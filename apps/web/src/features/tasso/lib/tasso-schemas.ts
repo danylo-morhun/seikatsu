@@ -57,6 +57,11 @@ export const deleteColumnSchema = z.object({
 	columnId: z.string().uuid(),
 });
 
+export const reorderColumnSchema = z.object({
+	columnId: z.string().uuid(),
+	newPosition: z.string().min(1),
+});
+
 export type CreateColumnInput = z.infer<typeof createColumnSchema>;
 export type UpdateColumnInput = z.infer<typeof updateColumnSchema>;
 
@@ -78,6 +83,17 @@ export const updateCardSchema = z.object({
 
 export const archiveCardSchema = z.object({
 	cardId: z.string().uuid(),
+});
+
+export const moveCardSchema = z.object({
+	cardId: z.string().uuid(),
+	newColumnId: z.string().uuid(),
+	newPosition: z.string().min(1),
+});
+
+export const reorderCardSchema = z.object({
+	cardId: z.string().uuid(),
+	newPosition: z.string().min(1),
 });
 
 export type CreateCardInput = z.infer<typeof createCardSchema>;

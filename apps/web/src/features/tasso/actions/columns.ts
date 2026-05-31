@@ -6,6 +6,7 @@ import { generateKeyBetween } from "@/features/tasso/lib/position";
 import {
 	createColumnSchema,
 	deleteColumnSchema,
+	reorderColumnSchema,
 	updateColumnSchema,
 } from "@/features/tasso/lib/tasso-schemas";
 import { and, asc, db, eq, tassoColumns, tassoProjects } from "@ethos/db";
@@ -123,6 +124,33 @@ export async function deleteColumn(
 	if (!project) return { error: "Forbidden" };
 
 	await db.delete(tassoColumns).where(eq(tassoColumns.id, columnId));
+
+	revalidatePath(`/tasso/${col.projectId}`);
+	return { success: true };
+}
+
+export async function reorderColumns(
+	input: unknown,
+): Promise<{ error: string } | { success: true }> {
+	const { workspace } = await getAuthedWorkspace();
+
+	const parsed = reorderColumnSchema.safeParse(input);
+	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+	const { columnId, newPosition } = parsed.data;
+
+	const [col] = await db
+		.select({ projectId: tassoColumns.projectId })
+		.from(tassoColumns)
+		.where(eq(tassoColumns.id, columnId))
+		.limit(1);
+
+	if (!col) return { error: "Column not found" };
+
+	const project = await assertProjectOwnership(col.projectId, workspace.id);
+	if (!project) return { error: "Forbidden" };
+
+	await db.update(tassoColumns).set({ position: newPosition }).where(eq(tassoColumns.id, columnId));
 
 	revalidatePath(`/tasso/${col.projectId}`);
 	return { success: true };

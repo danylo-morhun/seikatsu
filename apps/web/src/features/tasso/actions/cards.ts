@@ -6,6 +6,8 @@ import { generateKeyBetween } from "@/features/tasso/lib/position";
 import {
 	archiveCardSchema,
 	createCardSchema,
+	moveCardSchema,
+	reorderCardSchema,
 	updateCardSchema,
 } from "@/features/tasso/lib/tasso-schemas";
 import { and, asc, db, eq, isNull, tassoCards, tassoColumns, tassoProjects } from "@ethos/db";
@@ -140,6 +142,84 @@ export async function archiveCard(
 	if (!project) return { error: "Forbidden" };
 
 	await db.update(tassoCards).set({ archivedAt: new Date() }).where(eq(tassoCards.id, cardId));
+
+	revalidatePath(`/tasso/${card.projectId}`);
+	return { success: true };
+}
+
+export async function moveCard(
+	input: unknown,
+): Promise<{ error: string } | { success: true }> {
+	const { workspace } = await getAuthedWorkspace();
+
+	const parsed = moveCardSchema.safeParse(input);
+	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+	const { cardId, newColumnId, newPosition } = parsed.data;
+
+	const [card] = await db
+		.select({ projectId: tassoCards.projectId })
+		.from(tassoCards)
+		.where(eq(tassoCards.id, cardId))
+		.limit(1);
+
+	if (!card) return { error: "Card not found" };
+
+	const [project] = await db
+		.select({ id: tassoProjects.id })
+		.from(tassoProjects)
+		.where(and(eq(tassoProjects.id, card.projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.limit(1);
+
+	if (!project) return { error: "Forbidden" };
+
+	const [col] = await db
+		.select({ id: tassoColumns.id })
+		.from(tassoColumns)
+		.where(and(eq(tassoColumns.id, newColumnId), eq(tassoColumns.projectId, card.projectId)))
+		.limit(1);
+
+	if (!col) return { error: "Invalid column" };
+
+	await db
+		.update(tassoCards)
+		.set({ columnId: newColumnId, position: newPosition })
+		.where(eq(tassoCards.id, cardId));
+
+	revalidatePath(`/tasso/${card.projectId}`);
+	return { success: true };
+}
+
+export async function reorderCards(
+	input: unknown,
+): Promise<{ error: string } | { success: true }> {
+	const { workspace } = await getAuthedWorkspace();
+
+	const parsed = reorderCardSchema.safeParse(input);
+	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+	const { cardId, newPosition } = parsed.data;
+
+	const [card] = await db
+		.select({ projectId: tassoCards.projectId })
+		.from(tassoCards)
+		.where(eq(tassoCards.id, cardId))
+		.limit(1);
+
+	if (!card) return { error: "Card not found" };
+
+	const [project] = await db
+		.select({ id: tassoProjects.id })
+		.from(tassoProjects)
+		.where(and(eq(tassoProjects.id, card.projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.limit(1);
+
+	if (!project) return { error: "Forbidden" };
+
+	await db
+		.update(tassoCards)
+		.set({ position: newPosition })
+		.where(eq(tassoCards.id, cardId));
 
 	revalidatePath(`/tasso/${card.projectId}`);
 	return { success: true };
