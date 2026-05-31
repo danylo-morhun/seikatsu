@@ -44,7 +44,7 @@ export async function getColumns(projectId: string) {
 
 export async function createColumn(
 	input: unknown,
-): Promise<{ error: string } | { success: true; data: { id: string } }> {
+): Promise<{ error: string } | { success: true; data: { id: string; position: string } }> {
 	const { workspace } = await getAuthedWorkspace();
 
 	const parsed = createColumnSchema.safeParse(input);
@@ -72,7 +72,7 @@ export async function createColumn(
 	if (!column) return { error: "Failed to create column" };
 
 	revalidatePath(`/tasso/${projectId}`);
-	return { success: true, data: { id: column.id } };
+	return { success: true, data: { id: column.id, position } };
 }
 
 export async function updateColumn(input: unknown): Promise<{ error: string } | { success: true }> {

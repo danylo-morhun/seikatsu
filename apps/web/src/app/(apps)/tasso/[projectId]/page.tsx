@@ -6,6 +6,7 @@ import { getLabels } from "@/features/tasso/actions/labels";
 import { getProjects } from "@/features/tasso/actions/projects";
 import { KanbanBoard } from "@/features/tasso/components/KanbanBoard";
 import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
 
 export default async function TassoProjectPage({
 	params,
@@ -31,11 +32,13 @@ export default async function TassoProjectPage({
 	]);
 
 	return (
-		<KanbanBoard
-			projectId={projectId}
-			columns={columns}
-			cards={cards}
-			projectLabels={projectLabels}
-		/>
+		<Suspense>
+			<KanbanBoard
+				projectId={projectId}
+				columns={columns}
+				cards={cards}
+				projectLabels={projectLabels}
+			/>
+		</Suspense>
 	);
 }

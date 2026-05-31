@@ -2,7 +2,9 @@
 
 import { moveCard, reorderCards } from "@/features/tasso/actions/cards";
 import { reorderColumns } from "@/features/tasso/actions/columns";
+import { AddColumnButton } from "@/features/tasso/components/AddColumnButton";
 import { CardSheet } from "@/features/tasso/components/CardSheet";
+import { FilterBar } from "@/features/tasso/components/FilterBar";
 import {
 	type CardData,
 	KanbanCardOverlay,
@@ -25,6 +27,7 @@ import {
 	useSensors,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable";
+import { useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 
 interface Props {
@@ -34,9 +37,40 @@ interface Props {
 	projectLabels: LabelData[];
 }
 
+type Priority = "low" | "medium" | "high" | "urgent";
+
+function applyFilters(
+	cards: CardData[],
+	priorities: string[],
+	labelIds: string[],
+	due: string,
+): CardData[] {
+	return cards.filter((card) => {
+		if (priorities.length > 0 && !priorities.includes(card.priority ?? "")) return false;
+		if (labelIds.length > 0 && !card.labels.some((l) => labelIds.includes(l.id))) return false;
+		if (due) {
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
+			if (due === "none") return card.dueDate === null;
+			if (!card.dueDate) return false;
+			const [y, m, d] = card.dueDate.split("-").map(Number) as [number, number, number];
+			const dueDate = new Date(y, m - 1, d);
+			if (due === "overdue") return dueDate < today;
+			if (due === "today") return dueDate.getTime() === today.getTime();
+			if (due === "week") {
+				const weekEnd = new Date(today);
+				weekEnd.setDate(today.getDate() + 7);
+				return dueDate >= today && dueDate <= weekEnd;
+			}
+		}
+		return true;
+	});
+}
+
 export function KanbanBoard({
 	columns: initialColumns,
 	cards: initialCards,
+	projectId,
 	projectLabels: initialProjectLabels,
 }: Props) {
 	const [columns, setColumns] = useState(initialColumns);
@@ -47,6 +81,15 @@ export function KanbanBoard({
 	const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
 	const [sheetOpen, setSheetOpen] = useState(false);
 	const [, startTransition] = useTransition();
+
+	const searchParams = useSearchParams();
+	const activePriorities = (searchParams.get("priority") ?? "").split(",").filter(Boolean);
+	const activeLabels = (searchParams.get("label") ?? "").split(",").filter(Boolean);
+	const activeDue = searchParams.get("due") ?? "";
+	const isFiltered = activePriorities.length > 0 || activeLabels.length > 0 || activeDue !== "";
+	const filteredCards = isFiltered
+		? applyFilters(cards, activePriorities, activeLabels, activeDue)
+		: cards;
 
 	function handleCardClick(card: CardData) {
 		setSelectedCard(card);
@@ -66,6 +109,10 @@ export function KanbanBoard({
 	function handleCardArchive(cardId: string) {
 		setCards((prev) => prev.filter((c) => c.id !== cardId));
 		setSheetOpen(false);
+	}
+
+	function handleColumnAdded(column: ColumnData) {
+		setColumns((prev) => [...prev, column]);
 	}
 
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -119,7 +166,7 @@ export function KanbanBoard({
 
 			const isNewColumn = activeCard.columnId !== overColumnId;
 
-			const targetColCards = cards
+			const targetColCards = filteredCards
 				.filter((c) => c.columnId === overColumnId && c.id !== active.id)
 				.sort((a, b) => (a.position < b.position ? -1 : 1));
 
@@ -155,55 +202,59 @@ export function KanbanBoard({
 		}
 	}
 
-	if (sortedColumns.length === 0) {
-		return (
-			<div className="flex h-full items-center justify-center">
-				<p className="text-sm text-muted-foreground">No columns yet. Add one to get started.</p>
-			</div>
-		);
-	}
-
 	return (
-		<>
-			<DndContext
-				sensors={sensors}
-				collisionDetection={closestCorners}
-				onDragStart={handleDragStart}
-				onDragEnd={handleDragEnd}
-			>
-				<SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-					<div className="flex h-full gap-3 overflow-x-auto p-4 pb-6">
-						{sortedColumns.map((col) => (
-							<KanbanColumn
-								key={col.id}
-								column={col}
-								cards={cards.filter((c) => c.columnId === col.id)}
-								onCardClick={handleCardClick}
-							/>
-						))}
-					</div>
-				</SortableContext>
+		<div className="flex h-full flex-col overflow-hidden">
+			<FilterBar projectLabels={projectLabels} />
 
-				<DragOverlay>
-					{activeColumn && (
-						<KanbanColumnOverlay
-							column={activeColumn}
-							cardCount={cards.filter((c) => c.columnId === activeColumn.id).length}
-						/>
-					)}
-					{activeCard && <KanbanCardOverlay card={activeCard} />}
-				</DragOverlay>
-			</DndContext>
+			{sortedColumns.length === 0 ? (
+				<div className="flex flex-1 items-center justify-center gap-4">
+					<p className="text-sm text-muted-foreground">No columns yet.</p>
+					<AddColumnButton projectId={projectId} onColumnAdded={handleColumnAdded} />
+				</div>
+			) : (
+				<>
+					<DndContext
+						sensors={sensors}
+						collisionDetection={closestCorners}
+						onDragStart={handleDragStart}
+						onDragEnd={handleDragEnd}
+					>
+						<SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
+							<div className="flex flex-1 gap-3 overflow-x-auto p-4 pb-6">
+								{sortedColumns.map((col) => (
+									<KanbanColumn
+										key={col.id}
+										column={col}
+										cards={filteredCards.filter((c) => c.columnId === col.id)}
+										onCardClick={handleCardClick}
+									/>
+								))}
+								<AddColumnButton projectId={projectId} onColumnAdded={handleColumnAdded} />
+							</div>
+						</SortableContext>
 
-			<CardSheet
-				card={selectedCard}
-				open={sheetOpen}
-				onOpenChange={setSheetOpen}
-				projectLabels={projectLabels}
-				onUpdate={handleCardUpdate}
-				onArchive={handleCardArchive}
-				onProjectLabelsChange={setProjectLabels}
-			/>
-		</>
+						<DragOverlay>
+							{activeColumn && (
+								<KanbanColumnOverlay
+									column={activeColumn}
+									cardCount={filteredCards.filter((c) => c.columnId === activeColumn.id).length}
+								/>
+							)}
+							{activeCard && <KanbanCardOverlay card={activeCard} />}
+						</DragOverlay>
+					</DndContext>
+
+					<CardSheet
+						card={selectedCard}
+						open={sheetOpen}
+						onOpenChange={setSheetOpen}
+						projectLabels={projectLabels}
+						onUpdate={handleCardUpdate}
+						onArchive={handleCardArchive}
+						onProjectLabelsChange={setProjectLabels}
+					/>
+				</>
+			)}
+		</div>
 	);
 }
