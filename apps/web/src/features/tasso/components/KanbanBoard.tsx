@@ -1,33 +1,47 @@
 "use client";
 
+import { moveCard, reorderCards } from "@/features/tasso/actions/cards";
+import { reorderColumns } from "@/features/tasso/actions/columns";
+import { CardSheet } from "@/features/tasso/components/CardSheet";
+import {
+	type CardData,
+	KanbanCardOverlay,
+	type LabelData,
+} from "@/features/tasso/components/KanbanCard";
+import {
+	type ColumnData,
+	KanbanColumn,
+	KanbanColumnOverlay,
+} from "@/features/tasso/components/KanbanColumn";
+import { generateKeyBetween } from "@/features/tasso/lib/position";
 import {
 	DndContext,
-	DragOverlay,
-	PointerSensor,
 	type DragEndEvent,
+	DragOverlay,
 	type DragStartEvent,
+	PointerSensor,
 	closestCorners,
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable";
-import { moveCard, reorderCards } from "@/features/tasso/actions/cards";
-import { reorderColumns } from "@/features/tasso/actions/columns";
-import { CardSheet } from "@/features/tasso/components/CardSheet";
-import { type CardData, KanbanCardOverlay } from "@/features/tasso/components/KanbanCard";
-import { type ColumnData, KanbanColumn, KanbanColumnOverlay } from "@/features/tasso/components/KanbanColumn";
-import { generateKeyBetween } from "@/features/tasso/lib/position";
 import { useState, useTransition } from "react";
 
 interface Props {
 	columns: ColumnData[];
 	cards: CardData[];
 	projectId: string;
+	projectLabels: LabelData[];
 }
 
-export function KanbanBoard({ columns: initialColumns, cards: initialCards }: Props) {
+export function KanbanBoard({
+	columns: initialColumns,
+	cards: initialCards,
+	projectLabels: initialProjectLabels,
+}: Props) {
 	const [columns, setColumns] = useState(initialColumns);
 	const [cards, setCards] = useState(initialCards);
+	const [projectLabels, setProjectLabels] = useState(initialProjectLabels);
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const [activeType, setActiveType] = useState<"column" | "card" | null>(null);
 	const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
@@ -41,7 +55,9 @@ export function KanbanBoard({ columns: initialColumns, cards: initialCards }: Pr
 
 	function handleCardUpdate(
 		cardId: string,
-		updates: Partial<Pick<CardData, "title" | "description" | "priority" | "dueDate">>,
+		updates: Partial<
+			Pick<CardData, "title" | "description" | "priority" | "dueDate" | "checklistItems" | "labels">
+		>,
 	) {
 		setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, ...updates } : c)));
 		setSelectedCard((prev) => (prev?.id === cardId ? { ...prev, ...updates } : prev));
@@ -52,9 +68,7 @@ export function KanbanBoard({ columns: initialColumns, cards: initialCards }: Pr
 		setSheetOpen(false);
 	}
 
-	const sensors = useSensors(
-		useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-	);
+	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
 	const sortedColumns = [...columns].sort((a, b) => (a.position < b.position ? -1 : 1));
 	const columnIds = sortedColumns.map((c) => c.id);
@@ -101,9 +115,7 @@ export function KanbanBoard({ columns: initialColumns, cards: initialCards }: Pr
 
 			const overType = over.data.current?.type as "column" | "card" | undefined;
 			const overColumnId =
-				overType === "column"
-					? (over.id as string)
-					: (over.data.current?.columnId as string);
+				overType === "column" ? (over.id as string) : (over.data.current?.columnId as string);
 
 			const isNewColumn = activeCard.columnId !== overColumnId;
 
@@ -153,43 +165,45 @@ export function KanbanBoard({ columns: initialColumns, cards: initialCards }: Pr
 
 	return (
 		<>
-		<DndContext
-			sensors={sensors}
-			collisionDetection={closestCorners}
-			onDragStart={handleDragStart}
-			onDragEnd={handleDragEnd}
-		>
-			<SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-				<div className="flex h-full gap-3 overflow-x-auto p-4 pb-6">
-					{sortedColumns.map((col) => (
-						<KanbanColumn
-							key={col.id}
-							column={col}
-							cards={cards.filter((c) => c.columnId === col.id)}
-							onCardClick={handleCardClick}
+			<DndContext
+				sensors={sensors}
+				collisionDetection={closestCorners}
+				onDragStart={handleDragStart}
+				onDragEnd={handleDragEnd}
+			>
+				<SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
+					<div className="flex h-full gap-3 overflow-x-auto p-4 pb-6">
+						{sortedColumns.map((col) => (
+							<KanbanColumn
+								key={col.id}
+								column={col}
+								cards={cards.filter((c) => c.columnId === col.id)}
+								onCardClick={handleCardClick}
+							/>
+						))}
+					</div>
+				</SortableContext>
+
+				<DragOverlay>
+					{activeColumn && (
+						<KanbanColumnOverlay
+							column={activeColumn}
+							cardCount={cards.filter((c) => c.columnId === activeColumn.id).length}
 						/>
-					))}
-				</div>
-			</SortableContext>
+					)}
+					{activeCard && <KanbanCardOverlay card={activeCard} />}
+				</DragOverlay>
+			</DndContext>
 
-			<DragOverlay>
-				{activeColumn && (
-					<KanbanColumnOverlay
-						column={activeColumn}
-						cardCount={cards.filter((c) => c.columnId === activeColumn.id).length}
-					/>
-				)}
-				{activeCard && <KanbanCardOverlay card={activeCard} />}
-			</DragOverlay>
-		</DndContext>
-
-		<CardSheet
-			card={selectedCard}
-			open={sheetOpen}
-			onOpenChange={setSheetOpen}
-			onUpdate={handleCardUpdate}
-			onArchive={handleCardArchive}
-		/>
+			<CardSheet
+				card={selectedCard}
+				open={sheetOpen}
+				onOpenChange={setSheetOpen}
+				projectLabels={projectLabels}
+				onUpdate={handleCardUpdate}
+				onArchive={handleCardArchive}
+				onProjectLabelsChange={setProjectLabels}
+			/>
 		</>
 	);
 }

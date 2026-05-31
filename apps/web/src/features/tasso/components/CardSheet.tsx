@@ -1,8 +1,14 @@
 "use client";
 
-import { archiveCard, updateCard } from "@/features/tasso/actions/cards";
-import { type CardData } from "@/features/tasso/components/KanbanCard";
 import { Spinner } from "@/components/Spinner";
+import { archiveCard, updateCard } from "@/features/tasso/actions/cards";
+import { ChecklistSection } from "@/features/tasso/components/ChecklistSection";
+import type {
+	CardData,
+	ChecklistItemData,
+	LabelData,
+} from "@/features/tasso/components/KanbanCard";
+import { LabelManager } from "@/features/tasso/components/LabelManager";
 import {
 	Label,
 	Select,
@@ -27,14 +33,26 @@ interface Props {
 	card: CardData | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	projectLabels: LabelData[];
 	onUpdate?: (
 		cardId: string,
-		updates: Partial<Pick<CardData, "title" | "description" | "priority" | "dueDate">>,
+		updates: Partial<
+			Pick<CardData, "title" | "description" | "priority" | "dueDate" | "checklistItems" | "labels">
+		>,
 	) => void;
 	onArchive?: (cardId: string) => void;
+	onProjectLabelsChange?: (labels: LabelData[]) => void;
 }
 
-export function CardSheet({ card, open, onOpenChange, onUpdate, onArchive }: Props) {
+export function CardSheet({
+	card,
+	open,
+	onOpenChange,
+	projectLabels,
+	onUpdate,
+	onArchive,
+	onProjectLabelsChange,
+}: Props) {
 	const [title, setTitle] = useState(card?.title ?? "");
 	const [description, setDescription] = useState(card?.description ?? "");
 	const [priority, setPriority] = useState<Priority | "">(card?.priority ?? "");
@@ -159,6 +177,27 @@ export function CardSheet({ card, open, onOpenChange, onUpdate, onArchive }: Pro
 							className="w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
 						/>
 					</div>
+
+					<Separator />
+
+					<LabelManager
+						key={`labels-${card?.id ?? "none"}`}
+						cardId={card?.id ?? ""}
+						projectId={card?.projectId ?? ""}
+						projectLabels={projectLabels}
+						cardLabelIds={card?.labels.map((l) => l.id) ?? []}
+						onChange={(labels) => card && onUpdate?.(card.id, { labels })}
+						onProjectLabelsChange={onProjectLabelsChange}
+					/>
+
+					<Separator />
+
+					<ChecklistSection
+						key={`checklist-${card?.id ?? "none"}`}
+						cardId={card?.id ?? ""}
+						initialItems={card?.checklistItems ?? []}
+						onChange={(checklistItems) => card && onUpdate?.(card.id, { checklistItems })}
+					/>
 				</div>
 
 				<Separator />
