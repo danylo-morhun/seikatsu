@@ -75,9 +75,7 @@ export async function createColumn(
 	return { success: true, data: { id: column.id } };
 }
 
-export async function updateColumn(
-	input: unknown,
-): Promise<{ error: string } | { success: true }> {
+export async function updateColumn(input: unknown): Promise<{ error: string } | { success: true }> {
 	const { workspace } = await getAuthedWorkspace();
 
 	const parsed = updateColumnSchema.safeParse(input);
@@ -102,9 +100,7 @@ export async function updateColumn(
 	return { success: true };
 }
 
-export async function deleteColumn(
-	input: unknown,
-): Promise<{ error: string } | { success: true }> {
+export async function deleteColumn(input: unknown): Promise<{ error: string } | { success: true }> {
 	const { workspace } = await getAuthedWorkspace();
 
 	const parsed = deleteColumnSchema.safeParse(input);

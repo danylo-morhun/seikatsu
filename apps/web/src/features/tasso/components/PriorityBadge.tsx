@@ -14,9 +14,7 @@ export function PriorityBadge({ priority, showLabel = false, className }: Props)
 	return (
 		<span className={cn("inline-flex items-center gap-1", className)}>
 			<span className={cn("h-2 w-2 shrink-0 rounded-full", config.color)} />
-			{showLabel && (
-				<span className="text-xs text-muted-foreground">{config.label}</span>
-			)}
+			{showLabel && <span className="text-xs text-muted-foreground">{config.label}</span>}
 		</span>
 	);
 }

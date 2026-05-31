@@ -1,11 +1,11 @@
 "use client";
 
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { Spinner } from "@/components/Spinner";
 import { createCard } from "@/features/tasso/actions/cards";
 import { deleteColumn } from "@/features/tasso/actions/columns";
 import { type CardData, KanbanCard } from "@/features/tasso/components/KanbanCard";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@ethos/ui";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -104,9 +104,7 @@ export function KanbanColumn({ column, cards, onCardClick }: Props) {
 							style={{ backgroundColor: column.color }}
 						/>
 					)}
-					<span className="flex-1 truncate text-sm font-medium text-foreground">
-						{column.name}
-					</span>
+					<span className="flex-1 truncate text-sm font-medium text-foreground">{column.name}</span>
 					<span className="text-xs text-muted-foreground tabular-nums">{cards.length}</span>
 				</div>
 				<button
@@ -181,7 +179,10 @@ export function KanbanColumn({ column, cards, onCardClick }: Props) {
 	);
 }
 
-export function KanbanColumnOverlay({ column, cardCount }: { column: ColumnData; cardCount: number }) {
+export function KanbanColumnOverlay({
+	column,
+	cardCount,
+}: { column: ColumnData; cardCount: number }) {
 	return (
 		<div className="flex w-72 shrink-0 flex-col rounded-xl border border-border bg-muted/40 shadow-xl opacity-95 rotate-1">
 			<div className="flex items-center gap-2 px-3 pt-3 pb-2">

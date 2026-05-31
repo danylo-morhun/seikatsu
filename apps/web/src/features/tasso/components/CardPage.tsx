@@ -1,7 +1,7 @@
 "use client";
 
-import { archiveCard, updateCard } from "@/features/tasso/actions/cards";
 import { Spinner } from "@/components/Spinner";
+import { archiveCard, updateCard } from "@/features/tasso/actions/cards";
 import {
 	Label,
 	Select,

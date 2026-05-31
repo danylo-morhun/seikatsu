@@ -20,9 +20,7 @@ export function DueDateChip({ dueDate, className }: Props) {
 		<span
 			className={cn(
 				"inline-flex items-center rounded px-1 py-0.5 text-xs font-medium",
-				isOverdue
-					? "bg-red-500/15 text-red-400"
-					: "bg-muted text-muted-foreground",
+				isOverdue ? "bg-red-500/15 text-red-400" : "bg-muted text-muted-foreground",
 				className,
 			)}
 		>
