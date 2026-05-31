@@ -135,3 +135,6 @@ export const setCardLabelsSchema = z.object({
 	cardId: z.string().uuid(),
 	labelIds: z.array(z.string().uuid()),
 });
+
+export const restoreCardSchema = z.object({ cardId: z.string().uuid() });
+export const deleteCardSchema = z.object({ cardId: z.string().uuid() });

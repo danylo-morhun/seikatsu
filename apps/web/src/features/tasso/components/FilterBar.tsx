@@ -52,7 +52,7 @@ export function FilterBar({ projectLabels }: Props) {
 	}
 
 	return (
-		<div className="flex flex-wrap items-center gap-1.5 border-b border-border bg-background px-4 py-2">
+		<div className="flex flex-wrap items-center gap-1.5">
 			<span className="mr-1 text-xs font-medium text-muted-foreground">Filter:</span>
 
 			{/* Priority */}

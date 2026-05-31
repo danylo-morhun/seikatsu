@@ -13,5 +13,6 @@ export {
 	ilike,
 	count,
 	isNull,
+	isNotNull,
 	ne,
 } from "drizzle-orm";

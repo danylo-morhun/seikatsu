@@ -17,9 +17,10 @@ interface Props {
 	projects: Project[];
 	workspaceId: string;
 	activeProjectId?: string;
+	onProjectSelect?: () => void;
 }
 
-export function ProjectSidebar({ projects, workspaceId, activeProjectId }: Props) {
+export function ProjectSidebar({ projects, workspaceId, activeProjectId, onProjectSelect }: Props) {
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [isCreating, setIsCreating] = useState(false);
@@ -27,6 +28,7 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId }: Props
 	const [deletingId, setDeletingId] = useState<string | null>(null);
 
 	function navigate(projectId: string) {
+		onProjectSelect?.();
 		startTransition(() => {
 			router.push(`/tasso/${projectId}`);
 		});

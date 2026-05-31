@@ -3,6 +3,7 @@
 import { moveCard, reorderCards } from "@/features/tasso/actions/cards";
 import { reorderColumns } from "@/features/tasso/actions/columns";
 import { AddColumnButton } from "@/features/tasso/components/AddColumnButton";
+import { ArchivedCardsSheet } from "@/features/tasso/components/ArchivedCardsSheet";
 import { CardSheet } from "@/features/tasso/components/CardSheet";
 import { FilterBar } from "@/features/tasso/components/FilterBar";
 import {
@@ -15,6 +16,7 @@ import {
 	KanbanColumn,
 	KanbanColumnOverlay,
 } from "@/features/tasso/components/KanbanColumn";
+import { TassoMobileAddFab } from "@/features/tasso/components/TassoMobileAddFab";
 import { generateKeyBetween } from "@/features/tasso/lib/position";
 import {
 	DndContext,
@@ -115,6 +117,14 @@ export function KanbanBoard({
 		setColumns((prev) => [...prev, column]);
 	}
 
+	function handleCardRestore(card: CardData) {
+		setCards((prev) => [...prev, card]);
+	}
+
+	function handleCardAdded(card: CardData) {
+		setCards((prev) => [...prev, card]);
+	}
+
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
 	const sortedColumns = [...columns].sort((a, b) => (a.position < b.position ? -1 : 1));
@@ -204,7 +214,16 @@ export function KanbanBoard({
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
-			<FilterBar projectLabels={projectLabels} />
+			<div className="flex items-center gap-2 border-b border-border px-4 py-1.5">
+				<div className="flex-1">
+					<FilterBar projectLabels={projectLabels} />
+				</div>
+				<ArchivedCardsSheet
+					projectId={projectId}
+					columns={columns}
+					onCardRestore={handleCardRestore}
+				/>
+			</div>
 
 			{sortedColumns.length === 0 ? (
 				<div className="flex flex-1 items-center justify-center gap-4">
@@ -255,6 +274,12 @@ export function KanbanBoard({
 					/>
 				</>
 			)}
+
+			<TassoMobileAddFab
+				columns={sortedColumns}
+				projectId={projectId}
+				onCardAdded={handleCardAdded}
+			/>
 		</div>
 	);
 }

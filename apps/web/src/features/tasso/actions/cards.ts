@@ -6,8 +6,10 @@ import { generateKeyBetween } from "@/features/tasso/lib/position";
 import {
 	archiveCardSchema,
 	createCardSchema,
+	deleteCardSchema,
 	moveCardSchema,
 	reorderCardSchema,
+	restoreCardSchema,
 	updateCardSchema,
 } from "@/features/tasso/lib/tasso-schemas";
 import {
@@ -15,6 +17,7 @@ import {
 	asc,
 	db,
 	eq,
+	isNotNull,
 	isNull,
 	tassoCards,
 	tassoChecklistItems,
@@ -107,7 +110,7 @@ export async function getCards(projectId: string) {
 
 export async function createCard(
 	input: unknown,
-): Promise<{ error: string } | { success: true; data: { id: string } }> {
+): Promise<{ error: string } | { success: true; data: { id: string; position: string } }> {
 	const { workspace } = await getAuthedWorkspace();
 
 	const parsed = createCardSchema.safeParse(input);
@@ -141,12 +144,12 @@ export async function createCard(
 	const [card] = await db
 		.insert(tassoCards)
 		.values({ columnId, projectId, title, position })
-		.returning({ id: tassoCards.id });
+		.returning({ id: tassoCards.id, position: tassoCards.position });
 
 	if (!card) return { error: "Failed to create card" };
 
 	revalidatePath(`/tasso/${projectId}`);
-	return { success: true, data: { id: card.id } };
+	return { success: true, data: { id: card.id, position: card.position } };
 }
 
 export async function updateCard(input: unknown): Promise<{ error: string } | { success: true }> {
@@ -275,6 +278,111 @@ export async function reorderCards(input: unknown): Promise<{ error: string } | 
 	if (!project) return { error: "Forbidden" };
 
 	await db.update(tassoCards).set({ position: newPosition }).where(eq(tassoCards.id, cardId));
+
+	revalidatePath(`/tasso/${card.projectId}`);
+	return { success: true };
+}
+
+export async function getArchivedCards(projectId: string) {
+	const { workspace } = await getAuthedWorkspace();
+
+	const [project] = await db
+		.select({ id: tassoProjects.id })
+		.from(tassoProjects)
+		.where(and(eq(tassoProjects.id, projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.limit(1);
+
+	if (!project) throw new Error("Forbidden");
+
+	const rows = await db.query.tassoCards.findMany({
+		where: and(eq(tassoCards.projectId, projectId), isNotNull(tassoCards.archivedAt)),
+		orderBy: asc(tassoCards.archivedAt),
+		with: {
+			checklistItems: { orderBy: asc(tassoChecklistItems.position) },
+			cardLabels: { with: { label: true } },
+		},
+	});
+
+	return rows.map(({ cardLabels, checklistItems, ...rest }) => ({
+		...rest,
+		checklistItems: checklistItems.map(({ id, title, isCompleted, position }) => ({
+			id,
+			title,
+			isCompleted,
+			position,
+		})),
+		labels: cardLabels.map(({ label }) => ({ id: label.id, name: label.name, color: label.color })),
+	}));
+}
+
+export async function restoreCard(
+	input: unknown,
+): Promise<{ error: string } | { success: true; data: { columnId: string; position: string } }> {
+	const { workspace } = await getAuthedWorkspace();
+
+	const parsed = restoreCardSchema.safeParse(input);
+	if (!parsed.success) return { error: "Invalid input" };
+
+	const { cardId } = parsed.data;
+
+	const [card] = await db
+		.select({ projectId: tassoCards.projectId, columnId: tassoCards.columnId })
+		.from(tassoCards)
+		.where(eq(tassoCards.id, cardId))
+		.limit(1);
+
+	if (!card) return { error: "Card not found" };
+
+	const [project] = await db
+		.select({ id: tassoProjects.id })
+		.from(tassoProjects)
+		.where(and(eq(tassoProjects.id, card.projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.limit(1);
+
+	if (!project) return { error: "Forbidden" };
+
+	const lastInCol = await db
+		.select({ position: tassoCards.position })
+		.from(tassoCards)
+		.where(and(eq(tassoCards.columnId, card.columnId), isNull(tassoCards.archivedAt)))
+		.orderBy(asc(tassoCards.position));
+
+	const newPosition = generateKeyBetween(lastInCol.at(-1)?.position ?? null, null);
+
+	await db
+		.update(tassoCards)
+		.set({ archivedAt: null, position: newPosition })
+		.where(eq(tassoCards.id, cardId));
+
+	revalidatePath(`/tasso/${card.projectId}`);
+	return { success: true, data: { columnId: card.columnId, position: newPosition } };
+}
+
+export async function deleteCard(input: unknown): Promise<{ error: string } | { success: true }> {
+	const { workspace } = await getAuthedWorkspace();
+
+	const parsed = deleteCardSchema.safeParse(input);
+	if (!parsed.success) return { error: "Invalid input" };
+
+	const { cardId } = parsed.data;
+
+	const [card] = await db
+		.select({ projectId: tassoCards.projectId })
+		.from(tassoCards)
+		.where(eq(tassoCards.id, cardId))
+		.limit(1);
+
+	if (!card) return { error: "Card not found" };
+
+	const [project] = await db
+		.select({ id: tassoProjects.id })
+		.from(tassoProjects)
+		.where(and(eq(tassoProjects.id, card.projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.limit(1);
+
+	if (!project) return { error: "Forbidden" };
+
+	await db.delete(tassoCards).where(eq(tassoCards.id, cardId));
 
 	revalidatePath(`/tasso/${card.projectId}`);
 	return { success: true };
