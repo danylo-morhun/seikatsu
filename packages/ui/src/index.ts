@@ -143,3 +143,13 @@ export {
 } from "./components/dropdown-menu";
 export { Checkbox } from "./components/checkbox";
 export { Avatar } from "./components/avatar";
+export {
+	Sheet,
+	SheetTrigger,
+	SheetClose,
+	SheetContent,
+	SheetHeader,
+	SheetFooter,
+	SheetTitle,
+	SheetDescription,
+} from "./components/sheet";

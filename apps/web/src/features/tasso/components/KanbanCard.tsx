@@ -11,7 +11,9 @@ type Priority = "low" | "medium" | "high" | "urgent";
 export type CardData = {
 	id: string;
 	columnId: string;
+	projectId: string;
 	title: string;
+	description: string | null;
 	priority: Priority | null;
 	dueDate: string | null;
 	position: string;

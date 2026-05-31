@@ -21,6 +21,28 @@ async function getAuthedWorkspace() {
 	return { workspace };
 }
 
+export async function getCard(cardId: string) {
+	const { workspace } = await getAuthedWorkspace();
+
+	const [card] = await db
+		.select()
+		.from(tassoCards)
+		.where(eq(tassoCards.id, cardId))
+		.limit(1);
+
+	if (!card) return null;
+
+	const [project] = await db
+		.select({ id: tassoProjects.id })
+		.from(tassoProjects)
+		.where(and(eq(tassoProjects.id, card.projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.limit(1);
+
+	if (!project) return null;
+
+	return card;
+}
+
 export async function getCards(projectId: string) {
 	const { workspace } = await getAuthedWorkspace();
 
