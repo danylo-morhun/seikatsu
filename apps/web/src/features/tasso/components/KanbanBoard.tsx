@@ -13,6 +13,7 @@ import {
 import { SortableContext, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { moveCard, reorderCards } from "@/features/tasso/actions/cards";
 import { reorderColumns } from "@/features/tasso/actions/columns";
+import { CardSheet } from "@/features/tasso/components/CardSheet";
 import { type CardData, KanbanCardOverlay } from "@/features/tasso/components/KanbanCard";
 import { type ColumnData, KanbanColumn, KanbanColumnOverlay } from "@/features/tasso/components/KanbanColumn";
 import { generateKeyBetween } from "@/features/tasso/lib/position";
@@ -29,7 +30,27 @@ export function KanbanBoard({ columns: initialColumns, cards: initialCards }: Pr
 	const [cards, setCards] = useState(initialCards);
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const [activeType, setActiveType] = useState<"column" | "card" | null>(null);
+	const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
+	const [sheetOpen, setSheetOpen] = useState(false);
 	const [, startTransition] = useTransition();
+
+	function handleCardClick(card: CardData) {
+		setSelectedCard(card);
+		setSheetOpen(true);
+	}
+
+	function handleCardUpdate(
+		cardId: string,
+		updates: Partial<Pick<CardData, "title" | "description" | "priority" | "dueDate">>,
+	) {
+		setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, ...updates } : c)));
+		setSelectedCard((prev) => (prev?.id === cardId ? { ...prev, ...updates } : prev));
+	}
+
+	function handleCardArchive(cardId: string) {
+		setCards((prev) => prev.filter((c) => c.id !== cardId));
+		setSheetOpen(false);
+	}
 
 	const sensors = useSensors(
 		useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -131,6 +152,7 @@ export function KanbanBoard({ columns: initialColumns, cards: initialCards }: Pr
 	}
 
 	return (
+		<>
 		<DndContext
 			sensors={sensors}
 			collisionDetection={closestCorners}
@@ -144,6 +166,7 @@ export function KanbanBoard({ columns: initialColumns, cards: initialCards }: Pr
 							key={col.id}
 							column={col}
 							cards={cards.filter((c) => c.columnId === col.id)}
+							onCardClick={handleCardClick}
 						/>
 					))}
 				</div>
@@ -159,5 +182,14 @@ export function KanbanBoard({ columns: initialColumns, cards: initialCards }: Pr
 				{activeCard && <KanbanCardOverlay card={activeCard} />}
 			</DragOverlay>
 		</DndContext>
+
+		<CardSheet
+			card={selectedCard}
+			open={sheetOpen}
+			onOpenChange={setSheetOpen}
+			onUpdate={handleCardUpdate}
+			onArchive={handleCardArchive}
+		/>
+		</>
 	);
 }
