@@ -98,3 +98,40 @@ export const reorderCardSchema = z.object({
 
 export type CreateCardInput = z.infer<typeof createCardSchema>;
 export type UpdateCardInput = z.infer<typeof updateCardSchema>;
+
+// ─── Checklist ────────────────────────────────────────────────────────────────
+
+export const createChecklistItemSchema = z.object({
+	cardId: z.string().uuid(),
+	title: z.string().min(1, "Title is required").max(500),
+});
+
+export const toggleChecklistItemSchema = z.object({
+	itemId: z.string().uuid(),
+});
+
+export const deleteChecklistItemSchema = z.object({
+	itemId: z.string().uuid(),
+});
+
+export const reorderChecklistItemSchema = z.object({
+	itemId: z.string().uuid(),
+	newPosition: z.string().min(1),
+});
+
+// ─── Labels ──────────────────────────────────────────────────────────────────
+
+export const createLabelSchema = z.object({
+	projectId: z.string().uuid(),
+	name: z.string().min(1, "Name is required").max(100),
+	color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Invalid hex color"),
+});
+
+export const deleteLabelSchema = z.object({
+	labelId: z.string().uuid(),
+});
+
+export const setCardLabelsSchema = z.object({
+	cardId: z.string().uuid(),
+	labelIds: z.array(z.string().uuid()),
+});
