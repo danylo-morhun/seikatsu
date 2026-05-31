@@ -10,7 +10,17 @@ import {
 	reorderCardSchema,
 	updateCardSchema,
 } from "@/features/tasso/lib/tasso-schemas";
-import { and, asc, db, eq, isNull, tassoCards, tassoColumns, tassoProjects } from "@ethos/db";
+import {
+	and,
+	asc,
+	db,
+	eq,
+	isNull,
+	tassoCards,
+	tassoChecklistItems,
+	tassoColumns,
+	tassoProjects,
+} from "@ethos/db";
 import { revalidatePath } from "next/cache";
 
 async function getAuthedWorkspace() {
@@ -24,23 +34,39 @@ async function getAuthedWorkspace() {
 export async function getCard(cardId: string) {
 	const { workspace } = await getAuthedWorkspace();
 
-	const [card] = await db
-		.select()
-		.from(tassoCards)
-		.where(eq(tassoCards.id, cardId))
-		.limit(1);
+	const row = await db.query.tassoCards.findFirst({
+		where: eq(tassoCards.id, cardId),
+		with: {
+			checklistItems: { orderBy: asc(tassoChecklistItems.position) },
+			cardLabels: { with: { label: true } },
+		},
+	});
 
-	if (!card) return null;
+	if (!row) return null;
 
 	const [project] = await db
 		.select({ id: tassoProjects.id })
 		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, card.projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.where(and(eq(tassoProjects.id, row.projectId), eq(tassoProjects.workspaceId, workspace.id)))
 		.limit(1);
 
 	if (!project) return null;
 
-	return card;
+	const { cardLabels, checklistItems, ...rest } = row;
+	return {
+		...rest,
+		checklistItems: checklistItems.map(({ id, title, isCompleted, position }) => ({
+			id,
+			title,
+			isCompleted,
+			position,
+		})),
+		labels: cardLabels.map(({ label }) => ({
+			id: label.id,
+			name: label.name,
+			color: label.color,
+		})),
+	};
 }
 
 export async function getCards(projectId: string) {
@@ -54,11 +80,29 @@ export async function getCards(projectId: string) {
 
 	if (!project) throw new Error("Forbidden");
 
-	return db
-		.select()
-		.from(tassoCards)
-		.where(and(eq(tassoCards.projectId, projectId), isNull(tassoCards.archivedAt)))
-		.orderBy(asc(tassoCards.position));
+	const rows = await db.query.tassoCards.findMany({
+		where: and(eq(tassoCards.projectId, projectId), isNull(tassoCards.archivedAt)),
+		orderBy: asc(tassoCards.position),
+		with: {
+			checklistItems: { orderBy: asc(tassoChecklistItems.position) },
+			cardLabels: { with: { label: true } },
+		},
+	});
+
+	return rows.map(({ cardLabels, checklistItems, ...rest }) => ({
+		...rest,
+		checklistItems: checklistItems.map(({ id, title, isCompleted, position }) => ({
+			id,
+			title,
+			isCompleted,
+			position,
+		})),
+		labels: cardLabels.map(({ label }) => ({
+			id: label.id,
+			name: label.name,
+			color: label.color,
+		})),
+	}));
 }
 
 export async function createCard(
@@ -105,9 +149,7 @@ export async function createCard(
 	return { success: true, data: { id: card.id } };
 }
 
-export async function updateCard(
-	input: unknown,
-): Promise<{ error: string } | { success: true }> {
+export async function updateCard(input: unknown): Promise<{ error: string } | { success: true }> {
 	const { workspace } = await getAuthedWorkspace();
 
 	const parsed = updateCardSchema.safeParse(input);
@@ -137,9 +179,7 @@ export async function updateCard(
 	return { success: true };
 }
 
-export async function archiveCard(
-	input: unknown,
-): Promise<{ error: string } | { success: true }> {
+export async function archiveCard(input: unknown): Promise<{ error: string } | { success: true }> {
 	const { workspace } = await getAuthedWorkspace();
 
 	const parsed = archiveCardSchema.safeParse(input);
@@ -169,9 +209,7 @@ export async function archiveCard(
 	return { success: true };
 }
 
-export async function moveCard(
-	input: unknown,
-): Promise<{ error: string } | { success: true }> {
+export async function moveCard(input: unknown): Promise<{ error: string } | { success: true }> {
 	const { workspace } = await getAuthedWorkspace();
 
 	const parsed = moveCardSchema.safeParse(input);
@@ -212,9 +250,7 @@ export async function moveCard(
 	return { success: true };
 }
 
-export async function reorderCards(
-	input: unknown,
-): Promise<{ error: string } | { success: true }> {
+export async function reorderCards(input: unknown): Promise<{ error: string } | { success: true }> {
 	const { workspace } = await getAuthedWorkspace();
 
 	const parsed = reorderCardSchema.safeParse(input);
@@ -238,10 +274,7 @@ export async function reorderCards(
 
 	if (!project) return { error: "Forbidden" };
 
-	await db
-		.update(tassoCards)
-		.set({ position: newPosition })
-		.where(eq(tassoCards.id, cardId));
+	await db.update(tassoCards).set({ position: newPosition }).where(eq(tassoCards.id, cardId));
 
 	revalidatePath(`/tasso/${card.projectId}`);
 	return { success: true };
