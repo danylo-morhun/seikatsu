@@ -8,7 +8,7 @@ import { KanbanBoard } from "@/features/seiryu/components/KanbanBoard";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
-export default async function TassoProjectPage({
+export default async function SeiryuProjectPage({
 	params,
 }: {
 	params: Promise<{ projectId: string }>;

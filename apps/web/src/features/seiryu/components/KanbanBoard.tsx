@@ -16,7 +16,7 @@ import {
 	KanbanColumn,
 	KanbanColumnOverlay,
 } from "@/features/seiryu/components/KanbanColumn";
-import { TassoMobileAddFab } from "@/features/seiryu/components/TassoMobileAddFab";
+import { SeiryuMobileAddFab } from "@/features/seiryu/components/SeiryuMobileAddFab";
 import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import {
 	DndContext,
@@ -279,7 +279,7 @@ export function KanbanBoard({
 				</>
 			)}
 
-			<TassoMobileAddFab
+			<SeiryuMobileAddFab
 				columns={sortedColumns}
 				projectId={projectId}
 				onCardAdded={handleCardAdded}

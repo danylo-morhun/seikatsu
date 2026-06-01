@@ -21,12 +21,12 @@ interface Props {
 	children: React.ReactNode;
 }
 
-export function TassoLayout({ projects, workspaceId, cardCounts, children }: Props) {
+export function SeiryuLayout({ projects, workspaceId, cardCounts, children }: Props) {
 	const [isPending, startTransition] = useTransition();
 	const [mobileNavOpen, setMobileNavOpen] = useState(false);
 	const pathname = usePathname();
 
-	// /tasso/<projectId>/... → extract second segment
+	// /seiryu/<projectId>/... → extract second segment
 	const activeProjectId = pathname.split("/")[2] ?? undefined;
 	const activeProject = projects.find((p) => p.id === activeProjectId);
 

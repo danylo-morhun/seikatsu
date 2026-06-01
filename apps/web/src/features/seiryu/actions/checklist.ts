@@ -9,7 +9,7 @@ import {
 	reorderChecklistItemSchema,
 	toggleChecklistItemSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
-import { and, asc, db, eq, tassoCards, tassoChecklistItems, tassoProjects } from "@seikatsu/db";
+import { and, asc, db, eq, seiryuCards, seiryuChecklistItems, seiryuProjects } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 async function getAuthedWorkspace() {
@@ -22,16 +22,16 @@ async function getAuthedWorkspace() {
 
 async function assertCardOwnership(cardId: string, workspaceId: string) {
 	const [card] = await db
-		.select({ projectId: tassoCards.projectId })
-		.from(tassoCards)
-		.where(eq(tassoCards.id, cardId))
+		.select({ projectId: seiryuCards.projectId })
+		.from(seiryuCards)
+		.where(eq(seiryuCards.id, cardId))
 		.limit(1);
 	if (!card) return null;
 
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, card.projectId), eq(tassoProjects.workspaceId, workspaceId)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, card.projectId), eq(seiryuProjects.workspaceId, workspaceId)))
 		.limit(1);
 	if (!project) return null;
 
@@ -45,9 +45,9 @@ export async function getChecklistItems(cardId: string) {
 
 	return db
 		.select()
-		.from(tassoChecklistItems)
-		.where(eq(tassoChecklistItems.cardId, cardId))
-		.orderBy(asc(tassoChecklistItems.position));
+		.from(seiryuChecklistItems)
+		.where(eq(seiryuChecklistItems.cardId, cardId))
+		.orderBy(asc(seiryuChecklistItems.position));
 }
 
 export async function createChecklistItem(
@@ -64,18 +64,18 @@ export async function createChecklistItem(
 	if (!ownership) return { error: "Forbidden" };
 
 	const existing = await db
-		.select({ position: tassoChecklistItems.position })
-		.from(tassoChecklistItems)
-		.where(eq(tassoChecklistItems.cardId, cardId))
-		.orderBy(asc(tassoChecklistItems.position));
+		.select({ position: seiryuChecklistItems.position })
+		.from(seiryuChecklistItems)
+		.where(eq(seiryuChecklistItems.cardId, cardId))
+		.orderBy(asc(seiryuChecklistItems.position));
 
 	const lastPos = existing.at(-1)?.position ?? null;
 	const position = generateKeyBetween(lastPos, null);
 
 	const [item] = await db
-		.insert(tassoChecklistItems)
+		.insert(seiryuChecklistItems)
 		.values({ cardId, title, position })
-		.returning({ id: tassoChecklistItems.id, position: tassoChecklistItems.position });
+		.returning({ id: seiryuChecklistItems.id, position: seiryuChecklistItems.position });
 
 	if (!item) return { error: "Failed to create item" };
 
@@ -94,9 +94,9 @@ export async function toggleChecklistItem(
 	const { itemId } = parsed.data;
 
 	const [item] = await db
-		.select({ cardId: tassoChecklistItems.cardId, isCompleted: tassoChecklistItems.isCompleted })
-		.from(tassoChecklistItems)
-		.where(eq(tassoChecklistItems.id, itemId))
+		.select({ cardId: seiryuChecklistItems.cardId, isCompleted: seiryuChecklistItems.isCompleted })
+		.from(seiryuChecklistItems)
+		.where(eq(seiryuChecklistItems.id, itemId))
 		.limit(1);
 
 	if (!item) return { error: "Not found" };
@@ -105,9 +105,9 @@ export async function toggleChecklistItem(
 	if (!ownership) return { error: "Forbidden" };
 
 	await db
-		.update(tassoChecklistItems)
+		.update(seiryuChecklistItems)
 		.set({ isCompleted: !item.isCompleted })
-		.where(eq(tassoChecklistItems.id, itemId));
+		.where(eq(seiryuChecklistItems.id, itemId));
 
 	revalidatePath(`/seiryu/${ownership.projectId}`);
 	return { success: true };
@@ -124,9 +124,9 @@ export async function deleteChecklistItem(
 	const { itemId } = parsed.data;
 
 	const [item] = await db
-		.select({ cardId: tassoChecklistItems.cardId })
-		.from(tassoChecklistItems)
-		.where(eq(tassoChecklistItems.id, itemId))
+		.select({ cardId: seiryuChecklistItems.cardId })
+		.from(seiryuChecklistItems)
+		.where(eq(seiryuChecklistItems.id, itemId))
 		.limit(1);
 
 	if (!item) return { error: "Not found" };
@@ -134,7 +134,7 @@ export async function deleteChecklistItem(
 	const ownership = await assertCardOwnership(item.cardId, workspace.id);
 	if (!ownership) return { error: "Forbidden" };
 
-	await db.delete(tassoChecklistItems).where(eq(tassoChecklistItems.id, itemId));
+	await db.delete(seiryuChecklistItems).where(eq(seiryuChecklistItems.id, itemId));
 
 	revalidatePath(`/seiryu/${ownership.projectId}`);
 	return { success: true };
@@ -151,9 +151,9 @@ export async function reorderChecklistItems(
 	const { itemId, newPosition } = parsed.data;
 
 	const [item] = await db
-		.select({ cardId: tassoChecklistItems.cardId })
-		.from(tassoChecklistItems)
-		.where(eq(tassoChecklistItems.id, itemId))
+		.select({ cardId: seiryuChecklistItems.cardId })
+		.from(seiryuChecklistItems)
+		.where(eq(seiryuChecklistItems.id, itemId))
 		.limit(1);
 
 	if (!item) return { error: "Not found" };
@@ -162,9 +162,9 @@ export async function reorderChecklistItems(
 	if (!ownership) return { error: "Forbidden" };
 
 	await db
-		.update(tassoChecklistItems)
+		.update(seiryuChecklistItems)
 		.set({ position: newPosition })
-		.where(eq(tassoChecklistItems.id, itemId));
+		.where(eq(seiryuChecklistItems.id, itemId));
 
 	revalidatePath(`/seiryu/${ownership.projectId}`);
 	return { success: true };

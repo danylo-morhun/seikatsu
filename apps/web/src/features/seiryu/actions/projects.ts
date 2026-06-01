@@ -9,7 +9,7 @@ import {
 	deleteProjectSchema,
 	updateProjectSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
-import { and, asc, count, db, eq, isNull, sql, tassoCards, tassoColumns, tassoProjects } from "@seikatsu/db";
+import { and, asc, count, db, eq, isNull, sql, seiryuCards, seiryuColumns, seiryuProjects } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 async function getAuthedWorkspace() {
@@ -25,27 +25,27 @@ export async function getProjects() {
 
 	return db
 		.select()
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.workspaceId, workspace.id), isNull(tassoProjects.archivedAt)))
-		.orderBy(asc(tassoProjects.position));
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.workspaceId, workspace.id), isNull(seiryuProjects.archivedAt)))
+		.orderBy(asc(seiryuProjects.position));
 }
 
 export async function getNotDoneCardCounts(): Promise<Record<string, number>> {
 	const { workspace } = await getAuthedWorkspace();
 
 	const rows = await db
-		.select({ projectId: tassoCards.projectId, total: count() })
-		.from(tassoCards)
-		.innerJoin(tassoColumns, eq(tassoCards.columnId, tassoColumns.id))
-		.innerJoin(tassoProjects, eq(tassoCards.projectId, tassoProjects.id))
+		.select({ projectId: seiryuCards.projectId, total: count() })
+		.from(seiryuCards)
+		.innerJoin(seiryuColumns, eq(seiryuCards.columnId, seiryuColumns.id))
+		.innerJoin(seiryuProjects, eq(seiryuCards.projectId, seiryuProjects.id))
 		.where(
 			and(
-				eq(tassoProjects.workspaceId, workspace.id),
-				isNull(tassoCards.archivedAt),
-				sql`lower(${tassoColumns.name}) != 'done'`,
+				eq(seiryuProjects.workspaceId, workspace.id),
+				isNull(seiryuCards.archivedAt),
+				sql`lower(${seiryuColumns.name}) != 'done'`,
 			),
 		)
-		.groupBy(tassoCards.projectId);
+		.groupBy(seiryuCards.projectId);
 
 	return Object.fromEntries(rows.map((r) => [r.projectId, r.total]));
 }
@@ -61,18 +61,18 @@ export async function createProject(
 	const { name, description, color } = parsed.data;
 
 	const existing = await db
-		.select({ position: tassoProjects.position })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.workspaceId, workspace.id), isNull(tassoProjects.archivedAt)))
-		.orderBy(asc(tassoProjects.position));
+		.select({ position: seiryuProjects.position })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.workspaceId, workspace.id), isNull(seiryuProjects.archivedAt)))
+		.orderBy(asc(seiryuProjects.position));
 
 	const lastPos = existing.at(-1)?.position ?? null;
 	const position = generateKeyBetween(lastPos, null);
 
 	const [project] = await db
-		.insert(tassoProjects)
+		.insert(seiryuProjects)
 		.values({ workspaceId: workspace.id, name, description, color, position })
-		.returning({ id: tassoProjects.id });
+		.returning({ id: seiryuProjects.id });
 
 	if (!project) return { error: "Failed to create project" };
 
@@ -82,7 +82,7 @@ export async function createProject(
 		generateKeyBetween(generateKeyBetween(generateKeyBetween(null, null), null), null),
 	];
 
-	await db.insert(tassoColumns).values(
+	await db.insert(seiryuColumns).values(
 		DEFAULT_COLUMNS.map((colName, i) => ({
 			projectId: project.id,
 			name: colName,
@@ -105,17 +105,17 @@ export async function updateProject(
 	const { projectId, ...updates } = parsed.data;
 
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspace.id)))
 		.limit(1);
 
 	if (!project) return { error: "Forbidden" };
 
 	await db
-		.update(tassoProjects)
+		.update(seiryuProjects)
 		.set({ ...updates })
-		.where(eq(tassoProjects.id, projectId));
+		.where(eq(seiryuProjects.id, projectId));
 
 	revalidatePath("/seiryu");
 	return { success: true };
@@ -132,14 +132,14 @@ export async function deleteProject(
 	const { projectId } = parsed.data;
 
 	const [project] = await db
-		.select({ workspaceId: tassoProjects.workspaceId })
-		.from(tassoProjects)
-		.where(eq(tassoProjects.id, projectId))
+		.select({ workspaceId: seiryuProjects.workspaceId })
+		.from(seiryuProjects)
+		.where(eq(seiryuProjects.id, projectId))
 		.limit(1);
 
 	if (!project || project.workspaceId !== workspace.id) return { error: "Forbidden" };
 
-	await db.delete(tassoProjects).where(eq(tassoProjects.id, projectId));
+	await db.delete(seiryuProjects).where(eq(seiryuProjects.id, projectId));
 
 	revalidatePath("/seiryu");
 	return { success: true };
@@ -152,17 +152,17 @@ export async function reorderProject(
 	const { workspace } = await getAuthedWorkspace();
 
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspace.id)))
 		.limit(1);
 
 	if (!project) return { error: "Forbidden" };
 
 	await db
-		.update(tassoProjects)
+		.update(seiryuProjects)
 		.set({ position: newPosition })
-		.where(eq(tassoProjects.id, projectId));
+		.where(eq(seiryuProjects.id, projectId));
 
 	revalidatePath("/seiryu");
 	return { success: true };

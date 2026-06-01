@@ -28,7 +28,7 @@ interface Props {
 	onCardAdded: (card: CardData) => void;
 }
 
-export function TassoMobileAddFab({ columns, projectId, onCardAdded }: Props) {
+export function SeiryuMobileAddFab({ columns, projectId, onCardAdded }: Props) {
 	const [open, setOpen] = useState(false);
 	const [title, setTitle] = useState("");
 	const [columnId, setColumnId] = useState<string>("");

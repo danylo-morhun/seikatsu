@@ -9,7 +9,7 @@ import {
 	reorderColumnSchema,
 	updateColumnSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
-import { and, asc, db, eq, tassoColumns, tassoProjects } from "@seikatsu/db";
+import { and, asc, db, eq, seiryuColumns, seiryuProjects } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 async function getAuthedWorkspace() {
@@ -22,9 +22,9 @@ async function getAuthedWorkspace() {
 
 async function assertProjectOwnership(projectId: string, workspaceId: string) {
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, projectId), eq(tassoProjects.workspaceId, workspaceId)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspaceId)))
 		.limit(1);
 	return project ?? null;
 }
@@ -37,9 +37,9 @@ export async function getColumns(projectId: string) {
 
 	return db
 		.select()
-		.from(tassoColumns)
-		.where(eq(tassoColumns.projectId, projectId))
-		.orderBy(asc(tassoColumns.position));
+		.from(seiryuColumns)
+		.where(eq(seiryuColumns.projectId, projectId))
+		.orderBy(asc(seiryuColumns.position));
 }
 
 export async function createColumn(
@@ -56,18 +56,18 @@ export async function createColumn(
 	if (!project) return { error: "Forbidden" };
 
 	const existing = await db
-		.select({ position: tassoColumns.position })
-		.from(tassoColumns)
-		.where(eq(tassoColumns.projectId, projectId))
-		.orderBy(asc(tassoColumns.position));
+		.select({ position: seiryuColumns.position })
+		.from(seiryuColumns)
+		.where(eq(seiryuColumns.projectId, projectId))
+		.orderBy(asc(seiryuColumns.position));
 
 	const lastPos = existing.at(-1)?.position ?? null;
 	const position = generateKeyBetween(lastPos, null);
 
 	const [column] = await db
-		.insert(tassoColumns)
+		.insert(seiryuColumns)
 		.values({ projectId, name, color, position })
-		.returning({ id: tassoColumns.id });
+		.returning({ id: seiryuColumns.id });
 
 	if (!column) return { error: "Failed to create column" };
 
@@ -84,9 +84,9 @@ export async function updateColumn(input: unknown): Promise<{ error: string } | 
 	const { columnId, ...updates } = parsed.data;
 
 	const [col] = await db
-		.select({ projectId: tassoColumns.projectId })
-		.from(tassoColumns)
-		.where(eq(tassoColumns.id, columnId))
+		.select({ projectId: seiryuColumns.projectId })
+		.from(seiryuColumns)
+		.where(eq(seiryuColumns.id, columnId))
 		.limit(1);
 
 	if (!col) return { error: "Column not found" };
@@ -94,7 +94,7 @@ export async function updateColumn(input: unknown): Promise<{ error: string } | 
 	const project = await assertProjectOwnership(col.projectId, workspace.id);
 	if (!project) return { error: "Forbidden" };
 
-	await db.update(tassoColumns).set(updates).where(eq(tassoColumns.id, columnId));
+	await db.update(seiryuColumns).set(updates).where(eq(seiryuColumns.id, columnId));
 
 	revalidatePath(`/seiryu/${col.projectId}`);
 	return { success: true };
@@ -109,9 +109,9 @@ export async function deleteColumn(input: unknown): Promise<{ error: string } | 
 	const { columnId } = parsed.data;
 
 	const [col] = await db
-		.select({ projectId: tassoColumns.projectId })
-		.from(tassoColumns)
-		.where(eq(tassoColumns.id, columnId))
+		.select({ projectId: seiryuColumns.projectId })
+		.from(seiryuColumns)
+		.where(eq(seiryuColumns.id, columnId))
 		.limit(1);
 
 	if (!col) return { error: "Column not found" };
@@ -119,7 +119,7 @@ export async function deleteColumn(input: unknown): Promise<{ error: string } | 
 	const project = await assertProjectOwnership(col.projectId, workspace.id);
 	if (!project) return { error: "Forbidden" };
 
-	await db.delete(tassoColumns).where(eq(tassoColumns.id, columnId));
+	await db.delete(seiryuColumns).where(eq(seiryuColumns.id, columnId));
 
 	revalidatePath(`/seiryu/${col.projectId}`);
 	return { success: true };
@@ -136,9 +136,9 @@ export async function reorderColumns(
 	const { columnId, newPosition } = parsed.data;
 
 	const [col] = await db
-		.select({ projectId: tassoColumns.projectId })
-		.from(tassoColumns)
-		.where(eq(tassoColumns.id, columnId))
+		.select({ projectId: seiryuColumns.projectId })
+		.from(seiryuColumns)
+		.where(eq(seiryuColumns.id, columnId))
 		.limit(1);
 
 	if (!col) return { error: "Column not found" };
@@ -146,7 +146,7 @@ export async function reorderColumns(
 	const project = await assertProjectOwnership(col.projectId, workspace.id);
 	if (!project) return { error: "Forbidden" };
 
-	await db.update(tassoColumns).set({ position: newPosition }).where(eq(tassoColumns.id, columnId));
+	await db.update(seiryuColumns).set({ position: newPosition }).where(eq(seiryuColumns.id, columnId));
 
 	revalidatePath(`/seiryu/${col.projectId}`);
 	return { success: true };

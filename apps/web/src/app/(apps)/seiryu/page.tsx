@@ -3,7 +3,7 @@ import { getWorkspace } from "@/features/kuroji/actions/workspace";
 import { getProjects } from "@/features/seiryu/actions/projects";
 import { redirect } from "next/navigation";
 
-export default async function TassoPage() {
+export default async function SeiryuPage() {
 	const session = await auth();
 	if (!session?.user?.id) redirect("/");
 

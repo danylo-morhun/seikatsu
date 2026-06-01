@@ -12,10 +12,10 @@ import {
 	db,
 	eq,
 	inArray,
-	tassoCardLabels,
-	tassoCards,
-	tassoLabels,
-	tassoProjects,
+	seiryuCardLabels,
+	seiryuCards,
+	seiryuLabels,
+	seiryuProjects,
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
@@ -31,13 +31,13 @@ export async function getLabels(projectId: string) {
 	const { workspace } = await getAuthedWorkspace();
 
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspace.id)))
 		.limit(1);
 	if (!project) throw new Error("Forbidden");
 
-	return db.select().from(tassoLabels).where(eq(tassoLabels.projectId, projectId));
+	return db.select().from(seiryuLabels).where(eq(seiryuLabels.projectId, projectId));
 }
 
 export async function createLabel(
@@ -51,16 +51,16 @@ export async function createLabel(
 	const { projectId, name, color } = parsed.data;
 
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspace.id)))
 		.limit(1);
 	if (!project) return { error: "Forbidden" };
 
 	const [label] = await db
-		.insert(tassoLabels)
+		.insert(seiryuLabels)
 		.values({ projectId, name, color })
-		.returning({ id: tassoLabels.id })
+		.returning({ id: seiryuLabels.id })
 		.onConflictDoNothing();
 	if (!label) return { error: "Label already exists" };
 
@@ -77,20 +77,20 @@ export async function deleteLabel(input: unknown): Promise<{ error: string } | {
 	const { labelId } = parsed.data;
 
 	const [label] = await db
-		.select({ projectId: tassoLabels.projectId })
-		.from(tassoLabels)
-		.where(eq(tassoLabels.id, labelId))
+		.select({ projectId: seiryuLabels.projectId })
+		.from(seiryuLabels)
+		.where(eq(seiryuLabels.id, labelId))
 		.limit(1);
 	if (!label) return { error: "Not found" };
 
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, label.projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, label.projectId), eq(seiryuProjects.workspaceId, workspace.id)))
 		.limit(1);
 	if (!project) return { error: "Forbidden" };
 
-	await db.delete(tassoLabels).where(eq(tassoLabels.id, labelId));
+	await db.delete(seiryuLabels).where(eq(seiryuLabels.id, labelId));
 
 	revalidatePath(`/seiryu/${label.projectId}`);
 	return { success: true };
@@ -107,31 +107,31 @@ export async function setCardLabels(
 	const { cardId, labelIds } = parsed.data;
 
 	const [card] = await db
-		.select({ projectId: tassoCards.projectId })
-		.from(tassoCards)
-		.where(eq(tassoCards.id, cardId))
+		.select({ projectId: seiryuCards.projectId })
+		.from(seiryuCards)
+		.where(eq(seiryuCards.id, cardId))
 		.limit(1);
 	if (!card) return { error: "Card not found" };
 
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, card.projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, card.projectId), eq(seiryuProjects.workspaceId, workspace.id)))
 		.limit(1);
 	if (!project) return { error: "Forbidden" };
 
 	if (labelIds.length > 0) {
 		const valid = await db
-			.select({ id: tassoLabels.id })
-			.from(tassoLabels)
-			.where(and(inArray(tassoLabels.id, labelIds), eq(tassoLabels.projectId, card.projectId)));
+			.select({ id: seiryuLabels.id })
+			.from(seiryuLabels)
+			.where(and(inArray(seiryuLabels.id, labelIds), eq(seiryuLabels.projectId, card.projectId)));
 		if (valid.length !== labelIds.length) return { error: "Invalid label" };
 	}
 
 	await db.transaction(async (tx) => {
-		await tx.delete(tassoCardLabels).where(eq(tassoCardLabels.cardId, cardId));
+		await tx.delete(seiryuCardLabels).where(eq(seiryuCardLabels.cardId, cardId));
 		if (labelIds.length > 0) {
-			await tx.insert(tassoCardLabels).values(labelIds.map((labelId) => ({ cardId, labelId })));
+			await tx.insert(seiryuCardLabels).values(labelIds.map((labelId) => ({ cardId, labelId })));
 		}
 	});
 

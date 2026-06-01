@@ -19,10 +19,10 @@ import {
 	eq,
 	isNotNull,
 	isNull,
-	tassoCards,
-	tassoChecklistItems,
-	tassoColumns,
-	tassoProjects,
+	seiryuCards,
+	seiryuChecklistItems,
+	seiryuColumns,
+	seiryuProjects,
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
@@ -38,18 +38,18 @@ export async function getCard(cardId: string) {
 	const { workspace } = await getAuthedWorkspace();
 
 	const [owned] = await db
-		.select({ id: tassoCards.id })
-		.from(tassoCards)
-		.innerJoin(tassoProjects, eq(tassoProjects.id, tassoCards.projectId))
-		.where(and(eq(tassoCards.id, cardId), eq(tassoProjects.workspaceId, workspace.id)))
+		.select({ id: seiryuCards.id })
+		.from(seiryuCards)
+		.innerJoin(seiryuProjects, eq(seiryuProjects.id, seiryuCards.projectId))
+		.where(and(eq(seiryuCards.id, cardId), eq(seiryuProjects.workspaceId, workspace.id)))
 		.limit(1);
 
 	if (!owned) return null;
 
-	const row = await db.query.tassoCards.findFirst({
-		where: eq(tassoCards.id, cardId),
+	const row = await db.query.seiryuCards.findFirst({
+		where: eq(seiryuCards.id, cardId),
 		with: {
-			checklistItems: { orderBy: asc(tassoChecklistItems.position) },
+			checklistItems: { orderBy: asc(seiryuChecklistItems.position) },
 			cardLabels: { with: { label: true } },
 		},
 	});
@@ -77,18 +77,18 @@ export async function getCards(projectId: string) {
 	const { workspace } = await getAuthedWorkspace();
 
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspace.id)))
 		.limit(1);
 
 	if (!project) throw new Error("Forbidden");
 
-	const rows = await db.query.tassoCards.findMany({
-		where: and(eq(tassoCards.projectId, projectId), isNull(tassoCards.archivedAt)),
-		orderBy: asc(tassoCards.position),
+	const rows = await db.query.seiryuCards.findMany({
+		where: and(eq(seiryuCards.projectId, projectId), isNull(seiryuCards.archivedAt)),
+		orderBy: asc(seiryuCards.position),
 		with: {
-			checklistItems: { orderBy: asc(tassoChecklistItems.position) },
+			checklistItems: { orderBy: asc(seiryuChecklistItems.position) },
 			cardLabels: { with: { label: true } },
 		},
 	});
@@ -120,32 +120,32 @@ export async function createCard(
 	const { columnId, projectId, title } = parsed.data;
 
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspace.id)))
 		.limit(1);
 	if (!project) return { error: "Forbidden" };
 
 	const [col] = await db
-		.select({ id: tassoColumns.id })
-		.from(tassoColumns)
-		.where(and(eq(tassoColumns.id, columnId), eq(tassoColumns.projectId, projectId)))
+		.select({ id: seiryuColumns.id })
+		.from(seiryuColumns)
+		.where(and(eq(seiryuColumns.id, columnId), eq(seiryuColumns.projectId, projectId)))
 		.limit(1);
 	if (!col) return { error: "Invalid column" };
 
 	const existing = await db
-		.select({ position: tassoCards.position })
-		.from(tassoCards)
-		.where(and(eq(tassoCards.columnId, columnId), isNull(tassoCards.archivedAt)))
-		.orderBy(asc(tassoCards.position));
+		.select({ position: seiryuCards.position })
+		.from(seiryuCards)
+		.where(and(eq(seiryuCards.columnId, columnId), isNull(seiryuCards.archivedAt)))
+		.orderBy(asc(seiryuCards.position));
 
 	const lastPos = existing.at(-1)?.position ?? null;
 	const position = generateKeyBetween(lastPos, null);
 
 	const [card] = await db
-		.insert(tassoCards)
+		.insert(seiryuCards)
 		.values({ columnId, projectId, title, position })
-		.returning({ id: tassoCards.id, position: tassoCards.position });
+		.returning({ id: seiryuCards.id, position: seiryuCards.position });
 
 	if (!card) return { error: "Failed to create card" };
 
@@ -162,22 +162,22 @@ export async function updateCard(input: unknown): Promise<{ error: string } | { 
 	const { cardId, ...updates } = parsed.data;
 
 	const [card] = await db
-		.select({ projectId: tassoCards.projectId })
-		.from(tassoCards)
-		.where(eq(tassoCards.id, cardId))
+		.select({ projectId: seiryuCards.projectId })
+		.from(seiryuCards)
+		.where(eq(seiryuCards.id, cardId))
 		.limit(1);
 
 	if (!card) return { error: "Card not found" };
 
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, card.projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, card.projectId), eq(seiryuProjects.workspaceId, workspace.id)))
 		.limit(1);
 
 	if (!project) return { error: "Forbidden" };
 
-	await db.update(tassoCards).set(updates).where(eq(tassoCards.id, cardId));
+	await db.update(seiryuCards).set(updates).where(eq(seiryuCards.id, cardId));
 
 	revalidatePath(`/seiryu/${card.projectId}`);
 	return { success: true };
@@ -192,22 +192,22 @@ export async function archiveCard(input: unknown): Promise<{ error: string } | {
 	const { cardId } = parsed.data;
 
 	const [card] = await db
-		.select({ projectId: tassoCards.projectId })
-		.from(tassoCards)
-		.where(eq(tassoCards.id, cardId))
+		.select({ projectId: seiryuCards.projectId })
+		.from(seiryuCards)
+		.where(eq(seiryuCards.id, cardId))
 		.limit(1);
 
 	if (!card) return { error: "Card not found" };
 
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, card.projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, card.projectId), eq(seiryuProjects.workspaceId, workspace.id)))
 		.limit(1);
 
 	if (!project) return { error: "Forbidden" };
 
-	await db.update(tassoCards).set({ archivedAt: new Date() }).where(eq(tassoCards.id, cardId));
+	await db.update(seiryuCards).set({ archivedAt: new Date() }).where(eq(seiryuCards.id, cardId));
 
 	revalidatePath(`/seiryu/${card.projectId}`);
 	return { success: true };
@@ -222,33 +222,33 @@ export async function moveCard(input: unknown): Promise<{ error: string } | { su
 	const { cardId, newColumnId, newPosition } = parsed.data;
 
 	const [card] = await db
-		.select({ projectId: tassoCards.projectId })
-		.from(tassoCards)
-		.where(eq(tassoCards.id, cardId))
+		.select({ projectId: seiryuCards.projectId })
+		.from(seiryuCards)
+		.where(eq(seiryuCards.id, cardId))
 		.limit(1);
 
 	if (!card) return { error: "Card not found" };
 
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, card.projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, card.projectId), eq(seiryuProjects.workspaceId, workspace.id)))
 		.limit(1);
 
 	if (!project) return { error: "Forbidden" };
 
 	const [col] = await db
-		.select({ id: tassoColumns.id })
-		.from(tassoColumns)
-		.where(and(eq(tassoColumns.id, newColumnId), eq(tassoColumns.projectId, card.projectId)))
+		.select({ id: seiryuColumns.id })
+		.from(seiryuColumns)
+		.where(and(eq(seiryuColumns.id, newColumnId), eq(seiryuColumns.projectId, card.projectId)))
 		.limit(1);
 
 	if (!col) return { error: "Invalid column" };
 
 	await db
-		.update(tassoCards)
+		.update(seiryuCards)
 		.set({ columnId: newColumnId, position: newPosition })
-		.where(eq(tassoCards.id, cardId));
+		.where(eq(seiryuCards.id, cardId));
 
 	revalidatePath(`/seiryu/${card.projectId}`);
 	return { success: true };
@@ -263,22 +263,22 @@ export async function reorderCards(input: unknown): Promise<{ error: string } | 
 	const { cardId, newPosition } = parsed.data;
 
 	const [card] = await db
-		.select({ projectId: tassoCards.projectId })
-		.from(tassoCards)
-		.where(eq(tassoCards.id, cardId))
+		.select({ projectId: seiryuCards.projectId })
+		.from(seiryuCards)
+		.where(eq(seiryuCards.id, cardId))
 		.limit(1);
 
 	if (!card) return { error: "Card not found" };
 
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, card.projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, card.projectId), eq(seiryuProjects.workspaceId, workspace.id)))
 		.limit(1);
 
 	if (!project) return { error: "Forbidden" };
 
-	await db.update(tassoCards).set({ position: newPosition }).where(eq(tassoCards.id, cardId));
+	await db.update(seiryuCards).set({ position: newPosition }).where(eq(seiryuCards.id, cardId));
 
 	revalidatePath(`/seiryu/${card.projectId}`);
 	return { success: true };
@@ -288,18 +288,18 @@ export async function getArchivedCards(projectId: string) {
 	const { workspace } = await getAuthedWorkspace();
 
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspace.id)))
 		.limit(1);
 
 	if (!project) throw new Error("Forbidden");
 
-	const rows = await db.query.tassoCards.findMany({
-		where: and(eq(tassoCards.projectId, projectId), isNotNull(tassoCards.archivedAt)),
-		orderBy: asc(tassoCards.archivedAt),
+	const rows = await db.query.seiryuCards.findMany({
+		where: and(eq(seiryuCards.projectId, projectId), isNotNull(seiryuCards.archivedAt)),
+		orderBy: asc(seiryuCards.archivedAt),
 		with: {
-			checklistItems: { orderBy: asc(tassoChecklistItems.position) },
+			checklistItems: { orderBy: asc(seiryuChecklistItems.position) },
 			cardLabels: { with: { label: true } },
 		},
 	});
@@ -327,34 +327,34 @@ export async function restoreCard(
 	const { cardId } = parsed.data;
 
 	const [card] = await db
-		.select({ projectId: tassoCards.projectId, columnId: tassoCards.columnId })
-		.from(tassoCards)
-		.where(eq(tassoCards.id, cardId))
+		.select({ projectId: seiryuCards.projectId, columnId: seiryuCards.columnId })
+		.from(seiryuCards)
+		.where(eq(seiryuCards.id, cardId))
 		.limit(1);
 
 	if (!card) return { error: "Card not found" };
 
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, card.projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, card.projectId), eq(seiryuProjects.workspaceId, workspace.id)))
 		.limit(1);
 
 	if (!project) return { error: "Forbidden" };
 
 	const lastInCol = await db
-		.select({ position: tassoCards.position })
-		.from(tassoCards)
-		.where(and(eq(tassoCards.columnId, card.columnId), isNull(tassoCards.archivedAt)))
-		.orderBy(asc(tassoCards.position));
+		.select({ position: seiryuCards.position })
+		.from(seiryuCards)
+		.where(and(eq(seiryuCards.columnId, card.columnId), isNull(seiryuCards.archivedAt)))
+		.orderBy(asc(seiryuCards.position));
 
 	const newPosition = generateKeyBetween(lastInCol.at(-1)?.position ?? null, null);
 
 	const [updated] = await db
-		.update(tassoCards)
+		.update(seiryuCards)
 		.set({ archivedAt: null, position: newPosition })
-		.where(eq(tassoCards.id, cardId))
-		.returning({ id: tassoCards.id });
+		.where(eq(seiryuCards.id, cardId))
+		.returning({ id: seiryuCards.id });
 
 	if (!updated) return { error: "Failed to restore card" };
 
@@ -371,22 +371,22 @@ export async function deleteCard(input: unknown): Promise<{ error: string } | { 
 	const { cardId } = parsed.data;
 
 	const [card] = await db
-		.select({ projectId: tassoCards.projectId })
-		.from(tassoCards)
-		.where(eq(tassoCards.id, cardId))
+		.select({ projectId: seiryuCards.projectId })
+		.from(seiryuCards)
+		.where(eq(seiryuCards.id, cardId))
 		.limit(1);
 
 	if (!card) return { error: "Card not found" };
 
 	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, card.projectId), eq(tassoProjects.workspaceId, workspace.id)))
+		.select({ id: seiryuProjects.id })
+		.from(seiryuProjects)
+		.where(and(eq(seiryuProjects.id, card.projectId), eq(seiryuProjects.workspaceId, workspace.id)))
 		.limit(1);
 
 	if (!project) return { error: "Forbidden" };
 
-	await db.delete(tassoCards).where(eq(tassoCards.id, cardId));
+	await db.delete(seiryuCards).where(eq(seiryuCards.id, cardId));
 
 	revalidatePath(`/seiryu/${card.projectId}`);
 	return { success: true };

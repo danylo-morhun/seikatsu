@@ -1,5 +1,5 @@
 import { PageLoader } from "@/components/PageLoader";
 
-export default function TassoProjectLoading() {
+export default function SeiryuProjectLoading() {
 	return <PageLoader />;
 }
