@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { AppShell } from "@/components/AppShell";
-import { getWorkspace } from "@/features/midas/actions/workspace";
+import { getWorkspace } from "@/features/kuroji/actions/workspace";
 import { cookies } from "next/headers";
 
 export default async function AppsLayout({ children }: { children: React.ReactNode }) {

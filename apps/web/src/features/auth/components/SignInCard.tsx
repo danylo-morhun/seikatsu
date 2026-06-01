@@ -8,12 +8,12 @@ import {
 	signInWithMagicLink,
 } from "@/features/auth/actions/auth";
 import type { AuthState } from "@/features/auth/actions/auth";
-import { Button } from "@ethos/ui/button";
-import { Card, CardContent } from "@ethos/ui/card";
-import { Input } from "@ethos/ui/input";
-import { Label } from "@ethos/ui/label";
-import { Separator } from "@ethos/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ethos/ui/tabs";
+import { Button } from "@seikatsu/ui/button";
+import { Card, CardContent } from "@seikatsu/ui/card";
+import { Input } from "@seikatsu/ui/input";
+import { Label } from "@seikatsu/ui/label";
+import { Separator } from "@seikatsu/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@seikatsu/ui/tabs";
 import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useState } from "react";
@@ -21,8 +21,8 @@ import { useActionState, useState } from "react";
 function LogoMark() {
 	return (
 		<div className="mb-6 flex flex-col items-center gap-3 text-center">
-			<Image src="/icons/favicon.svg" alt="ethos" width={52} height={52} />
-			<h1 className="text-2xl font-semibold tracking-tight">ethos</h1>
+			<Image src="/icons/favicon.svg" alt="seikatsu" width={52} height={52} />
+			<h1 className="text-2xl font-semibold tracking-tight">seikatsu</h1>
 		</div>
 	);
 }

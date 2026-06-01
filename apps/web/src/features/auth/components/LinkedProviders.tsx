@@ -3,7 +3,7 @@
 import { Spinner } from "@/components/Spinner";
 import { unlinkProvider } from "@/features/auth/actions/settings";
 import type { SettingsState } from "@/features/auth/actions/settings";
-import { Button } from "@ethos/ui/button";
+import { Button } from "@seikatsu/ui/button";
 import { Unlink01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useActionState } from "react";

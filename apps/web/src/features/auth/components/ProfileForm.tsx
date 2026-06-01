@@ -3,10 +3,10 @@
 import { Spinner } from "@/components/Spinner";
 import { updateProfile } from "@/features/auth/actions/settings";
 import type { SettingsState } from "@/features/auth/actions/settings";
-import { Avatar, cn } from "@ethos/ui";
-import { Button } from "@ethos/ui/button";
-import { Input } from "@ethos/ui/input";
-import { Label } from "@ethos/ui/label";
+import { Avatar, cn } from "@seikatsu/ui";
+import { Button } from "@seikatsu/ui/button";
+import { Input } from "@seikatsu/ui/input";
+import { Label } from "@seikatsu/ui/label";
 import { Cancel01Icon, ImageUpload01Icon, Link01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { type ChangeEvent, type DragEvent, useRef, useState, useTransition } from "react";

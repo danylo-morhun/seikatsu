@@ -1,7 +1,7 @@
 "use server";
 
 import { signIn, signOut } from "@/auth";
-import { authUsers, db, eq } from "@ethos/db";
+import { authUsers, db, eq } from "@seikatsu/db";
 import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
 import { z } from "zod";
@@ -13,11 +13,11 @@ export async function signOutAction() {
 }
 
 export async function signInWithGitHub() {
-	await signIn("github", { redirectTo: "/midas" });
+	await signIn("github", { redirectTo: "/kuroji" });
 }
 
 export async function signInWithGoogle() {
-	await signIn("google", { redirectTo: "/midas" });
+	await signIn("google", { redirectTo: "/kuroji" });
 }
 
 export async function signInWithMagicLink(
@@ -28,7 +28,7 @@ export async function signInWithMagicLink(
 	const parsed = z.string().email().safeParse(email);
 	if (!parsed.success) return { error: "Invalid email" };
 	try {
-		await signIn("resend", { email: parsed.data, redirectTo: "/midas" });
+		await signIn("resend", { email: parsed.data, redirectTo: "/kuroji" });
 	} catch (e) {
 		if (e instanceof AuthError) return { error: "Failed to send magic link" };
 		throw e;
@@ -72,7 +72,7 @@ export async function handleCredentials(_prev: AuthState, formData: FormData): P
 		await signIn("credentials", {
 			email: formData.get("email"),
 			password: formData.get("password"),
-			redirectTo: "/midas",
+			redirectTo: "/kuroji",
 		});
 	} catch (e) {
 		if (e instanceof AuthError) {

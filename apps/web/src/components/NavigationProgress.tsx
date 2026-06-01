@@ -28,11 +28,11 @@ export function NavigationProgress() {
 		function handleRefreshEnd() {
 			complete();
 		}
-		window.addEventListener("ethos:refresh-start", handleRefreshStart);
-		window.addEventListener("ethos:refresh-end", handleRefreshEnd);
+		window.addEventListener("seikatsu:refresh-start", handleRefreshStart);
+		window.addEventListener("seikatsu:refresh-end", handleRefreshEnd);
 		return () => {
-			window.removeEventListener("ethos:refresh-start", handleRefreshStart);
-			window.removeEventListener("ethos:refresh-end", handleRefreshEnd);
+			window.removeEventListener("seikatsu:refresh-start", handleRefreshStart);
+			window.removeEventListener("seikatsu:refresh-end", handleRefreshEnd);
 		};
 	}, []);
 

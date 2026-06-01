@@ -1,14 +1,15 @@
 "use client";
 
 import { APPS_CONFIG } from "@/lib/app-themes";
-import { cn } from "@ethos/ui";
-import { Money01Icon, UserCircleIcon } from "@hugeicons/core-free-icons";
+import { cn } from "@seikatsu/ui";
+import { CoinsYenIcon, KanbanIcon, UserCircleIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const APP_ICONS: Record<string, typeof Money01Icon> = {
-	"/midas": Money01Icon,
+const APP_ICONS: Record<string, typeof CoinsYenIcon> = {
+	"/kuroji": CoinsYenIcon,
+	"/seiryu": KanbanIcon,
 };
 
 const ACCOUNT_LINKS = [{ href: "/settings/account", label: "Account", icon: UserCircleIcon }];

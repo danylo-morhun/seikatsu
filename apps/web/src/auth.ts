@@ -1,5 +1,5 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import { authAccounts, authSessions, authUsers, db, eq, verificationTokens } from "@ethos/db";
+import { authAccounts, authSessions, authUsers, db, eq, verificationTokens } from "@seikatsu/db";
 import bcrypt from "bcryptjs";
 import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";

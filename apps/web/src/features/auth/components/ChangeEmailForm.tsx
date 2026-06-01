@@ -3,9 +3,9 @@
 import { Spinner } from "@/components/Spinner";
 import { requestEmailChange } from "@/features/auth/actions/settings";
 import type { SettingsState } from "@/features/auth/actions/settings";
-import { Button } from "@ethos/ui/button";
-import { Input } from "@ethos/ui/input";
-import { Label } from "@ethos/ui/label";
+import { Button } from "@seikatsu/ui/button";
+import { Input } from "@seikatsu/ui/input";
+import { Label } from "@seikatsu/ui/label";
 import { useActionState } from "react";
 
 interface Props {

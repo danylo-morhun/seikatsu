@@ -1,10 +1,10 @@
 "use client";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { AddTransactionModal } from "@/features/midas/components/AddTransactionModal";
-import { DateRangePicker } from "@/features/midas/components/DateRangePicker";
+import { AddTransactionModal } from "@/features/kuroji/components/AddTransactionModal";
+import { DateRangePicker } from "@/features/kuroji/components/DateRangePicker";
 import { getAppForPath } from "@/lib/app-themes";
-import { Button, SidebarTrigger, cn } from "@ethos/ui";
+import { Button, SidebarTrigger, cn } from "@seikatsu/ui";
 import { Chart01Icon, Clock01Icon, Settings01Icon, Wallet01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
@@ -28,8 +28,8 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 	const searchParams = useSearchParams();
 	const app = getAppForPath(pathname);
 
-	const isMidasHome = pathname === "/midas";
-	const isMidas = pathname.startsWith("/midas");
+	const isMidasHome = pathname === "/kuroji";
+	const isMidas = pathname.startsWith("/kuroji");
 	const activeTab = (searchParams.get("tab") as MidasTab) || "overview";
 
 	function tabHref(tab: MidasTab) {
@@ -48,7 +48,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 			params.delete("tag");
 		}
 		const qs = params.toString();
-		return qs ? `/midas?${qs}` : "/midas";
+		return qs ? `/kuroji?${qs}` : "/kuroji";
 	}
 
 	return (
@@ -60,7 +60,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 				href={app?.href ?? "/"}
 				className="ml-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
 			>
-				{app?.name ?? "ethos"}
+				{app?.name ?? "seikatsu"}
 			</Link>
 
 			{isMidasHome && (

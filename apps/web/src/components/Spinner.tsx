@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@ethos/ui";
+import { cn } from "@seikatsu/ui";
 
 export function Spinner({ className }: { className?: string }) {
 	return (

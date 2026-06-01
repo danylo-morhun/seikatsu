@@ -1,6 +1,6 @@
 import { NavigationProgress } from "@/components/NavigationProgress";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { TooltipProvider } from "@ethos/ui";
+import { TooltipProvider } from "@seikatsu/ui";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { Suspense } from "react";
@@ -13,20 +13,16 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-	title: "ethos",
+	title: "seikatsu",
 	description: "Your personal suite of tools",
 	manifest: "/manifest.webmanifest",
 	appleWebApp: {
 		capable: true,
 		statusBarStyle: "black-translucent",
-		title: "ethos",
+		title: "seikatsu",
 	},
 	icons: {
-		icon: [
-			{ url: "/icons/favicon.svg?v=5", type: "image/svg+xml" },
-			{ url: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
-		],
-		apple: "/icons/apple-touch-icon.png",
+		icon: { url: "/icons/favicon.svg", type: "image/svg+xml" },
 	},
 };
 

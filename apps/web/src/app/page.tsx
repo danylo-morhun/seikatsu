@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 export default async function HomePage() {
 	const session = await auth();
-	if (session) redirect("/midas");
+	if (session) redirect("/kuroji");
 
 	return (
 		<main className="relative flex min-h-screen items-center justify-center overflow-hidden p-4">

@@ -21,13 +21,13 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
-} from "@ethos/ui";
+} from "@seikatsu/ui";
 import {
 	ArrowUpDownIcon,
 	CheckIcon,
-	GreekHelmetIcon,
+	CoinsYenIcon,
+	KanbanIcon,
 	Logout01Icon,
-	Money01Icon,
 	Settings01Icon,
 	UserCircleIcon,
 } from "@hugeicons/core-free-icons";
@@ -35,9 +35,9 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// Icons are UI-only — keyed by the same paths as APPS_CONFIG
-const APP_ICONS: Record<string, typeof Money01Icon> = {
-	"/midas": Money01Icon,
+const APP_ICONS: Record<string, typeof CoinsYenIcon> = {
+	"/kuroji": CoinsYenIcon,
+	"/seiryu": KanbanIcon,
 };
 
 interface User {
@@ -67,11 +67,11 @@ export function AppSidebar({ workspaceName, user }: Props) {
 									className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 								>
 									<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-										<HugeiconsIcon icon={GreekHelmetIcon} className="h-6 w-6" />
+										<span className="text-base font-bold leading-none">生</span>
 									</div>
 									<div className="flex min-w-0 flex-col text-left leading-none">
-										<span className="text-sm font-bold">ethos</span>
-										<span className="truncate text-xs text-muted-foreground">Midas</span>
+										<span className="text-sm font-bold">seikatsu</span>
+										<span className="truncate text-xs text-muted-foreground">Kuroji</span>
 									</div>
 									<HugeiconsIcon
 										icon={ArrowUpDownIcon}
@@ -112,7 +112,7 @@ export function AppSidebar({ workspaceName, user }: Props) {
 									<SidebarMenuItem key={href}>
 										<SidebarMenuButton asChild isActive={pathname.startsWith(href)} tooltip={name}>
 											<Link href={href}>
-												{icon && <HugeiconsIcon icon={icon} className="h-4 w-4" />}
+												{icon && <HugeiconsIcon icon={icon} className="h-4 w-4 shrink-0" />}
 												<span>{name}</span>
 											</Link>
 										</SidebarMenuButton>

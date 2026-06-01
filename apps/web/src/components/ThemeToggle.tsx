@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@ethos/ui";
+import { Button } from "@seikatsu/ui";
 import { Moon02Icon, Sun01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useTheme } from "next-themes";

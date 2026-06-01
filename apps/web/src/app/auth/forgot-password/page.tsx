@@ -2,10 +2,10 @@
 
 import { requestPasswordReset } from "@/features/auth/actions/password-reset";
 import type { ResetState } from "@/features/auth/actions/password-reset";
-import { Button } from "@ethos/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@ethos/ui/card";
-import { Input } from "@ethos/ui/input";
-import { Label } from "@ethos/ui/label";
+import { Button } from "@seikatsu/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@seikatsu/ui/card";
+import { Input } from "@seikatsu/ui/input";
+import { Label } from "@seikatsu/ui/label";
 import Link from "next/link";
 import { useActionState } from "react";
 

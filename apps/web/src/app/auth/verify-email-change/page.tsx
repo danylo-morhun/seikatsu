@@ -1,6 +1,6 @@
-import { authUsers, db, eq, verificationTokens } from "@ethos/db";
-import { and } from "@ethos/db";
-import { Card, CardContent, CardHeader, CardTitle } from "@ethos/ui/card";
+import { authUsers, db, eq, verificationTokens } from "@seikatsu/db";
+import { and } from "@seikatsu/db";
+import { Card, CardContent, CardHeader, CardTitle } from "@seikatsu/ui/card";
 import Link from "next/link";
 
 interface Props {

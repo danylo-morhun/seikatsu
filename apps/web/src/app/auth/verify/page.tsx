@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@ethos/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@seikatsu/ui/card";
 
 export default function VerifyPage() {
 	return (

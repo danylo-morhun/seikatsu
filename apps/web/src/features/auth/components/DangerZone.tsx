@@ -12,8 +12,8 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 	AlertDialogTrigger,
-} from "@ethos/ui/alert-dialog";
-import { Button } from "@ethos/ui/button";
+} from "@seikatsu/ui/alert-dialog";
+import { Button } from "@seikatsu/ui/button";
 import { Alert01Icon, Delete01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useState } from "react";

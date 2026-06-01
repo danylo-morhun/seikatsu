@@ -3,7 +3,7 @@
 import { AppHeader } from "@/components/AppHeader";
 import { AppSidebar } from "@/components/AppSidebar";
 import { APP_THEMES, getThemeForPath } from "@/lib/app-themes";
-import { SidebarInset, SidebarProvider } from "@ethos/ui";
+import { SidebarInset, SidebarProvider } from "@seikatsu/ui";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 

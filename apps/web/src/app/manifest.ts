@@ -2,32 +2,20 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
 	return {
-		name: "ethos",
-		short_name: "ethos",
+		name: "seikatsu",
+		short_name: "seikatsu",
 		description: "Your personal suite of tools",
-		start_url: "/midas",
+		start_url: "/kuroji",
 		display: "standalone",
 		orientation: "portrait",
 		background_color: "#0a0a0a",
 		theme_color: "#0a0a0a",
 		icons: [
 			{
-				src: "/icons/icon-192.png",
-				sizes: "192x192",
-				type: "image/png",
+				src: "/icons/favicon.svg",
+				sizes: "any",
+				type: "image/svg+xml",
 				purpose: "any",
-			},
-			{
-				src: "/icons/icon-512.png",
-				sizes: "512x512",
-				type: "image/png",
-				purpose: "any",
-			},
-			{
-				src: "/icons/icon-512.png",
-				sizes: "512x512",
-				type: "image/png",
-				purpose: "maskable",
 			},
 		],
 	};

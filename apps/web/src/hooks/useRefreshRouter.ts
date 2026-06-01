@@ -11,10 +11,10 @@ export function useRefreshRouter() {
 	useEffect(() => {
 		if (isPending) {
 			hasStarted.current = true;
-			window.dispatchEvent(new CustomEvent("ethos:refresh-start"));
+			window.dispatchEvent(new CustomEvent("seikatsu:refresh-start"));
 		} else if (hasStarted.current) {
 			hasStarted.current = false;
-			window.dispatchEvent(new CustomEvent("ethos:refresh-end"));
+			window.dispatchEvent(new CustomEvent("seikatsu:refresh-end"));
 		}
 	}, [isPending]);
 

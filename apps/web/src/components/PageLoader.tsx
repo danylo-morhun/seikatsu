@@ -1,8 +1,5 @@
 "use client";
 
-import { GreekHelmetIcon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-
 interface Props {
 	overlay?: boolean;
 }
@@ -11,10 +8,9 @@ export function PageLoader({ overlay = false }: Props) {
 	const spinner = (
 		<div className="relative flex items-center justify-center">
 			<div className="absolute h-12 w-12 rounded-full bg-primary/20 blur-2xl" />
-			<HugeiconsIcon
-				icon={GreekHelmetIcon}
-				className="relative h-10 w-10 animate-pulse text-primary [animation-duration:1.2s]"
-			/>
+			<span className="relative text-4xl font-bold text-primary animate-pulse [animation-duration:1.2s]">
+				生
+			</span>
 		</div>
 	);
 

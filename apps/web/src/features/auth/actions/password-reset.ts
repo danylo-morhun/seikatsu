@@ -1,7 +1,7 @@
 "use server";
 
 import { sendPasswordResetEmail } from "@/features/auth/lib/email";
-import { authUsers, db, eq, verificationTokens } from "@ethos/db";
+import { authUsers, db, eq, verificationTokens } from "@seikatsu/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 

@@ -4,8 +4,8 @@ import { ChangePasswordForm } from "@/features/auth/components/ChangePasswordFor
 import { DangerZone } from "@/features/auth/components/DangerZone";
 import { LinkedProviders } from "@/features/auth/components/LinkedProviders";
 import { ProfileForm } from "@/features/auth/components/ProfileForm";
-import { authAccounts, authUsers, db, eq } from "@ethos/db";
-import { Separator } from "@ethos/ui";
+import { authAccounts, authUsers, db, eq } from "@seikatsu/db";
+import { Separator } from "@seikatsu/ui";
 import { redirect } from "next/navigation";
 
 export default async function AccountSettingsPage() {
