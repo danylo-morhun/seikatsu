@@ -96,8 +96,8 @@ export function TrendChart({ data, currency, trendParam, hasDateFilter }: Props)
 							/>
 							<ChartTooltip content={<ChartTooltipContent />} />
 							<ChartLegend content={<ChartLegendContent />} />
-							<Bar dataKey="income" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
-							<Bar dataKey="expenses" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
+							<Bar dataKey="income" fill="var(--color-income)" radius={[4, 4, 0, 0]} />
+							<Bar dataKey="expenses" fill="var(--color-expenses)" radius={[4, 4, 0, 0]} />
 						</BarChart>
 					</ChartContainer>
 				)}
