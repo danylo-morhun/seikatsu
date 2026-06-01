@@ -29,6 +29,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 	const app = getAppForPath(pathname);
 
 	const isMidasHome = pathname === "/midas";
+	const isMidas = pathname.startsWith("/midas");
 	const activeTab = (searchParams.get("tab") as MidasTab) || "overview";
 
 	function tabHref(tab: MidasTab) {
@@ -84,7 +85,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 
 			{app && (
 				<div className="ml-auto flex items-center gap-1.5">
-					{workspaceId && baseCurrency && (
+					{isMidas && workspaceId && baseCurrency && (
 						<>
 							<DateRangePicker />
 							<span className="hidden md:contents">
