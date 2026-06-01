@@ -247,6 +247,7 @@ export function KanbanBoard({
 										column={col}
 										cards={filteredCards.filter((c) => c.columnId === col.id)}
 										onCardClick={handleCardClick}
+										onCardAdded={handleCardAdded}
 									/>
 								))}
 								<AddColumnButton projectId={projectId} onColumnAdded={handleColumnAdded} />

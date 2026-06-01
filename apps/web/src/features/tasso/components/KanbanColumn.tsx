@@ -22,9 +22,10 @@ interface Props {
 	column: ColumnData;
 	cards: CardData[];
 	onCardClick?: (card: CardData) => void;
+	onCardAdded?: (card: CardData) => void;
 }
 
-export function KanbanColumn({ column, cards, onCardClick }: Props) {
+export function KanbanColumn({ column, cards, onCardClick, onCardAdded }: Props) {
 	const [addingCard, setAddingCard] = useState(false);
 	const [title, setTitle] = useState("");
 	const [isCreating, startCreate] = useTransition();
@@ -73,6 +74,18 @@ export function KanbanColumn({ column, cards, onCardClick }: Props) {
 			setTitle("");
 			setAddingCard(false);
 			toast.success("Card created");
+			onCardAdded?.({
+				id: result.data.id,
+				columnId: column.id,
+				projectId: column.projectId,
+				title: trimmed,
+				description: null,
+				priority: null,
+				dueDate: null,
+				position: result.data.position,
+				checklistItems: [],
+				labels: [],
+			});
 		});
 	}
 
