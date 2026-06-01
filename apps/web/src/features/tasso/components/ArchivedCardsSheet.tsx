@@ -11,7 +11,7 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@ethos/ui";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type ArchivedCard = Awaited<ReturnType<typeof getArchivedCards>>[number];
@@ -26,7 +26,7 @@ export function ArchivedCardsSheet({ projectId, columns, onCardRestore }: Props)
 	const [open, setOpen] = useState(false);
 	const [cards, setCards] = useState<ArchivedCard[]>([]);
 	const [loading, setLoading] = useState(false);
-	const [restoringId, startRestore] = useTransition();
+	const [restoringId, setRestoringId] = useState<string | null>(null);
 	const [deletingId, setDeletingId] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -42,27 +42,27 @@ export function ArchivedCardsSheet({ projectId, columns, onCardRestore }: Props)
 		columns.find((c) => c.id === columnId)?.name ?? "Unknown column";
 
 	async function handleRestore(card: ArchivedCard) {
-		startRestore(async () => {
-			const result = await restoreCard({ cardId: card.id });
-			if ("error" in result) {
-				toast.error(result.error);
-				return;
-			}
-			setCards((prev) => prev.filter((c) => c.id !== card.id));
-			onCardRestore({
-				id: card.id,
-				columnId: result.data.columnId,
-				projectId: card.projectId,
-				title: card.title,
-				description: card.description,
-				priority: card.priority,
-				dueDate: card.dueDate,
-				position: result.data.position,
-				checklistItems: card.checklistItems,
-				labels: card.labels,
-			});
-			toast.success("Card restored");
+		setRestoringId(card.id);
+		const result = await restoreCard({ cardId: card.id });
+		setRestoringId(null);
+		if ("error" in result) {
+			toast.error(result.error);
+			return;
+		}
+		setCards((prev) => prev.filter((c) => c.id !== card.id));
+		onCardRestore({
+			id: card.id,
+			columnId: result.data.columnId,
+			projectId: card.projectId,
+			title: card.title,
+			description: card.description,
+			priority: card.priority,
+			dueDate: card.dueDate,
+			position: result.data.position,
+			checklistItems: card.checklistItems,
+			labels: card.labels,
 		});
+		toast.success("Card restored");
 	}
 
 	async function handleDelete(cardId: string) {
@@ -110,11 +110,11 @@ export function ArchivedCardsSheet({ projectId, columns, onCardRestore }: Props)
 								<div className="flex shrink-0 items-center gap-1.5">
 									<button
 										type="button"
-										disabled={restoringId}
+										disabled={restoringId === card.id}
 										onClick={() => handleRestore(card)}
 										className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10 disabled:opacity-50 transition-colors"
 									>
-										{restoringId ? <Spinner className="h-3 w-3" /> : null}
+										{restoringId === card.id ? <Spinner className="h-3 w-3" /> : null}
 										Restore
 									</button>
 									<button
