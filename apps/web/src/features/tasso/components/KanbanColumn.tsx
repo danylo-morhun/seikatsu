@@ -2,7 +2,7 @@
 
 import { Spinner } from "@/components/Spinner";
 import { createCard } from "@/features/tasso/actions/cards";
-import { deleteColumn } from "@/features/tasso/actions/columns";
+import { deleteColumn, updateColumn } from "@/features/tasso/actions/columns";
 import { type CardData, KanbanCard } from "@/features/tasso/components/KanbanCard";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -29,6 +29,9 @@ export function KanbanColumn({ column, cards, onCardClick }: Props) {
 	const [title, setTitle] = useState("");
 	const [isCreating, startCreate] = useTransition();
 	const [isDeleting, startDelete] = useTransition();
+	const [isEditing, setIsEditing] = useState(false);
+	const [editName, setEditName] = useState("");
+	const [, startRename] = useTransition();
 
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 		id: column.id,
@@ -73,6 +76,25 @@ export function KanbanColumn({ column, cards, onCardClick }: Props) {
 		});
 	}
 
+	function handleRenameStart() {
+		setEditName(column.name);
+		setIsEditing(true);
+	}
+
+	function handleRenameCancel() {
+		setIsEditing(false);
+	}
+
+	function handleRenameSubmit() {
+		const trimmed = editName.trim();
+		setIsEditing(false);
+		if (!trimmed || trimmed === column.name) return;
+		startRename(async () => {
+			const result = await updateColumn({ columnId: column.id, name: trimmed });
+			if ("error" in result) toast.error(result.error);
+		});
+	}
+
 	function handleDeleteColumn() {
 		if (!confirm(`Delete column "${column.name}"? All cards inside will be deleted.`)) return;
 		startDelete(async () => {
@@ -95,8 +117,11 @@ export function KanbanColumn({ column, cards, onCardClick }: Props) {
 			<div className="flex items-center gap-2 px-3 pt-3 pb-2">
 				<div
 					{...attributes}
-					{...listeners}
-					className="flex min-w-0 flex-1 cursor-grab items-center gap-2 active:cursor-grabbing"
+					{...(isEditing ? {} : listeners)}
+					className={cn(
+						"flex min-w-0 flex-1 items-center gap-2",
+						isEditing ? "cursor-default" : "cursor-grab active:cursor-grabbing",
+					)}
 				>
 					{column.color && (
 						<span
@@ -104,7 +129,26 @@ export function KanbanColumn({ column, cards, onCardClick }: Props) {
 							style={{ backgroundColor: column.color }}
 						/>
 					)}
-					<span className="flex-1 truncate text-sm font-medium text-foreground">{column.name}</span>
+					{isEditing ? (
+						<input
+							autoFocus
+							value={editName}
+							onChange={(e) => setEditName(e.target.value)}
+							onBlur={handleRenameSubmit}
+							onKeyDown={(e) => {
+								if (e.key === "Escape") { e.preventDefault(); handleRenameCancel(); }
+								if (e.key === "Enter") { e.preventDefault(); handleRenameSubmit(); }
+							}}
+							className="flex-1 bg-transparent text-sm font-medium text-foreground outline-none"
+						/>
+					) : (
+						<span
+							onDoubleClick={handleRenameStart}
+							className="flex-1 truncate text-sm font-medium text-foreground"
+						>
+							{column.name}
+						</span>
+					)}
 					<span className="text-xs text-muted-foreground tabular-nums">{cards.length}</span>
 				</div>
 				<button
