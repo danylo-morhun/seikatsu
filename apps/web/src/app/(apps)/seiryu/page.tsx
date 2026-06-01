@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
-import { getWorkspace } from "@/features/midas/actions/workspace";
-import { getProjects } from "@/features/tasso/actions/projects";
+import { getWorkspace } from "@/features/kuroji/actions/workspace";
+import { getProjects } from "@/features/seiryu/actions/projects";
 import { redirect } from "next/navigation";
 
 export default async function TassoPage() {
@@ -13,7 +13,7 @@ export default async function TassoPage() {
 	const projects = await getProjects();
 	const first = projects[0];
 
-	if (first) redirect(`/tasso/${first.id}`);
+	if (first) redirect(`/seiryu/${first.id}`);
 
 	return (
 		<div className="flex h-full items-center justify-center">

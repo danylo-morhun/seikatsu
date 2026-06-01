@@ -1,7 +1,7 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { archiveCard, updateCard } from "@/features/tasso/actions/cards";
+import { archiveCard, updateCard } from "@/features/seiryu/actions/cards";
 import {
 	Label,
 	Select,
@@ -10,7 +10,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Separator,
-} from "@ethos/ui";
+} from "@seikatsu/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -68,14 +68,14 @@ export function CardPage({ card, projectId }: Props) {
 				return;
 			}
 			toast.success("Card archived");
-			router.push(`/tasso/${projectId}`);
+			router.push(`/seiryu/${projectId}`);
 		});
 	}
 
 	return (
 		<div className="mx-auto flex h-full max-w-2xl flex-col px-6 py-8">
 			<Link
-				href={`/tasso/${projectId}`}
+				href={`/seiryu/${projectId}`}
 				className="mb-6 text-xs text-muted-foreground transition-colors hover:text-foreground"
 			>
 				← Back to board

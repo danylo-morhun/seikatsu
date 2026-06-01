@@ -1,10 +1,10 @@
 import { auth } from "@/auth";
-import { getWorkspace } from "@/features/midas/actions/workspace";
-import { getCards } from "@/features/tasso/actions/cards";
-import { getColumns } from "@/features/tasso/actions/columns";
-import { getLabels } from "@/features/tasso/actions/labels";
-import { getProjects } from "@/features/tasso/actions/projects";
-import { KanbanBoard } from "@/features/tasso/components/KanbanBoard";
+import { getWorkspace } from "@/features/kuroji/actions/workspace";
+import { getCards } from "@/features/seiryu/actions/cards";
+import { getColumns } from "@/features/seiryu/actions/columns";
+import { getLabels } from "@/features/seiryu/actions/labels";
+import { getProjects } from "@/features/seiryu/actions/projects";
+import { KanbanBoard } from "@/features/seiryu/components/KanbanBoard";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 

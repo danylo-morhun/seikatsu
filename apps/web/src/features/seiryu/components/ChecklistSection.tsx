@@ -6,9 +6,9 @@ import {
 	deleteChecklistItem,
 	reorderChecklistItems,
 	toggleChecklistItem,
-} from "@/features/tasso/actions/checklist";
-import type { ChecklistItemData } from "@/features/tasso/components/KanbanCard";
-import { generateKeyBetween } from "@/features/tasso/lib/position";
+} from "@/features/seiryu/actions/checklist";
+import type { ChecklistItemData } from "@/features/seiryu/components/KanbanCard";
+import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import {
 	DndContext,
 	type DragEndEvent,
@@ -19,7 +19,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { cn } from "@ethos/ui";
+import { cn } from "@seikatsu/ui";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 

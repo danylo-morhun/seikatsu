@@ -1,12 +1,12 @@
 "use server";
 
 import { auth } from "@/auth";
-import { getWorkspace } from "@/features/midas/actions/workspace";
+import { getWorkspace } from "@/features/kuroji/actions/workspace";
 import {
 	createLabelSchema,
 	deleteLabelSchema,
 	setCardLabelsSchema,
-} from "@/features/tasso/lib/tasso-schemas";
+} from "@/features/seiryu/lib/seiryu-schemas";
 import {
 	and,
 	db,
@@ -16,7 +16,7 @@ import {
 	tassoCards,
 	tassoLabels,
 	tassoProjects,
-} from "@ethos/db";
+} from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 async function getAuthedWorkspace() {
@@ -64,7 +64,7 @@ export async function createLabel(
 		.onConflictDoNothing();
 	if (!label) return { error: "Label already exists" };
 
-	revalidatePath(`/tasso/${projectId}`);
+	revalidatePath(`/seiryu/${projectId}`);
 	return { success: true, data: { id: label.id } };
 }
 
@@ -92,7 +92,7 @@ export async function deleteLabel(input: unknown): Promise<{ error: string } | {
 
 	await db.delete(tassoLabels).where(eq(tassoLabels.id, labelId));
 
-	revalidatePath(`/tasso/${label.projectId}`);
+	revalidatePath(`/seiryu/${label.projectId}`);
 	return { success: true };
 }
 
@@ -135,6 +135,6 @@ export async function setCardLabels(
 		}
 	});
 
-	revalidatePath(`/tasso/${card.projectId}`);
+	revalidatePath(`/seiryu/${card.projectId}`);
 	return { success: true };
 }

@@ -1,15 +1,15 @@
 "use server";
 
 import { auth } from "@/auth";
-import { getWorkspace } from "@/features/midas/actions/workspace";
-import { generateKeyBetween } from "@/features/tasso/lib/position";
+import { getWorkspace } from "@/features/kuroji/actions/workspace";
+import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import {
 	createColumnSchema,
 	deleteColumnSchema,
 	reorderColumnSchema,
 	updateColumnSchema,
-} from "@/features/tasso/lib/tasso-schemas";
-import { and, asc, db, eq, tassoColumns, tassoProjects } from "@ethos/db";
+} from "@/features/seiryu/lib/seiryu-schemas";
+import { and, asc, db, eq, tassoColumns, tassoProjects } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 async function getAuthedWorkspace() {
@@ -71,7 +71,7 @@ export async function createColumn(
 
 	if (!column) return { error: "Failed to create column" };
 
-	revalidatePath(`/tasso/${projectId}`);
+	revalidatePath(`/seiryu/${projectId}`);
 	return { success: true, data: { id: column.id, position } };
 }
 
@@ -96,7 +96,7 @@ export async function updateColumn(input: unknown): Promise<{ error: string } | 
 
 	await db.update(tassoColumns).set(updates).where(eq(tassoColumns.id, columnId));
 
-	revalidatePath(`/tasso/${col.projectId}`);
+	revalidatePath(`/seiryu/${col.projectId}`);
 	return { success: true };
 }
 
@@ -121,7 +121,7 @@ export async function deleteColumn(input: unknown): Promise<{ error: string } | 
 
 	await db.delete(tassoColumns).where(eq(tassoColumns.id, columnId));
 
-	revalidatePath(`/tasso/${col.projectId}`);
+	revalidatePath(`/seiryu/${col.projectId}`);
 	return { success: true };
 }
 
@@ -148,6 +148,6 @@ export async function reorderColumns(
 
 	await db.update(tassoColumns).set({ position: newPosition }).where(eq(tassoColumns.id, columnId));
 
-	revalidatePath(`/tasso/${col.projectId}`);
+	revalidatePath(`/seiryu/${col.projectId}`);
 	return { success: true };
 }

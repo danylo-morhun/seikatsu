@@ -1,12 +1,12 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { createCard } from "@/features/tasso/actions/cards";
-import { deleteColumn, updateColumn } from "@/features/tasso/actions/columns";
-import { type CardData, KanbanCard } from "@/features/tasso/components/KanbanCard";
+import { createCard } from "@/features/seiryu/actions/cards";
+import { deleteColumn, updateColumn } from "@/features/seiryu/actions/columns";
+import { type CardData, KanbanCard } from "@/features/seiryu/components/KanbanCard";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { cn } from "@ethos/ui";
+import { cn } from "@seikatsu/ui";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 

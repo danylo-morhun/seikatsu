@@ -1,15 +1,15 @@
 "use server";
 
 import { auth } from "@/auth";
-import { getWorkspace } from "@/features/midas/actions/workspace";
-import { generateKeyBetween } from "@/features/tasso/lib/position";
+import { getWorkspace } from "@/features/kuroji/actions/workspace";
+import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import {
 	createChecklistItemSchema,
 	deleteChecklistItemSchema,
 	reorderChecklistItemSchema,
 	toggleChecklistItemSchema,
-} from "@/features/tasso/lib/tasso-schemas";
-import { and, asc, db, eq, tassoCards, tassoChecklistItems, tassoProjects } from "@ethos/db";
+} from "@/features/seiryu/lib/seiryu-schemas";
+import { and, asc, db, eq, tassoCards, tassoChecklistItems, tassoProjects } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 async function getAuthedWorkspace() {
@@ -79,7 +79,7 @@ export async function createChecklistItem(
 
 	if (!item) return { error: "Failed to create item" };
 
-	revalidatePath(`/tasso/${ownership.projectId}`);
+	revalidatePath(`/seiryu/${ownership.projectId}`);
 	return { success: true, data: { id: item.id, position: item.position } };
 }
 
@@ -109,7 +109,7 @@ export async function toggleChecklistItem(
 		.set({ isCompleted: !item.isCompleted })
 		.where(eq(tassoChecklistItems.id, itemId));
 
-	revalidatePath(`/tasso/${ownership.projectId}`);
+	revalidatePath(`/seiryu/${ownership.projectId}`);
 	return { success: true };
 }
 
@@ -136,7 +136,7 @@ export async function deleteChecklistItem(
 
 	await db.delete(tassoChecklistItems).where(eq(tassoChecklistItems.id, itemId));
 
-	revalidatePath(`/tasso/${ownership.projectId}`);
+	revalidatePath(`/seiryu/${ownership.projectId}`);
 	return { success: true };
 }
 
@@ -166,6 +166,6 @@ export async function reorderChecklistItems(
 		.set({ position: newPosition })
 		.where(eq(tassoChecklistItems.id, itemId));
 
-	revalidatePath(`/tasso/${ownership.projectId}`);
+	revalidatePath(`/seiryu/${ownership.projectId}`);
 	return { success: true };
 }

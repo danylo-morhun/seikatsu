@@ -1,14 +1,14 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { archiveCard, updateCard } from "@/features/tasso/actions/cards";
-import { ChecklistSection } from "@/features/tasso/components/ChecklistSection";
+import { archiveCard, updateCard } from "@/features/seiryu/actions/cards";
+import { ChecklistSection } from "@/features/seiryu/components/ChecklistSection";
 import type {
 	CardData,
 	ChecklistItemData,
 	LabelData,
-} from "@/features/tasso/components/KanbanCard";
-import { LabelManager } from "@/features/tasso/components/LabelManager";
+} from "@/features/seiryu/components/KanbanCard";
+import { LabelManager } from "@/features/seiryu/components/LabelManager";
 import {
 	Label,
 	Select,
@@ -22,7 +22,7 @@ import {
 	SheetDescription,
 	SheetHeader,
 	SheetTitle,
-} from "@ethos/ui";
+} from "@seikatsu/ui";
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -126,7 +126,7 @@ export function CardSheet({
 					/>
 					{card && (
 						<Link
-							href={`/tasso/${card.projectId}/${card.id}`}
+							href={`/seiryu/${card.projectId}/${card.id}`}
 							target="_blank"
 							className="mt-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
 						>

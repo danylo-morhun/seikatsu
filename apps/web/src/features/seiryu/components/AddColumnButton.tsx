@@ -1,8 +1,8 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { createColumn } from "@/features/tasso/actions/columns";
-import type { ColumnData } from "@/features/tasso/components/KanbanColumn";
+import { createColumn } from "@/features/seiryu/actions/columns";
+import type { ColumnData } from "@/features/seiryu/components/KanbanColumn";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 

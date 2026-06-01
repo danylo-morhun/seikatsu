@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
-import { getCard } from "@/features/tasso/actions/cards";
-import { CardPage } from "@/features/tasso/components/CardPage";
+import { getCard } from "@/features/seiryu/actions/cards";
+import { CardPage } from "@/features/seiryu/components/CardPage";
 import { notFound, redirect } from "next/navigation";
 
 export default async function CardDetailPage({

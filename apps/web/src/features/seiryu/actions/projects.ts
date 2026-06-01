@@ -1,15 +1,15 @@
 "use server";
 
 import { auth } from "@/auth";
-import { getWorkspace } from "@/features/midas/actions/workspace";
-import { DEFAULT_COLUMNS } from "@/features/tasso/lib/constants";
-import { generateKeyBetween } from "@/features/tasso/lib/position";
+import { getWorkspace } from "@/features/kuroji/actions/workspace";
+import { DEFAULT_COLUMNS } from "@/features/seiryu/lib/constants";
+import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import {
 	createProjectSchema,
 	deleteProjectSchema,
 	updateProjectSchema,
-} from "@/features/tasso/lib/tasso-schemas";
-import { and, asc, db, eq, isNull, tassoColumns, tassoProjects } from "@ethos/db";
+} from "@/features/seiryu/lib/seiryu-schemas";
+import { and, asc, db, eq, isNull, tassoColumns, tassoProjects } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 async function getAuthedWorkspace() {
@@ -70,7 +70,7 @@ export async function createProject(
 		})),
 	);
 
-	revalidatePath("/tasso");
+	revalidatePath("/seiryu");
 	return { success: true, data: { id: project.id } };
 }
 
@@ -97,7 +97,7 @@ export async function updateProject(
 		.set({ ...updates })
 		.where(eq(tassoProjects.id, projectId));
 
-	revalidatePath("/tasso");
+	revalidatePath("/seiryu");
 	return { success: true };
 }
 
@@ -121,7 +121,7 @@ export async function deleteProject(
 
 	await db.delete(tassoProjects).where(eq(tassoProjects.id, projectId));
 
-	revalidatePath("/tasso");
+	revalidatePath("/seiryu");
 	return { success: true };
 }
 
@@ -144,6 +144,6 @@ export async function reorderProject(
 		.set({ position: newPosition })
 		.where(eq(tassoProjects.id, projectId));
 
-	revalidatePath("/tasso");
+	revalidatePath("/seiryu");
 	return { success: true };
 }

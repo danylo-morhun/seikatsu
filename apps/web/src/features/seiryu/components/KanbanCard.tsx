@@ -1,10 +1,10 @@
 "use client";
 
-import { DueDateChip } from "@/features/tasso/components/DueDateChip";
-import { PriorityBadge } from "@/features/tasso/components/PriorityBadge";
+import { DueDateChip } from "@/features/seiryu/components/DueDateChip";
+import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { cn } from "@ethos/ui";
+import { cn } from "@seikatsu/ui";
 
 type Priority = "low" | "medium" | "high" | "urgent";
 

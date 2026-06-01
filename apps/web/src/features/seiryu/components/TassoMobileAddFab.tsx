@@ -1,9 +1,9 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { createCard } from "@/features/tasso/actions/cards";
-import type { CardData } from "@/features/tasso/components/KanbanCard";
-import type { ColumnData } from "@/features/tasso/components/KanbanColumn";
+import { createCard } from "@/features/seiryu/actions/cards";
+import type { CardData } from "@/features/seiryu/components/KanbanCard";
+import type { ColumnData } from "@/features/seiryu/components/KanbanColumn";
 import {
 	Button,
 	Dialog,
@@ -16,7 +16,7 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@ethos/ui";
+} from "@seikatsu/ui";
 import { Add01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useState, useTransition } from "react";

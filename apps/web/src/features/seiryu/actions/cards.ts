@@ -1,8 +1,8 @@
 "use server";
 
 import { auth } from "@/auth";
-import { getWorkspace } from "@/features/midas/actions/workspace";
-import { generateKeyBetween } from "@/features/tasso/lib/position";
+import { getWorkspace } from "@/features/kuroji/actions/workspace";
+import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import {
 	archiveCardSchema,
 	createCardSchema,
@@ -11,7 +11,7 @@ import {
 	reorderCardSchema,
 	restoreCardSchema,
 	updateCardSchema,
-} from "@/features/tasso/lib/tasso-schemas";
+} from "@/features/seiryu/lib/seiryu-schemas";
 import {
 	and,
 	asc,
@@ -23,7 +23,7 @@ import {
 	tassoChecklistItems,
 	tassoColumns,
 	tassoProjects,
-} from "@ethos/db";
+} from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 async function getAuthedWorkspace() {
@@ -149,7 +149,7 @@ export async function createCard(
 
 	if (!card) return { error: "Failed to create card" };
 
-	revalidatePath(`/tasso/${projectId}`);
+	revalidatePath(`/seiryu/${projectId}`);
 	return { success: true, data: { id: card.id, position: card.position } };
 }
 
@@ -179,7 +179,7 @@ export async function updateCard(input: unknown): Promise<{ error: string } | { 
 
 	await db.update(tassoCards).set(updates).where(eq(tassoCards.id, cardId));
 
-	revalidatePath(`/tasso/${card.projectId}`);
+	revalidatePath(`/seiryu/${card.projectId}`);
 	return { success: true };
 }
 
@@ -209,7 +209,7 @@ export async function archiveCard(input: unknown): Promise<{ error: string } | {
 
 	await db.update(tassoCards).set({ archivedAt: new Date() }).where(eq(tassoCards.id, cardId));
 
-	revalidatePath(`/tasso/${card.projectId}`);
+	revalidatePath(`/seiryu/${card.projectId}`);
 	return { success: true };
 }
 
@@ -250,7 +250,7 @@ export async function moveCard(input: unknown): Promise<{ error: string } | { su
 		.set({ columnId: newColumnId, position: newPosition })
 		.where(eq(tassoCards.id, cardId));
 
-	revalidatePath(`/tasso/${card.projectId}`);
+	revalidatePath(`/seiryu/${card.projectId}`);
 	return { success: true };
 }
 
@@ -280,7 +280,7 @@ export async function reorderCards(input: unknown): Promise<{ error: string } | 
 
 	await db.update(tassoCards).set({ position: newPosition }).where(eq(tassoCards.id, cardId));
 
-	revalidatePath(`/tasso/${card.projectId}`);
+	revalidatePath(`/seiryu/${card.projectId}`);
 	return { success: true };
 }
 
@@ -358,7 +358,7 @@ export async function restoreCard(
 
 	if (!updated) return { error: "Failed to restore card" };
 
-	revalidatePath(`/tasso/${card.projectId}`);
+	revalidatePath(`/seiryu/${card.projectId}`);
 	return { success: true, data: { columnId: card.columnId, position: newPosition } };
 }
 
@@ -388,6 +388,6 @@ export async function deleteCard(input: unknown): Promise<{ error: string } | { 
 
 	await db.delete(tassoCards).where(eq(tassoCards.id, cardId));
 
-	revalidatePath(`/tasso/${card.projectId}`);
+	revalidatePath(`/seiryu/${card.projectId}`);
 	return { success: true };
 }

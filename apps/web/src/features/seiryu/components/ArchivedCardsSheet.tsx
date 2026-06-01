@@ -1,8 +1,8 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { deleteCard, getArchivedCards, restoreCard } from "@/features/tasso/actions/cards";
-import type { CardData } from "@/features/tasso/components/KanbanCard";
+import { deleteCard, getArchivedCards, restoreCard } from "@/features/seiryu/actions/cards";
+import type { CardData } from "@/features/seiryu/components/KanbanCard";
 import {
 	Button,
 	Sheet,
@@ -10,7 +10,7 @@ import {
 	SheetHeader,
 	SheetTitle,
 	SheetTrigger,
-} from "@ethos/ui";
+} from "@seikatsu/ui";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 

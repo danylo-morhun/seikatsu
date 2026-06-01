@@ -1,8 +1,8 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { createProject, deleteProject, updateProject } from "@/features/tasso/actions/projects";
-import { cn } from "@ethos/ui";
+import { createProject, deleteProject, updateProject } from "@/features/seiryu/actions/projects";
+import { cn } from "@seikatsu/ui";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -33,7 +33,7 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, onProje
 	function navigate(projectId: string) {
 		onProjectSelect?.();
 		startTransition(() => {
-			router.push(`/tasso/${projectId}`);
+			router.push(`/seiryu/${projectId}`);
 		});
 	}
 
@@ -70,7 +70,7 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, onProje
 		setNewName("");
 		toast.success("Project created");
 		startTransition(() => {
-			router.push(`/tasso/${result.data.id}`);
+			router.push(`/seiryu/${result.data.id}`);
 		});
 	}
 
@@ -87,7 +87,7 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, onProje
 		if (activeProjectId === projectId) {
 			const next = projects.find((p) => p.id !== projectId);
 			startTransition(() => {
-				router.push(next ? `/tasso/${next.id}` : "/tasso");
+				router.push(next ? `/seiryu/${next.id}` : "/seiryu");
 			});
 		}
 	}

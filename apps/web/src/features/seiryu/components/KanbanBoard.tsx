@@ -1,23 +1,23 @@
 "use client";
 
-import { moveCard, reorderCards } from "@/features/tasso/actions/cards";
-import { reorderColumns } from "@/features/tasso/actions/columns";
-import { AddColumnButton } from "@/features/tasso/components/AddColumnButton";
-import { ArchivedCardsSheet } from "@/features/tasso/components/ArchivedCardsSheet";
-import { CardSheet } from "@/features/tasso/components/CardSheet";
-import { FilterBar } from "@/features/tasso/components/FilterBar";
+import { moveCard, reorderCards } from "@/features/seiryu/actions/cards";
+import { reorderColumns } from "@/features/seiryu/actions/columns";
+import { AddColumnButton } from "@/features/seiryu/components/AddColumnButton";
+import { ArchivedCardsSheet } from "@/features/seiryu/components/ArchivedCardsSheet";
+import { CardSheet } from "@/features/seiryu/components/CardSheet";
+import { FilterBar } from "@/features/seiryu/components/FilterBar";
 import {
 	type CardData,
 	KanbanCardOverlay,
 	type LabelData,
-} from "@/features/tasso/components/KanbanCard";
+} from "@/features/seiryu/components/KanbanCard";
 import {
 	type ColumnData,
 	KanbanColumn,
 	KanbanColumnOverlay,
-} from "@/features/tasso/components/KanbanColumn";
-import { TassoMobileAddFab } from "@/features/tasso/components/TassoMobileAddFab";
-import { generateKeyBetween } from "@/features/tasso/lib/position";
+} from "@/features/seiryu/components/KanbanColumn";
+import { TassoMobileAddFab } from "@/features/seiryu/components/TassoMobileAddFab";
+import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import {
 	DndContext,
 	type DragEndEvent,

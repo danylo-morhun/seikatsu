@@ -1,8 +1,8 @@
 "use client";
 
 import { PageLoader } from "@/components/PageLoader";
-import { ProjectSidebar } from "@/features/tasso/components/ProjectSidebar";
-import { Sheet, SheetContent, SheetTrigger, Button } from "@ethos/ui";
+import { ProjectSidebar } from "@/features/seiryu/components/ProjectSidebar";
+import { Sheet, SheetContent, SheetTrigger, Button } from "@seikatsu/ui";
 import { Menu01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { usePathname, useRouter } from "next/navigation";

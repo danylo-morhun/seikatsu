@@ -1,10 +1,10 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { createLabel, deleteLabel, setCardLabels } from "@/features/tasso/actions/labels";
-import type { LabelData } from "@/features/tasso/components/KanbanCard";
-import { LABEL_COLORS } from "@/features/tasso/lib/constants";
-import { cn } from "@ethos/ui";
+import { createLabel, deleteLabel, setCardLabels } from "@/features/seiryu/actions/labels";
+import type { LabelData } from "@/features/seiryu/components/KanbanCard";
+import { LABEL_COLORS } from "@/features/seiryu/lib/constants";
+import { cn } from "@seikatsu/ui";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 

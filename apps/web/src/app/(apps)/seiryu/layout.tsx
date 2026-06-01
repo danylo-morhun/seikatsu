@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
-import { getWorkspace } from "@/features/midas/actions/workspace";
-import { getProjects } from "@/features/tasso/actions/projects";
-import { TassoLayout } from "@/features/tasso/components/TassoLayout";
+import { getWorkspace } from "@/features/kuroji/actions/workspace";
+import { getProjects } from "@/features/seiryu/actions/projects";
+import { TassoLayout } from "@/features/seiryu/components/TassoLayout";
 import { redirect } from "next/navigation";
 
 export default async function TassoRootLayout({ children }: { children: React.ReactNode }) {

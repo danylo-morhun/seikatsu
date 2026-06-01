@@ -1,5 +1,5 @@
-import { PRIORITY_CONFIG } from "@/features/tasso/lib/constants";
-import { cn } from "@ethos/ui";
+import { PRIORITY_CONFIG } from "@/features/seiryu/lib/constants";
+import { cn } from "@seikatsu/ui";
 
 type Priority = "low" | "medium" | "high" | "urgent";
 

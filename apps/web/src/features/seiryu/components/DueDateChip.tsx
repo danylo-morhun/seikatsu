@@ -1,4 +1,4 @@
-import { cn } from "@ethos/ui";
+import { cn } from "@seikatsu/ui";
 
 interface Props {
 	dueDate: string;
