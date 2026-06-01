@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-	transpilePackages: ["@ethos/ui", "@ethos/db"],
+	transpilePackages: ["@seikatsu/ui", "@seikatsu/db"],
 	async rewrites() {
 		return [{ source: "/favicon.ico", destination: "/icons/favicon.svg" }];
 	},
