@@ -37,6 +37,15 @@ async function getAuthedWorkspace() {
 export async function getCard(cardId: string) {
 	const { workspace } = await getAuthedWorkspace();
 
+	const [owned] = await db
+		.select({ id: tassoCards.id })
+		.from(tassoCards)
+		.innerJoin(tassoProjects, eq(tassoProjects.id, tassoCards.projectId))
+		.where(and(eq(tassoCards.id, cardId), eq(tassoProjects.workspaceId, workspace.id)))
+		.limit(1);
+
+	if (!owned) return null;
+
 	const row = await db.query.tassoCards.findFirst({
 		where: eq(tassoCards.id, cardId),
 		with: {
@@ -46,14 +55,6 @@ export async function getCard(cardId: string) {
 	});
 
 	if (!row) return null;
-
-	const [project] = await db
-		.select({ id: tassoProjects.id })
-		.from(tassoProjects)
-		.where(and(eq(tassoProjects.id, row.projectId), eq(tassoProjects.workspaceId, workspace.id)))
-		.limit(1);
-
-	if (!project) return null;
 
 	const { cardLabels, checklistItems, ...rest } = row;
 	return {
