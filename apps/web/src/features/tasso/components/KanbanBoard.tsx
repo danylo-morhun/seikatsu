@@ -240,17 +240,19 @@ export function KanbanBoard({
 						onDragEnd={handleDragEnd}
 					>
 						<SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-							<div className="flex flex-1 gap-3 overflow-x-auto p-4 pb-6">
-								{sortedColumns.map((col) => (
-									<KanbanColumn
-										key={col.id}
-										column={col}
-										cards={filteredCards.filter((c) => c.columnId === col.id)}
-										onCardClick={handleCardClick}
-										onCardAdded={handleCardAdded}
-									/>
-								))}
-								<AddColumnButton projectId={projectId} onColumnAdded={handleColumnAdded} />
+							<div className="relative flex-1">
+								<div className="absolute inset-0 flex gap-3 overflow-x-auto p-4 pb-6">
+									{sortedColumns.map((col) => (
+										<KanbanColumn
+											key={col.id}
+											column={col}
+											cards={filteredCards.filter((c) => c.columnId === col.id)}
+											onCardClick={handleCardClick}
+											onCardAdded={handleCardAdded}
+										/>
+									))}
+									<AddColumnButton projectId={projectId} onColumnAdded={handleColumnAdded} />
+								</div>
 							</div>
 						</SortableContext>
 
