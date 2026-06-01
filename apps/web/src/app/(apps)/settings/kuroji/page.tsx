@@ -28,7 +28,7 @@ export default async function MidasSettingsPage() {
 
 	return (
 		<main className="px-4 py-6 sm:px-6 max-w-3xl">
-			<h1 className="mb-8 text-2xl font-semibold">黒字 Kuroji</h1>
+			<h1 className="mb-8 text-2xl font-semibold">黒 Kuroji</h1>
 
 			<section className="mb-10">
 				<h2 className="mb-1 text-base font-semibold">Workspace</h2>

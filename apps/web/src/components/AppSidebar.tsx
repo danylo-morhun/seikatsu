@@ -25,7 +25,7 @@ import {
 import {
 	ArrowUpDownIcon,
 	CheckIcon,
-	CoinsYenIcon,
+	YenSquareIcon,
 	KanbanIcon,
 	Logout01Icon,
 	Settings01Icon,
@@ -35,8 +35,8 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const APP_ICONS: Record<string, typeof CoinsYenIcon> = {
-	"/kuroji": CoinsYenIcon,
+const APP_ICONS: Record<string, typeof YenSquareIcon> = {
+	"/kuroji": YenSquareIcon,
 	"/seiryu": KanbanIcon,
 };
 
