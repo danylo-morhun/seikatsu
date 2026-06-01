@@ -85,12 +85,12 @@ export async function updateProject(
 	const { projectId, ...updates } = parsed.data;
 
 	const [project] = await db
-		.select({ workspaceId: tassoProjects.workspaceId })
+		.select({ id: tassoProjects.id })
 		.from(tassoProjects)
-		.where(eq(tassoProjects.id, projectId))
+		.where(and(eq(tassoProjects.id, projectId), eq(tassoProjects.workspaceId, workspace.id)))
 		.limit(1);
 
-	if (!project || project.workspaceId !== workspace.id) return { error: "Forbidden" };
+	if (!project) return { error: "Forbidden" };
 
 	await db
 		.update(tassoProjects)
@@ -132,12 +132,12 @@ export async function reorderProject(
 	const { workspace } = await getAuthedWorkspace();
 
 	const [project] = await db
-		.select({ workspaceId: tassoProjects.workspaceId })
+		.select({ id: tassoProjects.id })
 		.from(tassoProjects)
-		.where(eq(tassoProjects.id, projectId))
+		.where(and(eq(tassoProjects.id, projectId), eq(tassoProjects.workspaceId, workspace.id)))
 		.limit(1);
 
-	if (!project || project.workspaceId !== workspace.id) return { error: "Forbidden" };
+	if (!project) return { error: "Forbidden" };
 
 	await db
 		.update(tassoProjects)
