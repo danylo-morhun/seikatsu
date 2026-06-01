@@ -39,7 +39,7 @@ export function TassoLayout({ projects, workspaceId, children }: Props) {
 				/>
 			</aside>
 
-			<main className="flex flex-1 flex-col overflow-hidden relative">
+			<main className="flex flex-1 min-w-0 flex-col overflow-hidden relative">
 				{/* Mobile project header */}
 				<div className="flex items-center gap-2 border-b border-border px-3 py-2 md:hidden">
 					{activeProject && (
