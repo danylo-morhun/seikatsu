@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { AppShell } from "@/components/AppShell";
-import { getWorkspace } from "@/features/kuroji/actions/workspace";
+import { initializeWorkspace } from "@/features/kuroji/actions/workspace";
 import { cookies } from "next/headers";
 
 export default async function AppsLayout({ children }: { children: React.ReactNode }) {
@@ -9,7 +9,7 @@ export default async function AppsLayout({ children }: { children: React.ReactNo
 	const sidebarCookie = cookieStore.get("sidebar_state");
 	const defaultOpen = sidebarCookie ? sidebarCookie.value === "true" : true;
 
-	const workspace = session?.user?.id ? await getWorkspace(session.user.id) : null;
+	const workspace = session?.user?.id ? await initializeWorkspace(session.user.id) : null;
 
 	return (
 		<AppShell

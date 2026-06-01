@@ -29,8 +29,14 @@ export async function initializeWorkspace(userId: string) {
 	if (inserted) {
 		await db.insert(accounts).values([
 			{ workspaceId: inserted.id, name: "Wallet", type: "ASSET", currency: "PLN" },
+			{ workspaceId: inserted.id, name: "Bank Account", type: "ASSET", currency: "PLN" },
+			{ workspaceId: inserted.id, name: "Savings", type: "ASSET", currency: "PLN" },
 			{ workspaceId: inserted.id, name: "Salary", type: "INCOME", currency: "PLN" },
 			{ workspaceId: inserted.id, name: "Groceries", type: "EXPENSE", currency: "PLN" },
+			{ workspaceId: inserted.id, name: "Transport", type: "EXPENSE", currency: "PLN" },
+			{ workspaceId: inserted.id, name: "Dining", type: "EXPENSE", currency: "PLN" },
+			{ workspaceId: inserted.id, name: "Utilities", type: "EXPENSE", currency: "PLN" },
+			{ workspaceId: inserted.id, name: "Entertainment", type: "EXPENSE", currency: "PLN" },
 		]);
 		return inserted;
 	}
