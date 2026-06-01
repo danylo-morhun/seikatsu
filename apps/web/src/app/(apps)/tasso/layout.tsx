@@ -11,7 +11,7 @@ export default async function TassoRootLayout({ children }: { children: React.Re
 	const workspace = await getWorkspace(session.user.id);
 	if (!workspace) redirect("/");
 
-	const projects = await getProjects(workspace.id);
+	const projects = await getProjects();
 
 	return (
 		<TassoLayout projects={projects} workspaceId={workspace.id}>

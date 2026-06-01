@@ -20,7 +20,7 @@ export default async function TassoProjectPage({
 	if (!workspace) redirect("/");
 
 	const { projectId } = await params;
-	const projects = await getProjects(workspace.id);
+	const projects = await getProjects();
 	const project = projects.find((p) => p.id === projectId);
 
 	if (!project) notFound();

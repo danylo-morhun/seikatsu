@@ -20,17 +20,13 @@ async function getAuthedWorkspace() {
 	return { session, workspace };
 }
 
-export async function getProjects(workspaceId: string) {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Unauthorized");
-
-	const workspace = await getWorkspace(session.user.id);
-	if (!workspace || workspace.id !== workspaceId) throw new Error("Forbidden");
+export async function getProjects() {
+	const { workspace } = await getAuthedWorkspace();
 
 	return db
 		.select()
 		.from(tassoProjects)
-		.where(and(eq(tassoProjects.workspaceId, workspaceId), isNull(tassoProjects.archivedAt)))
+		.where(and(eq(tassoProjects.workspaceId, workspace.id), isNull(tassoProjects.archivedAt)))
 		.orderBy(asc(tassoProjects.position));
 }
 

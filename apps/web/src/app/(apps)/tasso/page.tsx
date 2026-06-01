@@ -10,7 +10,7 @@ export default async function TassoPage() {
 	const workspace = await getWorkspace(session.user.id);
 	if (!workspace) redirect("/");
 
-	const projects = await getProjects(workspace.id);
+	const projects = await getProjects();
 	const first = projects[0];
 
 	if (first) redirect(`/tasso/${first.id}`);
