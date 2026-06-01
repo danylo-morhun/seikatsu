@@ -9,7 +9,7 @@ import {
 	deleteProjectSchema,
 	updateProjectSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
-import { and, asc, db, eq, isNull, tassoColumns, tassoProjects } from "@seikatsu/db";
+import { and, asc, count, db, eq, isNull, sql, tassoCards, tassoColumns, tassoProjects } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 async function getAuthedWorkspace() {
@@ -28,6 +28,26 @@ export async function getProjects() {
 		.from(tassoProjects)
 		.where(and(eq(tassoProjects.workspaceId, workspace.id), isNull(tassoProjects.archivedAt)))
 		.orderBy(asc(tassoProjects.position));
+}
+
+export async function getNotDoneCardCounts(): Promise<Record<string, number>> {
+	const { workspace } = await getAuthedWorkspace();
+
+	const rows = await db
+		.select({ projectId: tassoCards.projectId, total: count() })
+		.from(tassoCards)
+		.innerJoin(tassoColumns, eq(tassoCards.columnId, tassoColumns.id))
+		.innerJoin(tassoProjects, eq(tassoCards.projectId, tassoProjects.id))
+		.where(
+			and(
+				eq(tassoProjects.workspaceId, workspace.id),
+				isNull(tassoCards.archivedAt),
+				sql`lower(${tassoColumns.name}) != 'done'`,
+			),
+		)
+		.groupBy(tassoCards.projectId);
+
+	return Object.fromEntries(rows.map((r) => [r.projectId, r.total]));
 }
 
 export async function createProject(

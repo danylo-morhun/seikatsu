@@ -20,10 +20,11 @@ interface Props {
 	projects: Project[];
 	workspaceId: string;
 	activeProjectId?: string;
+	cardCounts: Record<string, number>;
 	onProjectSelect?: () => void;
 }
 
-export function ProjectSidebar({ projects, workspaceId, activeProjectId, onProjectSelect }: Props) {
+export function ProjectSidebar({ projects, workspaceId, activeProjectId, cardCounts, onProjectSelect }: Props) {
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [isCreating, setIsCreating] = useState(false);
@@ -169,6 +170,11 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, onProje
 									style={{ backgroundColor: project.color ?? "#6366f1" }}
 								/>
 								<span className="flex-1 truncate text-left">{project.name}</span>
+								{(cardCounts[project.id] ?? 0) > 0 && (
+									<span className="ml-auto shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+										{cardCounts[project.id]}
+									</span>
+								)}
 							</button>
 						)}
 						{!isEditingThis && (

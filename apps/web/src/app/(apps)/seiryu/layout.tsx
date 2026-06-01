@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { getWorkspace } from "@/features/kuroji/actions/workspace";
-import { getProjects } from "@/features/seiryu/actions/projects";
+import { getNotDoneCardCounts, getProjects } from "@/features/seiryu/actions/projects";
 import { TassoLayout } from "@/features/seiryu/components/TassoLayout";
 import { redirect } from "next/navigation";
 
@@ -11,10 +11,10 @@ export default async function TassoRootLayout({ children }: { children: React.Re
 	const workspace = await getWorkspace(session.user.id);
 	if (!workspace) redirect("/");
 
-	const projects = await getProjects();
+	const [projects, cardCounts] = await Promise.all([getProjects(), getNotDoneCardCounts()]);
 
 	return (
-		<TassoLayout projects={projects} workspaceId={workspace.id}>
+		<TassoLayout projects={projects} workspaceId={workspace.id} cardCounts={cardCounts}>
 			{children}
 		</TassoLayout>
 	);

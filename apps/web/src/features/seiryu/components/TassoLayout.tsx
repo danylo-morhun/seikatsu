@@ -17,10 +17,11 @@ type Project = {
 interface Props {
 	projects: Project[];
 	workspaceId: string;
+	cardCounts: Record<string, number>;
 	children: React.ReactNode;
 }
 
-export function TassoLayout({ projects, workspaceId, children }: Props) {
+export function TassoLayout({ projects, workspaceId, cardCounts, children }: Props) {
 	const [isPending, startTransition] = useTransition();
 	const [mobileNavOpen, setMobileNavOpen] = useState(false);
 	const pathname = usePathname();
@@ -36,6 +37,7 @@ export function TassoLayout({ projects, workspaceId, children }: Props) {
 					projects={projects}
 					workspaceId={workspaceId}
 					activeProjectId={activeProjectId}
+					cardCounts={cardCounts}
 				/>
 			</aside>
 
@@ -62,6 +64,7 @@ export function TassoLayout({ projects, workspaceId, children }: Props) {
 								projects={projects}
 								workspaceId={workspaceId}
 								activeProjectId={activeProjectId}
+								cardCounts={cardCounts}
 								onProjectSelect={() => setMobileNavOpen(false)}
 							/>
 						</SheetContent>
