@@ -34,20 +34,26 @@ export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 
 		const tempId = `temp-${Math.random()}`;
 		const optimistic: ChecklistItemData = { id: tempId, title, isCompleted: false, position: "" };
-		const withTemp = [...items, optimistic];
-		update(withTemp);
+		update([...items, optimistic]);
 
 		startAdd(async () => {
 			const result = await createChecklistItem({ cardId, title });
 			if ("error" in result) {
 				toast.error(result.error);
-				update(items);
+				setItems((prev) => {
+					const next = prev.filter((i) => i.id !== tempId);
+					onChange?.(next);
+					return next;
+				});
 				return;
 			}
-			update([
-				...items,
-				{ id: result.data.id, title, isCompleted: false, position: result.data.position },
-			]);
+			setItems((prev) => {
+				const next = prev
+					.filter((i) => i.id !== tempId)
+					.concat({ id: result.data.id, title, isCompleted: false, position: result.data.position });
+				onChange?.(next);
+				return next;
+			});
 		});
 	}
 
@@ -124,7 +130,7 @@ export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 					onKeyDown={(e) => {
 						if (e.key === "Enter") {
 							e.preventDefault();
-							handleAdd();
+							if (!isAdding) handleAdd();
 						}
 					}}
 					placeholder="Add item…"
