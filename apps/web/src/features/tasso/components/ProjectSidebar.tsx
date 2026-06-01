@@ -1,7 +1,7 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { createProject, deleteProject } from "@/features/tasso/actions/projects";
+import { createProject, deleteProject, updateProject } from "@/features/tasso/actions/projects";
 import { cn } from "@ethos/ui";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -26,11 +26,33 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, onProje
 	const [isCreating, setIsCreating] = useState(false);
 	const [newName, setNewName] = useState("");
 	const [deletingId, setDeletingId] = useState<string | null>(null);
+	const [editingId, setEditingId] = useState<string | null>(null);
+	const [editName, setEditName] = useState("");
+	const [, startRename] = useTransition();
 
 	function navigate(projectId: string) {
 		onProjectSelect?.();
 		startTransition(() => {
 			router.push(`/tasso/${projectId}`);
+		});
+	}
+
+	function handleRenameStart(projectId: string, currentName: string) {
+		setEditName(currentName);
+		setEditingId(projectId);
+	}
+
+	function handleRenameCancel() {
+		setEditingId(null);
+	}
+
+	function handleRenameSubmit(projectId: string, currentName: string) {
+		const trimmed = editName.trim();
+		setEditingId(null);
+		if (!trimmed || trimmed === currentName) return;
+		startRename(async () => {
+			const result = await updateProject({ projectId, name: trimmed });
+			if ("error" in result) toast.error(result.error);
 		});
 	}
 
@@ -83,6 +105,7 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, onProje
 			{projects.map((project) => {
 				const isActive = activeProjectId === project.id;
 				const isDeleting = deletingId === project.id;
+				const isEditingThis = editingId === project.id;
 				return (
 					<div
 						key={project.id}
@@ -93,31 +116,54 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, onProje
 								: "hover:bg-accent/50 text-muted-foreground hover:text-foreground",
 						)}
 					>
-						<button
-							type="button"
-							disabled={isActive}
-							className="flex flex-1 items-center gap-2 px-2 py-1.5 cursor-pointer disabled:cursor-default select-none"
-							onClick={() => navigate(project.id)}
-						>
-							<span
-								className="h-2.5 w-2.5 shrink-0 rounded-full"
-								style={{ backgroundColor: project.color ?? "#6366f1" }}
-							/>
-							<span className="flex-1 truncate text-left">{project.name}</span>
-						</button>
-						{isDeleting ? (
-							<span className="pr-2">
-								<Spinner className="h-3.5 w-3.5" />
-							</span>
+						{isEditingThis ? (
+							<div className="flex flex-1 items-center gap-2 px-2 py-1.5">
+								<span
+									className="h-2.5 w-2.5 shrink-0 rounded-full"
+									style={{ backgroundColor: project.color ?? "#6366f1" }}
+								/>
+								<input
+									autoFocus
+									value={editName}
+									onChange={(e) => setEditName(e.target.value)}
+									onBlur={() => handleRenameSubmit(project.id, project.name)}
+									onKeyDown={(e) => {
+										if (e.key === "Escape") { e.preventDefault(); handleRenameCancel(); }
+										if (e.key === "Enter") { e.preventDefault(); handleRenameSubmit(project.id, project.name); }
+									}}
+									className="flex-1 bg-transparent text-sm text-foreground outline-none"
+								/>
+							</div>
 						) : (
 							<button
 								type="button"
-								className="mr-1 hidden group-hover:flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-destructive transition-colors"
-								onClick={() => handleDelete(project.id, project.name)}
-								aria-label={`Delete ${project.name}`}
+								disabled={isActive}
+								className="flex flex-1 items-center gap-2 px-2 py-1.5 cursor-pointer disabled:cursor-default select-none"
+								onClick={() => navigate(project.id)}
+								onDoubleClick={() => handleRenameStart(project.id, project.name)}
 							>
-								×
+								<span
+									className="h-2.5 w-2.5 shrink-0 rounded-full"
+									style={{ backgroundColor: project.color ?? "#6366f1" }}
+								/>
+								<span className="flex-1 truncate text-left">{project.name}</span>
 							</button>
+						)}
+						{!isEditingThis && (
+							isDeleting ? (
+								<span className="pr-2">
+									<Spinner className="h-3.5 w-3.5" />
+								</span>
+							) : (
+								<button
+									type="button"
+									className="mr-1 hidden group-hover:flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-destructive transition-colors"
+									onClick={() => handleDelete(project.id, project.name)}
+									aria-label={`Delete ${project.name}`}
+								>
+									×
+								</button>
+							)
 						)}
 					</div>
 				);
