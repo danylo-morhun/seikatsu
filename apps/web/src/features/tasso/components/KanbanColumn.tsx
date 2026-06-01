@@ -87,7 +87,7 @@ export function KanbanColumn({ column, cards, onCardClick }: Props) {
 			ref={setNodeRef}
 			style={style}
 			className={cn(
-				"flex w-72 shrink-0 flex-col rounded-xl border border-border bg-muted/40",
+				"group/col flex w-72 shrink-0 flex-col rounded-xl border border-border bg-muted/40",
 				isDragging && "opacity-40",
 			)}
 		>
@@ -123,7 +123,7 @@ export function KanbanColumn({ column, cards, onCardClick }: Props) {
 
 			{/* Cards */}
 			<SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
-				<div className="group/col flex flex-1 flex-col gap-2 overflow-y-auto px-3 pb-2">
+				<div className="flex flex-1 flex-col gap-2 overflow-y-auto px-3 pb-2">
 					{sortedCards.map((card) => (
 						<KanbanCard key={card.id} card={card} onClick={onCardClick} />
 					))}
