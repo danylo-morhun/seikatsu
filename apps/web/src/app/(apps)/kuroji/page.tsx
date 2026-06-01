@@ -9,6 +9,7 @@ import { initializeWorkspace } from "@/features/kuroji/actions/workspace";
 import { AccountsOverview } from "@/features/kuroji/components/AccountsOverview";
 import { ExpenseBreakdown } from "@/features/kuroji/components/ExpenseBreakdown";
 import { ExpenseCategoryList } from "@/features/kuroji/components/ExpenseCategoryList";
+import { ExpensesEmptyState } from "@/features/kuroji/components/ExpensesEmptyState";
 import type { MidasTab } from "@/features/kuroji/components/MidasNavTabs";
 import { OnboardingCard } from "@/features/kuroji/components/OnboardingCard";
 import { TransactionTable } from "@/features/kuroji/components/TransactionTable";
@@ -140,8 +141,17 @@ export default async function MidasPage({
 							</div>
 						</div>
 
-						<ExpenseBreakdown balances={balances} currency={workspace.baseCurrency} />
-						<ExpenseCategoryList balances={balances} currency={workspace.baseCurrency} />
+						{income === 0 && expenses === 0 ? (
+							<ExpensesEmptyState
+								workspaceId={workspace.id}
+								baseCurrency={workspace.baseCurrency}
+							/>
+						) : (
+							<>
+								<ExpenseBreakdown balances={balances} currency={workspace.baseCurrency} />
+								<ExpenseCategoryList balances={balances} currency={workspace.baseCurrency} />
+							</>
+						)}
 						<TrendChart
 							data={trendData}
 							currency={workspace.baseCurrency}
