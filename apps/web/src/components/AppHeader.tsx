@@ -10,9 +10,9 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
-type MidasTab = "overview" | "accounts" | "transactions";
+type KurojiTab = "overview" | "accounts" | "transactions";
 
-const MIDAS_TABS: { value: MidasTab; label: string; icon: typeof Chart01Icon }[] = [
+const KUROJI_TABS: { value: KurojiTab; label: string; icon: typeof Chart01Icon }[] = [
 	{ value: "overview", label: "Expenses", icon: Chart01Icon },
 	{ value: "accounts", label: "Accounts", icon: Wallet01Icon },
 	{ value: "transactions", label: "Transactions", icon: Clock01Icon },
@@ -28,11 +28,11 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 	const searchParams = useSearchParams();
 	const app = getAppForPath(pathname);
 
-	const isMidasHome = pathname === "/kuroji";
-	const isMidas = pathname.startsWith("/kuroji");
-	const activeTab = (searchParams.get("tab") as MidasTab) || "overview";
+	const isKurojiHome = pathname === "/kuroji";
+	const isKuroji = pathname.startsWith("/kuroji");
+	const activeTab = (searchParams.get("tab") as KurojiTab) || "overview";
 
-	function tabHref(tab: MidasTab) {
+	function tabHref(tab: KurojiTab) {
 		const params = new URLSearchParams(searchParams.toString());
 		if (tab === "overview") {
 			params.delete("tab");
@@ -63,9 +63,9 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 				{app?.name ?? "seikatsu"}
 			</Link>
 
-			{isMidasHome && (
+			{isKurojiHome && (
 				<nav className="absolute left-1/2 hidden -translate-x-1/2 md:flex h-full items-stretch">
-					{MIDAS_TABS.map(({ value, label, icon }) => (
+					{KUROJI_TABS.map(({ value, label, icon }) => (
 						<Link
 							key={value}
 							href={tabHref(value)}
@@ -85,7 +85,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 
 			{app && (
 				<div className="ml-auto flex items-center gap-1.5">
-					{isMidas && workspaceId && baseCurrency && (
+					{isKuroji && workspaceId && baseCurrency && (
 						<>
 							<DateRangePicker />
 							<span className="hidden md:contents">

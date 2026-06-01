@@ -135,8 +135,8 @@
    Background/foreground/border stay neutral so the UI feels cohesive.
    ─────────────────────────────────────────────────────────────────────────── */
 
-/* Midas — Gold (light) */
-.theme-midas {
+/* Kuroji — Gold (light) */
+.theme-kuroji {
 	--primary: oklch(0.72 0.2 78);
 	--primary-foreground: oklch(0.12 0.04 78);
 	--accent: oklch(0.94 0.05 80);
@@ -150,8 +150,8 @@
 	--chart-5: oklch(0.48 0.09 64);
 }
 
-/* Midas — Gold (dark) */
-.dark .theme-midas {
+/* Kuroji — Gold (dark) */
+.dark .theme-kuroji {
 	--primary: oklch(0.78 0.18 83);
 	--primary-foreground: oklch(0.1 0.03 83);
 	--accent: oklch(0.22 0.05 83);
@@ -165,8 +165,8 @@
 	--chart-5: oklch(0.48 0.09 64);
 }
 
-/* Tasso — Blue (light) */
-.theme-tasso {
+/* Seiryu — Blue (light) */
+.theme-seiryu {
 	--primary: oklch(0.40 0.20 264);
 	--primary-foreground: oklch(0.97 0.01 264);
 	--accent: oklch(0.93 0.04 264);
@@ -180,8 +180,8 @@
 	--chart-5: oklch(0.28 0.14 264);
 }
 
-/* Tasso — Blue (dark) */
-.dark .theme-tasso {
+/* Seiryu — Blue (dark) */
+.dark .theme-seiryu {
 	--primary: oklch(0.56 0.20 264);
 	--primary-foreground: oklch(0.97 0.01 264);
 	--accent: oklch(0.22 0.06 264);

@@ -1,8 +1,8 @@
 // Fix 7: single source of truth for app paths, names, and themes
 // AppSidebar imports APPS_CONFIG so path/name are never duplicated
 export const APPS_CONFIG = {
-	"/kuroji": { theme: "theme-midas", name: "黒 Kuroji" },
-	"/seiryu": { theme: "theme-tasso", name: "清 Seiryu" },
+	"/kuroji": { theme: "theme-kuroji", name: "黒 Kuroji" },
+	"/seiryu": { theme: "theme-seiryu", name: "清 Seiryu" },
 } satisfies Record<string, { theme: string; name: string }>;
 
 export const APP_THEMES = Object.fromEntries(
