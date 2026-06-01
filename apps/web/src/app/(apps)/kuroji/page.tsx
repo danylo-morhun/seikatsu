@@ -10,7 +10,7 @@ import { AccountsOverview } from "@/features/kuroji/components/AccountsOverview"
 import { ExpenseBreakdown } from "@/features/kuroji/components/ExpenseBreakdown";
 import { ExpenseCategoryList } from "@/features/kuroji/components/ExpenseCategoryList";
 import { ExpensesEmptyState } from "@/features/kuroji/components/ExpensesEmptyState";
-import type { MidasTab } from "@/features/kuroji/components/MidasNavTabs";
+import type { KurojiTab } from "@/features/kuroji/components/KurojiNavTabs";
 import { OnboardingCard } from "@/features/kuroji/components/OnboardingCard";
 import { TransactionTable } from "@/features/kuroji/components/TransactionTable";
 import { TrendChart } from "@/features/kuroji/components/TrendChart";
@@ -22,9 +22,9 @@ function fmt(d: Date) {
 	return format(d, "yyyy-MM-dd");
 }
 
-const VALID_TABS: MidasTab[] = ["overview", "accounts", "transactions"];
+const VALID_TABS: KurojiTab[] = ["overview", "accounts", "transactions"];
 
-export default async function MidasPage({
+export default async function KurojiPage({
 	searchParams,
 }: {
 	searchParams: Promise<{
@@ -61,7 +61,7 @@ export default async function MidasPage({
 	const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 	const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-	const tab: MidasTab = VALID_TABS.includes(rawTab as MidasTab) ? (rawTab as MidasTab) : "overview";
+	const tab: KurojiTab = VALID_TABS.includes(rawTab as KurojiTab) ? (rawTab as KurojiTab) : "overview";
 
 	const isAllTime = rawAll === "1";
 	const rawValidFrom = rawFrom && ISO_DATE.test(rawFrom) ? rawFrom : undefined;

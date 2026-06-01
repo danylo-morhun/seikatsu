@@ -12,7 +12,7 @@ import { WorkspaceSettingsForm } from "@/features/kuroji/components/WorkspaceSet
 import { Separator } from "@seikatsu/ui";
 import { redirect } from "next/navigation";
 
-export default async function MidasSettingsPage() {
+export default async function KurojiSettingsPage() {
 	const session = await auth();
 	if (!session?.user?.id) redirect("/");
 

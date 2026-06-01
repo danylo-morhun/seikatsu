@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export function MidasContentShell({ children }: { children: React.ReactNode }) {
+export function KurojiContentShell({ children }: { children: React.ReactNode }) {
 	const [refreshing, setRefreshing] = useState(false);
 
 	useEffect(() => {

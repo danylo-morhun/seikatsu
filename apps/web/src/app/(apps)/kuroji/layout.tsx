@@ -1,17 +1,17 @@
 import { auth } from "@/auth";
 import { getWorkspace } from "@/features/kuroji/actions/workspace";
-import { MidasContentShell } from "@/features/kuroji/components/MidasContentShell";
-import { MidasNavTabs } from "@/features/kuroji/components/MidasNavTabs";
+import { KurojiContentShell } from "@/features/kuroji/components/KurojiContentShell";
+import { KurojiNavTabs } from "@/features/kuroji/components/KurojiNavTabs";
 
-export default async function MidasLayout({ children }: { children: React.ReactNode }) {
+export default async function KurojiLayout({ children }: { children: React.ReactNode }) {
 	const session = await auth();
 	const workspace = session?.user?.id ? await getWorkspace(session.user.id) : null;
 
 	return (
 		<>
-			<MidasContentShell>{children}</MidasContentShell>
+			<KurojiContentShell>{children}</KurojiContentShell>
 			{workspace && (
-				<MidasNavTabs workspaceId={workspace.id} baseCurrency={workspace.baseCurrency} />
+				<KurojiNavTabs workspaceId={workspace.id} baseCurrency={workspace.baseCurrency} />
 			)}
 		</>
 	);

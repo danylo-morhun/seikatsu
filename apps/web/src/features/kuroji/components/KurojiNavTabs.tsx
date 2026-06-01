@@ -15,9 +15,9 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
-export type MidasTab = "overview" | "accounts" | "transactions";
+export type KurojiTab = "overview" | "accounts" | "transactions";
 
-const TABS: { value: MidasTab; label: string; icon: typeof Chart01Icon }[] = [
+const TABS: { value: KurojiTab; label: string; icon: typeof Chart01Icon }[] = [
 	{ value: "overview", label: "Expenses", icon: Chart01Icon },
 	{ value: "accounts", label: "Accounts", icon: Wallet01Icon },
 	{ value: "transactions", label: "History", icon: Clock01Icon },
@@ -28,14 +28,14 @@ interface Props {
 	baseCurrency: string;
 }
 
-export function MidasNavTabs({ workspaceId, baseCurrency }: Props) {
+export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 	const searchParams = useSearchParams();
 	const pathname = usePathname();
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
-	const [pendingTab, setPendingTab] = useState<MidasTab | null>(null);
+	const [pendingTab, setPendingTab] = useState<KurojiTab | null>(null);
 
-	const activeTab = (searchParams.get("tab") as MidasTab) || "overview";
+	const activeTab = (searchParams.get("tab") as KurojiTab) || "overview";
 	const displayTab = pendingTab ?? activeTab;
 	const isSettings = pathname.startsWith("/settings");
 
@@ -43,7 +43,7 @@ export function MidasNavTabs({ workspaceId, baseCurrency }: Props) {
 		if (!isPending) setPendingTab(null);
 	}, [isPending]);
 
-	function tabHref(tab: MidasTab) {
+	function tabHref(tab: KurojiTab) {
 		const params = new URLSearchParams(searchParams.toString());
 		if (tab === "overview") {
 			params.delete("tab");
@@ -62,7 +62,7 @@ export function MidasNavTabs({ workspaceId, baseCurrency }: Props) {
 		return qs ? `/kuroji?${qs}` : "/kuroji";
 	}
 
-	function handleTabClick(tab: MidasTab) {
+	function handleTabClick(tab: KurojiTab) {
 		if (tab === displayTab && !isSettings) return;
 		setPendingTab(tab);
 		startTransition(() => {
