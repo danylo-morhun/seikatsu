@@ -350,10 +350,13 @@ export async function restoreCard(
 
 	const newPosition = generateKeyBetween(lastInCol.at(-1)?.position ?? null, null);
 
-	await db
+	const [updated] = await db
 		.update(tassoCards)
 		.set({ archivedAt: null, position: newPosition })
-		.where(eq(tassoCards.id, cardId));
+		.where(eq(tassoCards.id, cardId))
+		.returning({ id: tassoCards.id });
+
+	if (!updated) return { error: "Failed to restore card" };
 
 	revalidatePath(`/tasso/${card.projectId}`);
 	return { success: true, data: { columnId: card.columnId, position: newPosition } };
