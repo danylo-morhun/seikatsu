@@ -4,9 +4,21 @@ import { Spinner } from "@/components/Spinner";
 import {
 	createChecklistItem,
 	deleteChecklistItem,
+	reorderChecklistItems,
 	toggleChecklistItem,
 } from "@/features/tasso/actions/checklist";
 import type { ChecklistItemData } from "@/features/tasso/components/KanbanCard";
+import { generateKeyBetween } from "@/features/tasso/lib/position";
+import {
+	DndContext,
+	type DragEndEvent,
+	PointerSensor,
+	closestCenter,
+	useSensor,
+	useSensors,
+} from "@dnd-kit/core";
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@ethos/ui";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -17,14 +29,103 @@ interface Props {
 	onChange?: (items: ChecklistItemData[]) => void;
 }
 
+function SortableChecklistItem({
+	item,
+	onToggle,
+	onDelete,
+}: {
+	item: ChecklistItemData;
+	onToggle: (id: string) => void;
+	onDelete: (id: string) => void;
+}) {
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+		id: item.id,
+		disabled: item.id.startsWith("temp-"),
+	});
+	const style = { transform: CSS.Transform.toString(transform), transition };
+
+	return (
+		<div
+			ref={setNodeRef}
+			style={style}
+			className={cn("group flex items-center gap-2", isDragging && "opacity-40")}
+		>
+			<button
+				type="button"
+				{...attributes}
+				{...listeners}
+				className="cursor-grab text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing"
+				aria-label="Drag to reorder"
+			>
+				⠿
+			</button>
+			<input
+				type="checkbox"
+				checked={item.isCompleted}
+				onChange={() => onToggle(item.id)}
+				className="h-3.5 w-3.5 shrink-0 cursor-pointer rounded-sm accent-primary"
+			/>
+			<span
+				className={cn(
+					"flex-1 text-xs",
+					item.isCompleted && "text-muted-foreground line-through",
+				)}
+			>
+				{item.title}
+			</span>
+			<button
+				type="button"
+				onClick={() => onDelete(item.id)}
+				className="invisible text-xs text-muted-foreground transition-colors hover:text-destructive group-hover:visible"
+			>
+				✕
+			</button>
+		</div>
+	);
+}
+
 export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 	const [items, setItems] = useState(initialItems);
 	const [newTitle, setNewTitle] = useState("");
 	const [isAdding, startAdd] = useTransition();
+	const [, startReorder] = useTransition();
+
+	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+	const sortedItems = [...items].sort((a, b) => {
+		if (!a.position) return 1;
+		if (!b.position) return -1;
+		return a.position < b.position ? -1 : 1;
+	});
 
 	function update(next: ChecklistItemData[]) {
 		setItems(next);
 		onChange?.(next);
+	}
+
+	function handleDragEnd(event: DragEndEvent) {
+		const { active, over } = event;
+		if (!over || active.id === over.id) return;
+
+		const oldIdx = sortedItems.findIndex((i) => i.id === active.id);
+		const newIdx = sortedItems.findIndex((i) => i.id === over.id);
+		if (oldIdx === -1 || newIdx === -1) return;
+
+		const reordered = arrayMove(sortedItems, oldIdx, newIdx);
+		const newPosition = generateKeyBetween(
+			reordered[newIdx - 1]?.position ?? null,
+			reordered[newIdx + 1]?.position ?? null,
+		);
+
+		update(items.map((i) => (i.id === active.id ? { ...i, position: newPosition } : i)));
+
+		startReorder(async () => {
+			const result = await reorderChecklistItems({ itemId: active.id as string, newPosition });
+			if ("error" in result) {
+				toast.error(result.error);
+				update(items);
+			}
+		});
 	}
 
 	function handleAdd() {
@@ -94,33 +195,20 @@ export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 			</div>
 
 			{total > 0 && (
-				<div className="flex flex-col gap-1">
-					{items.map((item) => (
-						<div key={item.id} className="group flex items-center gap-2">
-							<input
-								type="checkbox"
-								checked={item.isCompleted}
-								onChange={() => handleToggle(item.id)}
-								className="h-3.5 w-3.5 shrink-0 cursor-pointer rounded-sm accent-primary"
-							/>
-							<span
-								className={cn(
-									"flex-1 text-xs",
-									item.isCompleted && "text-muted-foreground line-through",
-								)}
-							>
-								{item.title}
-							</span>
-							<button
-								type="button"
-								onClick={() => handleDelete(item.id)}
-								className="invisible text-xs text-muted-foreground transition-colors hover:text-destructive group-hover:visible"
-							>
-								✕
-							</button>
+				<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+					<SortableContext items={sortedItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+						<div className="flex flex-col gap-1">
+							{sortedItems.map((item) => (
+								<SortableChecklistItem
+									key={item.id}
+									item={item}
+									onToggle={handleToggle}
+									onDelete={handleDelete}
+								/>
+							))}
 						</div>
-					))}
-				</div>
+					</SortableContext>
+				</DndContext>
 			)}
 
 			<div className="flex items-center gap-2">
