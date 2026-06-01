@@ -13,11 +13,11 @@ export async function signOutAction() {
 }
 
 export async function signInWithGitHub() {
-	await signIn("github", { redirectTo: "/kuroji" });
+	await signIn("github", { redirectTo: "/" });
 }
 
 export async function signInWithGoogle() {
-	await signIn("google", { redirectTo: "/kuroji" });
+	await signIn("google", { redirectTo: "/" });
 }
 
 export async function signInWithMagicLink(
@@ -28,7 +28,7 @@ export async function signInWithMagicLink(
 	const parsed = z.string().email().safeParse(email);
 	if (!parsed.success) return { error: "Invalid email" };
 	try {
-		await signIn("resend", { email: parsed.data, redirectTo: "/kuroji" });
+		await signIn("resend", { email: parsed.data, redirectTo: "/" });
 	} catch (e) {
 		if (e instanceof AuthError) return { error: "Failed to send magic link" };
 		throw e;
@@ -72,7 +72,7 @@ export async function handleCredentials(_prev: AuthState, formData: FormData): P
 		await signIn("credentials", {
 			email: formData.get("email"),
 			password: formData.get("password"),
-			redirectTo: "/kuroji",
+			redirectTo: "/",
 		});
 	} catch (e) {
 		if (e instanceof AuthError) {
