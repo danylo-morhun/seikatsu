@@ -1,6 +1,8 @@
 "use client";
 
 import type { MonthlyTrend } from "@/features/kuroji/actions/trends";
+import { ChartBarLineIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	type ChartConfig,
 	ChartContainer,
@@ -15,8 +17,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 const chartConfig: ChartConfig = {
-	income: { label: "Income", color: "var(--chart-2)" },
-	expenses: { label: "Expenses", color: "var(--chart-1)" },
+	income: { label: "Income", color: "oklch(0.68 0.18 142)" },
+	expenses: { label: "Expenses", color: "oklch(0.62 0.22 25)" },
 };
 
 const PERIODS = [
@@ -69,8 +71,11 @@ export function TrendChart({ data, currency, trendParam, hasDateFilter }: Props)
 			</CardHeader>
 			<CardContent>
 				{formatted.length === 0 ? (
-					<div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
-						No data in this period
+					<div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+						<div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+							<HugeiconsIcon icon={ChartBarLineIcon} size={20} className="text-muted-foreground" />
+						</div>
+						<p className="text-sm text-muted-foreground">No data in this period</p>
 					</div>
 				) : (
 					<ChartContainer config={chartConfig} className="h-[220px] w-full">
