@@ -176,7 +176,7 @@ export function KanbanBoard({
 
 			const isNewColumn = activeCard.columnId !== overColumnId;
 
-			const targetColCards = filteredCards
+			const targetColCards = cards
 				.filter((c) => c.columnId === overColumnId && c.id !== active.id)
 				.sort((a, b) => (a.position < b.position ? -1 : 1));
 
@@ -186,6 +186,7 @@ export function KanbanBoard({
 				newPosition = generateKeyBetween(targetColCards.at(-1)?.position ?? null, null);
 			} else {
 				const overIdx = targetColCards.findIndex((c) => c.id === over.id);
+				if (overIdx === -1) return;
 				newPosition = generateKeyBetween(
 					targetColCards[overIdx - 1]?.position ?? null,
 					targetColCards[overIdx]?.position ?? null,
