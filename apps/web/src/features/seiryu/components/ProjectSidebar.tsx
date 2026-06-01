@@ -2,6 +2,9 @@
 
 import { Spinner } from "@/components/Spinner";
 import { createProject, deleteProject, updateProject } from "@/features/seiryu/actions/projects";
+import { LABEL_COLORS } from "@/features/seiryu/lib/constants";
+import { PencilEdit01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -28,6 +31,7 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, onProje
 	const [deletingId, setDeletingId] = useState<string | null>(null);
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [editName, setEditName] = useState("");
+	const [editColor, setEditColor] = useState<string | null>(null);
 	const [, startRename] = useTransition();
 
 	function navigate(projectId: string) {
@@ -37,8 +41,9 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, onProje
 		});
 	}
 
-	function handleRenameStart(projectId: string, currentName: string) {
+	function handleRenameStart(projectId: string, currentName: string, currentColor: string | null) {
 		setEditName(currentName);
+		setEditColor(currentColor);
 		setEditingId(projectId);
 	}
 
@@ -46,12 +51,18 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, onProje
 		setEditingId(null);
 	}
 
-	function handleRenameSubmit(projectId: string, currentName: string) {
+	function handleRenameSubmit(projectId: string, currentName: string, currentColor: string | null) {
 		const trimmed = editName.trim();
 		setEditingId(null);
-		if (!trimmed || trimmed === currentName) return;
+		if (!trimmed) return;
+		const nameChanged = trimmed !== currentName;
+		const colorChanged = editColor !== currentColor;
+		if (!nameChanged && !colorChanged) return;
 		startRename(async () => {
-			const result = await updateProject({ projectId, name: trimmed });
+			const updates: Record<string, string> = { projectId };
+			if (nameChanged) updates.name = trimmed;
+			if (colorChanged && editColor) updates.color = editColor;
+			const result = await updateProject(updates);
 			if ("error" in result) toast.error(result.error);
 		});
 	}
@@ -117,19 +128,30 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, onProje
 						)}
 					>
 						{isEditingThis ? (
-							<div className="flex flex-1 items-center gap-2 px-2 py-1.5">
-								<span
-									className="h-2.5 w-2.5 shrink-0 rounded-full"
-									style={{ backgroundColor: project.color ?? "#6366f1" }}
-								/>
+							<div className="flex flex-1 flex-col gap-1.5 px-2 py-1.5">
+								<div className="flex items-center gap-1.5 flex-wrap">
+									{LABEL_COLORS.map((c) => (
+										<button
+											key={c}
+											type="button"
+											aria-label={c}
+											onMouseDown={(e) => { e.preventDefault(); setEditColor(c); }}
+											className={cn(
+												"h-4 w-4 shrink-0 rounded-full ring-offset-background transition-shadow",
+												editColor === c ? "ring-2 ring-ring ring-offset-1" : "hover:ring-2 hover:ring-ring/50 hover:ring-offset-1",
+											)}
+											style={{ backgroundColor: c }}
+										/>
+									))}
+								</div>
 								<input
 									autoFocus
 									value={editName}
 									onChange={(e) => setEditName(e.target.value)}
-									onBlur={() => handleRenameSubmit(project.id, project.name)}
+									onBlur={() => handleRenameSubmit(project.id, project.name, project.color)}
 									onKeyDown={(e) => {
 										if (e.key === "Escape") { e.preventDefault(); handleRenameCancel(); }
-										if (e.key === "Enter") { e.preventDefault(); handleRenameSubmit(project.id, project.name); }
+										if (e.key === "Enter") { e.preventDefault(); handleRenameSubmit(project.id, project.name, project.color); }
 									}}
 									className="flex-1 bg-transparent text-sm text-foreground outline-none"
 								/>
@@ -140,7 +162,7 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, onProje
 								disabled={isActive}
 								className="flex flex-1 items-center gap-2 px-2 py-1.5 cursor-pointer disabled:cursor-default select-none"
 								onClick={() => navigate(project.id)}
-								onDoubleClick={() => handleRenameStart(project.id, project.name)}
+								onDoubleClick={() => handleRenameStart(project.id, project.name, project.color)}
 							>
 								<span
 									className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -155,14 +177,24 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, onProje
 									<Spinner className="h-3.5 w-3.5" />
 								</span>
 							) : (
-								<button
-									type="button"
-									className="mr-1 hidden group-hover:flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-destructive transition-colors"
-									onClick={() => handleDelete(project.id, project.name)}
-									aria-label={`Delete ${project.name}`}
-								>
-									×
-								</button>
+								<div className="mr-1 hidden group-hover:flex items-center gap-0.5">
+									<button
+										type="button"
+										className="h-5 w-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
+										onClick={() => handleRenameStart(project.id, project.name, project.color)}
+										aria-label={`Edit ${project.name}`}
+									>
+										<HugeiconsIcon icon={PencilEdit01Icon} className="h-3 w-3" />
+									</button>
+									<button
+										type="button"
+										className="h-5 w-5 flex items-center justify-center rounded text-muted-foreground hover:text-destructive transition-colors"
+										onClick={() => handleDelete(project.id, project.name)}
+										aria-label={`Delete ${project.name}`}
+									>
+										×
+									</button>
+								</div>
 							)
 						)}
 					</div>
