@@ -1,10 +1,13 @@
 import { auth } from "@/auth";
+import { HomeGrid } from "@/components/HomeGrid";
 import { SignInCard } from "@/features/auth/components/SignInCard";
-import { redirect } from "next/navigation";
 
 export default async function HomePage() {
 	const session = await auth();
-	if (session) redirect("/kuroji");
+
+	if (session) {
+		return <HomeGrid user={session.user} />;
+	}
 
 	return (
 		<main className="relative flex min-h-screen items-center justify-center overflow-hidden p-4">
