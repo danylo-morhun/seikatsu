@@ -36,6 +36,13 @@
       "when": 1780347893239,
       "tag": "0004_rename_tasso_to_seiryu",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780756648093,
+      "tag": "0005_silly_morg",
+      "breakpoints": true
     }
   ]
 }
