@@ -99,13 +99,19 @@ export default async function KurojiPage({
 			),
 		]);
 
+		const topLevel = (type: string) =>
+			balances
+				.filter((b) => b.type === type && !b.parentId && !b.hidden)
+				.reduce((acc, b) => acc + Number(b.balance), 0);
 		const income = Math.abs(
 			balances.filter((b) => b.type === "INCOME").reduce((acc, b) => acc + Number(b.balance), 0),
 		);
 		const expenses = Math.abs(
 			balances.filter((b) => b.type === "EXPENSE").reduce((acc, b) => acc + Number(b.balance), 0),
 		);
-		const cashflow = income - expenses;
+		const assets = topLevel("ASSET");
+		const liabilities = Math.abs(topLevel("LIABILITY"));
+		const netWorth = assets - liabilities;
 		const savingsRate = income > 0 ? ((income - expenses) / income) * 100 : null;
 
 		return (
@@ -122,10 +128,10 @@ export default async function KurojiPage({
 					<div className="space-y-6 px-4 py-6 sm:px-6">
 						<div className="flex items-center gap-6">
 							<div>
-								<p className="text-xs text-muted-foreground">Cashflow</p>
-								<p className={`text-2xl font-bold ${cashflow < 0 ? "text-destructive" : ""}`}>
-									{cashflow < 0 ? "−" : ""}
-									{formatCurrency(Math.abs(cashflow), workspace.baseCurrency)}
+								<p className="text-xs text-muted-foreground">Net Worth</p>
+								<p className={`text-2xl font-bold ${netWorth < 0 ? "text-destructive" : ""}`}>
+									{netWorth < 0 ? "−" : ""}
+									{formatCurrency(Math.abs(netWorth), workspace.baseCurrency)}
 								</p>
 							</div>
 							<div className="h-8 w-px bg-border" />
