@@ -15,11 +15,13 @@ import {
 
 export type AccountBalance = {
 	accountId: string;
+	parentId: string | null;
 	name: string;
 	type: "ASSET" | "LIABILITY" | "INCOME" | "EXPENSE";
 	currency: string;
 	balance: string;
 	nativeBalance: string;
+	hidden: boolean;
 };
 
 export async function getBalances(
@@ -47,9 +49,11 @@ export async function getBalances(
 	const rows = await db
 		.select({
 			accountId: accounts.id,
+			parentId: accounts.parentId,
 			name: accounts.name,
 			type: accounts.type,
 			currency: accounts.currency,
+			hidden: accounts.hiddenFromDashboard,
 			balance: sql<string>`coalesce(sum(
         case
           when ${accounts.type} in ('ASSET', 'LIABILITY') ${assetLiabDateClause}
@@ -73,7 +77,28 @@ export async function getBalances(
 		.leftJoin(transactionEntries, eq(transactionEntries.accountId, accounts.id))
 		.leftJoin(transactions, and(eq(transactions.id, transactionEntries.transactionId)))
 		.where(and(eq(accounts.workspaceId, workspaceId), isNull(accounts.archivedAt)))
-		.groupBy(accounts.id, accounts.name, accounts.type, accounts.currency);
+		.groupBy(accounts.id, accounts.parentId, accounts.name, accounts.type, accounts.currency, accounts.hiddenFromDashboard);
 
-	return rows;
+	// Roll up children's baseAmount into parent balance
+	const mutable = rows.map((r) => ({
+		...r,
+		balance: Number(r.balance),
+		nativeBalance: Number(r.nativeBalance),
+	}));
+	const byId = new Map(mutable.map((r) => [r.accountId, r]));
+	for (const row of mutable) {
+		if (!row.parentId || row.hidden) continue;
+		const parent = byId.get(row.parentId);
+		if (!parent) continue;
+		parent.balance += row.balance;
+		if (row.currency === parent.currency) {
+			parent.nativeBalance += row.nativeBalance;
+		}
+	}
+
+	return mutable.map((r) => ({
+		...r,
+		balance: String(r.balance),
+		nativeBalance: String(r.nativeBalance),
+	}));
 }
