@@ -215,3 +215,31 @@ export async function unarchiveAccount(
 	revalidatePath("/kuroji/settings");
 	return { success: true };
 }
+
+export async function toggleAccountDashboardVisibility(
+	accountId: string,
+	hidden: boolean,
+): Promise<{ error: string } | { success: true }> {
+	const session = await auth();
+	if (!session?.user?.id) return { error: "Unauthorized" };
+
+	const [account] = await db
+		.select({ workspaceId: accounts.workspaceId })
+		.from(accounts)
+		.where(eq(accounts.id, accountId))
+		.limit(1);
+
+	if (!account) return { error: "Account not found" };
+
+	const [ws] = await db
+		.select({ userId: workspaces.userId })
+		.from(workspaces)
+		.where(eq(workspaces.id, account.workspaceId))
+		.limit(1);
+
+	if (!ws || ws.userId !== session.user.id) return { error: "Forbidden" };
+
+	await db.update(accounts).set({ hiddenFromDashboard: hidden }).where(eq(accounts.id, accountId));
+	revalidatePath("/kuroji");
+	return { success: true };
+}
