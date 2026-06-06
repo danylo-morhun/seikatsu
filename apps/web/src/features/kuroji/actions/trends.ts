@@ -9,6 +9,7 @@ import {
 	gte,
 	inArray,
 	lte,
+	ne,
 	sql,
 	transactionEntries,
 	transactions,
@@ -61,6 +62,8 @@ export async function getMonthlyTrends(
 			and(
 				eq(accounts.workspaceId, workspaceId),
 				inArray(accounts.type, ["INCOME", "EXPENSE"]),
+				ne(accounts.name, "Opening Balance"),
+				ne(accounts.hiddenFromDashboard, true),
 				gte(transactions.date, cutoffDate),
 				to ? lte(transactions.date, to) : undefined,
 			),
