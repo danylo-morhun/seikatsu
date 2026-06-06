@@ -89,7 +89,7 @@ export async function getBalances(
 	for (const row of mutable) {
 		if (!row.parentId || row.hidden) continue;
 		const parent = byId.get(row.parentId);
-		if (!parent) continue;
+		if (!parent || parent.type !== row.type) continue;
 		parent.balance += row.balance;
 		if (row.currency === parent.currency) {
 			parent.nativeBalance += row.nativeBalance;
