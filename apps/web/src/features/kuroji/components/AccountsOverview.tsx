@@ -339,8 +339,12 @@ export function AccountsOverview({
 				const typeAccounts = accounts.filter((a) => a.type === type);
 				if (listMode && typeAccounts.length === 0) return null;
 
-				const visibleParents = parents.filter((r) => !r.hidden);
-				const hiddenParents = parents.filter((r) => r.hidden);
+				const visibleParents = parents.filter(
+					(r) => !r.hidden && (type === "ASSET" || r.name !== "Opening Balance"),
+				);
+				const hiddenParents = parents.filter(
+					(r) => r.hidden && (type === "ASSET" || r.name !== "Opening Balance"),
+				);
 				const typeTotal = visibleParents.reduce((acc, b) => acc + Number(b.balance), 0);
 
 				return (
