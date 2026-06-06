@@ -99,20 +99,25 @@ export default async function KurojiPage({
 			),
 		]);
 
-		const topLevel = (type: string) =>
+		const topLevel = (type: string, excludeOpeningBalance = false) =>
 			balances
-				.filter((b) => b.type === type && !b.parentId && !b.hidden)
+				.filter(
+					(b) =>
+						b.type === type &&
+						!b.parentId &&
+						!b.hidden &&
+						(!excludeOpeningBalance || b.name !== "Opening Balance"),
+				)
 				.reduce((acc, b) => acc + Number(b.balance), 0);
-		const income = Math.abs(
-			balances.filter((b) => b.type === "INCOME").reduce((acc, b) => acc + Number(b.balance), 0),
-		);
-		const expenses = Math.abs(
-			balances.filter((b) => b.type === "EXPENSE").reduce((acc, b) => acc + Number(b.balance), 0),
-		);
+		const income = Math.abs(topLevel("INCOME"));
+		const expenses = Math.abs(topLevel("EXPENSE"));
 		const assets = topLevel("ASSET");
-		const liabilities = Math.abs(topLevel("LIABILITY"));
+		const liabilities = Math.abs(topLevel("LIABILITY", true));
 		const netWorth = assets - liabilities;
-		const savingsRate = income > 0 ? ((income - expenses) / income) * 100 : null;
+		const savingsAccount = balances.find(
+			(b) => b.type === "ASSET" && b.name.toLowerCase().includes("saving"),
+		);
+		const savingsBalance = savingsAccount ? Number(savingsAccount.balance) : null;
 
 		return (
 			<main className="flex flex-col pb-28 md:pb-0">
@@ -136,13 +141,11 @@ export default async function KurojiPage({
 							</div>
 							<div className="h-8 w-px bg-border" />
 							<div>
-								<p className="text-xs text-muted-foreground">Savings rate</p>
-								<p
-									className={`text-2xl font-bold ${savingsRate !== null && savingsRate < 0 ? "text-destructive" : ""}`}
-								>
-									{savingsRate === null
+								<p className="text-xs text-muted-foreground">Money Saved</p>
+								<p className="text-2xl font-bold">
+									{savingsBalance === null
 										? "—"
-										: `${savingsRate < 0 ? "−" : ""}${Math.abs(savingsRate).toFixed(1)}%`}
+										: formatCurrency(savingsBalance, workspace.baseCurrency)}
 								</p>
 							</div>
 						</div>
