@@ -1,6 +1,10 @@
 "use client";
 
-import { archiveAccount, deleteAccount } from "@/features/kuroji/actions/accounts";
+import {
+	archiveAccount,
+	deleteAccount,
+	toggleAccountDashboardVisibility,
+} from "@/features/kuroji/actions/accounts";
 import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import type { AccountBalance } from "@/features/kuroji/actions/balances";
 import { AddAccountModal } from "@/features/kuroji/components/AddAccountModal";
@@ -29,6 +33,8 @@ import {
 	ArrowDown01Icon,
 	ArrowRight01Icon,
 	Delete01Icon,
+	EyeIcon,
+	EyeOffIcon,
 	MoreHorizontalIcon,
 	PencilEdit01Icon,
 } from "@hugeicons/core-free-icons";
@@ -66,14 +72,18 @@ interface Props {
 
 function AccountActions({
 	acct,
+	hidden,
 	onEdit,
 	onArchive,
 	onDelete,
+	onToggleHidden,
 }: {
 	acct: Account;
+	hidden: boolean;
 	onEdit: (a: Account) => void;
 	onArchive: (id: string, name: string) => void;
 	onDelete: (id: string, name: string) => void;
+	onToggleHidden: (id: string, hidden: boolean) => void;
 }) {
 	return (
 		<DropdownMenu>
@@ -90,6 +100,10 @@ function AccountActions({
 				<DropdownMenuItem onClick={() => onEdit(acct)}>
 					<HugeiconsIcon icon={PencilEdit01Icon} className="mr-2 h-4 w-4" />
 					Edit
+				</DropdownMenuItem>
+				<DropdownMenuItem onClick={() => onToggleHidden(acct.id, !hidden)}>
+					<HugeiconsIcon icon={hidden ? EyeIcon : EyeOffIcon} className="mr-2 h-4 w-4" />
+					{hidden ? "Show on dashboard" : "Hide from dashboard"}
 				</DropdownMenuItem>
 				<DropdownMenuItem onClick={() => onArchive(acct.id, acct.name)}>
 					<HugeiconsIcon icon={Archive01Icon} className="mr-2 h-4 w-4" />
@@ -156,6 +170,7 @@ export function AccountsOverview({
 		null,
 	);
 	const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
+	const [showHidden, setShowHidden] = React.useState(false);
 
 	const accountMap = new Map(accounts.map((a) => [a.id, a]));
 	const accountIdSet = new Set(accounts.map((a) => a.id));
@@ -213,11 +228,21 @@ export function AccountsOverview({
 		});
 	}
 
+	function handleToggleHidden(id: string, hidden: boolean) {
+		startTransition(async () => {
+			const result = await toggleAccountDashboardVisibility(id, hidden);
+			if ("error" in result) toast.error(result.error);
+			else router.refresh();
+		});
+	}
+
 	function renderAccountRow(row: AccountRow, isChild = false) {
 		const acct = accountMap.get(row.accountId);
 		if (!acct) return null;
 
-		const children = grouped[row.type]?.filter((r) => r.parentId === row.accountId) ?? [];
+		const children = grouped[row.type]?.filter(
+			(r) => r.parentId === row.accountId && (!r.hidden || showHidden),
+		) ?? [];
 		const hasChildren = children.length > 0;
 		const isExpanded = expanded.has(row.accountId);
 
@@ -263,9 +288,11 @@ export function AccountsOverview({
 							{!listMode && (
 								<AccountActions
 									acct={acct}
+									hidden={row.hidden}
 									onEdit={setEditTarget}
 									onArchive={(id, name) => setArchiveTarget({ id, name })}
 									onDelete={(id, name) => setConfirmTarget({ id, name })}
+									onToggleHidden={handleToggleHidden}
 								/>
 							)}
 						</div>
@@ -312,7 +339,9 @@ export function AccountsOverview({
 				const typeAccounts = accounts.filter((a) => a.type === type);
 				if (listMode && typeAccounts.length === 0) return null;
 
-				const typeTotal = group.reduce((acc, b) => acc + Number(b.balance), 0);
+				const visibleParents = parents.filter((r) => !r.hidden);
+				const hiddenParents = parents.filter((r) => r.hidden);
+				const typeTotal = visibleParents.reduce((acc, b) => acc + Number(b.balance), 0);
 
 				return (
 					<div key={type}>
@@ -320,7 +349,7 @@ export function AccountsOverview({
 							<p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 								{TYPE_LABELS[type]}
 							</p>
-							{!listMode && group.length > 0 && (
+							{!listMode && visibleParents.length > 0 && (
 								<p className="text-sm font-semibold tabular-nums">
 									{formatCurrency(Math.abs(typeTotal), currency)}
 								</p>
@@ -338,18 +367,37 @@ export function AccountsOverview({
 												{row && <BalanceDisplay row={row} acct={acct} currency={currency} />}
 												<AccountActions
 													acct={acct}
+													hidden={row?.hidden ?? false}
 													onEdit={setEditTarget}
 													onArchive={(id, name) => setArchiveTarget({ id, name })}
 													onDelete={(id, name) => setConfirmTarget({ id, name })}
+													onToggleHidden={handleToggleHidden}
 												/>
 											</div>
 										</div>
 									);
 								})
-							) : parents.length === 0 ? (
+							) : visibleParents.length === 0 && hiddenParents.length === 0 ? (
 								<p className="px-3 py-3 text-xs text-muted-foreground">No accounts</p>
 							) : (
-								parents.map((row) => renderAccountRow(row, false))
+								<>
+									{visibleParents.map((row) => renderAccountRow(row, false))}
+									{showHidden && hiddenParents.map((row) => (
+										<div key={row.accountId} className="opacity-40">
+											{renderAccountRow(row, false)}
+										</div>
+									))}
+									{hiddenParents.length > 0 && (
+										<button
+											type="button"
+											onClick={() => setShowHidden((v) => !v)}
+											className="w-full flex items-center gap-1.5 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+										>
+											<HugeiconsIcon icon={showHidden ? EyeOffIcon : EyeIcon} className="h-3 w-3" />
+											{showHidden ? "Hide" : `${hiddenParents.length} hidden`}
+										</button>
+									)}
+								</>
 							)}
 						</div>
 					</div>
