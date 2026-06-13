@@ -63,9 +63,15 @@ export const transactions = pgTable(
 			.references(() => workspaces.id, { onDelete: "cascade" }),
 		date: date("date").notNull(),
 		description: text("description"),
+		// Source transaction id from an external provider (e.g. GoCardless). Null for manual entries.
+		externalId: text("external_id"),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
-	(t) => [index("transactions_workspace_id_idx").on(t.workspaceId)],
+	(t) => [
+		index("transactions_workspace_id_idx").on(t.workspaceId),
+		// Dedupe imports: NULLs are allowed to repeat (manual entries), real ids are unique per workspace.
+		uniqueIndex("transactions_workspace_external_id_idx").on(t.workspaceId, t.externalId),
+	],
 );
 
 export const transactionEntries = pgTable(
