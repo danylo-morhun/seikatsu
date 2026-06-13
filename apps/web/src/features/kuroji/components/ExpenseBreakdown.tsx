@@ -63,8 +63,8 @@ export function ExpenseBreakdown({ balances, currency }: Props) {
 	}
 
 	return (
-		<div className="relative overflow-x-auto pb-1 md:overflow-visible after:absolute after:right-0 after:top-0 after:bottom-1 after:w-8 after:bg-gradient-to-l after:from-background after:to-transparent after:pointer-events-none md:after:hidden">
-			<div className="flex gap-3 min-w-max md:min-w-0 md:flex-wrap">
+		<div className="w-full overflow-x-auto pb-1">
+			<div className="flex gap-3 min-w-max">
 				{/* Pie card */}
 				<Card className="w-52 h-52 shrink-0 p-3 flex flex-col gap-0">
 					<p className="text-xs font-medium text-muted-foreground">Total</p>
