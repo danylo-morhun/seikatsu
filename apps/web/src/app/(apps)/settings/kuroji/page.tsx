@@ -1,12 +1,15 @@
 import { auth } from "@/auth";
 import { getAccounts } from "@/features/kuroji/actions/accounts";
 import { getBalances } from "@/features/kuroji/actions/balances";
+import { getBankConnections, getBankRules } from "@/features/kuroji/actions/bank";
 import { getRecurringTransactions } from "@/features/kuroji/actions/recurring";
 import { initializeWorkspace } from "@/features/kuroji/actions/workspace";
 import { AccountsOverview } from "@/features/kuroji/components/AccountsOverview";
 import { AddAccountModal } from "@/features/kuroji/components/AddAccountModal";
 import { AddRecurringModal } from "@/features/kuroji/components/AddRecurringModal";
 import { ArchivedAccountsList } from "@/features/kuroji/components/ArchivedAccountsList";
+import { BankConnectionsSection } from "@/features/kuroji/components/BankConnectionsSection";
+import { BankRulesManager } from "@/features/kuroji/components/BankRulesManager";
 import { RecurringTransactionsList } from "@/features/kuroji/components/RecurringTransactionsList";
 import { WorkspaceSettingsForm } from "@/features/kuroji/components/WorkspaceSettingsForm";
 import { Separator } from "@seikatsu/ui";
@@ -17,14 +20,17 @@ export default async function KurojiSettingsPage() {
 	if (!session?.user?.id) redirect("/");
 
 	const workspace = await initializeWorkspace(session.user.id);
-	const [accounts, archivedAccounts, balances, recurringItems] = await Promise.all([
-		getAccounts(workspace.id),
-		getAccounts(workspace.id, { includeArchived: true }).then((all) =>
-			all.filter((a) => a.archivedAt !== null),
-		),
-		getBalances(workspace.id, undefined, undefined),
-		getRecurringTransactions(workspace.id),
-	]);
+	const [accounts, archivedAccounts, balances, recurringItems, bankConnections, bankRules] =
+		await Promise.all([
+			getAccounts(workspace.id),
+			getAccounts(workspace.id, { includeArchived: true }).then((all) =>
+				all.filter((a) => a.archivedAt !== null),
+			),
+			getBalances(workspace.id, undefined, undefined),
+			getRecurringTransactions(workspace.id),
+			getBankConnections(workspace.id),
+			getBankRules(workspace.id),
+		]);
 
 	return (
 		<main className="px-4 py-6 sm:px-6 max-w-3xl">
@@ -79,6 +85,34 @@ export default async function KurojiSettingsPage() {
 					<AddRecurringModal workspaceId={workspace.id} baseCurrency={workspace.baseCurrency} />
 				</div>
 				<RecurringTransactionsList items={recurringItems} currency={workspace.baseCurrency} />
+			</section>
+
+			<Separator className="my-8" />
+
+			<section>
+				<div className="mb-4">
+					<h2 className="text-base font-semibold">Bank Connections</h2>
+					<p className="text-sm text-muted-foreground">
+						Connect a bank via Open Banking to import transactions automatically (synced daily).
+					</p>
+				</div>
+				<BankConnectionsSection
+					workspaceId={workspace.id}
+					connections={bankConnections}
+					accounts={accounts}
+				/>
+			</section>
+
+			<Separator className="my-8" />
+
+			<section>
+				<div className="mb-4">
+					<h2 className="text-base font-semibold">Import Rules</h2>
+					<p className="text-sm text-muted-foreground">
+						Auto-categorize imported bank transactions by keyword.
+					</p>
+				</div>
+				<BankRulesManager workspaceId={workspace.id} rules={bankRules} accounts={accounts} />
 			</section>
 		</main>
 	);
