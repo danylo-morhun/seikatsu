@@ -48,7 +48,7 @@ export function AppShell({
 	return (
 		<SidebarProvider defaultOpen={sidebarDefaultOpen} className={theme}>
 			<AppSidebar workspaceName={workspaceName} user={user} />
-			<SidebarInset>
+			<SidebarInset className="min-w-0">
 				<AppHeader workspaceId={workspaceId} baseCurrency={baseCurrency} />
 				{children}
 			</SidebarInset>
