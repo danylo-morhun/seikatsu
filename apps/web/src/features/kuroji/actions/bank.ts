@@ -18,6 +18,9 @@ import {
 	db,
 	desc,
 	eq,
+	inArray,
+	transactionEntries,
+	transactions,
 	workspaces,
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
@@ -242,6 +245,65 @@ export async function syncBankConnection(
 		return { success: true, imported, skipped };
 	} catch (e) {
 		return { error: e instanceof Error ? e.message : "Sync failed" };
+	}
+}
+
+// ── Reset & re-import ───────────────────────────────────────────────────────
+// Deletes every transaction touching this connection's linked Kuroji accounts
+// (cascades entries + tag links), then re-syncs from scratch — which re-posts a
+// fresh opening balance. Other accounts' data is untouched.
+
+export async function resetAndResync(
+	connectionId: string,
+): Promise<Result<{ imported: number; skipped: number }>> {
+	const session = await auth();
+	if (!session?.user?.id) return { error: "Unauthorized" };
+
+	const [conn] = await db
+		.select()
+		.from(bankConnections)
+		.where(eq(bankConnections.id, connectionId))
+		.limit(1);
+	if (!conn) return { error: "Connection not found" };
+
+	const owner = await ownedWorkspace(conn.workspaceId);
+	if (owner) return owner;
+
+	const linked = await db
+		.select({ accountId: bankAccounts.accountId })
+		.from(bankAccounts)
+		.where(eq(bankAccounts.connectionId, connectionId));
+	const linkedIds = linked.map((l) => l.accountId).filter((id): id is string => id !== null);
+	if (linkedIds.length === 0) return { error: "No linked account to reset" };
+
+	try {
+		// Delete transactions that have any entry on a linked account.
+		const txnIdsSubquery = db
+			.selectDistinct({ id: transactionEntries.transactionId })
+			.from(transactionEntries)
+			.where(inArray(transactionEntries.accountId, linkedIds));
+		await db
+			.delete(transactions)
+			.where(
+				and(
+					eq(transactions.workspaceId, conn.workspaceId),
+					inArray(transactions.id, txnIdsSubquery),
+				),
+			);
+
+		// Reset sync state so the next run re-imports from the floor + re-seeds opening balance.
+		await db
+			.update(bankConnections)
+			.set({ lastSyncedAt: null, lastError: null, status: "LINKED" })
+			.where(eq(bankConnections.id, connectionId));
+
+		const fresh = { ...conn, lastSyncedAt: null, status: "LINKED" as const, lastError: null };
+		const { imported, skipped } = await syncConnection(fresh);
+		revalidatePath("/kuroji");
+		revalidatePath("/settings/kuroji");
+		return { success: true, imported, skipped };
+	} catch (e) {
+		return { error: e instanceof Error ? e.message : "Reset failed" };
 	}
 }
 

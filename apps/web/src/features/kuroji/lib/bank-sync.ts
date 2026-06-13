@@ -21,6 +21,7 @@ import {
 	ebTransactionDescription,
 	ebTransactionExternalId,
 	ebTransactionIsInflow,
+	getAccountBalance,
 	getAccountTransactions,
 } from "./enablebanking";
 import { getExchangeRate } from "./exchange-rates";
@@ -142,6 +143,98 @@ async function insertImported(opts: {
 	});
 }
 
+function dayBefore(isoDateStr: string): string {
+	const d = new Date(`${isoDateStr}T00:00:00Z`);
+	d.setUTCDate(d.getUTCDate() - 1);
+	return d.toISOString().slice(0, 10);
+}
+
+// Find-or-create the "Opening Balance" counterpart account. Mirrors the Kuroji
+// convention: a LIABILITY account excluded from liability/net-worth rollups,
+// used to seed an asset's starting balance via double-entry.
+async function ensureOpeningBalanceAccount(
+	workspaceId: string,
+	baseCurrency: string,
+): Promise<string> {
+	const [existing] = await db
+		.select({ id: accounts.id })
+		.from(accounts)
+		.where(and(eq(accounts.workspaceId, workspaceId), eq(accounts.name, "Opening Balance")))
+		.limit(1);
+	if (existing) return existing.id;
+	const [created] = await db
+		.insert(accounts)
+		.values({ workspaceId, name: "Opening Balance", type: "LIABILITY", currency: baseCurrency })
+		.returning({ id: accounts.id });
+	return created.id;
+}
+
+// Seed the linked account's starting balance as of the day before the first
+// imported transaction. opening = currentBookedBalance − netImportedFlow, so
+// once posted the absolute balance reconciles with the bank. Idempotent via a
+// fixed externalId; only posts when no opening entry exists yet.
+async function ensureOpeningBalance(opts: {
+	workspaceId: string;
+	accountUid: string;
+	kurojiAccountId: string;
+	netImported: number; // signed: inflow +, outflow −, in account currency
+	openingDate: string;
+	baseCurrency: string;
+}): Promise<void> {
+	const { workspaceId, accountUid, kurojiAccountId, netImported, openingDate, baseCurrency } = opts;
+	const externalId = `opening:${accountUid}`;
+
+	const balance = await getAccountBalance(accountUid);
+	if (!balance) return;
+	// The bank balance's currency is the account's authoritative currency.
+	const currency = balance.currency;
+
+	const opening = balance.amount - netImported;
+	// Nothing meaningful to seed.
+	if (Math.abs(opening) < 0.005) return;
+
+	const openingAccountId = await ensureOpeningBalanceAccount(workspaceId, baseCurrency);
+	const amount = Math.abs(opening);
+	const rate =
+		currency === baseCurrency ? 1 : await getExchangeRate(currency, baseCurrency, openingDate);
+	const baseAmount = amount * rate;
+
+	// opening > 0 → asset increases from Opening Balance (from=OB, to=asset).
+	const fromAccountId = opening > 0 ? openingAccountId : kurojiAccountId;
+	const toAccountId = opening > 0 ? kurojiAccountId : openingAccountId;
+
+	await db.transaction(async (tx) => {
+		const [txn] = await tx
+			.insert(transactions)
+			.values({
+				workspaceId,
+				date: openingDate,
+				description: "Opening balance",
+				externalId,
+			})
+			.onConflictDoNothing({ target: [transactions.workspaceId, transactions.externalId] })
+			.returning({ id: transactions.id });
+		if (!txn) return; // already seeded
+
+		await tx.insert(transactionEntries).values([
+			{
+				transactionId: txn.id,
+				accountId: fromAccountId,
+				amount: String(-amount),
+				currency,
+				baseAmount: (-baseAmount).toFixed(4),
+			},
+			{
+				transactionId: txn.id,
+				accountId: toAccountId,
+				amount: String(amount),
+				currency,
+				baseAmount: baseAmount.toFixed(4),
+			},
+		]);
+	});
+}
+
 function startsExpired(message: string): boolean {
 	return /expired|invalid_token|401|access has expired/i.test(message);
 }
@@ -188,6 +281,10 @@ export async function syncConnection(connection: ConnectionRow): Promise<SyncRes
 
 	let imported = 0;
 	let skipped = 0;
+	// On the first sync we seed an opening balance so absolute balances reconcile
+	// with the bank. Track net signed flow + earliest date per linked account.
+	const isFirstSync = !connection.lastSyncedAt;
+	const flowByAccount = new Map<string, { net: number; earliest: string }>();
 
 	try {
 		for (const link of links) {
@@ -211,6 +308,13 @@ export async function syncConnection(connection: ConnectionRow): Promise<SyncRes
 					continue;
 				}
 				const isInflow = ebTransactionIsInflow(t);
+
+				// Accumulate net flow regardless of dedupe — opening = balance − all flow.
+				const flow = flowByAccount.get(link.accountId) ?? { net: 0, earliest: date };
+				flow.net += isInflow ? Math.abs(raw) : -Math.abs(raw);
+				if (date < flow.earliest) flow.earliest = date;
+				flowByAccount.set(link.accountId, flow);
+
 				const description = ebTransactionDescription(t);
 				const counterpartId = resolveCounterpart(description, isInflow, rules, uncategorized);
 				const created = await insertImported({
@@ -227,6 +331,27 @@ export async function syncConnection(connection: ConnectionRow): Promise<SyncRes
 				});
 				if (created) imported++;
 				else skipped++;
+			}
+		}
+
+		if (isFirstSync) {
+			for (const link of links) {
+				if (!link.accountId) continue;
+				const flow = flowByAccount.get(link.accountId);
+				const openingDate = connection.importFromDate
+					? dayBefore(connection.importFromDate)
+					: flow
+						? dayBefore(flow.earliest)
+						: undefined;
+				if (!openingDate) continue;
+				await ensureOpeningBalance({
+					workspaceId: connection.workspaceId,
+					accountUid: link.accountUid,
+					kurojiAccountId: link.accountId,
+					netImported: flow?.net ?? 0,
+					openingDate,
+					baseCurrency,
+				});
 			}
 		}
 

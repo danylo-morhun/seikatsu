@@ -8,6 +8,7 @@ import {
 	deleteBankConnection,
 	linkBankAccount,
 	listBankInstitutions,
+	resetAndResync,
 	syncBankConnection,
 } from "@/features/kuroji/actions/bank";
 import {
@@ -91,7 +92,7 @@ function ConnectionCard({
 	onChanged: () => void;
 }) {
 	const [isPending, startTransition] = useTransition();
-	const [action, setAction] = useState<"sync" | "delete" | null>(null);
+	const [action, setAction] = useState<"sync" | "delete" | "reset" | null>(null);
 	const status = STATUS_LABEL[connection.status] ?? { text: connection.status, cls: "" };
 
 	function handleSync() {
@@ -100,6 +101,24 @@ function ConnectionCard({
 			const result = await syncBankConnection(connection.id);
 			if ("error" in result) toast.error(result.error);
 			else toast.success(`Imported ${result.imported} transaction(s).`);
+			setAction(null);
+			onChanged();
+		});
+	}
+
+	function handleReset() {
+		if (
+			!confirm(
+				`Delete all transactions for the account(s) linked to ${connection.displayName} and re-import from scratch? Other accounts are untouched.`,
+			)
+		) {
+			return;
+		}
+		setAction("reset");
+		startTransition(async () => {
+			const result = await resetAndResync(connection.id);
+			if ("error" in result) toast.error(result.error);
+			else toast.success(`Re-imported ${result.imported} transaction(s).`);
 			setAction(null);
 			onChanged();
 		});
@@ -153,6 +172,15 @@ function ConnectionCard({
 					>
 						{isPending && action === "sync" && <Spinner />}
 						{isPending && action === "sync" ? "Syncing…" : "Sync now"}
+					</Button>
+					<Button
+						size="sm"
+						variant="outline"
+						onClick={handleReset}
+						disabled={isPending || connection.status === "CREATED"}
+						className="gap-1.5"
+					>
+						{isPending && action === "reset" ? "Resetting…" : "Reset & re-import"}
 					</Button>
 					<Button
 						size="sm"

@@ -163,6 +163,31 @@ export async function createSession(code: string): Promise<SessionResult> {
 	};
 }
 
+// ── Balances ──────────────────────────────────────────────────────────────────
+
+type RawBalance = {
+	balance_amount: { amount: string; currency: string };
+	balance_type?: string;
+};
+
+// Returns the current closing-booked balance (preferred), else the first one.
+export async function getAccountBalance(
+	accountUid: string,
+): Promise<{ amount: number; currency: string } | null> {
+	const data = await ebFetch<{ balances: RawBalance[] }>(`/accounts/${accountUid}/balances`);
+	const balances = data.balances ?? [];
+	if (balances.length === 0) return null;
+	// CLBD = closing booked; matches our booked-only imports.
+	const preferred =
+		balances.find((b) => b.balance_type === "CLBD") ??
+		balances.find((b) => b.balance_type === "ITBD") ??
+		balances[0];
+	return {
+		amount: Number(preferred.balance_amount.amount),
+		currency: preferred.balance_amount.currency,
+	};
+}
+
 // ── Transactions ──────────────────────────────────────────────────────────────
 
 export type EbTransaction = {
