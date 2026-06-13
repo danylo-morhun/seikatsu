@@ -317,7 +317,7 @@ export function TransactionTable({
 									</span>
 								</button>
 							</TableHead>
-							<TableHead>Description</TableHead>
+							<TableHead className="w-full">Description</TableHead>
 							<TableHead>From</TableHead>
 							<TableHead>To</TableHead>
 							<TableHead className="text-right">
@@ -362,8 +362,8 @@ export function TransactionTable({
 										/>
 									</TableCell>
 									<TableCell className="text-muted-foreground">{fmtDate(txn.date)}</TableCell>
-									<TableCell className="font-medium">
-										<div>{txn.description ?? "—"}</div>
+									<TableCell className="max-w-0 w-full font-medium">
+										<div className="truncate">{txn.description ?? "—"}</div>
 										{txn.tags.length > 0 && (
 											<div className="mt-1 flex flex-wrap gap-1">
 												{txn.tags.map((tag) => (
