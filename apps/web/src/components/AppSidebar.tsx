@@ -1,7 +1,6 @@
 "use client";
 
 import { signOutAction } from "@/features/auth/actions/auth";
-// Fix 7: import APPS_CONFIG as single source of truth for paths + names
 import { APPS_CONFIG } from "@/lib/app-themes";
 import {
 	Avatar,
@@ -16,7 +15,6 @@ import {
 	SidebarFooter,
 	SidebarGroup,
 	SidebarGroupContent,
-	SidebarGroupLabel,
 	SidebarHeader,
 	SidebarMenu,
 	SidebarMenuButton,
@@ -24,11 +22,9 @@ import {
 } from "@seikatsu/ui";
 import {
 	ArrowUpDownIcon,
-	CheckIcon,
 	YenSquareIcon,
 	KanbanIcon,
 	Logout01Icon,
-	Settings01Icon,
 	UserCircleIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -60,50 +56,21 @@ export function AppSidebar({ workspaceName, user }: Props) {
 			<SidebarHeader>
 				<SidebarMenu>
 					<SidebarMenuItem>
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<SidebarMenuButton
-									size="lg"
-									className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-								>
-									<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-										<span className="text-base font-bold leading-none">生</span>
-									</div>
-									<div className="flex min-w-0 flex-col text-left leading-none">
-										<span className="text-sm font-bold">seikatsu</span>
-										<span className="truncate text-xs text-muted-foreground">Kuroji</span>
-									</div>
-									<HugeiconsIcon
-										icon={ArrowUpDownIcon}
-										className="ml-auto h-4 w-4 shrink-0 text-muted-foreground/60"
-									/>
-								</SidebarMenuButton>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent className="w-56" side="right" align="start" sideOffset={20}>
-								<DropdownMenuLabel className="text-xs text-muted-foreground">
-									Workspaces
-								</DropdownMenuLabel>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem>
-									<HugeiconsIcon icon={CheckIcon} className="h-4 w-4 text-primary" />
-									{workspaceName}
-								</DropdownMenuItem>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem disabled>
-									New workspace
-									<span className="ml-auto rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium">
-										soon
-									</span>
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
+						<SidebarMenuButton size="lg" className="cursor-default">
+							<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+								<span className="text-base font-bold leading-none">生</span>
+							</div>
+							<div className="flex min-w-0 flex-col text-left leading-none">
+								<span className="text-sm font-bold">seikatsu</span>
+								<span className="truncate text-xs text-muted-foreground">{workspaceName}</span>
+							</div>
+						</SidebarMenuButton>
 					</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarHeader>
 
 			<SidebarContent>
 				<SidebarGroup>
-					<SidebarGroupLabel>Applications</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarMenu>
 							{Object.entries(APPS_CONFIG).map(([href, { name }]) => {

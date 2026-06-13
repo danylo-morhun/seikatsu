@@ -15,12 +15,13 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
-export type KurojiTab = "overview" | "accounts" | "transactions";
+import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
+export type { KurojiTab };
 
 const TABS: { value: KurojiTab; label: string; icon: typeof Chart01Icon }[] = [
-	{ value: "overview", label: "Expenses", icon: Chart01Icon },
+	{ value: "expense", label: "Expenses", icon: Chart01Icon },
 	{ value: "accounts", label: "Accounts", icon: Wallet01Icon },
-	{ value: "transactions", label: "History", icon: Clock01Icon },
+	{ value: "transactions", label: "Transactions", icon: Clock01Icon },
 ];
 
 interface Props {
@@ -35,7 +36,7 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 	const [isPending, startTransition] = useTransition();
 	const [pendingTab, setPendingTab] = useState<KurojiTab | null>(null);
 
-	const activeTab = (searchParams.get("tab") as KurojiTab) || "overview";
+	const activeTab = (searchParams.get("tab") as KurojiTab) || "expense";
 	const displayTab = pendingTab ?? activeTab;
 	const isSettings = pathname.startsWith("/settings");
 
@@ -44,22 +45,7 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 	}, [isPending]);
 
 	function tabHref(tab: KurojiTab) {
-		const params = new URLSearchParams(searchParams.toString());
-		if (tab === "overview") {
-			params.delete("tab");
-		} else {
-			params.set("tab", tab);
-		}
-		if (tab !== "transactions") {
-			params.delete("page");
-			params.delete("account");
-			params.delete("q");
-			params.delete("sort");
-			params.delete("dir");
-			params.delete("tag");
-		}
-		const qs = params.toString();
-		return qs ? `/kuroji?${qs}` : "/kuroji";
+		return buildTabHref(tab, searchParams.toString());
 	}
 
 	function handleTabClick(tab: KurojiTab) {
@@ -132,7 +118,7 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 								)}
 							>
 								<HugeiconsIcon icon={Clock01Icon} className="h-5 w-5" />
-								<span className="text-[10px] font-medium leading-none">History</span>
+								<span className="text-[10px] font-medium leading-none">Transactions</span>
 							</button>
 							<Link href="/settings" className={tabCls(isSettings)}>
 								<HugeiconsIcon icon={Settings01Icon} className="h-5 w-5" />

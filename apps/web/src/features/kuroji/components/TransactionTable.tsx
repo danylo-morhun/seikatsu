@@ -34,10 +34,12 @@ import {
 } from "@seikatsu/ui";
 import {
 	Alert01Icon,
+	Cancel01Icon,
 	Delete01Icon,
 	Download01Icon,
 	MoreHorizontalIcon,
 	PencilEdit01Icon,
+	Tag01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { format } from "date-fns";
@@ -238,19 +240,20 @@ export function TransactionTable({
 								className="ml-1 text-muted-foreground hover:text-foreground"
 								onClick={clearAccountFilter}
 							>
-								×
+								<HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
 							</button>
 						</span>
 					)}
 					{tagFilterId && tagFilterName && (
 						<span className="flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium">
-							🏷 {tagFilterName}
+							<HugeiconsIcon icon={Tag01Icon} className="h-3 w-3" />
+							{tagFilterName}
 							<button
 								type="button"
 								className="ml-1 text-muted-foreground hover:text-foreground"
 								onClick={clearTagFilter}
 							>
-								×
+								<HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
 							</button>
 						</span>
 					)}
@@ -274,7 +277,6 @@ export function TransactionTable({
 						onKeyDown={(e) => {
 							if (e.key === "Enter") submitSearch(localQuery);
 						}}
-						onBlur={() => submitSearch(localQuery)}
 					/>
 					<Button
 						variant="outline"
@@ -318,7 +320,18 @@ export function TransactionTable({
 							<TableHead>Description</TableHead>
 							<TableHead>From</TableHead>
 							<TableHead>To</TableHead>
-							<TableHead className="text-right">Amount</TableHead>
+							<TableHead className="text-right">
+								<button
+									type="button"
+									className="flex items-center gap-1 hover:text-foreground ml-auto"
+									onClick={() => sortBy("amount")}
+								>
+									Amount
+									<span className="text-muted-foreground/60">
+										{sortField === "amount" ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
+									</span>
+								</button>
+							</TableHead>
 							<TableHead className="w-10" />
 						</TableRow>
 					</TableHeader>
@@ -378,8 +391,7 @@ export function TransactionTable({
 											onClick={() => filterByAccount(txn.fromAccountId)}
 										>
 											{txn.fromAccount}
-											<span className="opacity-0 group-hover:opacity-40 text-xs">⌦</span>
-										</button>
+													</button>
 									</TableCell>
 									<TableCell>
 										<button
@@ -389,8 +401,7 @@ export function TransactionTable({
 											onClick={() => filterByAccount(txn.toAccountId)}
 										>
 											{txn.toAccount}
-											<span className="opacity-0 group-hover:opacity-40 text-xs">⌦</span>
-										</button>
+													</button>
 									</TableCell>
 									<TableCell className="text-right">
 										{txn.currency && txn.currency !== currency ? (
@@ -445,8 +456,7 @@ export function TransactionTable({
 														Delete transaction?
 													</AlertDialogTitle>
 													<AlertDialogDescription>
-														This will recalculate your account balances. This action cannot be
-														undone.
+														Your account balances will be updated. This action cannot be undone.
 													</AlertDialogDescription>
 												</AlertDialogHeader>
 												<AlertDialogFooter>
@@ -507,8 +517,7 @@ export function TransactionTable({
 							Delete {selectedIds.size} transaction{selectedIds.size !== 1 ? "s" : ""}?
 						</AlertDialogTitle>
 						<AlertDialogDescription>
-							This will permanently delete the selected transactions and recalculate your account
-							balances. This action cannot be undone.
+							Permanently deletes the selected transactions. Your account balances will be updated. This action cannot be undone.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

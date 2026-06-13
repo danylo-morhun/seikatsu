@@ -3,17 +3,16 @@
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AddTransactionModal } from "@/features/kuroji/components/AddTransactionModal";
 import { DateRangePicker } from "@/features/kuroji/components/DateRangePicker";
+import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
 import { getAppForPath } from "@/lib/app-themes";
-import { Button, SidebarTrigger, cn } from "@seikatsu/ui";
-import { Chart01Icon, Clock01Icon, Settings01Icon, Wallet01Icon } from "@hugeicons/core-free-icons";
+import { SidebarTrigger, cn } from "@seikatsu/ui";
+import { Chart01Icon, Clock01Icon, Wallet01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
-type KurojiTab = "overview" | "accounts" | "transactions";
-
 const KUROJI_TABS: { value: KurojiTab; label: string; icon: typeof Chart01Icon }[] = [
-	{ value: "overview", label: "Expenses", icon: Chart01Icon },
+	{ value: "expense", label: "Expenses", icon: Chart01Icon },
 	{ value: "accounts", label: "Accounts", icon: Wallet01Icon },
 	{ value: "transactions", label: "Transactions", icon: Clock01Icon },
 ];
@@ -30,25 +29,10 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 
 	const isKurojiHome = pathname === "/kuroji";
 	const isKuroji = pathname.startsWith("/kuroji");
-	const activeTab = (searchParams.get("tab") as KurojiTab) || "overview";
+	const activeTab = (searchParams.get("tab") as KurojiTab) || "expense";
 
 	function tabHref(tab: KurojiTab) {
-		const params = new URLSearchParams(searchParams.toString());
-		if (tab === "overview") {
-			params.delete("tab");
-		} else {
-			params.set("tab", tab);
-		}
-		if (tab !== "transactions") {
-			params.delete("page");
-			params.delete("account");
-			params.delete("q");
-			params.delete("sort");
-			params.delete("dir");
-			params.delete("tag");
-		}
-		const qs = params.toString();
-		return qs ? `/kuroji?${qs}` : "/kuroji";
+		return buildTabHref(tab, searchParams.toString());
 	}
 
 	return (
@@ -94,11 +78,6 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 						</>
 					)}
 					<ThemeToggle />
-					<Button variant="ghost" size="icon" className="hidden h-8 w-8 md:inline-flex" asChild>
-						<Link href="/settings" aria-label="Settings">
-							<HugeiconsIcon icon={Settings01Icon} className="h-4 w-4" />
-						</Link>
-					</Button>
 				</div>
 			)}
 		</header>

@@ -8,7 +8,6 @@ import { getMonthlyTrends } from "@/features/kuroji/actions/trends";
 import { initializeWorkspace } from "@/features/kuroji/actions/workspace";
 import { AccountsOverview } from "@/features/kuroji/components/AccountsOverview";
 import { ExpenseBreakdown } from "@/features/kuroji/components/ExpenseBreakdown";
-import { ExpenseCategoryList } from "@/features/kuroji/components/ExpenseCategoryList";
 import { ExpensesEmptyState } from "@/features/kuroji/components/ExpensesEmptyState";
 import type { KurojiTab } from "@/features/kuroji/components/KurojiNavTabs";
 import { OnboardingCard } from "@/features/kuroji/components/OnboardingCard";
@@ -22,7 +21,7 @@ function fmt(d: Date) {
 	return format(d, "yyyy-MM-dd");
 }
 
-const VALID_TABS: KurojiTab[] = ["overview", "accounts", "transactions"];
+const VALID_TABS: KurojiTab[] = ["expense", "accounts", "transactions"];
 
 export default async function KurojiPage({
 	searchParams,
@@ -61,7 +60,7 @@ export default async function KurojiPage({
 	const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 	const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-	const tab: KurojiTab = VALID_TABS.includes(rawTab as KurojiTab) ? (rawTab as KurojiTab) : "overview";
+	const tab: KurojiTab = VALID_TABS.includes(rawTab as KurojiTab) ? (rawTab as KurojiTab) : "expense";
 
 	const isAllTime = rawAll === "1";
 	const rawValidFrom = rawFrom && ISO_DATE.test(rawFrom) ? rawFrom : undefined;
@@ -84,7 +83,7 @@ export default async function KurojiPage({
 	await generateDueRecurring(workspace.id);
 
 	// ── Overview ────────────────────────────────────────────────────────────────
-	if (tab === "overview") {
+	if (tab === "expense") {
 		const trendParam = rawTrend === "3m" || rawTrend === "1y" ? rawTrend : "6m";
 		const trendMonths = trendParam === "3m" ? 3 : trendParam === "1y" ? 12 : 6;
 		const hasDateFilter = !isAllTime && (rawValidFrom !== undefined || rawValidTo !== undefined);
@@ -114,11 +113,6 @@ export default async function KurojiPage({
 		const assets = topLevel("ASSET");
 		const liabilities = Math.abs(topLevel("LIABILITY", true));
 		const netWorth = assets - liabilities;
-		const savingsAccount = balances.find(
-			(b) => b.type === "ASSET" && b.name.toLowerCase().includes("saving"),
-		);
-		const savingsBalance = savingsAccount ? Number(savingsAccount.balance) : null;
-
 		return (
 			<main className="flex flex-col pb-28 md:pb-0">
 				{balances.length === 0 ? (
@@ -131,7 +125,7 @@ export default async function KurojiPage({
 					</div>
 				) : (
 					<div className="space-y-6 px-4 py-6 sm:px-6">
-						<div className="flex items-center gap-6">
+						<div className="flex flex-wrap items-center gap-4 sm:gap-6">
 							<div>
 								<p className="text-xs text-muted-foreground">Net Worth</p>
 								<p className={`text-2xl font-bold ${netWorth < 0 ? "text-destructive" : ""}`}>
@@ -141,11 +135,16 @@ export default async function KurojiPage({
 							</div>
 							<div className="h-8 w-px bg-border" />
 							<div>
-								<p className="text-xs text-muted-foreground">Money Saved</p>
+								<p className="text-xs text-muted-foreground">Income</p>
+								<p className="text-2xl font-bold text-green-500">
+									{formatCurrency(income, workspace.baseCurrency)}
+								</p>
+							</div>
+							<div className="h-8 w-px bg-border" />
+							<div>
+								<p className="text-xs text-muted-foreground">Expenses</p>
 								<p className="text-2xl font-bold">
-									{savingsBalance === null
-										? "—"
-										: formatCurrency(savingsBalance, workspace.baseCurrency)}
+									{formatCurrency(expenses, workspace.baseCurrency)}
 								</p>
 							</div>
 						</div>
@@ -158,7 +157,6 @@ export default async function KurojiPage({
 						) : (
 							<>
 								<ExpenseBreakdown balances={balances} currency={workspace.baseCurrency} />
-								<ExpenseCategoryList balances={balances} currency={workspace.baseCurrency} />
 							</>
 						)}
 						<TrendChart

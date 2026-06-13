@@ -91,9 +91,9 @@ function AccountActions({
 				<Button
 					variant="ghost"
 					size="icon"
-					className="h-7 w-7 text-muted-foreground/50 hover:text-foreground"
+					className="h-9 w-9 text-muted-foreground/50 hover:text-foreground"
 				>
-					<HugeiconsIcon icon={MoreHorizontalIcon} className="h-3.5 w-3.5" />
+					<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
@@ -442,8 +442,7 @@ export function AccountsOverview({
 					<AlertDialogHeader>
 						<AlertDialogTitle>Archive "{archiveTarget?.name}"?</AlertDialogTitle>
 						<AlertDialogDescription>
-							The account will be hidden from pickers and the dashboard. Its balance history is
-							preserved and still counts toward totals. You can restore it from Settings.
+							The account will be hidden from pickers and the dashboard. Historical transactions are preserved. You can restore it from Settings.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
@@ -468,8 +467,7 @@ export function AccountsOverview({
 							Delete "{confirmTarget?.name}"?
 						</AlertDialogTitle>
 						<AlertDialogDescription>
-							This will permanently delete the account and all its transaction entries. This action
-							cannot be undone.
+							Permanently deletes this account and all its transaction entries. This action cannot be undone.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

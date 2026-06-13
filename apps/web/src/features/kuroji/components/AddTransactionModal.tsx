@@ -36,7 +36,8 @@ import {
 	TabsTrigger,
 } from "@seikatsu/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Add01Icon } from "@hugeicons/core-free-icons";
+import { Add01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import { format } from "date-fns";
 import { HugeiconsIcon } from "@hugeicons/react";
 import * as React from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
@@ -59,11 +60,12 @@ export function AddTransactionModal({
 	const [accounts, setAccounts] = React.useState<Account[]>([]);
 	const [workspaceTags, setWorkspaceTags] = React.useState<Tag[]>([]);
 	const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>([]);
+	const [accountsLoading, setAccountsLoading] = React.useState(false);
 	const [txType, setTxType] = React.useState<TxType>("expense");
 	const refresh = useRefreshRouter();
 
 	const defaultCurrency = toCurrency(baseCurrency);
-	const today = new Date().toISOString().slice(0, 10);
+	const today = format(new Date(), "yyyy-MM-dd");
 	const blankSplit: SplitItem = { categoryId: "", amount: undefined as unknown as number };
 
 	const {
@@ -103,8 +105,12 @@ export function AddTransactionModal({
 
 	React.useEffect(() => {
 		if (open) {
-			getAccounts(workspaceId).then(setAccounts);
-			getTags(workspaceId).then(setWorkspaceTags);
+			setAccountsLoading(true);
+			Promise.all([getAccounts(workspaceId), getTags(workspaceId)]).then(([accts, tags]) => {
+				setAccounts(accts);
+				setWorkspaceTags(tags);
+				setAccountsLoading(false);
+			});
 		}
 	}, [open, workspaceId]);
 
@@ -288,7 +294,7 @@ export function AddTransactionModal({
 							className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
 							onClick={() => removeSplit(index)}
 						>
-							×
+							<HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
 						</Button>
 					)}
 				</div>
@@ -318,7 +324,10 @@ export function AddTransactionModal({
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>New Transaction</DialogTitle>
+					<DialogTitle className="flex items-center justify-between">
+						New Transaction
+						<kbd className="hidden md:inline-flex items-center rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">N</kbd>
+					</DialogTitle>
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -337,12 +346,12 @@ export function AddTransactionModal({
 
 						<TabsContent value="expense" className="space-y-4">
 							<div className="space-y-2">
-								<Label>Wallet</Label>
+								<Label>Account</Label>
 								<AccountSelect
 									control={control as never}
 									name="walletId"
 									accounts={wallets}
-									placeholder="Select wallet"
+									placeholder="Select account"
 									error={(errs.walletId as { message?: string })?.message}
 								/>
 							</div>
@@ -351,12 +360,12 @@ export function AddTransactionModal({
 
 						<TabsContent value="income" className="space-y-4">
 							<div className="space-y-2">
-								<Label>Wallet</Label>
+								<Label>Account</Label>
 								<AccountSelect
 									control={control as never}
 									name="walletId"
 									accounts={wallets}
-									placeholder="Select wallet"
+									placeholder="Select account"
 									error={(errs.walletId as { message?: string })?.message}
 								/>
 							</div>
@@ -365,7 +374,7 @@ export function AddTransactionModal({
 
 						<TabsContent value="transfer" className="space-y-4">
 							<div className="space-y-2">
-								<Label>From Wallet</Label>
+								<Label>From Account</Label>
 								<AccountSelect
 									control={control as never}
 									name="fromWalletId"
@@ -375,7 +384,7 @@ export function AddTransactionModal({
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label>To Wallet</Label>
+								<Label>To Account</Label>
 								<AccountSelect
 									control={control as never}
 									name="toWalletId"

@@ -2,7 +2,6 @@
 
 import type { AccountBalance } from "@/features/kuroji/actions/balances";
 import { formatCurrency } from "@/features/kuroji/lib/format";
-import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 
 interface Props {
@@ -58,10 +57,7 @@ export function ExpenseCategoryList({ balances, currency }: Props) {
 							</div>
 							<div className="h-1.5 overflow-hidden rounded-full bg-muted">
 								<div
-									className={cn(
-										"h-full rounded-full transition-all",
-										pct > 66 ? "bg-destructive" : pct > 33 ? "bg-orange-500" : "bg-chart-1",
-									)}
+									className="h-full rounded-full transition-all bg-primary"
 									style={{ width: `${pct}%` }}
 								/>
 							</div>

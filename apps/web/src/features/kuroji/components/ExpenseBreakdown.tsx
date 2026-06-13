@@ -15,7 +15,7 @@ const COLORS = [
 	"oklch(0.65 0.18 330)", // pink
 ];
 
-const PIE_SIZE = 128; // explicit px — no ResponsiveContainer stretching
+const PIE_SIZE = 160;
 
 interface TooltipProps {
 	active?: boolean;
@@ -63,10 +63,10 @@ export function ExpenseBreakdown({ balances, currency }: Props) {
 	}
 
 	return (
-		<div className="overflow-x-auto pb-1 md:overflow-visible">
+		<div className="relative overflow-x-auto pb-1 md:overflow-visible after:absolute after:right-0 after:top-0 after:bottom-1 after:w-8 after:bg-gradient-to-l after:from-background after:to-transparent after:pointer-events-none md:after:hidden">
 			<div className="flex gap-3 min-w-max md:min-w-0 md:flex-wrap">
 				{/* Pie card */}
-				<Card className="w-44 h-44 shrink-0 p-3 flex flex-col gap-0">
+				<Card className="w-52 h-52 shrink-0 p-3 flex flex-col gap-0">
 					<p className="text-xs font-medium text-muted-foreground">Total</p>
 					<div className="flex flex-1 items-center justify-center">
 						<PieChart
@@ -82,8 +82,8 @@ export function ExpenseBreakdown({ balances, currency }: Props) {
 								nameKey="name"
 								cx={PIE_SIZE / 2}
 								cy={PIE_SIZE / 2}
-								innerRadius={36}
-								outerRadius={56}
+								innerRadius={46}
+								outerRadius={70}
 								strokeWidth={0}
 							>
 								{expenses.map((entry) => (
@@ -121,7 +121,7 @@ export function ExpenseBreakdown({ balances, currency }: Props) {
 					const pct = total > 0 ? (exp.value / total) * 100 : 0;
 					return (
 						<Link key={exp.accountId} href={`/kuroji/accounts/${exp.accountId}`}>
-							<Card className="w-44 h-44 shrink-0 flex flex-col justify-between p-4 hover:bg-muted/40 transition-colors cursor-pointer">
+							<Card className="w-52 h-52 shrink-0 flex flex-col justify-between p-4 hover:bg-muted/40 transition-colors cursor-pointer">
 								<p className="text-xs font-medium text-muted-foreground truncate">{exp.name}</p>
 								<p className="text-2xl font-bold leading-none tracking-tight">
 									{formatCurrency(exp.value, currency)}
