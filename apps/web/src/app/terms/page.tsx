@@ -60,8 +60,8 @@ export default function TermsPage() {
 					<h2 className="mb-2 text-base font-semibold">6. Contact</h2>
 					<p>
 						Questions:{" "}
-						<a className="underline" href="mailto:d.morhun@goldenratio.exchange">
-							d.morhun@goldenratio.exchange
+						<a className="underline" href="mailto:danymorhun@gmail.com">
+							danymorhun@gmail.com
 						</a>
 						.
 					</p>

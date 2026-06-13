@@ -17,8 +17,8 @@ export default function PrivacyPage() {
 					<p>
 						Seikatsu is a personal finance application operated privately by an individual for their
 						own use. It is not a commercial service and has no other end users. Contact:{" "}
-						<a className="underline" href="mailto:d.morhun@goldenratio.exchange">
-							d.morhun@goldenratio.exchange
+						<a className="underline" href="mailto:danymorhun@gmail.com">
+							danymorhun@gmail.com
 						</a>
 						.
 					</p>
