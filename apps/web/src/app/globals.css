@@ -195,6 +195,36 @@
 	--chart-5: oklch(0.28 0.14 264);
 }
 
+/* Tsundoku — Teal (light) */
+.theme-tsundoku {
+	--primary: oklch(0.55 0.12 180);
+	--primary-foreground: oklch(0.98 0.01 180);
+	--accent: oklch(0.93 0.04 180);
+	--accent-foreground: oklch(0.2 0.05 180);
+	--ring: oklch(0.55 0.12 180);
+
+	--chart-1: oklch(0.82 0.09 180);
+	--chart-2: oklch(0.7 0.12 175);
+	--chart-3: oklch(0.6 0.13 185);
+	--chart-4: oklch(0.5 0.12 190);
+	--chart-5: oklch(0.4 0.1 195);
+}
+
+/* Tsundoku — Teal (dark) */
+.dark .theme-tsundoku {
+	--primary: oklch(0.72 0.13 180);
+	--primary-foreground: oklch(0.12 0.03 180);
+	--accent: oklch(0.22 0.05 180);
+	--accent-foreground: oklch(0.95 0.03 180);
+	--ring: oklch(0.72 0.13 180);
+
+	--chart-1: oklch(0.82 0.11 180);
+	--chart-2: oklch(0.72 0.13 175);
+	--chart-3: oklch(0.62 0.13 185);
+	--chart-4: oklch(0.52 0.12 190);
+	--chart-5: oklch(0.42 0.1 195);
+}
+
 @keyframes loader-appear {
 	from {
 		opacity: 0;
