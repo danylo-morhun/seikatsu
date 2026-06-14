@@ -13,6 +13,12 @@ export const APPS_CONFIG = {
 		kanji: "清",
 		description: "Kanban board. Projects, columns, cards, checklists, and labels.",
 	},
+	"/tsundoku": {
+		theme: "theme-tsundoku",
+		name: "積 Tsundoku",
+		kanji: "積",
+		description: "Books tracker. Library, reading progress, ratings, sessions, and stats.",
+	},
 } satisfies Record<string, { theme: string; name: string; kanji: string; description: string }>;
 
 export const APP_THEMES = Object.fromEntries(
