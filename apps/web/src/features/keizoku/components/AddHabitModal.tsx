@@ -3,7 +3,13 @@
 import { Spinner } from "@/components/Spinner";
 import { createHabit } from "@/features/keizoku/actions/habits";
 import { FrequencyPicker } from "@/features/keizoku/components/FrequencyPicker";
-import { EMOJI_PRESETS, type FrequencyType } from "@/features/keizoku/lib/constants";
+import {
+	EMOJI_PRESETS,
+	type FrequencyType,
+	TIME_OF_DAY_LABELS,
+	TIME_OF_DAY_VALUES,
+	type TimeOfDay,
+} from "@/features/keizoku/lib/constants";
 import {
 	Button,
 	Checkbox,
@@ -14,6 +20,11 @@ import {
 	DialogTrigger,
 	Input,
 	Label,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	cn,
 } from "@seikatsu/ui";
 import { useRouter } from "next/navigation";
@@ -38,6 +49,7 @@ export function AddHabitModal({
 	const [frequencyType, setFrequencyType] = useState<FrequencyType>("daily");
 	const [frequencyDays, setFrequencyDays] = useState<number[]>([]);
 	const [frequencyTarget, setFrequencyTarget] = useState("3");
+	const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>("anytime");
 	const [requiresPhoto, setRequiresPhoto] = useState(false);
 
 	function reset() {
@@ -46,6 +58,7 @@ export function AddHabitModal({
 		setFrequencyType("daily");
 		setFrequencyDays([]);
 		setFrequencyTarget("3");
+		setTimeOfDay("anytime");
 		setRequiresPhoto(false);
 	}
 
@@ -63,6 +76,7 @@ export function AddHabitModal({
 			frequencyDays: frequencyType === "weekdays" ? frequencyDays : undefined,
 			frequencyTarget:
 				frequencyType === "times_per_week" ? Number.parseInt(frequencyTarget, 10) : undefined,
+			timeOfDay,
 			requiresPhoto,
 		});
 		setSaving(false);
@@ -134,6 +148,21 @@ export function AddHabitModal({
 						onFrequencyDaysChange={setFrequencyDays}
 						onFrequencyTargetChange={setFrequencyTarget}
 					/>
+					<div className="space-y-1.5">
+						<Label>Time of day</Label>
+						<Select value={timeOfDay} onValueChange={(v) => setTimeOfDay(v as TimeOfDay)}>
+							<SelectTrigger>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{TIME_OF_DAY_VALUES.map((t) => (
+									<SelectItem key={t} value={t}>
+										{TIME_OF_DAY_LABELS[t]}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 					<label htmlFor="add-habit-requires-photo" className="flex items-center gap-2 text-sm">
 						<Checkbox
 							id="add-habit-requires-photo"
