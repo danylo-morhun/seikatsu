@@ -61,6 +61,7 @@ export async function createHabit(
 			workspaceId,
 			name: v.name,
 			emoji: v.emoji,
+			timeOfDay: v.timeOfDay,
 			requiresPhoto: v.requiresPhoto,
 			...frequencyFields(v),
 		})
@@ -86,6 +87,7 @@ export async function updateHabit(
 		.set({
 			name: v.name,
 			emoji: v.emoji,
+			timeOfDay: v.timeOfDay,
 			requiresPhoto: v.requiresPhoto,
 			...frequencyFields(v),
 		})
