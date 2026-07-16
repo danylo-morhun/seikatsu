@@ -2,6 +2,8 @@
 
 import { Spinner } from "@/components/Spinner";
 import { deleteAccount, signOutAllDevices } from "@/features/auth/actions/settings";
+import { Alert01Icon, Delete01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -14,8 +16,6 @@ import {
 	AlertDialogTrigger,
 } from "@seikatsu/ui/alert-dialog";
 import { Button } from "@seikatsu/ui/button";
-import { Alert01Icon, Delete01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { useState } from "react";
 
 export function DangerZone() {

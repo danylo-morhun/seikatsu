@@ -2,9 +2,9 @@
 
 import { unarchiveAccount } from "@/features/kuroji/actions/accounts";
 import type { getAccounts } from "@/features/kuroji/actions/accounts";
-import { Button } from "@seikatsu/ui";
 import { Archive01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { Button } from "@seikatsu/ui";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useTransition } from "react";

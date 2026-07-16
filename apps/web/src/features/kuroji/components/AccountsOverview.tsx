@@ -11,6 +11,18 @@ import { AddAccountModal } from "@/features/kuroji/components/AddAccountModal";
 import { EditAccountModal } from "@/features/kuroji/components/EditAccountModal";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import {
+	Alert01Icon,
+	Archive01Icon,
+	ArrowDown01Icon,
+	ArrowRight01Icon,
+	Delete01Icon,
+	EyeIcon,
+	EyeOffIcon,
+	MoreHorizontalIcon,
+	PencilEdit01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
 	AlertDialog,
 	AlertDialogAction,
 	AlertDialogCancel,
@@ -27,18 +39,6 @@ import {
 	DropdownMenuTrigger,
 	Progress,
 } from "@seikatsu/ui";
-import {
-	Alert01Icon,
-	Archive01Icon,
-	ArrowDown01Icon,
-	ArrowRight01Icon,
-	Delete01Icon,
-	EyeIcon,
-	EyeOffIcon,
-	MoreHorizontalIcon,
-	PencilEdit01Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
@@ -240,9 +240,9 @@ export function AccountsOverview({
 		const acct = accountMap.get(row.accountId);
 		if (!acct) return null;
 
-		const children = grouped[row.type]?.filter(
-			(r) => r.parentId === row.accountId && (!r.hidden || showHidden),
-		) ?? [];
+		const children =
+			grouped[row.type]?.filter((r) => r.parentId === row.accountId && (!r.hidden || showHidden)) ??
+			[];
 		const hasChildren = children.length > 0;
 		const isExpanded = expanded.has(row.accountId);
 
@@ -386,11 +386,12 @@ export function AccountsOverview({
 							) : (
 								<>
 									{visibleParents.map((row) => renderAccountRow(row, false))}
-									{showHidden && hiddenParents.map((row) => (
-										<div key={row.accountId} className="opacity-40">
-											{renderAccountRow(row, false)}
-										</div>
-									))}
+									{showHidden &&
+										hiddenParents.map((row) => (
+											<div key={row.accountId} className="opacity-40">
+												{renderAccountRow(row, false)}
+											</div>
+										))}
 									{hiddenParents.length > 0 && (
 										<button
 											type="button"
@@ -442,7 +443,8 @@ export function AccountsOverview({
 					<AlertDialogHeader>
 						<AlertDialogTitle>Archive "{archiveTarget?.name}"?</AlertDialogTitle>
 						<AlertDialogDescription>
-							The account will be hidden from pickers and the dashboard. Historical transactions are preserved. You can restore it from Settings.
+							The account will be hidden from pickers and the dashboard. Historical transactions are
+							preserved. You can restore it from Settings.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
@@ -467,7 +469,8 @@ export function AccountsOverview({
 							Delete "{confirmTarget?.name}"?
 						</AlertDialogTitle>
 						<AlertDialogDescription>
-							Permanently deletes this account and all its transaction entries. This action cannot be undone.
+							Permanently deletes this account and all its transaction entries. This action cannot
+							be undone.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

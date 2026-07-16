@@ -149,8 +149,14 @@ export function KanbanColumn({ column, cards, onCardClick, onCardAdded }: Props)
 							onChange={(e) => setEditName(e.target.value)}
 							onBlur={handleRenameSubmit}
 							onKeyDown={(e) => {
-								if (e.key === "Escape") { e.preventDefault(); handleRenameCancel(); }
-								if (e.key === "Enter") { e.preventDefault(); handleRenameSubmit(); }
+								if (e.key === "Escape") {
+									e.preventDefault();
+									handleRenameCancel();
+								}
+								if (e.key === "Enter") {
+									e.preventDefault();
+									handleRenameSubmit();
+								}
 							}}
 							className="flex-1 bg-transparent text-sm font-medium text-foreground outline-none"
 						/>

@@ -1,9 +1,9 @@
 "use client";
 
 import { APPS_CONFIG } from "@/lib/app-themes";
-import { cn } from "@seikatsu/ui";
 import { CoinsYenIcon, KanbanIcon, UserCircleIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 

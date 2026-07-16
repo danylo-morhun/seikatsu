@@ -146,7 +146,10 @@ export async function reorderColumns(
 	const project = await assertProjectOwnership(col.projectId, workspace.id);
 	if (!project) return { error: "Forbidden" };
 
-	await db.update(seiryuColumns).set({ position: newPosition }).where(eq(seiryuColumns.id, columnId));
+	await db
+		.update(seiryuColumns)
+		.set({ position: newPosition })
+		.where(eq(seiryuColumns.id, columnId));
 
 	revalidatePath(`/seiryu/${col.projectId}`);
 	return { success: true };

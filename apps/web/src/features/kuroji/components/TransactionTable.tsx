@@ -9,6 +9,16 @@ import { parseLocal } from "@/features/kuroji/lib/dates";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { useRefreshRouter } from "@/hooks/useRefreshRouter";
 import {
+	Alert01Icon,
+	Cancel01Icon,
+	Delete01Icon,
+	Download01Icon,
+	MoreHorizontalIcon,
+	PencilEdit01Icon,
+	Tag01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
 	AlertDialog,
 	AlertDialogAction,
 	AlertDialogCancel,
@@ -32,16 +42,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@seikatsu/ui";
-import {
-	Alert01Icon,
-	Cancel01Icon,
-	Delete01Icon,
-	Download01Icon,
-	MoreHorizontalIcon,
-	PencilEdit01Icon,
-	Tag01Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { format } from "date-fns";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -391,7 +391,7 @@ export function TransactionTable({
 											onClick={() => filterByAccount(txn.fromAccountId)}
 										>
 											{txn.fromAccount}
-													</button>
+										</button>
 									</TableCell>
 									<TableCell>
 										<button
@@ -401,7 +401,7 @@ export function TransactionTable({
 											onClick={() => filterByAccount(txn.toAccountId)}
 										>
 											{txn.toAccount}
-													</button>
+										</button>
 									</TableCell>
 									<TableCell className="text-right">
 										{txn.currency && txn.currency !== currency ? (
@@ -517,7 +517,8 @@ export function TransactionTable({
 							Delete {selectedIds.size} transaction{selectedIds.size !== 1 ? "s" : ""}?
 						</AlertDialogTitle>
 						<AlertDialogDescription>
-							Permanently deletes the selected transactions. Your account balances will be updated. This action cannot be undone.
+							Permanently deletes the selected transactions. Your account balances will be updated.
+							This action cannot be undone.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

@@ -154,7 +154,9 @@ export function HomeGrid({ user }: Props) {
 								className="relative overflow-hidden rounded-2xl border border-border/30 bg-card/50 p-6"
 							>
 								{/* Top accent line (dimmed) */}
-								<div className={cn("absolute inset-x-0 top-0 h-[2px] opacity-30", app.accentBarClass)} />
+								<div
+									className={cn("absolute inset-x-0 top-0 h-[2px] opacity-30", app.accentBarClass)}
+								/>
 
 								{/* Watermark kanji */}
 								<div

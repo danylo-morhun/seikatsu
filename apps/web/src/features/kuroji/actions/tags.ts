@@ -1,7 +1,16 @@
 "use server";
 
 import { auth } from "@/auth";
-import { and, db, eq, inArray, tags, transactionTags, transactions, workspaces } from "@seikatsu/db";
+import {
+	and,
+	db,
+	eq,
+	inArray,
+	tags,
+	transactionTags,
+	transactions,
+	workspaces,
+} from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 export type Tag = { id: string; name: string; color: string | null };

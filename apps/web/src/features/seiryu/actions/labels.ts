@@ -86,7 +86,9 @@ export async function deleteLabel(input: unknown): Promise<{ error: string } | {
 	const [project] = await db
 		.select({ id: seiryuProjects.id })
 		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.id, label.projectId), eq(seiryuProjects.workspaceId, workspace.id)))
+		.where(
+			and(eq(seiryuProjects.id, label.projectId), eq(seiryuProjects.workspaceId, workspace.id)),
+		)
 		.limit(1);
 	if (!project) return { error: "Forbidden" };
 

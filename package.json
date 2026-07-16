@@ -14,11 +14,7 @@
 	},
 	"packageManager": "pnpm@10.33.2",
 	"pnpm": {
-		"onlyBuiltDependencies": [
-			"@biomejs/biome",
-			"esbuild",
-			"sharp"
-		]
+		"onlyBuiltDependencies": ["@biomejs/biome", "esbuild", "sharp"]
 	},
 	"dependencies": {
 		"@dnd-kit/core": "^6.3.1",

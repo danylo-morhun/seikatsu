@@ -5,7 +5,8 @@ export const APPS_CONFIG = {
 		theme: "theme-kuroji",
 		name: "黒 Kuroji",
 		kanji: "黒",
-		description: "Finance tracker. Double-entry accounting, multi-currency, recurring transactions.",
+		description:
+			"Finance tracker. Double-entry accounting, multi-currency, recurring transactions.",
 	},
 	"/seiryu": {
 		theme: "theme-seiryu",

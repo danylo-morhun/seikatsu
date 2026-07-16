@@ -60,7 +60,9 @@ export default async function KurojiPage({
 	const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 	const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-	const tab: KurojiTab = VALID_TABS.includes(rawTab as KurojiTab) ? (rawTab as KurojiTab) : "expense";
+	const tab: KurojiTab = VALID_TABS.includes(rawTab as KurojiTab)
+		? (rawTab as KurojiTab)
+		: "expense";
 
 	const isAllTime = rawAll === "1";
 	const rawValidFrom = rawFrom && ISO_DATE.test(rawFrom) ? rawFrom : undefined;

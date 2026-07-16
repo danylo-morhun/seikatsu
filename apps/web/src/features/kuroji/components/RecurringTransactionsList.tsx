@@ -3,6 +3,8 @@
 import { deleteRecurringTransaction, toggleRecurring } from "@/features/kuroji/actions/recurring";
 import type { RecurringTransaction } from "@/features/kuroji/actions/recurring";
 import { formatCurrency } from "@/features/kuroji/lib/format";
+import { Alert01Icon, Delete01Icon, PauseIcon, PlayCircleIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -14,8 +16,6 @@ import {
 	AlertDialogTitle,
 	Button,
 } from "@seikatsu/ui";
-import { Alert01Icon, Delete01Icon, PauseIcon, PlayCircleIcon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useTransition } from "react";

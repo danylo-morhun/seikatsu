@@ -17,7 +17,12 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+	SortableContext,
+	arrayMove,
+	useSortable,
+	verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@seikatsu/ui";
 import { useState, useTransition } from "react";
@@ -66,10 +71,7 @@ function SortableChecklistItem({
 				className="h-3.5 w-3.5 shrink-0 cursor-pointer rounded-sm accent-primary"
 			/>
 			<span
-				className={cn(
-					"flex-1 text-xs",
-					item.isCompleted && "text-muted-foreground line-through",
-				)}
+				className={cn("flex-1 text-xs", item.isCompleted && "text-muted-foreground line-through")}
 			>
 				{item.title}
 			</span>
@@ -151,7 +153,12 @@ export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 			setItems((prev) => {
 				const next = prev
 					.filter((i) => i.id !== tempId)
-					.concat({ id: result.data.id, title, isCompleted: false, position: result.data.position });
+					.concat({
+						id: result.data.id,
+						title,
+						isCompleted: false,
+						position: result.data.position,
+					});
 				onChange?.(next);
 				return next;
 			});
@@ -196,7 +203,10 @@ export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 
 			{total > 0 && (
 				<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-					<SortableContext items={sortedItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+					<SortableContext
+						items={sortedItems.map((i) => i.id)}
+						strategy={verticalListSortingStrategy}
+					>
 						<div className="flex flex-col gap-1">
 							{sortedItems.map((item) => (
 								<SortableChecklistItem

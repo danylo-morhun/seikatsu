@@ -3,14 +3,7 @@
 import { Spinner } from "@/components/Spinner";
 import { deleteCard, getArchivedCards, restoreCard } from "@/features/seiryu/actions/cards";
 import type { CardData } from "@/features/seiryu/components/KanbanCard";
-import {
-	Button,
-	Sheet,
-	SheetContent,
-	SheetHeader,
-	SheetTitle,
-	SheetTrigger,
-} from "@seikatsu/ui";
+import { Button, Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@seikatsu/ui";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
