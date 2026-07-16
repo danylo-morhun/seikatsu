@@ -1,0 +1,2 @@
+CREATE TYPE "public"."keizoku_time_of_day" AS ENUM('morning', 'anytime', 'evening');--> statement-breakpoint
+ALTER TABLE "keizoku_habits" ADD COLUMN "time_of_day" "keizoku_time_of_day" DEFAULT 'anytime' NOT NULL;

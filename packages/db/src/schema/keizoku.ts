@@ -19,6 +19,12 @@ export const keizokuFrequencyEnum = pgEnum("keizoku_frequency", [
 	"times_per_week",
 ]);
 
+export const keizokuTimeOfDayEnum = pgEnum("keizoku_time_of_day", [
+	"morning",
+	"anytime",
+	"evening",
+]);
+
 export const keizokuHabits = pgTable(
 	"keizoku_habits",
 	{
@@ -31,6 +37,7 @@ export const keizokuHabits = pgTable(
 		frequencyType: keizokuFrequencyEnum("frequency_type").notNull(),
 		frequencyDays: integer("frequency_days").array(),
 		frequencyTarget: integer("frequency_target"),
+		timeOfDay: keizokuTimeOfDayEnum("time_of_day").notNull().default("anytime"),
 		requiresPhoto: boolean("requires_photo").notNull().default(false),
 		archivedAt: timestamp("archived_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
