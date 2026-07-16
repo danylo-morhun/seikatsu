@@ -4,7 +4,13 @@ import { Spinner } from "@/components/Spinner";
 import type { KeizokuHabit } from "@/features/keizoku/actions/habits";
 import { updateHabit } from "@/features/keizoku/actions/habits";
 import { FrequencyPicker } from "@/features/keizoku/components/FrequencyPicker";
-import { EMOJI_PRESETS, type FrequencyType } from "@/features/keizoku/lib/constants";
+import {
+	EMOJI_PRESETS,
+	type FrequencyType,
+	TIME_OF_DAY_LABELS,
+	TIME_OF_DAY_VALUES,
+	type TimeOfDay,
+} from "@/features/keizoku/lib/constants";
 import {
 	Button,
 	Checkbox,
@@ -14,6 +20,11 @@ import {
 	DialogTitle,
 	Input,
 	Label,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	cn,
 } from "@seikatsu/ui";
 import { useRouter } from "next/navigation";
@@ -36,6 +47,7 @@ export function EditHabitModal({ habit, open, onOpenChange, onChange }: Props) {
 	const [frequencyType, setFrequencyType] = useState<FrequencyType>(habit.frequencyType);
 	const [frequencyDays, setFrequencyDays] = useState<number[]>(habit.frequencyDays ?? []);
 	const [frequencyTarget, setFrequencyTarget] = useState(String(habit.frequencyTarget ?? 3));
+	const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(habit.timeOfDay);
 	const [requiresPhoto, setRequiresPhoto] = useState(habit.requiresPhoto);
 
 	useEffect(() => {
@@ -45,6 +57,7 @@ export function EditHabitModal({ habit, open, onOpenChange, onChange }: Props) {
 		setFrequencyType(habit.frequencyType);
 		setFrequencyDays(habit.frequencyDays ?? []);
 		setFrequencyTarget(String(habit.frequencyTarget ?? 3));
+		setTimeOfDay(habit.timeOfDay);
 		setRequiresPhoto(habit.requiresPhoto);
 	}, [open, habit]);
 
@@ -62,6 +75,7 @@ export function EditHabitModal({ habit, open, onOpenChange, onChange }: Props) {
 			frequencyDays: frequencyType === "weekdays" ? frequencyDays : undefined,
 			frequencyTarget:
 				frequencyType === "times_per_week" ? Number.parseInt(frequencyTarget, 10) : undefined,
+			timeOfDay,
 			requiresPhoto,
 		});
 		setSaving(false);
@@ -120,6 +134,21 @@ export function EditHabitModal({ habit, open, onOpenChange, onChange }: Props) {
 						onFrequencyDaysChange={setFrequencyDays}
 						onFrequencyTargetChange={setFrequencyTarget}
 					/>
+					<div className="space-y-1.5">
+						<Label>Time of day</Label>
+						<Select value={timeOfDay} onValueChange={(v) => setTimeOfDay(v as TimeOfDay)}>
+							<SelectTrigger>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{TIME_OF_DAY_VALUES.map((t) => (
+									<SelectItem key={t} value={t}>
+										{TIME_OF_DAY_LABELS[t]}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 					<label htmlFor="edit-habit-requires-photo" className="flex items-center gap-2 text-sm">
 						<Checkbox
 							id="edit-habit-requires-photo"
