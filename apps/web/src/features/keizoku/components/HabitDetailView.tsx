@@ -48,14 +48,14 @@ export function HabitDetailView({ habit, logs, streak, completionRate }: Props) 
 				Today
 			</Link>
 
-			<div className="mb-5 flex items-start justify-between">
-				<div className="flex items-center gap-3">
+			<div className="mb-5 flex items-start justify-between gap-3">
+				<div className="flex min-w-0 items-center gap-3">
 					<span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted text-xl">
 						{habit.emoji}
 					</span>
-					<div>
-						<h1 className="text-lg font-semibold">{habit.name}</h1>
-						<p className="text-xs text-muted-foreground">
+					<div className="min-w-0">
+						<h1 className="truncate text-lg font-semibold">{habit.name}</h1>
+						<p className="truncate text-xs text-muted-foreground">
 							{completionRate}% completion · last 30 days
 						</p>
 					</div>
