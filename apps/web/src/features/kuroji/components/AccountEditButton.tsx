@@ -2,9 +2,9 @@
 
 import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import { EditAccountModal } from "@/features/kuroji/components/EditAccountModal";
-import { Button } from "@seikatsu/ui";
 import { PencilEdit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { Button } from "@seikatsu/ui";
 import { useState } from "react";
 
 type Account = Awaited<ReturnType<typeof getAccounts>>[number];

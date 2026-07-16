@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@seikatsu/ui";
 import { Moon02Icon, Sun01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { Button } from "@seikatsu/ui";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 

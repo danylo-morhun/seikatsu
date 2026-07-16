@@ -4,6 +4,8 @@ import { Spinner } from "@/components/Spinner";
 import { createCard } from "@/features/seiryu/actions/cards";
 import type { CardData } from "@/features/seiryu/components/KanbanCard";
 import type { ColumnData } from "@/features/seiryu/components/KanbanColumn";
+import { Add01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
 	Dialog,
@@ -17,8 +19,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@seikatsu/ui";
-import { Add01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -112,7 +112,11 @@ export function SeiryuMobileAddFab({ columns, projectId, onCardAdded }: Props) {
 							className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
 						/>
 
-						<Button type="submit" disabled={isPending || !title.trim() || !columnId} className="gap-1.5">
+						<Button
+							type="submit"
+							disabled={isPending || !title.trim() || !columnId}
+							className="gap-1.5"
+						>
 							{isPending && <Spinner className="h-3.5 w-3.5" />}
 							{isPending ? "Adding…" : "Add card"}
 						</Button>

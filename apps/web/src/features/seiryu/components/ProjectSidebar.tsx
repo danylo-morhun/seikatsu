@@ -24,7 +24,13 @@ interface Props {
 	onProjectSelect?: () => void;
 }
 
-export function ProjectSidebar({ projects, workspaceId, activeProjectId, cardCounts, onProjectSelect }: Props) {
+export function ProjectSidebar({
+	projects,
+	workspaceId,
+	activeProjectId,
+	cardCounts,
+	onProjectSelect,
+}: Props) {
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [isCreating, setIsCreating] = useState(false);
@@ -136,10 +142,15 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, cardCou
 											key={c}
 											type="button"
 											aria-label={c}
-											onMouseDown={(e) => { e.preventDefault(); setEditColor(c); }}
+											onMouseDown={(e) => {
+												e.preventDefault();
+												setEditColor(c);
+											}}
 											className={cn(
 												"h-4 w-4 shrink-0 rounded-full ring-offset-background transition-shadow",
-												editColor === c ? "ring-2 ring-ring ring-offset-1" : "hover:ring-2 hover:ring-ring/50 hover:ring-offset-1",
+												editColor === c
+													? "ring-2 ring-ring ring-offset-1"
+													: "hover:ring-2 hover:ring-ring/50 hover:ring-offset-1",
 											)}
 											style={{ backgroundColor: c }}
 										/>
@@ -151,8 +162,14 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, cardCou
 									onChange={(e) => setEditName(e.target.value)}
 									onBlur={() => handleRenameSubmit(project.id, project.name, project.color)}
 									onKeyDown={(e) => {
-										if (e.key === "Escape") { e.preventDefault(); handleRenameCancel(); }
-										if (e.key === "Enter") { e.preventDefault(); handleRenameSubmit(project.id, project.name, project.color); }
+										if (e.key === "Escape") {
+											e.preventDefault();
+											handleRenameCancel();
+										}
+										if (e.key === "Enter") {
+											e.preventDefault();
+											handleRenameSubmit(project.id, project.name, project.color);
+										}
 									}}
 									className="flex-1 bg-transparent text-sm text-foreground outline-none"
 								/>
@@ -177,8 +194,8 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, cardCou
 								)}
 							</button>
 						)}
-						{!isEditingThis && (
-							isDeleting ? (
+						{!isEditingThis &&
+							(isDeleting ? (
 								<span className="pr-2">
 									<Spinner className="h-3.5 w-3.5" />
 								</span>
@@ -201,8 +218,7 @@ export function ProjectSidebar({ projects, workspaceId, activeProjectId, cardCou
 										×
 									</button>
 								</div>
-							)
-						)}
+							))}
 					</div>
 				);
 			})}

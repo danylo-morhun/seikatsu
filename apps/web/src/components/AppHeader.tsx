@@ -5,9 +5,9 @@ import { AddTransactionModal } from "@/features/kuroji/components/AddTransaction
 import { DateRangePicker } from "@/features/kuroji/components/DateRangePicker";
 import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
 import { getAppForPath } from "@/lib/app-themes";
-import { SidebarTrigger, cn } from "@seikatsu/ui";
 import { Chart01Icon, Clock01Icon, Wallet01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { SidebarTrigger, cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 

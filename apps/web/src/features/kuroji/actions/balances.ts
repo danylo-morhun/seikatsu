@@ -77,7 +77,14 @@ export async function getBalances(
 		.leftJoin(transactionEntries, eq(transactionEntries.accountId, accounts.id))
 		.leftJoin(transactions, and(eq(transactions.id, transactionEntries.transactionId)))
 		.where(and(eq(accounts.workspaceId, workspaceId), isNull(accounts.archivedAt)))
-		.groupBy(accounts.id, accounts.parentId, accounts.name, accounts.type, accounts.currency, accounts.hiddenFromDashboard);
+		.groupBy(
+			accounts.id,
+			accounts.parentId,
+			accounts.name,
+			accounts.type,
+			accounts.currency,
+			accounts.hiddenFromDashboard,
+		);
 
 	// Roll up children's baseAmount into parent balance
 	const mutable = rows.map((r) => ({

@@ -16,6 +16,9 @@ import {
 	addTransactionFormSchema,
 } from "@/features/kuroji/lib/transaction-schema";
 import { useRefreshRouter } from "@/hooks/useRefreshRouter";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Add01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
 	Dialog,
@@ -35,10 +38,7 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@seikatsu/ui";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Add01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { format } from "date-fns";
-import { HugeiconsIcon } from "@hugeicons/react";
 import * as React from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import type { Control } from "react-hook-form";
@@ -326,7 +326,9 @@ export function AddTransactionModal({
 				<DialogHeader>
 					<DialogTitle className="flex items-center justify-between">
 						New Transaction
-						<kbd className="hidden md:inline-flex items-center rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">N</kbd>
+						<kbd className="hidden md:inline-flex items-center rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+							N
+						</kbd>
 					</DialogTitle>
 				</DialogHeader>
 
