@@ -2,6 +2,7 @@
 
 import { getOwnedHabit, getOwnedWorkspace } from "@/features/keizoku/actions/guard";
 import { logHabitSchema } from "@/features/keizoku/lib/keizoku-schemas";
+import { computeStreak } from "@/features/keizoku/lib/streak";
 import {
 	and,
 	db,
@@ -23,6 +24,7 @@ type Habit = typeof keizokuHabits.$inferSelect;
 export interface TodayHabit {
 	habit: Habit;
 	log: KeizokuHabitLog | null;
+	streak: number;
 }
 
 export async function getTodayHabits(workspaceId: string, date: string): Promise<TodayHabit[]> {
@@ -37,21 +39,31 @@ export async function getTodayHabits(workspaceId: string, date: string): Promise
 
 	if (habits.length === 0) return [];
 
-	const logs = await db
-		.select()
-		.from(keizokuHabitLogs)
-		.where(
-			and(
-				inArray(
-					keizokuHabitLogs.habitId,
-					habits.map((h) => h.id),
-				),
-				eq(keizokuHabitLogs.date, date),
-			),
-		);
+	const habitIds = habits.map((h) => h.id);
+	const [todayLogs, allLogs] = await Promise.all([
+		db
+			.select()
+			.from(keizokuHabitLogs)
+			.where(and(inArray(keizokuHabitLogs.habitId, habitIds), eq(keizokuHabitLogs.date, date))),
+		db
+			.select({ habitId: keizokuHabitLogs.habitId, date: keizokuHabitLogs.date })
+			.from(keizokuHabitLogs)
+			.where(inArray(keizokuHabitLogs.habitId, habitIds)),
+	]);
 
-	const logByHabit = new Map(logs.map((l) => [l.habitId, l]));
-	return habits.map((habit) => ({ habit, log: logByHabit.get(habit.id) ?? null }));
+	const logByHabit = new Map(todayLogs.map((l) => [l.habitId, l]));
+	const datesByHabit = new Map<string, string[]>();
+	for (const l of allLogs) {
+		const arr = datesByHabit.get(l.habitId);
+		if (arr) arr.push(l.date);
+		else datesByHabit.set(l.habitId, [l.date]);
+	}
+
+	return habits.map((habit) => ({
+		habit,
+		log: logByHabit.get(habit.id) ?? null,
+		streak: computeStreak(habit, datesByHabit.get(habit.id) ?? [], date).current,
+	}));
 }
 
 export async function logHabit(
