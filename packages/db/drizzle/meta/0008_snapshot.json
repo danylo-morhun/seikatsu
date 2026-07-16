@@ -1,6 +1,6 @@
 {
-	"id": "d512fd94-7ecc-44ee-894f-f1b6d2d6f41f",
-	"prevId": "831bc909-d391-4235-89ca-13260d43c48e",
+	"id": "f0008b1b-e920-4571-a483-569e89426081",
+	"prevId": "bbd1e656-5652-4e7e-a8d2-22d740e3992f",
 	"version": "7",
 	"dialect": "postgresql",
 	"tables": {
@@ -237,6 +237,207 @@
 					"columns": ["identifier", "token"]
 				}
 			},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.keizoku_habit_logs": {
+			"name": "keizoku_habit_logs",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"habit_id": {
+					"name": "habit_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"date": {
+					"name": "date",
+					"type": "date",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"photo_url": {
+					"name": "photo_url",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"note": {
+					"name": "note",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {
+				"keizoku_habit_logs_habit_date_idx": {
+					"name": "keizoku_habit_logs_habit_date_idx",
+					"columns": [
+						{
+							"expression": "habit_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						},
+						{
+							"expression": "date",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": true,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				},
+				"keizoku_habit_logs_habit_id_idx": {
+					"name": "keizoku_habit_logs_habit_id_idx",
+					"columns": [
+						{
+							"expression": "habit_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"keizoku_habit_logs_habit_id_keizoku_habits_id_fk": {
+					"name": "keizoku_habit_logs_habit_id_keizoku_habits_id_fk",
+					"tableFrom": "keizoku_habit_logs",
+					"tableTo": "keizoku_habits",
+					"columnsFrom": ["habit_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.keizoku_habits": {
+			"name": "keizoku_habits",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"workspace_id": {
+					"name": "workspace_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"emoji": {
+					"name": "emoji",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"frequency_type": {
+					"name": "frequency_type",
+					"type": "keizoku_frequency",
+					"typeSchema": "public",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"frequency_days": {
+					"name": "frequency_days",
+					"type": "integer[]",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"frequency_target": {
+					"name": "frequency_target",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"requires_photo": {
+					"name": "requires_photo",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": false
+				},
+				"archived_at": {
+					"name": "archived_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {
+				"keizoku_habits_workspace_id_idx": {
+					"name": "keizoku_habits_workspace_id_idx",
+					"columns": [
+						{
+							"expression": "workspace_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"keizoku_habits_workspace_id_workspaces_id_fk": {
+					"name": "keizoku_habits_workspace_id_workspaces_id_fk",
+					"tableFrom": "keizoku_habits",
+					"tableTo": "workspaces",
+					"columnsFrom": ["workspace_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
 			"uniqueConstraints": {},
 			"policies": {},
 			"checkConstraints": {},
@@ -1865,9 +2066,567 @@
 			"policies": {},
 			"checkConstraints": {},
 			"isRLSEnabled": false
+		},
+		"public.tsundoku_book_shelves": {
+			"name": "tsundoku_book_shelves",
+			"schema": "",
+			"columns": {
+				"book_id": {
+					"name": "book_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"shelf_id": {
+					"name": "shelf_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				}
+			},
+			"indexes": {
+				"tsundoku_book_shelves_book_id_idx": {
+					"name": "tsundoku_book_shelves_book_id_idx",
+					"columns": [
+						{
+							"expression": "book_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				},
+				"tsundoku_book_shelves_shelf_id_idx": {
+					"name": "tsundoku_book_shelves_shelf_id_idx",
+					"columns": [
+						{
+							"expression": "shelf_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"tsundoku_book_shelves_book_id_tsundoku_books_id_fk": {
+					"name": "tsundoku_book_shelves_book_id_tsundoku_books_id_fk",
+					"tableFrom": "tsundoku_book_shelves",
+					"tableTo": "tsundoku_books",
+					"columnsFrom": ["book_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				},
+				"tsundoku_book_shelves_shelf_id_tsundoku_shelves_id_fk": {
+					"name": "tsundoku_book_shelves_shelf_id_tsundoku_shelves_id_fk",
+					"tableFrom": "tsundoku_book_shelves",
+					"tableTo": "tsundoku_shelves",
+					"columnsFrom": ["shelf_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {
+				"tsundoku_book_shelves_book_id_shelf_id_pk": {
+					"name": "tsundoku_book_shelves_book_id_shelf_id_pk",
+					"columns": ["book_id", "shelf_id"]
+				}
+			},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.tsundoku_books": {
+			"name": "tsundoku_books",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"workspace_id": {
+					"name": "workspace_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"title": {
+					"name": "title",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"authors": {
+					"name": "authors",
+					"type": "text[]",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"isbn": {
+					"name": "isbn",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"cover_url": {
+					"name": "cover_url",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"ol_key": {
+					"name": "ol_key",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"page_count": {
+					"name": "page_count",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"published_year": {
+					"name": "published_year",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"description": {
+					"name": "description",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"genre": {
+					"name": "genre",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"series_name": {
+					"name": "series_name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"series_position": {
+					"name": "series_position",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"source": {
+					"name": "source",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "'openlibrary'"
+				},
+				"status": {
+					"name": "status",
+					"type": "tsundoku_book_status",
+					"typeSchema": "public",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "'want'"
+				},
+				"rating": {
+					"name": "rating",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"review": {
+					"name": "review",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"current_page": {
+					"name": "current_page",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"default": 0
+				},
+				"started_at": {
+					"name": "started_at",
+					"type": "date",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"finished_at": {
+					"name": "finished_at",
+					"type": "date",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"position": {
+					"name": "position",
+					"type": "varchar(255)",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {
+				"tsundoku_books_workspace_id_idx": {
+					"name": "tsundoku_books_workspace_id_idx",
+					"columns": [
+						{
+							"expression": "workspace_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"tsundoku_books_workspace_id_workspaces_id_fk": {
+					"name": "tsundoku_books_workspace_id_workspaces_id_fk",
+					"tableFrom": "tsundoku_books",
+					"tableTo": "workspaces",
+					"columnsFrom": ["workspace_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.tsundoku_goals": {
+			"name": "tsundoku_goals",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"workspace_id": {
+					"name": "workspace_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"year": {
+					"name": "year",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"target_books": {
+					"name": "target_books",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {
+				"tsundoku_goals_workspace_year_idx": {
+					"name": "tsundoku_goals_workspace_year_idx",
+					"columns": [
+						{
+							"expression": "workspace_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						},
+						{
+							"expression": "year",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": true,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"tsundoku_goals_workspace_id_workspaces_id_fk": {
+					"name": "tsundoku_goals_workspace_id_workspaces_id_fk",
+					"tableFrom": "tsundoku_goals",
+					"tableTo": "workspaces",
+					"columnsFrom": ["workspace_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.tsundoku_quotes": {
+			"name": "tsundoku_quotes",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"book_id": {
+					"name": "book_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"page": {
+					"name": "page",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"text": {
+					"name": "text",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {
+				"tsundoku_quotes_book_id_idx": {
+					"name": "tsundoku_quotes_book_id_idx",
+					"columns": [
+						{
+							"expression": "book_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"tsundoku_quotes_book_id_tsundoku_books_id_fk": {
+					"name": "tsundoku_quotes_book_id_tsundoku_books_id_fk",
+					"tableFrom": "tsundoku_quotes",
+					"tableTo": "tsundoku_books",
+					"columnsFrom": ["book_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.tsundoku_sessions": {
+			"name": "tsundoku_sessions",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"book_id": {
+					"name": "book_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"date": {
+					"name": "date",
+					"type": "date",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"pages_read": {
+					"name": "pages_read",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {
+				"tsundoku_sessions_book_id_idx": {
+					"name": "tsundoku_sessions_book_id_idx",
+					"columns": [
+						{
+							"expression": "book_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"tsundoku_sessions_book_id_tsundoku_books_id_fk": {
+					"name": "tsundoku_sessions_book_id_tsundoku_books_id_fk",
+					"tableFrom": "tsundoku_sessions",
+					"tableTo": "tsundoku_books",
+					"columnsFrom": ["book_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.tsundoku_shelves": {
+			"name": "tsundoku_shelves",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"workspace_id": {
+					"name": "workspace_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"color": {
+					"name": "color",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"position": {
+					"name": "position",
+					"type": "varchar(255)",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {
+				"tsundoku_shelves_workspace_id_idx": {
+					"name": "tsundoku_shelves_workspace_id_idx",
+					"columns": [
+						{
+							"expression": "workspace_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"tsundoku_shelves_workspace_id_workspaces_id_fk": {
+					"name": "tsundoku_shelves_workspace_id_workspaces_id_fk",
+					"tableFrom": "tsundoku_shelves",
+					"tableTo": "workspaces",
+					"columnsFrom": ["workspace_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
 		}
 	},
 	"enums": {
+		"public.keizoku_frequency": {
+			"name": "keizoku_frequency",
+			"schema": "public",
+			"values": ["daily", "weekdays", "times_per_week"]
+		},
 		"public.account_type": {
 			"name": "account_type",
 			"schema": "public",
@@ -1887,6 +2646,11 @@
 			"name": "seiryu_card_priority",
 			"schema": "public",
 			"values": ["low", "medium", "high", "urgent"]
+		},
+		"public.tsundoku_book_status": {
+			"name": "tsundoku_book_status",
+			"schema": "public",
+			"values": ["want", "reading", "read", "dnf", "paused"]
 		}
 	},
 	"schemas": {},
