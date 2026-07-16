@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { FREQUENCY_TYPES } from "./constants";
+import { FREQUENCY_TYPES, TIME_OF_DAY_VALUES } from "./constants";
 
 const optionalText = z
 	.string()
@@ -13,6 +13,7 @@ export const habitFormSchema = z
 		frequencyType: z.enum(FREQUENCY_TYPES),
 		frequencyDays: z.array(z.number().int().min(0).max(6)).optional(),
 		frequencyTarget: z.number().int().min(1).max(7).optional(),
+		timeOfDay: z.enum(TIME_OF_DAY_VALUES).default("anytime"),
 		requiresPhoto: z.boolean().default(false),
 	})
 	.superRefine((v, ctx) => {
