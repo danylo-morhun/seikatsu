@@ -5,6 +5,7 @@ import { archiveHabit, unarchiveHabit } from "@/features/keizoku/actions/habits"
 import type { KeizokuHabitLog } from "@/features/keizoku/actions/logs";
 import { EditHabitModal } from "@/features/keizoku/components/EditHabitModal";
 import { HabitCalendarGrid } from "@/features/keizoku/components/HabitCalendarGrid";
+import { PhotoGallery } from "@/features/keizoku/components/PhotoGallery";
 import { StreakBadge } from "@/features/keizoku/components/StreakBadge";
 import type { StreakResult } from "@/features/keizoku/lib/streak";
 import { Archive01Icon, ArrowLeft01Icon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
@@ -18,11 +19,12 @@ import { toast } from "sonner";
 interface Props {
 	habit: KeizokuHabit;
 	logs: KeizokuHabitLog[];
+	photos: KeizokuHabitLog[];
 	streak: StreakResult;
 	completionRate: number;
 }
 
-export function HabitDetailView({ habit, logs, streak, completionRate }: Props) {
+export function HabitDetailView({ habit, logs, photos, streak, completionRate }: Props) {
 	const router = useRouter();
 	const [editOpen, setEditOpen] = useState(false);
 	const [pending, startTransition] = useTransition();
@@ -75,6 +77,10 @@ export function HabitDetailView({ habit, logs, streak, completionRate }: Props) 
 			</div>
 
 			<HabitCalendarGrid habit={habit} logs={logs} />
+
+			<div className="mt-6">
+				<PhotoGallery photos={photos} />
+			</div>
 
 			<EditHabitModal habit={habit} open={editOpen} onOpenChange={setEditOpen} />
 		</main>

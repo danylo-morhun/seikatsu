@@ -10,6 +10,7 @@ import {
 	eq,
 	gte,
 	inArray,
+	isNotNull,
 	isNull,
 	keizokuHabitLogs,
 	keizokuHabits,
@@ -150,5 +151,16 @@ export async function getHabitLogs(
 		.select()
 		.from(keizokuHabitLogs)
 		.where(and(...conditions))
+		.orderBy(desc(keizokuHabitLogs.date));
+}
+
+export async function getHabitPhotos(habitId: string): Promise<KeizokuHabitLog[]> {
+	const habit = await getOwnedHabit(habitId);
+	if (!habit) return [];
+
+	return db
+		.select()
+		.from(keizokuHabitLogs)
+		.where(and(eq(keizokuHabitLogs.habitId, habitId), isNotNull(keizokuHabitLogs.photoUrl)))
 		.orderBy(desc(keizokuHabitLogs.date));
 }

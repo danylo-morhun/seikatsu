@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { getOwnedHabit } from "@/features/keizoku/actions/guard";
-import { getHabitLogs } from "@/features/keizoku/actions/logs";
+import { getHabitLogs, getHabitPhotos } from "@/features/keizoku/actions/logs";
 import { getHabitCompletionRate, getHabitStreaks } from "@/features/keizoku/actions/stats";
 import { HabitDetailView } from "@/features/keizoku/components/HabitDetailView";
 import { notFound, redirect } from "next/navigation";
@@ -24,8 +24,9 @@ export default async function HabitPage({ params }: { params: Promise<{ habitId:
 		.toISOString()
 		.slice(0, 10);
 
-	const [logs, streak, completionRate] = await Promise.all([
+	const [logs, photos, streak, completionRate] = await Promise.all([
 		getHabitLogs(habitId, fromHeatmap, to),
+		getHabitPhotos(habitId),
 		getHabitStreaks(habitId, to),
 		getHabitCompletionRate(habitId, from30, to),
 	]);
@@ -34,6 +35,7 @@ export default async function HabitPage({ params }: { params: Promise<{ habitId:
 		<HabitDetailView
 			habit={habit}
 			logs={logs}
+			photos={photos}
 			streak={streak ?? { current: 0, best: 0 }}
 			completionRate={completionRate ?? 0}
 		/>
