@@ -19,11 +19,13 @@ export default async function HabitPage({ params }: { params: Promise<{ habitId:
 
 	const to = today();
 	const now = new Date();
-	const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
 	const from30 = new Date(now.getTime() - 29 * 86_400_000).toISOString().slice(0, 10);
+	const fromHeatmap = new Date(now.getTime() - (53 * 7 - 1) * 86_400_000)
+		.toISOString()
+		.slice(0, 10);
 
-	const [initialLogs, streak, completionRate] = await Promise.all([
-		getHabitLogs(habitId, monthStart, to),
+	const [logs, streak, completionRate] = await Promise.all([
+		getHabitLogs(habitId, fromHeatmap, to),
 		getHabitStreaks(habitId, to),
 		getHabitCompletionRate(habitId, from30, to),
 	]);
@@ -31,7 +33,7 @@ export default async function HabitPage({ params }: { params: Promise<{ habitId:
 	return (
 		<HabitDetailView
 			habit={habit}
-			initialLogs={initialLogs}
+			logs={logs}
 			streak={streak ?? { current: 0, best: 0 }}
 			completionRate={completionRate ?? 0}
 		/>

@@ -17,16 +17,15 @@ import { toast } from "sonner";
 
 interface Props {
 	habit: KeizokuHabit;
-	initialLogs: KeizokuHabitLog[];
+	logs: KeizokuHabitLog[];
 	streak: StreakResult;
 	completionRate: number;
 }
 
-export function HabitDetailView({ habit, initialLogs, streak, completionRate }: Props) {
+export function HabitDetailView({ habit, logs, streak, completionRate }: Props) {
 	const router = useRouter();
 	const [editOpen, setEditOpen] = useState(false);
 	const [pending, startTransition] = useTransition();
-	const now = new Date();
 
 	function toggleArchive() {
 		startTransition(async () => {
@@ -75,12 +74,7 @@ export function HabitDetailView({ habit, initialLogs, streak, completionRate }: 
 				<StreakBadge current={streak.current} best={streak.best} />
 			</div>
 
-			<HabitCalendarGrid
-				habitId={habit.id}
-				initialLogs={initialLogs}
-				initialYear={now.getFullYear()}
-				initialMonth={now.getMonth()}
-			/>
+			<HabitCalendarGrid habit={habit} logs={logs} />
 
 			<EditHabitModal habit={habit} open={editOpen} onOpenChange={setEditOpen} />
 		</main>
