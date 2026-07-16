@@ -39,7 +39,7 @@ export function HabitDetailView({ habit, logs, streak, completionRate }: Props) 
 	}
 
 	return (
-		<main className="mx-auto max-w-lg px-4 py-6 pb-24">
+		<main className="mx-auto max-w-3xl px-4 py-6 pb-24">
 			<Link
 				href="/keizoku"
 				className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
