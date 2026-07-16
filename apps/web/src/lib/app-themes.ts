@@ -26,6 +26,12 @@ export const APPS_CONFIG = {
 		kanji: "継",
 		description: "Habit tracker. Streaks, completion rate, and daily check-ins.",
 	},
+	"/kyuu": {
+		theme: "theme-kyuu",
+		name: "求 Kyuu",
+		kanji: "求",
+		description: "Job application tracker. Pipeline stages, sources, and status.",
+	},
 } satisfies Record<string, { theme: string; name: string; kanji: string; description: string }>;
 
 export const APP_THEMES = Object.fromEntries(
