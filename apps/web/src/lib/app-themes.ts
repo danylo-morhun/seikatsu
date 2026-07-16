@@ -20,6 +20,12 @@ export const APPS_CONFIG = {
 		kanji: "積",
 		description: "Books tracker. Library, reading progress, ratings, sessions, and stats.",
 	},
+	"/keizoku": {
+		theme: "theme-keizoku",
+		name: "継 Keizoku",
+		kanji: "継",
+		description: "Habit tracker. Streaks, completion rate, and daily check-ins.",
+	},
 } satisfies Record<string, { theme: string; name: string; kanji: string; description: string }>;
 
 export const APP_THEMES = Object.fromEntries(
