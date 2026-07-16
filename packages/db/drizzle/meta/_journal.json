@@ -1,76 +1,83 @@
 {
-  "version": "7",
-  "dialect": "postgresql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1780069712561,
-      "tag": "0000_nifty_grey_gargoyle",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1780144770523,
-      "tag": "0001_messy_lester",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1780146762622,
-      "tag": "0002_uneven_kulan_gath",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1780179605563,
-      "tag": "0003_married_strong_guy",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1780347893239,
-      "tag": "0004_rename_tasso_to_seiryu",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1780756648093,
-      "tag": "0005_silly_morg",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1781357082063,
-      "tag": "0006_good_silver_fox",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1781396316722,
-      "tag": "0007_common_wallop",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1784208921762,
-      "tag": "0008_lying_fabian_cortez",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1784215083709,
-      "tag": "0009_same_deathstrike",
-      "breakpoints": true
-    }
-  ]
+	"version": "7",
+	"dialect": "postgresql",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "7",
+			"when": 1780069712561,
+			"tag": "0000_nifty_grey_gargoyle",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "7",
+			"when": 1780144770523,
+			"tag": "0001_messy_lester",
+			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1780146762622,
+			"tag": "0002_uneven_kulan_gath",
+			"breakpoints": true
+		},
+		{
+			"idx": 3,
+			"version": "7",
+			"when": 1780179605563,
+			"tag": "0003_married_strong_guy",
+			"breakpoints": true
+		},
+		{
+			"idx": 4,
+			"version": "7",
+			"when": 1780347893239,
+			"tag": "0004_rename_tasso_to_seiryu",
+			"breakpoints": true
+		},
+		{
+			"idx": 5,
+			"version": "7",
+			"when": 1780756648093,
+			"tag": "0005_silly_morg",
+			"breakpoints": true
+		},
+		{
+			"idx": 6,
+			"version": "7",
+			"when": 1781357082063,
+			"tag": "0006_good_silver_fox",
+			"breakpoints": true
+		},
+		{
+			"idx": 7,
+			"version": "7",
+			"when": 1781396316722,
+			"tag": "0007_common_wallop",
+			"breakpoints": true
+		},
+		{
+			"idx": 8,
+			"version": "7",
+			"when": 1784208921762,
+			"tag": "0008_lying_fabian_cortez",
+			"breakpoints": true
+		},
+		{
+			"idx": 9,
+			"version": "7",
+			"when": 1784215083709,
+			"tag": "0009_same_deathstrike",
+			"breakpoints": true
+		},
+		{
+			"idx": 10,
+			"version": "7",
+			"when": 1784223609895,
+			"tag": "0010_foamy_lockjaw",
+			"breakpoints": true
+		}
+	]
 }

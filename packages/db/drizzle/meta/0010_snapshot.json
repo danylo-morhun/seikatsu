@@ -1,6 +1,6 @@
 {
-	"id": "97f3a24a-d16d-46ec-aa22-cd52d8e52c14",
-	"prevId": "f0008b1b-e920-4571-a483-569e89426081",
+	"id": "aab511d0-03db-453c-a4fa-a058a7af7509",
+	"prevId": "97f3a24a-d16d-46ec-aa22-cd52d8e52c14",
 	"version": "7",
 	"dialect": "postgresql",
 	"tables": {
@@ -1540,6 +1540,158 @@
 			"checkConstraints": {},
 			"isRLSEnabled": false
 		},
+		"public.kyuu_applications": {
+			"name": "kyuu_applications",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"workspace_id": {
+					"name": "workspace_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"company": {
+					"name": "company",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"role": {
+					"name": "role",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"job_url": {
+					"name": "job_url",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"source": {
+					"name": "source",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"status": {
+					"name": "status",
+					"type": "kyuu_status",
+					"typeSchema": "public",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "'applied'"
+				},
+				"hr_screening": {
+					"name": "hr_screening",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": false
+				},
+				"technical_interview": {
+					"name": "technical_interview",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": false
+				},
+				"offer": {
+					"name": "offer",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": false
+				},
+				"date_applied": {
+					"name": "date_applied",
+					"type": "date",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"notes": {
+					"name": "notes",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"archived_at": {
+					"name": "archived_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {
+				"kyuu_applications_workspace_id_idx": {
+					"name": "kyuu_applications_workspace_id_idx",
+					"columns": [
+						{
+							"expression": "workspace_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				},
+				"kyuu_applications_status_idx": {
+					"name": "kyuu_applications_status_idx",
+					"columns": [
+						{
+							"expression": "status",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"kyuu_applications_workspace_id_workspaces_id_fk": {
+					"name": "kyuu_applications_workspace_id_workspaces_id_fk",
+					"tableFrom": "kyuu_applications",
+					"tableTo": "workspaces",
+					"columnsFrom": ["workspace_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
 		"public.seiryu_card_labels": {
 			"name": "seiryu_card_labels",
 			"schema": "",
@@ -2654,6 +2806,11 @@
 			"name": "bank_connection_status",
 			"schema": "public",
 			"values": ["CREATED", "LINKED", "EXPIRED", "ERROR"]
+		},
+		"public.kyuu_status": {
+			"name": "kyuu_status",
+			"schema": "public",
+			"values": ["applied", "hr_screening", "technical_interview", "offer", "rejected", "withdrawn"]
 		},
 		"public.seiryu_card_priority": {
 			"name": "seiryu_card_priority",
