@@ -20,13 +20,13 @@ function toIso(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function addDays(iso: string, n: number): string {
+export function addDays(iso: string, n: number): string {
 	const d = toDate(iso);
 	d.setDate(d.getDate() + n);
 	return toIso(d);
 }
 
-function isScheduled(habit: HabitSchedule, dateIso: string): boolean {
+export function isScheduled(habit: HabitSchedule, dateIso: string): boolean {
 	if (habit.frequencyType === "daily") return true;
 	if (habit.frequencyType === "weekdays") {
 		return habit.frequencyDays?.includes(toDate(dateIso).getDay()) ?? false;
