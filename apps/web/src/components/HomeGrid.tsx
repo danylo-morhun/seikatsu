@@ -1,20 +1,12 @@
 import { signOutAction } from "@/features/auth/actions/auth";
+import { KeizokuHomeWidget } from "@/features/keizoku/components/KeizokuHomeWidget";
 import { APPS_CONFIG } from "@/lib/app-themes";
-import { Avatar, cn } from "@seikatsu/ui";
 import { ArrowRight01Icon, Logout01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { Avatar, cn } from "@seikatsu/ui";
 import Link from "next/link";
 
 const PLANNED_APPS = [
-	{
-		name: "習 Habits",
-		kanji: "習",
-		description: "Daily habit tracking and streak building.",
-		textClass: "text-emerald-400",
-		bgTintClass: "bg-emerald-400/10",
-		ringClass: "ring-emerald-400/20",
-		accentBarClass: "bg-emerald-400",
-	},
 	{
 		name: "書 Books",
 		kanji: "書",
@@ -45,6 +37,7 @@ function getGreeting() {
 
 interface Props {
 	user: {
+		id: string;
 		name?: string | null;
 		email?: string | null;
 		image?: string | null;
@@ -136,6 +129,7 @@ export function HomeGrid({ user }: Props) {
 									<p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
 										{app.description}
 									</p>
+									{href === "/keizoku" && <KeizokuHomeWidget userId={user.id} />}
 								</div>
 							</Link>
 						))}
