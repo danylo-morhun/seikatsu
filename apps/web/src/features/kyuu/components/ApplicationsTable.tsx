@@ -98,8 +98,7 @@ export function ApplicationsTable({ applications, sources, statusFilter }: Props
 
 	return (
 		<section>
-			<div className="mb-4 flex items-center justify-between gap-3">
-				<h2 className="text-lg font-semibold">Applications</h2>
+			<div className="mb-4 flex items-center justify-end">
 				<Select value={statusFilter ?? "all"} onValueChange={filterByStatus}>
 					<SelectTrigger className="h-8 w-44">
 						<SelectValue placeholder="All statuses" />
@@ -114,15 +113,15 @@ export function ApplicationsTable({ applications, sources, statusFilter }: Props
 					</SelectContent>
 				</Select>
 			</div>
-			<div className="rounded-lg border">
-				<Table>
+			<div className="overflow-x-auto rounded-lg border">
+				<Table className="min-w-[860px]">
 					<TableHeader>
 						<TableRow>
-							<TableHead>Date</TableHead>
+							<TableHead className="whitespace-nowrap">Date</TableHead>
 							<TableHead>Company</TableHead>
-							<TableHead>Role</TableHead>
-							<TableHead>Source</TableHead>
-							<TableHead>Status</TableHead>
+							<TableHead className="w-full">Role</TableHead>
+							<TableHead className="whitespace-nowrap">Source</TableHead>
+							<TableHead className="whitespace-nowrap">Status</TableHead>
 							<TableHead className="text-center">HR</TableHead>
 							<TableHead className="text-center">Tech</TableHead>
 							<TableHead className="text-center">Offer</TableHead>
@@ -149,23 +148,32 @@ export function ApplicationsTable({ applications, sources, statusFilter }: Props
 									<TableCell className="text-muted-foreground whitespace-nowrap">
 										{fmtDate(app.dateApplied)}
 									</TableCell>
-									<TableCell className="font-medium">{app.company}</TableCell>
-									<TableCell>
+									<TableCell className="max-w-[180px] font-medium">
+										<div className="truncate" title={app.company}>
+											{app.company}
+										</div>
+									</TableCell>
+									<TableCell className="max-w-0 w-full">
 										{app.jobUrl ? (
 											<a
 												href={app.jobUrl}
 												target="_blank"
 												rel="noopener noreferrer"
-												className="hover:underline underline-offset-2"
+												title={app.role}
+												className="block truncate hover:underline underline-offset-2"
 											>
 												{app.role}
 											</a>
 										) : (
-											app.role
+											<div className="truncate" title={app.role}>
+												{app.role}
+											</div>
 										)}
 									</TableCell>
-									<TableCell className="text-muted-foreground">{app.source ?? "—"}</TableCell>
-									<TableCell>
+									<TableCell className="text-muted-foreground whitespace-nowrap">
+										{app.source ?? "—"}
+									</TableCell>
+									<TableCell className="whitespace-nowrap">
 										<StatusBadge status={app.status} />
 									</TableCell>
 									<TableCell className="text-center">
