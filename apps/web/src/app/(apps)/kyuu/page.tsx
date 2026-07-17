@@ -29,9 +29,15 @@ export default async function KyuuPage({
 	]);
 
 	return (
-		<div className="space-y-6">
-			<div className="flex items-center justify-between">
-				<h1 className="text-2xl font-semibold">求 Kyuu</h1>
+		<div className="px-4 py-6 md:px-8">
+			<div className="mb-5 flex items-center justify-between">
+				<div>
+					<h1 className="text-lg font-semibold">Applications</h1>
+					<p className="text-sm text-muted-foreground">
+						{applications.length} application{applications.length !== 1 ? "s" : ""}
+						{status ? " matching filter" : ""}
+					</p>
+				</div>
 				<AddApplicationModal workspaceId={workspace.id} sources={sources} />
 			</div>
 			<ApplicationsTable applications={applications} sources={sources} statusFilter={status} />
