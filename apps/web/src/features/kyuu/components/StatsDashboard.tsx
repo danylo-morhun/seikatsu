@@ -1,6 +1,7 @@
 import type { KyuuStats } from "@/features/kyuu/actions/stats";
 import { Card, CardContent, CardHeader, CardTitle } from "@seikatsu/ui";
 import { FunnelCard } from "./FunnelCard";
+import { KyuuFilterBar } from "./KyuuFilterBar";
 import { SourceChart } from "./SourceChart";
 import { WeeklyTrendChart } from "./WeeklyTrendChart";
 
@@ -16,7 +17,7 @@ function Kpi({ label, value, sub }: { label: string; value: string; sub?: string
 	);
 }
 
-export function StatsDashboard({ stats }: { stats: KyuuStats }) {
+export function StatsDashboard({ stats, sources }: { stats: KyuuStats; sources: string[] }) {
 	const rejected = stats.byStatus.rejected ?? 0;
 	const withdrawn = stats.byStatus.withdrawn ?? 0;
 
@@ -26,6 +27,8 @@ export function StatsDashboard({ stats }: { stats: KyuuStats }) {
 				<h1 className="text-xl font-semibold">Stats</h1>
 				<p className="text-sm text-muted-foreground">Your job search at a glance</p>
 			</div>
+
+			<KyuuFilterBar sources={sources} />
 
 			<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 				<Kpi label="Applied" value={String(stats.total)} />
