@@ -5,7 +5,7 @@ import { Briefcase01Icon, ChartLineData01Icon } from "@hugeicons/core-free-icons
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 
 const TABS = [
@@ -13,18 +13,33 @@ const TABS = [
 	{ href: "/kyuu/stats", label: "Stats", icon: ChartLineData01Icon, exact: false },
 ] as const;
 
+// Filter params carry over between tabs; table-only params (sort/dir/page) don't.
+const CARRY_PARAMS = ["status", "source", "stage", "from", "to", "q"];
+
 export function KyuuNavTabs() {
 	const pathname = usePathname();
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const [isPending, startTransition] = useTransition();
+
+	function tabHref(href: string) {
+		const params = new URLSearchParams();
+		for (const key of CARRY_PARAMS) {
+			const value = searchParams.get(key);
+			if (value) params.set(key, value);
+		}
+		const qs = params.toString();
+		return qs ? `${href}?${qs}` : href;
+	}
 
 	function isActive(href: string, exact: boolean) {
 		return exact ? pathname === href : pathname.startsWith(href);
 	}
 
 	function nav(href: string) {
-		if (pathname === href) return;
-		startTransition(() => router.push(href));
+		const target = tabHref(href);
+		if (pathname === href && !searchParams.toString()) return;
+		startTransition(() => router.push(target));
 	}
 
 	return (
@@ -37,7 +52,7 @@ export function KyuuNavTabs() {
 					{TABS.map(({ href, label, icon, exact }) => (
 						<Link
 							key={href}
-							href={href}
+							href={tabHref(href)}
 							className={cn(
 								"flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-medium transition-colors",
 								isActive(href, exact)
