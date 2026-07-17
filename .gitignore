@@ -19,3 +19,6 @@ dist
 *.pem
 next-env.d.ts
 docs/
+
+# playwright mcp debug output
+.playwright-mcp
