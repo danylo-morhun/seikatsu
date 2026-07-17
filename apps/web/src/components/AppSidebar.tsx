@@ -5,6 +5,7 @@ import { APPS_CONFIG } from "@/lib/app-themes";
 import {
 	ArrowUpDownIcon,
 	Book01Icon,
+	Briefcase01Icon,
 	KanbanIcon,
 	Logout01Icon,
 	UserCircleIcon,
@@ -36,6 +37,7 @@ const APP_ICONS: Record<string, typeof YenSquareIcon> = {
 	"/kuroji": YenSquareIcon,
 	"/seiryu": KanbanIcon,
 	"/tsundoku": Book01Icon,
+	"/kyuu": Briefcase01Icon,
 };
 
 interface User {
