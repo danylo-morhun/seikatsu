@@ -25,11 +25,6 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
 	Table,
 	TableBody,
 	TableCell,
@@ -43,9 +38,10 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import type { getApplications } from "../actions/applications";
 import { deleteApplication } from "../actions/applications";
-import { kyuuStatusValues } from "../lib/kyuu-schemas";
+import { isIgnored } from "../lib/status";
 import { EditApplicationModal } from "./EditApplicationModal";
-import { STATUS_CONFIG, StatusBadge } from "./StatusBadge";
+import { KyuuFilterBar } from "./KyuuFilterBar";
+import { StatusBadge } from "./StatusBadge";
 
 type Application = Awaited<ReturnType<typeof getApplications>>[number];
 
@@ -61,13 +57,24 @@ function Check({ done }: { done: boolean }) {
 	);
 }
 
+const SORTABLE_COLUMNS = ["date", "company", "status"] as const;
+type SortColumn = (typeof SORTABLE_COLUMNS)[number];
+
 interface Props {
 	applications: Application[];
 	sources: string[];
-	statusFilter?: string;
+	hasFilters: boolean;
+	sortField: SortColumn;
+	sortDir: "asc" | "desc";
 }
 
-export function ApplicationsTable({ applications, sources, statusFilter }: Props) {
+export function ApplicationsTable({
+	applications,
+	sources,
+	hasFilters,
+	sortField,
+	sortDir,
+}: Props) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
@@ -76,11 +83,19 @@ export function ApplicationsTable({ applications, sources, statusFilter }: Props
 	const [pendingId, setPendingId] = useState<string | null>(null);
 	const [editTarget, setEditTarget] = useState<Application | null>(null);
 
-	function filterByStatus(value: string) {
+	function sortBy(field: SortColumn) {
 		const params = new URLSearchParams(searchParams.toString());
-		if (value === "all") params.delete("status");
-		else params.set("status", value);
+		if (sortField === field) {
+			params.set("dir", sortDir === "asc" ? "desc" : "asc");
+		} else {
+			params.set("sort", field);
+			params.delete("dir");
+		}
 		router.push(`${pathname}?${params.toString()}`);
+	}
+
+	function sortIndicator(field: SortColumn) {
+		return sortField === field ? (sortDir === "asc" ? "↑" : "↓") : "↕";
 	}
 
 	function handleDelete(id: string) {
@@ -98,30 +113,45 @@ export function ApplicationsTable({ applications, sources, statusFilter }: Props
 
 	return (
 		<section>
-			<div className="mb-4 flex items-center justify-end">
-				<Select value={statusFilter ?? "all"} onValueChange={filterByStatus}>
-					<SelectTrigger className="h-8 w-44">
-						<SelectValue placeholder="All statuses" />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="all">All statuses</SelectItem>
-						{kyuuStatusValues.map((s) => (
-							<SelectItem key={s} value={s}>
-								{STATUS_CONFIG[s].label}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+			<div className="mb-4">
+				<KyuuFilterBar sources={sources} />
 			</div>
 			<div className="overflow-x-auto rounded-lg border">
 				<Table className="min-w-[860px]">
 					<TableHeader>
 						<TableRow>
-							<TableHead className="whitespace-nowrap">Date</TableHead>
-							<TableHead>Company</TableHead>
+							<TableHead className="whitespace-nowrap">
+								<button
+									type="button"
+									className="flex items-center gap-1 hover:text-foreground"
+									onClick={() => sortBy("date")}
+								>
+									Date
+									<span className="text-muted-foreground/60">{sortIndicator("date")}</span>
+								</button>
+							</TableHead>
+							<TableHead>
+								<button
+									type="button"
+									className="flex items-center gap-1 hover:text-foreground"
+									onClick={() => sortBy("company")}
+								>
+									Company
+									<span className="text-muted-foreground/60">{sortIndicator("company")}</span>
+								</button>
+							</TableHead>
 							<TableHead className="w-full">Role</TableHead>
 							<TableHead className="whitespace-nowrap">Source</TableHead>
-							<TableHead className="whitespace-nowrap">Status</TableHead>
+							<TableHead className="whitespace-nowrap">
+								<button
+									type="button"
+									className="flex items-center gap-1 hover:text-foreground"
+									onClick={() => sortBy("status")}
+								>
+									Status
+									<span className="text-muted-foreground/60">{sortIndicator("status")}</span>
+								</button>
+							</TableHead>
 							<TableHead className="text-center">HR</TableHead>
 							<TableHead className="text-center">Tech</TableHead>
 							<TableHead className="text-center">Offer</TableHead>
@@ -133,9 +163,9 @@ export function ApplicationsTable({ applications, sources, statusFilter }: Props
 							<TableRow>
 								<TableCell colSpan={9} className="py-12 text-center">
 									<p className="text-sm font-medium text-muted-foreground">
-										{statusFilter ? "No applications with this status" : "No applications yet"}
+										{hasFilters ? "No applications match these filters" : "No applications yet"}
 									</p>
-									{!statusFilter && (
+									{!hasFilters && (
 										<p className="mt-1 text-xs text-muted-foreground">
 											Use the Add Application button to log your first one.
 										</p>
@@ -174,7 +204,7 @@ export function ApplicationsTable({ applications, sources, statusFilter }: Props
 										{app.source ?? "—"}
 									</TableCell>
 									<TableCell className="whitespace-nowrap">
-										<StatusBadge status={app.status} />
+										<StatusBadge status={isIgnored(app) ? "ignored" : app.status} />
 									</TableCell>
 									<TableCell className="text-center">
 										<Check done={app.hrScreening} />
