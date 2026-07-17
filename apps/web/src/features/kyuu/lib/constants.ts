@@ -1,0 +1,1 @@
+export const IGNORE_THRESHOLD_DAYS = 14;
