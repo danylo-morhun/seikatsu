@@ -41,13 +41,13 @@ export function StatsDashboard({ stats, sources }: { stats: KyuuStats; sources: 
 				/>
 			</div>
 
-			<div className="grid gap-3 sm:grid-cols-3">
+			<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
 				<Kpi label="HR screenings" value={String(stats.hrScreeningCount)} />
 				<Kpi label="Technical interviews" value={String(stats.technicalInterviewCount)} />
 				<Kpi label="Offers" value={String(stats.offerCount)} />
 			</div>
 
-			<div className="grid gap-4 md:grid-cols-2">
+			<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 				<Card>
 					<CardHeader className="pb-2">
 						<CardTitle className="text-base">Funnel</CardTitle>
@@ -75,20 +75,23 @@ export function StatsDashboard({ stats, sources }: { stats: KyuuStats; sources: 
 				</CardContent>
 			</Card>
 
-			{stats.activeInPipeline > 0 && (
-				<Kpi
-					label="Currently active"
-					value={String(stats.activeInPipeline)}
-					sub="beyond initial apply, not rejected/withdrawn"
-				/>
-			)}
-
-			{stats.avgResponseDays != null && (
-				<Kpi
-					label="Avg. time to first response"
-					value={`${stats.avgResponseDays} days`}
-					sub="applied → HR screening"
-				/>
+			{(stats.activeInPipeline > 0 || stats.avgResponseDays != null) && (
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+					{stats.activeInPipeline > 0 && (
+						<Kpi
+							label="Currently active"
+							value={String(stats.activeInPipeline)}
+							sub="beyond initial apply, not rejected/withdrawn"
+						/>
+					)}
+					{stats.avgResponseDays != null && (
+						<Kpi
+							label="Avg. time to first response"
+							value={`${stats.avgResponseDays} days`}
+							sub="applied → HR screening"
+						/>
+					)}
+				</div>
 			)}
 		</div>
 	);
