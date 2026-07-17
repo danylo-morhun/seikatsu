@@ -1,21 +1,10 @@
 "use server";
 
 import { auth } from "@/auth";
-import {
-	and,
-	db,
-	desc,
-	eq,
-	isNotNull,
-	isNull,
-	kyuuApplications,
-	type kyuuStatusEnum,
-	workspaces,
-} from "@seikatsu/db";
+import { and, asc, db, desc, eq, isNotNull, kyuuApplications, workspaces } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 import { applicationSchema } from "../lib/kyuu-schemas";
-
-type KyuuStatus = (typeof kyuuStatusEnum.enumValues)[number];
+import { type KyuuFilters, buildKyuuConditions } from "./filters";
 
 async function assertWorkspaceOwner(workspaceId: string, userId: string) {
 	const [ws] = await db
@@ -26,26 +15,25 @@ async function assertWorkspaceOwner(workspaceId: string, userId: string) {
 	if (!ws || ws.userId !== userId) throw new Error("Forbidden");
 }
 
+const SORT_COLUMNS = {
+	date: kyuuApplications.dateApplied,
+	company: kyuuApplications.company,
+	status: kyuuApplications.status,
+} as const;
+
 export async function getApplications(
 	workspaceId: string,
-	opts?: { status?: KyuuStatus; source?: string },
+	opts?: KyuuFilters & { sort?: keyof typeof SORT_COLUMNS; dir?: "asc" | "desc" },
 ) {
 	const session = await auth();
 	if (!session?.user?.id) throw new Error("Unauthorized");
 	await assertWorkspaceOwner(workspaceId, session.user.id);
 
-	const filters = [
-		eq(kyuuApplications.workspaceId, workspaceId),
-		isNull(kyuuApplications.archivedAt),
-	];
-	if (opts?.status) filters.push(eq(kyuuApplications.status, opts.status));
-	if (opts?.source) filters.push(eq(kyuuApplications.source, opts.source));
+	const where = buildKyuuConditions(workspaceId, opts ?? {});
+	const sortCol = SORT_COLUMNS[opts?.sort ?? "date"];
+	const orderFn = opts?.dir === "asc" ? asc : desc;
 
-	return db
-		.select()
-		.from(kyuuApplications)
-		.where(and(...filters))
-		.orderBy(desc(kyuuApplications.dateApplied));
+	return db.select().from(kyuuApplications).where(where).orderBy(orderFn(sortCol));
 }
 
 export async function getSources(workspaceId: string) {
