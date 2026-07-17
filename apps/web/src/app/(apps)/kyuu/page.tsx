@@ -29,18 +29,20 @@ export default async function KyuuPage({
 	]);
 
 	return (
-		<div className="px-4 py-6 md:px-8">
-			<div className="mb-5 flex items-center justify-between">
-				<div>
-					<h1 className="text-lg font-semibold">Applications</h1>
-					<p className="text-sm text-muted-foreground">
-						{applications.length} application{applications.length !== 1 ? "s" : ""}
-						{status ? " matching filter" : ""}
-					</p>
+		<main className="flex flex-col pb-28 md:pb-0">
+			<div className="px-4 py-6 md:px-8">
+				<div className="mb-5 flex items-center justify-between">
+					<div>
+						<h1 className="text-lg font-semibold">Applications</h1>
+						<p className="text-sm text-muted-foreground">
+							{applications.length} application{applications.length !== 1 ? "s" : ""}
+							{status ? " matching filter" : ""}
+						</p>
+					</div>
+					<AddApplicationModal workspaceId={workspace.id} sources={sources} />
 				</div>
-				<AddApplicationModal workspaceId={workspace.id} sources={sources} />
+				<ApplicationsTable applications={applications} sources={sources} statusFilter={status} />
 			</div>
-			<ApplicationsTable applications={applications} sources={sources} statusFilter={status} />
-		</div>
+		</main>
 	);
 }
