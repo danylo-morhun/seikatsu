@@ -3,7 +3,12 @@
 import { cn } from "@seikatsu/ui";
 import { useMemo } from "react";
 
-const DAY_MS = 86_400_000;
+function addDays(d: Date, n: number): Date {
+	const copy = new Date(d);
+	copy.setDate(copy.getDate() + n);
+	return copy;
+}
+
 const MONTH_NAMES = [
 	"Jan",
 	"Feb",
@@ -48,8 +53,8 @@ export function GithubHeatmap({ weeks = 53, cellByDate, emptyClassName, legend, 
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
 		// Align grid end to the upcoming Saturday so columns are whole weeks.
-		const end = new Date(today.getTime() + (6 - today.getDay()) * DAY_MS);
-		const start = new Date(end.getTime() - (weeks * 7 - 1) * DAY_MS);
+		const end = addDays(today, 6 - today.getDay());
+		const start = addDays(end, -(weeks * 7 - 1));
 
 		const cols: { date: string; future: boolean }[][] = [];
 		let cursor = new Date(start);
@@ -57,7 +62,7 @@ export function GithubHeatmap({ weeks = 53, cellByDate, emptyClassName, legend, 
 			const col: { date: string; future: boolean }[] = [];
 			for (let d = 0; d < 7; d++) {
 				col.push({ date: iso(cursor), future: cursor > today });
-				cursor = new Date(cursor.getTime() + DAY_MS);
+				cursor = addDays(cursor, 1);
 			}
 			cols.push(col);
 		}
