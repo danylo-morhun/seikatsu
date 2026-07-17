@@ -24,3 +24,6 @@ export const applicationSchema = z.object({
 
 export type ApplicationFormValues = z.infer<typeof applicationSchema>;
 export type KyuuStatus = (typeof kyuuStatusValues)[number];
+
+export const kyuuFilterStatusValues = [...kyuuStatusValues, "ignored"] as const;
+export type KyuuFilterStatus = (typeof kyuuFilterStatusValues)[number];

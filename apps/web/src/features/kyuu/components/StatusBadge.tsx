@@ -1,10 +1,14 @@
 import { cn } from "@seikatsu/ui";
-import type { KyuuStatus } from "../lib/kyuu-schemas";
+import type { KyuuFilterStatus } from "../lib/kyuu-schemas";
 
-const STATUS_CONFIG: Record<KyuuStatus, { label: string; className: string }> = {
+const STATUS_CONFIG: Record<KyuuFilterStatus, { label: string; className: string }> = {
 	applied: {
 		label: "Applied",
 		className: "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",
+	},
+	ignored: {
+		label: "Ignored",
+		className: "border-slate-500/30 bg-slate-500/10 text-slate-500 dark:text-slate-400",
 	},
 	hr_screening: {
 		label: "HR Screening",
@@ -28,7 +32,7 @@ const STATUS_CONFIG: Record<KyuuStatus, { label: string; className: string }> = 
 	},
 };
 
-export function StatusBadge({ status }: { status: KyuuStatus }) {
+export function StatusBadge({ status }: { status: KyuuFilterStatus }) {
 	const config = STATUS_CONFIG[status];
 	return (
 		<span
