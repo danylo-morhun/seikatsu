@@ -8,6 +8,7 @@ import {
 	Briefcase01Icon,
 	KanbanIcon,
 	Logout01Icon,
+	TaskDaily02Icon,
 	UserCircleIcon,
 	YenSquareIcon,
 } from "@hugeicons/core-free-icons";
@@ -37,6 +38,7 @@ const APP_ICONS: Record<string, typeof YenSquareIcon> = {
 	"/kuroji": YenSquareIcon,
 	"/seiryu": KanbanIcon,
 	"/tsundoku": Book01Icon,
+	"/keizoku": TaskDaily02Icon,
 	"/kyuu": Briefcase01Icon,
 };
 
