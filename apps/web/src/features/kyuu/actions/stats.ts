@@ -1,9 +1,10 @@
 "use server";
 
 import { auth } from "@/auth";
-import { and, db, eq, isNull, kyuuApplications, sql, workspaces } from "@seikatsu/db";
+import { db, eq, kyuuApplications, sql, workspaces } from "@seikatsu/db";
 import { IGNORE_THRESHOLD_DAYS } from "../lib/constants";
 import type { KyuuStatus } from "../lib/kyuu-schemas";
+import { type KyuuFilters, buildKyuuConditions } from "./filters";
 
 async function assertWorkspaceOwner(workspaceId: string, userId: string) {
 	const [ws] = await db
@@ -39,7 +40,10 @@ export interface KyuuStats {
 	weekly: WeekStat[];
 }
 
-export async function getKyuuStats(workspaceId: string): Promise<KyuuStats | null> {
+export async function getKyuuStats(
+	workspaceId: string,
+	filters: KyuuFilters = {},
+): Promise<KyuuStats | null> {
 	const session = await auth();
 	if (!session?.user?.id) return null;
 	try {
@@ -47,6 +51,8 @@ export async function getKyuuStats(workspaceId: string): Promise<KyuuStats | nul
 	} catch {
 		return null;
 	}
+
+	const where = buildKyuuConditions(workspaceId, filters);
 
 	const rows = await db
 		.select({
@@ -59,7 +65,7 @@ export async function getKyuuStats(workspaceId: string): Promise<KyuuStats | nul
 			hrScreeningAt: kyuuApplications.hrScreeningAt,
 		})
 		.from(kyuuApplications)
-		.where(and(eq(kyuuApplications.workspaceId, workspaceId), isNull(kyuuApplications.archivedAt)));
+		.where(where);
 
 	const byStatus: Record<string, number> = {};
 	let hrScreeningCount = 0;
@@ -110,7 +116,7 @@ export async function getKyuuStats(workspaceId: string): Promise<KyuuStats | nul
 			count: sql<number>`count(*)::int`,
 		})
 		.from(kyuuApplications)
-		.where(and(eq(kyuuApplications.workspaceId, workspaceId), isNull(kyuuApplications.archivedAt)))
+		.where(where)
 		.groupBy(sql`date_trunc('week', ${kyuuApplications.dateApplied}::date)`)
 		.orderBy(sql`date_trunc('week', ${kyuuApplications.dateApplied}::date)`);
 
