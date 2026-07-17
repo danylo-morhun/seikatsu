@@ -45,8 +45,8 @@ import { StatusBadge } from "./StatusBadge";
 
 type Application = Awaited<ReturnType<typeof getApplications>>[number];
 
-function fmtDate(iso: string): string {
-	return format(new Date(`${iso}T00:00:00`), "MMM d, yyyy");
+function fmtDate(iso: string, short = false): string {
+	return format(new Date(`${iso}T00:00:00`), short ? "MMM d" : "MMM d, yyyy");
 }
 
 function Check({ done }: { done: boolean }) {
@@ -117,7 +117,7 @@ export function ApplicationsTable({
 				<KyuuFilterBar sources={sources} />
 			</div>
 			<div className="overflow-x-auto rounded-lg border">
-				<Table className="min-w-[860px]">
+				<Table className="min-w-0 sm:min-w-[860px]">
 					<TableHeader>
 						<TableRow>
 							<TableHead className="whitespace-nowrap">
@@ -130,7 +130,7 @@ export function ApplicationsTable({
 									<span className="text-muted-foreground/60">{sortIndicator("date")}</span>
 								</button>
 							</TableHead>
-							<TableHead>
+							<TableHead className="w-full sm:w-auto">
 								<button
 									type="button"
 									className="flex items-center gap-1 hover:text-foreground"
@@ -140,8 +140,8 @@ export function ApplicationsTable({
 									<span className="text-muted-foreground/60">{sortIndicator("company")}</span>
 								</button>
 							</TableHead>
-							<TableHead className="w-full">Role</TableHead>
-							<TableHead className="whitespace-nowrap">Source</TableHead>
+							<TableHead className="hidden w-full sm:table-cell">Role</TableHead>
+							<TableHead className="hidden whitespace-nowrap sm:table-cell">Source</TableHead>
 							<TableHead className="whitespace-nowrap">
 								<button
 									type="button"
@@ -152,9 +152,9 @@ export function ApplicationsTable({
 									<span className="text-muted-foreground/60">{sortIndicator("status")}</span>
 								</button>
 							</TableHead>
-							<TableHead className="text-center">HR</TableHead>
-							<TableHead className="text-center">Tech</TableHead>
-							<TableHead className="text-center">Offer</TableHead>
+							<TableHead className="hidden text-center sm:table-cell">HR</TableHead>
+							<TableHead className="hidden text-center sm:table-cell">Tech</TableHead>
+							<TableHead className="hidden text-center sm:table-cell">Offer</TableHead>
 							<TableHead className="w-10" />
 						</TableRow>
 					</TableHeader>
@@ -176,14 +176,18 @@ export function ApplicationsTable({
 							applications.map((app) => (
 								<TableRow key={app.id}>
 									<TableCell className="text-muted-foreground whitespace-nowrap">
-										{fmtDate(app.dateApplied)}
+										<span className="sm:hidden">{fmtDate(app.dateApplied, true)}</span>
+										<span className="hidden sm:inline">{fmtDate(app.dateApplied)}</span>
 									</TableCell>
-									<TableCell className="max-w-[180px] font-medium">
+									<TableCell className="max-w-0 w-full font-medium sm:max-w-[180px] sm:w-auto">
 										<div className="truncate" title={app.company}>
 											{app.company}
 										</div>
+										<div className="truncate text-xs font-normal text-muted-foreground sm:hidden">
+											{app.role}
+										</div>
 									</TableCell>
-									<TableCell className="max-w-0 w-full">
+									<TableCell className="hidden max-w-0 w-full sm:table-cell">
 										{app.jobUrl ? (
 											<a
 												href={app.jobUrl}
@@ -200,19 +204,19 @@ export function ApplicationsTable({
 											</div>
 										)}
 									</TableCell>
-									<TableCell className="text-muted-foreground whitespace-nowrap">
+									<TableCell className="hidden text-muted-foreground whitespace-nowrap sm:table-cell">
 										{app.source ?? "—"}
 									</TableCell>
 									<TableCell className="whitespace-nowrap">
 										<StatusBadge status={isIgnored(app) ? "ignored" : app.status} />
 									</TableCell>
-									<TableCell className="text-center">
+									<TableCell className="hidden text-center sm:table-cell">
 										<Check done={app.hrScreening} />
 									</TableCell>
-									<TableCell className="text-center">
+									<TableCell className="hidden text-center sm:table-cell">
 										<Check done={app.technicalInterview} />
 									</TableCell>
-									<TableCell className="text-center">
+									<TableCell className="hidden text-center sm:table-cell">
 										<Check done={app.offer} />
 									</TableCell>
 									<TableCell>
