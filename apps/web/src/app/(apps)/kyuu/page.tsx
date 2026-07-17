@@ -3,14 +3,25 @@ import { getWorkspace, initializeWorkspace } from "@/features/kuroji/actions/wor
 import { getApplications, getSources } from "@/features/kyuu/actions/applications";
 import { AddApplicationModal } from "@/features/kyuu/components/AddApplicationModal";
 import { ApplicationsTable } from "@/features/kyuu/components/ApplicationsTable";
-import type { KyuuStatus } from "@/features/kyuu/lib/kyuu-schemas";
-import { kyuuStatusValues } from "@/features/kyuu/lib/kyuu-schemas";
+import { hasActiveKyuuFilters, parseKyuuFilters } from "@/features/kyuu/lib/search-params";
 import { redirect } from "next/navigation";
+
+const SORT_FIELDS = ["date", "company", "status"] as const;
+type SortField = (typeof SORT_FIELDS)[number];
 
 export default async function KyuuPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ status?: string }>;
+	searchParams: Promise<{
+		status?: string;
+		source?: string;
+		stage?: string;
+		from?: string;
+		to?: string;
+		q?: string;
+		sort?: string;
+		dir?: string;
+	}>;
 }) {
 	const session = await auth();
 	if (!session?.user?.id) redirect("/");
@@ -18,13 +29,16 @@ export default async function KyuuPage({
 	const workspace =
 		(await getWorkspace(session.user.id)) ?? (await initializeWorkspace(session.user.id));
 
-	const { status: rawStatus } = await searchParams;
-	const status = kyuuStatusValues.includes(rawStatus as KyuuStatus)
-		? (rawStatus as KyuuStatus)
-		: undefined;
+	const raw = await searchParams;
+	const filters = parseKyuuFilters(raw);
+	const hasFilters = hasActiveKyuuFilters(filters);
+	const sort: SortField = SORT_FIELDS.includes(raw.sort as SortField)
+		? (raw.sort as SortField)
+		: "date";
+	const dir = raw.dir === "asc" ? "asc" : "desc";
 
 	const [applications, sources] = await Promise.all([
-		getApplications(workspace.id, { status }),
+		getApplications(workspace.id, { ...filters, sort, dir }),
 		getSources(workspace.id),
 	]);
 
@@ -36,12 +50,18 @@ export default async function KyuuPage({
 						<h1 className="text-lg font-semibold">Applications</h1>
 						<p className="text-sm text-muted-foreground">
 							{applications.length} application{applications.length !== 1 ? "s" : ""}
-							{status ? " matching filter" : ""}
+							{hasFilters ? " matching filters" : ""}
 						</p>
 					</div>
 					<AddApplicationModal workspaceId={workspace.id} sources={sources} />
 				</div>
-				<ApplicationsTable applications={applications} sources={sources} statusFilter={status} />
+				<ApplicationsTable
+					applications={applications}
+					sources={sources}
+					hasFilters={hasFilters}
+					sortField={sort}
+					sortDir={dir}
+				/>
 			</div>
 		</main>
 	);
