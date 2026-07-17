@@ -69,6 +69,7 @@ export async function createApplication(workspaceId: string, data: unknown) {
 	const parsed = applicationSchema.safeParse(data);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid data" };
 
+	const now = new Date();
 	const [application] = await db
 		.insert(kyuuApplications)
 		.values({
@@ -83,6 +84,10 @@ export async function createApplication(workspaceId: string, data: unknown) {
 			offer: parsed.data.offer,
 			dateApplied: parsed.data.dateApplied,
 			notes: parsed.data.notes || null,
+			hrScreeningAt: parsed.data.hrScreening ? now : null,
+			technicalInterviewAt: parsed.data.technicalInterview ? now : null,
+			offerAt: parsed.data.offer ? now : null,
+			rejectedAt: parsed.data.status === "rejected" ? now : null,
 		})
 		.returning();
 
@@ -95,7 +100,17 @@ export async function updateApplication(applicationId: string, data: unknown) {
 	if (!session?.user?.id) return { error: "Unauthorized" };
 
 	const [existing] = await db
-		.select({ workspaceId: kyuuApplications.workspaceId })
+		.select({
+			workspaceId: kyuuApplications.workspaceId,
+			hrScreening: kyuuApplications.hrScreening,
+			technicalInterview: kyuuApplications.technicalInterview,
+			offer: kyuuApplications.offer,
+			status: kyuuApplications.status,
+			hrScreeningAt: kyuuApplications.hrScreeningAt,
+			technicalInterviewAt: kyuuApplications.technicalInterviewAt,
+			offerAt: kyuuApplications.offerAt,
+			rejectedAt: kyuuApplications.rejectedAt,
+		})
 		.from(kyuuApplications)
 		.where(eq(kyuuApplications.id, applicationId))
 		.limit(1);
@@ -104,6 +119,18 @@ export async function updateApplication(applicationId: string, data: unknown) {
 
 	const parsed = applicationSchema.safeParse(data);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid data" };
+
+	const now = new Date();
+	// First false→true transition stamps the stage timestamp; later toggles don't overwrite it.
+	const hrScreeningAt =
+		parsed.data.hrScreening && !existing.hrScreening ? now : existing.hrScreeningAt;
+	const technicalInterviewAt =
+		parsed.data.technicalInterview && !existing.technicalInterview
+			? now
+			: existing.technicalInterviewAt;
+	const offerAt = parsed.data.offer && !existing.offer ? now : existing.offerAt;
+	const rejectedAt =
+		parsed.data.status === "rejected" && existing.status !== "rejected" ? now : existing.rejectedAt;
 
 	const [application] = await db
 		.update(kyuuApplications)
@@ -118,7 +145,11 @@ export async function updateApplication(applicationId: string, data: unknown) {
 			offer: parsed.data.offer,
 			dateApplied: parsed.data.dateApplied,
 			notes: parsed.data.notes || null,
-			updatedAt: new Date(),
+			hrScreeningAt,
+			technicalInterviewAt,
+			offerAt,
+			rejectedAt,
+			updatedAt: now,
 		})
 		.where(eq(kyuuApplications.id, applicationId))
 		.returning();
