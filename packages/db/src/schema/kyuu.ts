@@ -22,6 +22,8 @@ export const kyuuApplications = pgTable(
 		role: text("role").notNull(),
 		jobUrl: text("job_url"),
 		source: text("source"),
+		resumeFileUrl: text("resume_file_url"),
+		resumeFileName: text("resume_file_name"),
 		status: kyuuStatusEnum("status").notNull().default("applied"),
 		hrScreening: boolean("hr_screening").notNull().default(false),
 		technicalInterview: boolean("technical_interview").notNull().default(false),

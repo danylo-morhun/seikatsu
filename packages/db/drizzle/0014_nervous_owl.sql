@@ -1,0 +1,1 @@
+ALTER TABLE "kyuu_applications" DROP COLUMN "resume_version";

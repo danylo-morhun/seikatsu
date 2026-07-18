@@ -1,6 +1,6 @@
 {
-	"id": "ca3a952a-ee78-43b8-9278-de5fcdebfc3e",
-	"prevId": "aab511d0-03db-453c-a4fa-a058a7af7509",
+	"id": "321d3fa7-d643-4b71-b9e5-a39231e0fa03",
+	"prevId": "34d2d03e-61dd-4dbe-9e03-307858a92d6c",
 	"version": "7",
 	"dialect": "postgresql",
 	"tables": {
@@ -1577,6 +1577,18 @@
 				},
 				"source": {
 					"name": "source",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"resume_file_url": {
+					"name": "resume_file_url",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"resume_file_name": {
+					"name": "resume_file_name",
 					"type": "text",
 					"primaryKey": false,
 					"notNull": false
