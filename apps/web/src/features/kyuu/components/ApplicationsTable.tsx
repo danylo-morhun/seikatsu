@@ -36,7 +36,7 @@ import { format } from "date-fns";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import type { getApplications } from "../actions/applications";
+import type { ResumeFile, getApplications } from "../actions/applications";
 import { deleteApplication } from "../actions/applications";
 import { isIgnored } from "../lib/status";
 import { EditApplicationModal } from "./EditApplicationModal";
@@ -63,6 +63,7 @@ type SortColumn = (typeof SORTABLE_COLUMNS)[number];
 interface Props {
 	applications: Application[];
 	sources: string[];
+	resumeFiles: ResumeFile[];
 	hasFilters: boolean;
 	sortField: SortColumn;
 	sortDir: "asc" | "desc";
@@ -71,6 +72,7 @@ interface Props {
 export function ApplicationsTable({
 	applications,
 	sources,
+	resumeFiles,
 	hasFilters,
 	sortField,
 	sortDir,
@@ -142,6 +144,7 @@ export function ApplicationsTable({
 							</TableHead>
 							<TableHead className="hidden w-full sm:table-cell">Role</TableHead>
 							<TableHead className="hidden whitespace-nowrap sm:table-cell">Source</TableHead>
+							<TableHead className="hidden whitespace-nowrap md:table-cell">Resume</TableHead>
 							<TableHead className="whitespace-nowrap">
 								<button
 									type="button"
@@ -161,7 +164,7 @@ export function ApplicationsTable({
 					<TableBody>
 						{applications.length === 0 ? (
 							<TableRow>
-								<TableCell colSpan={9} className="py-12 text-center">
+								<TableCell colSpan={10} className="py-12 text-center">
 									<p className="text-sm font-medium text-muted-foreground">
 										{hasFilters ? "No applications match these filters" : "No applications yet"}
 									</p>
@@ -206,6 +209,22 @@ export function ApplicationsTable({
 									</TableCell>
 									<TableCell className="hidden text-muted-foreground whitespace-nowrap sm:table-cell">
 										{app.source ?? "—"}
+									</TableCell>
+									<TableCell className="hidden max-w-[140px] text-muted-foreground whitespace-nowrap md:table-cell">
+										{app.resumeFileUrl ? (
+											<a
+												href={app.resumeFileUrl}
+												target="_blank"
+												rel="noopener noreferrer"
+												download={app.resumeFileName ?? undefined}
+												title={app.resumeFileName ?? undefined}
+												className="block truncate hover:underline underline-offset-2"
+											>
+												{app.resumeFileName ?? "Resume"}
+											</a>
+										) : (
+											"—"
+										)}
 									</TableCell>
 									<TableCell className="whitespace-nowrap">
 										<StatusBadge status={isIgnored(app) ? "ignored" : app.status} />
@@ -288,6 +307,7 @@ export function ApplicationsTable({
 				<EditApplicationModal
 					application={editTarget}
 					sources={sources}
+					resumeFiles={resumeFiles}
 					open={!!editTarget}
 					onOpenChange={(v) => {
 						if (!v) setEditTarget(null);
