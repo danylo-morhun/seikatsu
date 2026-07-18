@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { getWorkspace, initializeWorkspace } from "@/features/kuroji/actions/workspace";
-import { getApplications, getSources } from "@/features/kyuu/actions/applications";
+import { getApplications, getResumeFiles, getSources } from "@/features/kyuu/actions/applications";
 import { AddApplicationModal } from "@/features/kyuu/components/AddApplicationModal";
 import { ApplicationsTable } from "@/features/kyuu/components/ApplicationsTable";
 import { hasActiveKyuuFilters, parseKyuuFilters } from "@/features/kyuu/lib/search-params";
@@ -37,9 +37,10 @@ export default async function KyuuPage({
 		: "date";
 	const dir = raw.dir === "asc" ? "asc" : "desc";
 
-	const [applications, sources] = await Promise.all([
+	const [applications, sources, resumeFiles] = await Promise.all([
 		getApplications(workspace.id, { ...filters, sort, dir }),
 		getSources(workspace.id),
+		getResumeFiles(workspace.id),
 	]);
 
 	return (
@@ -53,11 +54,16 @@ export default async function KyuuPage({
 							{hasFilters ? " matching filters" : ""}
 						</p>
 					</div>
-					<AddApplicationModal workspaceId={workspace.id} sources={sources} />
+					<AddApplicationModal
+						workspaceId={workspace.id}
+						sources={sources}
+						resumeFiles={resumeFiles}
+					/>
 				</div>
 				<ApplicationsTable
 					applications={applications}
 					sources={sources}
+					resumeFiles={resumeFiles}
 					hasFilters={hasFilters}
 					sortField={sort}
 					sortDir={dir}
