@@ -49,6 +49,29 @@ export async function getSources(workspaceId: string) {
 	return rows.map((r) => r.source).filter((s): s is string => !!s);
 }
 
+export interface ResumeFile {
+	fileUrl: string;
+	fileName: string;
+}
+
+export async function getResumeFiles(workspaceId: string): Promise<ResumeFile[]> {
+	const session = await auth();
+	if (!session?.user?.id) throw new Error("Unauthorized");
+	await assertWorkspaceOwner(workspaceId, session.user.id);
+
+	const rows = await db
+		.selectDistinct({
+			fileUrl: kyuuApplications.resumeFileUrl,
+			fileName: kyuuApplications.resumeFileName,
+		})
+		.from(kyuuApplications)
+		.where(
+			and(eq(kyuuApplications.workspaceId, workspaceId), isNotNull(kyuuApplications.resumeFileUrl)),
+		);
+
+	return rows.filter((r): r is ResumeFile => !!r.fileUrl && !!r.fileName);
+}
+
 export async function createApplication(workspaceId: string, data: unknown) {
 	const session = await auth();
 	if (!session?.user?.id) return { error: "Unauthorized" };
@@ -66,6 +89,8 @@ export async function createApplication(workspaceId: string, data: unknown) {
 			role: parsed.data.role,
 			jobUrl: parsed.data.jobUrl || null,
 			source: parsed.data.source || null,
+			resumeFileUrl: parsed.data.resumeFileUrl || null,
+			resumeFileName: parsed.data.resumeFileName || null,
 			status: parsed.data.status,
 			hrScreening: parsed.data.hrScreening,
 			technicalInterview: parsed.data.technicalInterview,
@@ -127,6 +152,8 @@ export async function updateApplication(applicationId: string, data: unknown) {
 			role: parsed.data.role,
 			jobUrl: parsed.data.jobUrl || null,
 			source: parsed.data.source || null,
+			resumeFileUrl: parsed.data.resumeFileUrl || null,
+			resumeFileName: parsed.data.resumeFileName || null,
 			status: parsed.data.status,
 			hrScreening: parsed.data.hrScreening,
 			technicalInterview: parsed.data.technicalInterview,
