@@ -21,6 +21,7 @@ import {
 import * as React from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import type { ResumeFile } from "../actions/applications";
 import type { getApplications } from "../actions/applications";
 import { updateApplication } from "../actions/applications";
 import {
@@ -28,6 +29,7 @@ import {
 	applicationSchema,
 	kyuuStatusValues,
 } from "../lib/kyuu-schemas";
+import { ResumeUploadField } from "./ResumeUploadField";
 import { STATUS_CONFIG } from "./StatusBadge";
 
 type Application = Awaited<ReturnType<typeof getApplications>>[number];
@@ -38,6 +40,8 @@ function toFormValues(app: Application): ApplicationFormValues {
 		role: app.role,
 		jobUrl: app.jobUrl ?? "",
 		source: app.source ?? "",
+		resumeFileUrl: app.resumeFileUrl ?? "",
+		resumeFileName: app.resumeFileName ?? "",
 		status: app.status,
 		hrScreening: app.hrScreening,
 		technicalInterview: app.technicalInterview,
@@ -50,11 +54,18 @@ function toFormValues(app: Application): ApplicationFormValues {
 interface Props {
 	application: Application;
 	sources: string[];
+	resumeFiles: ResumeFile[];
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }
 
-export function EditApplicationModal({ application, sources, open, onOpenChange }: Props) {
+export function EditApplicationModal({
+	application,
+	sources,
+	resumeFiles,
+	open,
+	onOpenChange,
+}: Props) {
 	const refresh = useRefreshRouter();
 
 	const {
@@ -62,6 +73,8 @@ export function EditApplicationModal({ application, sources, open, onOpenChange 
 		handleSubmit,
 		control,
 		reset,
+		setValue,
+		watch,
 		formState: { errors, isSubmitting },
 	} = useForm<ApplicationFormValues>({
 		resolver: zodResolver(applicationSchema),
@@ -125,6 +138,16 @@ export function EditApplicationModal({ application, sources, open, onOpenChange 
 							))}
 						</datalist>
 					</div>
+
+					<ResumeUploadField
+						fileUrl={watch("resumeFileUrl") ?? ""}
+						fileName={watch("resumeFileName") ?? ""}
+						resumeFiles={resumeFiles}
+						onChange={(fileUrl, fileNameVal) => {
+							setValue("resumeFileUrl", fileUrl, { shouldValidate: true });
+							setValue("resumeFileName", fileNameVal);
+						}}
+					/>
 
 					<div className="space-y-2">
 						<Label>Status</Label>
