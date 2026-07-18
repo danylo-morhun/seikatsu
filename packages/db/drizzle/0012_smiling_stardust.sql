@@ -1,0 +1,1 @@
+ALTER TABLE "kyuu_applications" ADD COLUMN "resume_version" text;
