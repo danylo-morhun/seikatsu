@@ -14,6 +14,8 @@ export const applicationSchema = z.object({
 	role: z.string().min(1, "Role required"),
 	jobUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 	source: z.string().optional(),
+	resumeFileUrl: z.string().url().optional().or(z.literal("")),
+	resumeFileName: z.string().optional(),
 	status: z.enum(kyuuStatusValues),
 	hrScreening: z.boolean(),
 	technicalInterview: z.boolean(),
