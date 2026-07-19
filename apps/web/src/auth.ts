@@ -30,7 +30,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 		}),
 		Resend({
 			apiKey: process.env.RESEND_API_KEY ?? "",
-			from: process.env.AUTH_EMAIL_FROM ?? "ethos <noreply@ethos.danylomorhun.com>",
+			from: process.env.AUTH_EMAIL_FROM ?? "seikatsu <noreply@seikatsu.danylomorhun.com>",
 		}),
 		Credentials({
 			async authorize(credentials) {
