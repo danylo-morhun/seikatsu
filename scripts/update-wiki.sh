@@ -15,11 +15,11 @@ RELEVANT=$(echo "$CHANGED" | grep -E \
 
 [ -z "$RELEVANT" ] && exit 0
 
-WIKI_LOG="${HOME}/.cache/ethos-wiki-update.log"
+WIKI_LOG="${HOME}/.cache/seikatsu-wiki-update.log"
 mkdir -p "$(dirname "$WIKI_LOG")"
 echo "[wiki] Triggered by: $(echo "$RELEVANT" | tr '\n' ' ')" >> "$WIKI_LOG"
 
-nohup claude -p "You are maintaining the ethos project wiki at graphify-out/wiki/.
+nohup claude -p "You are maintaining the seikatsu project wiki at graphify-out/wiki/.
 
 Files changed in last commit that may affect the wiki:
 $(echo "$RELEVANT")
