@@ -5,6 +5,7 @@
 		"build": "turbo build",
 		"dev": "turbo dev",
 		"typecheck": "turbo typecheck",
+		"test": "turbo test",
 		"biome": "biome check --write ."
 	},
 	"devDependencies": {
