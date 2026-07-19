@@ -3,7 +3,9 @@
 	"version": "0.0.0",
 	"private": true,
 	"exports": {
-		".": "./src/index.ts"
+		".": "./src/index.ts",
+		"./schema": "./src/schema/index.ts",
+		"./test-utils": "./src/test-utils.ts"
 	},
 	"scripts": {
 		"build": "tsc --noEmit",
@@ -18,6 +20,7 @@
 		"postgres": "^3.4.5"
 	},
 	"devDependencies": {
+		"@electric-sql/pglite": "^0.5.4",
 		"@types/node": "^22.19.19",
 		"drizzle-kit": "^0.31.10",
 		"typescript": "^5.7.2"

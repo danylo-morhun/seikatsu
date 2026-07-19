@@ -10,6 +10,10 @@
 			"dependsOn": ["^build"],
 			"inputs": ["**/*.ts", "**/*.tsx", "tsconfig.json"]
 		},
+		"test": {
+			"dependsOn": ["^build"],
+			"inputs": ["**/*.ts", "**/*.tsx", "**/*.test.ts"]
+		},
 		"dev": {
 			"cache": false,
 			"persistent": true
