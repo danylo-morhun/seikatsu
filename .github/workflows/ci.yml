@@ -1,38 +1,94 @@
-name: CI
+name: CI Pipeline
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
-  AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-  AUTH_URL: ${{ secrets.AUTH_URL }}
+  DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/seikatsu_test' }}
+  AUTH_SECRET: ${{ secrets.AUTH_SECRET || 'ci-test-auth-secret-32-chars-long' }}
+  AUTH_URL: ${{ secrets.AUTH_URL || 'http://localhost:3010' }}
 
 jobs:
-  ci:
+  audit:
+    name: Security & Audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Security audit
+        run: pnpm audit --audit-level=high
 
-      - name: Lint (Biome)
+  lint:
+    name: Code Quality (Biome)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run Biome Check
         run: pnpm exec biome check .
 
-      - name: Typecheck
+  typecheck:
+    name: Static Type Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck Workspace
         run: pnpm typecheck
 
-      - name: Test
+  test:
+    name: Unit & Integration Tests
+    needs: [lint, typecheck]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run Vitest Suite
         run: pnpm test
 
-      - name: Build
+  build:
+    name: Production Monorepo Build
+    needs: [lint, typecheck]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Turbo Build
         run: pnpm build
