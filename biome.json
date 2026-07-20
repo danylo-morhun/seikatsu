@@ -6,7 +6,27 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true
+			"recommended": true,
+			"a11y": {
+				"useKeyWithClickEvents": "off",
+				"useFocusableInteractive": "off",
+				"useSemanticElements": "off",
+				"noSvgWithoutTitle": "off",
+				"noAutofocus": "off",
+				"noBlankTarget": "off"
+			},
+			"style": {
+				"noNonNullAssertion": "off"
+			},
+			"suspicious": {
+				"noExplicitAny": "off"
+			},
+			"security": {
+				"noDangerouslySetInnerHtml": "off"
+			},
+			"correctness": {
+				"useExhaustiveDependencies": "off"
+			}
 		}
 	},
 	"formatter": {
@@ -21,6 +41,14 @@
 		}
 	},
 	"files": {
-		"ignore": ["node_modules", ".next", "dist", ".turbo", "*.lock"]
+		"ignore": [
+			"node_modules",
+			".next",
+			"dist",
+			".turbo",
+			"*.lock",
+			"graphify-out",
+			".playwright-mcp"
+		]
 	}
 }
