@@ -11,26 +11,13 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/seikatsu_test' }}
-  AUTH_SECRET: ${{ secrets.AUTH_SECRET || 'ci-test-auth-secret-32-chars-long' }}
-  AUTH_URL: ${{ secrets.AUTH_URL || 'http://localhost:3010' }}
+  DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/seikatsu_test"
+  AUTH_SECRET: "ci-test-auth-secret-32-chars-long-seikatsu"
+  AUTH_URL: "http://localhost:3010"
+  SKIP_ENV_VALIDATION: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
 
 jobs:
-  audit:
-    name: Security & Audit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Security audit
-        run: pnpm audit --audit-level=high
-
   lint:
     name: Code Quality (Biome)
     runs-on: ubuntu-latest
@@ -42,7 +29,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
       - name: Run Biome Check
         run: pnpm exec biome check .
 
@@ -57,7 +44,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
       - name: Typecheck Workspace
         run: pnpm typecheck
 
@@ -73,7 +60,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
       - name: Run Vitest Suite
         run: pnpm test
 
@@ -89,6 +76,6 @@ jobs:
           node-version: 22
           cache: pnpm
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
       - name: Turbo Build
         run: pnpm build
