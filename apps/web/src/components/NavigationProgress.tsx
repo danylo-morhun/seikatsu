@@ -20,7 +20,6 @@ export function NavigationProgress() {
 	}
 
 	// Mutation progress only (data refreshes, not navigation)
-	// biome-ignore lint/correctness/useExhaustiveDependencies: start/complete are stable imperative helpers
 	useEffect(() => {
 		function handleRefreshStart() {
 			start();

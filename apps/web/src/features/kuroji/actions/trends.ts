@@ -41,7 +41,7 @@ export async function getMonthlyTrends(
 
 	let cutoffDate: string;
 	if (from) {
-		cutoffDate = from.slice(0, 7) + "-01";
+		cutoffDate = `${from.slice(0, 7)}-01`;
 	} else {
 		const cutoff = new Date();
 		cutoff.setDate(1);

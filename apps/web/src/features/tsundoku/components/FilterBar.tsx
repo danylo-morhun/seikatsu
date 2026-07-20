@@ -52,7 +52,6 @@ export function FilterBar({ shelves, genres }: Props) {
 	}
 
 	// Debounced search → URL. Only `q` should re-trigger; params/setParam are stable enough here.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — sync q to URL on change only
 	useEffect(() => {
 		const t = setTimeout(() => {
 			if ((params.get("q") ?? "") !== q) setParam("q", q.trim());
