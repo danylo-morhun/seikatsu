@@ -6,6 +6,14 @@ const STATUS_CONFIG: Record<KyuuFilterStatus, { label: string; className: string
 		label: "Applied",
 		className: "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",
 	},
+	under_review: {
+		label: "Under Review",
+		className: "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400",
+	},
+	video_interview: {
+		label: "Video Interview",
+		className: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
+	},
 	ignored: {
 		label: "Ignored",
 		className: "border-slate-500/30 bg-slate-500/10 text-slate-500 dark:text-slate-400",

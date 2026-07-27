@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const kyuuStatusValues = [
 	"applied",
+	"under_review",
+	"video_interview",
 	"hr_screening",
 	"technical_interview",
 	"offer",
