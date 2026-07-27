@@ -138,13 +138,13 @@ export function AddApplicationModal({
 			<DialogTrigger asChild>
 				<Button size="sm">Add Application</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-md">
+			<DialogContent className="sm:max-w-md max-w-full overflow-x-hidden">
 				<DialogHeader>
 					<DialogTitle>New Application</DialogTitle>
 				</DialogHeader>
 
 				{pasteMode ? (
-					<div className="space-y-3">
+					<div className="space-y-3 min-w-0">
 						<div className="space-y-2">
 							<Label htmlFor="app-paste">Paste job posting</Label>
 							<textarea
@@ -196,9 +196,9 @@ export function AddApplicationModal({
 							onSubmit={handleSubmit(onSubmit, () =>
 								toast.error("Please check the form for errors"),
 							)}
-							className="space-y-4"
+							className="space-y-4 min-w-0"
 						>
-							<fieldset disabled={isExtracting} className="contents">
+							<fieldset disabled={isSubmitting || isExtracting} className="contents min-w-0">
 								<div className="space-y-2">
 									<Label htmlFor="app-company">Company</Label>
 									<Input

@@ -98,14 +98,14 @@ export function EditApplicationModal({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-md">
+			<DialogContent className="sm:max-w-md max-w-full overflow-x-hidden">
 				<DialogHeader>
 					<DialogTitle>Edit Application</DialogTitle>
 				</DialogHeader>
 
 				<form
 					onSubmit={handleSubmit(onSubmit, () => toast.error("Please check the form for errors"))}
-					className="space-y-4"
+					className="space-y-4 min-w-0"
 				>
 					<div className="space-y-2">
 						<Label htmlFor="edit-app-company">Company</Label>
