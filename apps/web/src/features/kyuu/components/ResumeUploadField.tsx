@@ -58,14 +58,16 @@ export function ResumeUploadField({ fileUrl, fileName, resumeFiles, onChange }: 
 				onChange={handleFileChange}
 			/>
 			{fileUrl && fileName ? (
-				<div className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
-					<span className="flex-1 truncate">{fileName}</span>
+				<div className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm min-w-0 w-full overflow-hidden">
+					<span className="flex-1 min-w-0 truncate" title={fileName}>
+						{fileName}
+					</span>
 					<a
 						href={fileUrl}
 						target="_blank"
 						rel="noopener noreferrer"
 						download={fileName}
-						className="text-muted-foreground hover:text-foreground"
+						className="shrink-0 text-muted-foreground hover:text-foreground"
 						aria-label="Download resume"
 					>
 						<HugeiconsIcon icon={Download01Icon} className="h-4 w-4" />
@@ -73,20 +75,20 @@ export function ResumeUploadField({ fileUrl, fileName, resumeFiles, onChange }: 
 					<button
 						type="button"
 						onClick={() => onChange("", "")}
-						className="text-muted-foreground hover:text-destructive"
+						className="shrink-0 text-muted-foreground hover:text-destructive"
 						aria-label="Remove resume"
 					>
 						<HugeiconsIcon icon={Delete01Icon} className="h-4 w-4" />
 					</button>
 				</div>
 			) : (
-				<div className="flex flex-wrap items-center gap-2">
+				<div className="flex flex-wrap items-center gap-2 max-w-full">
 					<Button
 						type="button"
 						variant="outline"
 						size="sm"
 						disabled={isUploading}
-						className="gap-1.5"
+						className="shrink-0 gap-1.5"
 						onClick={() => inputRef.current?.click()}
 					>
 						{isUploading ? (
@@ -104,13 +106,15 @@ export function ResumeUploadField({ fileUrl, fileName, resumeFiles, onChange }: 
 								if (picked) onChange(picked.fileUrl, picked.fileName);
 							}}
 						>
-							<SelectTrigger className="h-8 w-auto text-xs">
+							<SelectTrigger className="h-8 max-w-[180px] min-w-0 text-xs">
 								<SelectValue placeholder="Reuse previous…" />
 							</SelectTrigger>
-							<SelectContent>
+							<SelectContent className="max-w-[300px]">
 								{reusable.map((r) => (
 									<SelectItem key={r.fileUrl} value={r.fileUrl}>
-										{r.fileName}
+										<span className="block max-w-[220px] truncate" title={r.fileName}>
+											{r.fileName}
+										</span>
 									</SelectItem>
 								))}
 							</SelectContent>
