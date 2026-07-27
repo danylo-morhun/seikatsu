@@ -4,6 +4,8 @@ import { workspaces } from "./kuroji";
 
 export const kyuuStatusEnum = pgEnum("kyuu_status", [
 	"applied",
+	"under_review",
+	"video_interview",
 	"hr_screening",
 	"technical_interview",
 	"offer",
