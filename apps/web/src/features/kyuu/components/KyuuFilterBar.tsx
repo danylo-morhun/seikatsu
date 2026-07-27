@@ -4,7 +4,7 @@ import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@seikatsu/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { kyuuFilterStatusValues } from "../lib/kyuu-schemas";
 import { KyuuDateRangeFilter } from "./KyuuDateRangeFilter";
 import { StageFilter, type StageKey } from "./StageFilter";
@@ -20,7 +20,8 @@ export function KyuuFilterBar({ sources }: Props) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
-	const [localQuery, setLocalQuery] = useState(searchParams.get("q") ?? "");
+	const urlQuery = searchParams.get("q") ?? "";
+	const [localQuery, setLocalQuery] = useState(urlQuery);
 
 	function setParam(key: string, value: string | null) {
 		const params = new URLSearchParams(searchParams.toString());
@@ -33,6 +34,18 @@ export function KyuuFilterBar({ sources }: Props) {
 	function submitSearch(value: string) {
 		setParam("q", value.trim() || null);
 	}
+
+	useEffect(() => {
+		setLocalQuery(urlQuery);
+	}, [urlQuery]);
+
+	useEffect(() => {
+		if (localQuery.trim() === urlQuery) return;
+		const timer = setTimeout(() => {
+			submitSearch(localQuery);
+		}, 350);
+		return () => clearTimeout(timer);
+	}, [localQuery, urlQuery]);
 
 	const status = searchParams.get("status") ?? "all";
 	const source = searchParams.get("source") ?? "all";
@@ -62,7 +75,6 @@ export function KyuuFilterBar({ sources }: Props) {
 					onKeyDown={(e) => {
 						if (e.key === "Enter") submitSearch(localQuery);
 					}}
-					onBlur={() => submitSearch(localQuery)}
 				/>
 			</div>
 
