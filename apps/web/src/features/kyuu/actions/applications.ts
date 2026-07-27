@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import { and, asc, db, desc, eq, isNotNull, kyuuApplications, workspaces } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
-import { applicationSchema } from "../lib/kyuu-schemas";
+import { type KyuuStatus, applicationSchema, kyuuStatusValues } from "../lib/kyuu-schemas";
 import { type KyuuFilters, buildKyuuConditions } from "./filters";
 
 async function assertWorkspaceOwner(workspaceId: string, userId: string) {
@@ -190,4 +190,93 @@ export async function deleteApplication(
 	await db.delete(kyuuApplications).where(eq(kyuuApplications.id, applicationId));
 	revalidatePath("/kyuu");
 	return { success: true };
+}
+
+export async function updateApplicationStatus(applicationId: string, status: unknown) {
+	const session = await auth();
+	if (!session?.user?.id) return { error: "Unauthorized" };
+
+	const [existing] = await db
+		.select({
+			workspaceId: kyuuApplications.workspaceId,
+			status: kyuuApplications.status,
+			rejectedAt: kyuuApplications.rejectedAt,
+		})
+		.from(kyuuApplications)
+		.where(eq(kyuuApplications.id, applicationId))
+		.limit(1);
+	if (!existing) return { error: "Application not found" };
+	await assertWorkspaceOwner(existing.workspaceId, session.user.id);
+
+	if (typeof status !== "string" || !(kyuuStatusValues as readonly string[]).includes(status)) {
+		return { error: "Invalid status" };
+	}
+
+	const newStatus = status as KyuuStatus;
+	const now = new Date();
+	const rejectedAt =
+		newStatus === "rejected" && existing.status !== "rejected" ? now : existing.rejectedAt;
+
+	const [application] = await db
+		.update(kyuuApplications)
+		.set({
+			status: newStatus,
+			rejectedAt,
+			updatedAt: now,
+		})
+		.where(eq(kyuuApplications.id, applicationId))
+		.returning();
+
+	revalidatePath("/kyuu");
+	return { success: true as const, data: application };
+}
+
+export type StageField = "hrScreening" | "technicalInterview" | "offer";
+
+export async function updateApplicationStage(
+	applicationId: string,
+	stage: StageField,
+	value: boolean,
+) {
+	const session = await auth();
+	if (!session?.user?.id) return { error: "Unauthorized" };
+
+	const [existing] = await db
+		.select({
+			workspaceId: kyuuApplications.workspaceId,
+			hrScreening: kyuuApplications.hrScreening,
+			technicalInterview: kyuuApplications.technicalInterview,
+			offer: kyuuApplications.offer,
+			hrScreeningAt: kyuuApplications.hrScreeningAt,
+			technicalInterviewAt: kyuuApplications.technicalInterviewAt,
+			offerAt: kyuuApplications.offerAt,
+		})
+		.from(kyuuApplications)
+		.where(eq(kyuuApplications.id, applicationId))
+		.limit(1);
+	if (!existing) return { error: "Application not found" };
+	await assertWorkspaceOwner(existing.workspaceId, session.user.id);
+
+	const now = new Date();
+	const updatePayload: Record<string, unknown> = {
+		[stage]: value,
+		updatedAt: now,
+	};
+
+	if (stage === "hrScreening" && value && !existing.hrScreeningAt) {
+		updatePayload.hrScreeningAt = now;
+	} else if (stage === "technicalInterview" && value && !existing.technicalInterviewAt) {
+		updatePayload.technicalInterviewAt = now;
+	} else if (stage === "offer" && value && !existing.offerAt) {
+		updatePayload.offerAt = now;
+	}
+
+	const [application] = await db
+		.update(kyuuApplications)
+		.set(updatePayload)
+		.where(eq(kyuuApplications.id, applicationId))
+		.returning();
+
+	revalidatePath("/kyuu");
+	return { success: true as const, data: application };
 }

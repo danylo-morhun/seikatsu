@@ -31,13 +31,20 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	cn,
 } from "@seikatsu/ui";
 import { format } from "date-fns";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 import type { ResumeFile, getApplications } from "../actions/applications";
-import { deleteApplication } from "../actions/applications";
+import {
+	type StageField,
+	deleteApplication,
+	updateApplicationStage,
+	updateApplicationStatus,
+} from "../actions/applications";
+import { type KyuuStatus, kyuuStatusValues } from "../lib/kyuu-schemas";
 import { isIgnored } from "../lib/status";
 import { EditApplicationModal } from "./EditApplicationModal";
 import { KyuuFilterBar } from "./KyuuFilterBar";
@@ -49,11 +56,40 @@ function fmtDate(iso: string, short = false): string {
 	return format(new Date(`${iso}T00:00:00`), short ? "MMM d" : "MMM d, yyyy");
 }
 
-function Check({ done }: { done: boolean }) {
-	return done ? (
-		<HugeiconsIcon icon={CheckmarkCircle02Icon} className="h-4 w-4 text-emerald-500" />
-	) : (
-		<span className="text-muted-foreground/40">—</span>
+function Check({
+	done,
+	loading,
+	onClick,
+}: {
+	done: boolean;
+	loading?: boolean;
+	onClick?: () => void;
+}) {
+	if (loading) {
+		return (
+			<div className="flex items-center justify-center">
+				<Spinner className="h-4 w-4" />
+			</div>
+		);
+	}
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			className="inline-flex cursor-pointer items-center justify-center rounded-md p-1 transition-colors hover:bg-muted/80 focus:outline-hidden"
+			title={done ? "Mark stage as incomplete" : "Mark stage as complete"}
+		>
+			{done ? (
+				<HugeiconsIcon
+					icon={CheckmarkCircle02Icon}
+					className="h-4 w-4 text-emerald-500 transition-transform hover:scale-110"
+				/>
+			) : (
+				<span className="text-xs font-medium text-muted-foreground/40 transition-colors hover:text-foreground">
+					—
+				</span>
+			)}
+		</button>
 	);
 }
 
@@ -69,6 +105,10 @@ interface Props {
 	sortDir: "asc" | "desc";
 }
 
+type OptimisticUpdate =
+	| { type: "update"; id: string; changes: Partial<Application> }
+	| { type: "delete"; id: string };
+
 export function ApplicationsTable({
 	applications,
 	sources,
@@ -83,7 +123,18 @@ export function ApplicationsTable({
 	const [isPending, startTransition] = useTransition();
 	const refresh = useRefreshRouter();
 	const [pendingId, setPendingId] = useState<string | null>(null);
+	const [pendingKey, setPendingKey] = useState<string | null>(null);
 	const [editTarget, setEditTarget] = useState<Application | null>(null);
+
+	const [optimisticApplications, setOptimisticApplications] = useOptimistic(
+		applications,
+		(state, update: OptimisticUpdate) => {
+			if (update.type === "delete") {
+				return state.filter((a) => a.id !== update.id);
+			}
+			return state.map((a) => (a.id === update.id ? { ...a, ...update.changes } : a));
+		},
+	);
 
 	function sortBy(field: SortColumn) {
 		const params = new URLSearchParams(searchParams.toString());
@@ -100,8 +151,44 @@ export function ApplicationsTable({
 		return sortField === field ? (sortDir === "asc" ? "↑" : "↓") : "↕";
 	}
 
-	function handleDelete(id: string) {
+	function handleStatusChange(id: string, newStatus: KyuuStatus) {
+		const key = `${id}-status`;
+		setPendingKey(key);
 		startTransition(async () => {
+			setOptimisticApplications({ type: "update", id, changes: { status: newStatus } });
+			const result = await updateApplicationStatus(id, newStatus);
+			if ("error" in result) {
+				toast.error(result.error);
+			} else {
+				toast.success("Status updated");
+				refresh();
+			}
+			setPendingKey(null);
+		});
+	}
+
+	function handleStageToggle(id: string, stage: StageField, currentValue: boolean) {
+		const key = `${id}-${stage}`;
+		setPendingKey(key);
+		startTransition(async () => {
+			const nextValue = !currentValue;
+			setOptimisticApplications({ type: "update", id, changes: { [stage]: nextValue } });
+			const result = await updateApplicationStage(id, stage, nextValue);
+			if ("error" in result) {
+				toast.error(result.error);
+			} else {
+				toast.success("Stage updated");
+				refresh();
+			}
+			setPendingKey(null);
+		});
+	}
+
+	function handleDelete(id: string) {
+		const key = `${id}-delete`;
+		setPendingKey(key);
+		startTransition(async () => {
+			setOptimisticApplications({ type: "delete", id });
 			const result = await deleteApplication(id);
 			if ("error" in result) {
 				toast.error(result.error);
@@ -110,6 +197,7 @@ export function ApplicationsTable({
 				refresh();
 			}
 			setPendingId(null);
+			setPendingKey(null);
 		});
 	}
 
@@ -162,7 +250,7 @@ export function ApplicationsTable({
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{applications.length === 0 ? (
+						{optimisticApplications.length === 0 ? (
 							<TableRow>
 								<TableCell colSpan={10} className="py-12 text-center">
 									<p className="text-sm font-medium text-muted-foreground">
@@ -176,8 +264,14 @@ export function ApplicationsTable({
 								</TableCell>
 							</TableRow>
 						) : (
-							applications.map((app) => (
-								<TableRow key={app.id}>
+							optimisticApplications.map((app) => (
+								<TableRow
+									key={app.id}
+									className={cn(
+										pendingKey?.startsWith(app.id) &&
+											"bg-muted/20 opacity-60 transition-opacity pointer-events-none",
+									)}
+								>
 									<TableCell className="text-muted-foreground whitespace-nowrap">
 										<span className="sm:hidden">{fmtDate(app.dateApplied, true)}</span>
 										<span className="hidden sm:inline">{fmtDate(app.dateApplied)}</span>
@@ -227,16 +321,62 @@ export function ApplicationsTable({
 										)}
 									</TableCell>
 									<TableCell className="whitespace-nowrap">
-										<StatusBadge status={isIgnored(app) ? "ignored" : app.status} />
+										{pendingKey === `${app.id}-status` ? (
+											<span className="inline-flex items-center gap-1.5 rounded-full border border-muted-foreground/30 bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+												<Spinner className="h-3 w-3" />
+												Updating…
+											</span>
+										) : (
+											<DropdownMenu>
+												<DropdownMenuTrigger asChild>
+													<button
+														type="button"
+														className="inline-flex cursor-pointer transition-opacity hover:opacity-80 focus:outline-hidden"
+													>
+														<StatusBadge status={isIgnored(app) ? "ignored" : app.status} />
+													</button>
+												</DropdownMenuTrigger>
+												<DropdownMenuContent align="start">
+													{kyuuStatusValues.map((s) => (
+														<DropdownMenuItem
+															key={s}
+															disabled={app.status === s}
+															onSelect={() => handleStatusChange(app.id, s)}
+															className="cursor-pointer"
+														>
+															<StatusBadge status={s} />
+														</DropdownMenuItem>
+													))}
+												</DropdownMenuContent>
+											</DropdownMenu>
+										)}
 									</TableCell>
 									<TableCell className="hidden text-center sm:table-cell">
-										<Check done={app.hrScreening} />
+										<Check
+											done={app.hrScreening}
+											loading={pendingKey === `${app.id}-hrScreening`}
+											onClick={() => handleStageToggle(app.id, "hrScreening", app.hrScreening)}
+										/>
 									</TableCell>
 									<TableCell className="hidden text-center sm:table-cell">
-										<Check done={app.technicalInterview} />
+										<Check
+											done={app.technicalInterview}
+											loading={pendingKey === `${app.id}-technicalInterview`}
+											onClick={() =>
+												handleStageToggle(
+													app.id,
+													"technicalInterview",
+													app.technicalInterview,
+												)
+											}
+										/>
 									</TableCell>
 									<TableCell className="hidden text-center sm:table-cell">
-										<Check done={app.offer} />
+										<Check
+											done={app.offer}
+											loading={pendingKey === `${app.id}-offer`}
+											onClick={() => handleStageToggle(app.id, "offer", app.offer)}
+										/>
 									</TableCell>
 									<TableCell>
 										<AlertDialog
