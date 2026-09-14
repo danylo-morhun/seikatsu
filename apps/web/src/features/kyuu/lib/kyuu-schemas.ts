@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 export const kyuuStatusValues = [
+	"sourced",
+	"drafted",
 	"applied",
 	"under_review",
 	"video_interview",

@@ -2,6 +2,14 @@ import { cn } from "@seikatsu/ui";
 import type { KyuuFilterStatus } from "../lib/kyuu-schemas";
 
 const STATUS_CONFIG: Record<KyuuFilterStatus, { label: string; className: string }> = {
+	sourced: {
+		label: "Sourced",
+		className: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-400",
+	},
+	drafted: {
+		label: "Drafted",
+		className: "border-orange-500/30 bg-orange-500/10 text-orange-600 dark:text-orange-400",
+	},
 	applied: {
 		label: "Applied",
 		className: "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",

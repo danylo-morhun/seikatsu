@@ -3,6 +3,8 @@ import { boolean, date, index, pgEnum, pgTable, text, timestamp, uuid } from "dr
 import { workspaces } from "./kuroji";
 
 export const kyuuStatusEnum = pgEnum("kyuu_status", [
+	"sourced",
+	"drafted",
 	"applied",
 	"under_review",
 	"video_interview",

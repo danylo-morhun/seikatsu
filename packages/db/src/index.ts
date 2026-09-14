@@ -10,6 +10,7 @@ export {
 	gte,
 	lte,
 	inArray,
+	notInArray,
 	ilike,
 	count,
 	isNull,

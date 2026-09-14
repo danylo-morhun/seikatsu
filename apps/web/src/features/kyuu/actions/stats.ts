@@ -1,8 +1,8 @@
 "use server";
 
 import { auth } from "@/auth";
-import { db, eq, kyuuApplications, sql, workspaces } from "@seikatsu/db";
-import { IGNORE_THRESHOLD_DAYS } from "../lib/constants";
+import { and, db, eq, kyuuApplications, notInArray, sql, workspaces } from "@seikatsu/db";
+import { IGNORE_THRESHOLD_DAYS, PRE_APPLICATION_STATUSES } from "../lib/constants";
 import type { KyuuStatus } from "../lib/kyuu-schemas";
 import { type KyuuFilters, buildKyuuConditions } from "./filters";
 
@@ -80,8 +80,16 @@ export async function getKyuuStats(
 	const now = Date.now();
 	const msPerDay = 86_400_000;
 
+	const isPreApplication = (status: string) =>
+		(PRE_APPLICATION_STATUSES as readonly string[]).includes(status);
+
+	let countedTotal = 0;
+
 	for (const r of rows) {
 		byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
+		if (isPreApplication(r.status)) continue; // sourced/drafted aren't real applications yet
+		countedTotal++;
+
 		if (r.hrScreening) hrScreeningCount++;
 		if (r.technicalInterview) technicalInterviewCount++;
 		if (r.offer) offerCount++;
@@ -116,7 +124,7 @@ export async function getKyuuStats(
 			count: sql<number>`count(*)::int`,
 		})
 		.from(kyuuApplications)
-		.where(where)
+		.where(and(where, notInArray(kyuuApplications.status, [...PRE_APPLICATION_STATUSES])))
 		.groupBy(sql`date_trunc('week', ${kyuuApplications.dateApplied}::date)`)
 		.orderBy(sql`date_trunc('week', ${kyuuApplications.dateApplied}::date)`);
 
@@ -125,14 +133,14 @@ export async function getKyuuStats(
 		.sort((a, b) => b.count - a.count);
 
 	return {
-		total: rows.length,
+		total: countedTotal,
 		byStatus: byStatus as Record<KyuuStatus, number>,
 		ignored,
 		hrScreeningCount,
 		technicalInterviewCount,
 		offerCount,
 		activeInPipeline,
-		responseRate: rows.length > 0 ? hrScreeningCount / rows.length : 0,
+		responseRate: countedTotal > 0 ? hrScreeningCount / countedTotal : 0,
 		avgResponseDays:
 			responseDaysN > 0 ? Math.round((responseDaysSum / responseDaysN) * 10) / 10 : null,
 		sources,
