@@ -32,6 +32,12 @@ export const APPS_CONFIG = {
 		kanji: "求",
 		description: "Job application tracker. Pipeline stages, sources, and status.",
 	},
+	"/aisha": {
+		theme: "theme-aisha",
+		name: "愛 Aisha",
+		kanji: "愛",
+		description: "Car care. Maintenance schedule, mileage, service history, and documents.",
+	},
 } satisfies Record<string, { theme: string; name: string; kanji: string; description: string }>;
 
 export const APP_THEMES = Object.fromEntries(

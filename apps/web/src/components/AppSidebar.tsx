@@ -6,6 +6,7 @@ import {
 	ArrowUpDownIcon,
 	Book01Icon,
 	Briefcase01Icon,
+	Car01Icon,
 	KanbanIcon,
 	Logout01Icon,
 	TaskDaily02Icon,
@@ -40,6 +41,7 @@ const APP_ICONS: Record<string, typeof YenSquareIcon> = {
 	"/tsundoku": Book01Icon,
 	"/keizoku": TaskDaily02Icon,
 	"/kyuu": Briefcase01Icon,
+	"/aisha": Car01Icon,
 };
 
 interface User {
