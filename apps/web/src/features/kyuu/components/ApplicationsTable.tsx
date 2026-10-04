@@ -363,11 +363,7 @@ export function ApplicationsTable({
 											done={app.technicalInterview}
 											loading={pendingKey === `${app.id}-technicalInterview`}
 											onClick={() =>
-												handleStageToggle(
-													app.id,
-													"technicalInterview",
-													app.technicalInterview,
-												)
+												handleStageToggle(app.id, "technicalInterview", app.technicalInterview)
 											}
 										/>
 									</TableCell>
