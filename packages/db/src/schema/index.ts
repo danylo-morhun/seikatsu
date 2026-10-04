@@ -1,3 +1,4 @@
+export * from "./aisha";
 export * from "./auth";
 export * from "./keizoku";
 export * from "./kuroji";
