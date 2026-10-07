@@ -53,6 +53,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 						<Link
 							key={value}
 							href={tabHref(value)}
+							prefetch
 							className={cn(
 								"relative flex items-center gap-1.5 px-3.5 text-sm font-medium transition-colors",
 								activeTab === value
