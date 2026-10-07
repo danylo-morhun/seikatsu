@@ -3,8 +3,10 @@ import { BookCover } from "@/features/tsundoku/components/BookCover";
 import { StatusBadge } from "@/features/tsundoku/components/StatusBadge";
 import { progressPercent } from "@/features/tsundoku/lib/pace";
 import Link from "next/link";
+import { memo } from "react";
 
-export function BookListRow({ book }: { book: TsundokuBook }) {
+// Memoized: the library re-renders on every filter keystroke; unchanged books skip.
+export const BookListRow = memo(function BookListRow({ book }: { book: TsundokuBook }) {
 	const pct = progressPercent(book.currentPage, book.pageCount);
 
 	return (
@@ -34,4 +36,4 @@ export function BookListRow({ book }: { book: TsundokuBook }) {
 			<StatusBadge status={book.status} short />
 		</Link>
 	);
-}
+});
