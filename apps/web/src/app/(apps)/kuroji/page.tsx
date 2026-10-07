@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
 import { getAccounts } from "@/features/kuroji/actions/accounts";
 import { getBalances } from "@/features/kuroji/actions/balances";
-import { generateDueRecurring } from "@/features/kuroji/actions/recurring";
 import { getTags } from "@/features/kuroji/actions/tags";
 import { getRecentTransactions } from "@/features/kuroji/actions/transactions";
 import { getMonthlyTrends } from "@/features/kuroji/actions/trends";
@@ -14,8 +13,10 @@ import { OnboardingCard } from "@/features/kuroji/components/OnboardingCard";
 import { TransactionTable } from "@/features/kuroji/components/TransactionTable";
 import { TrendChart } from "@/features/kuroji/components/TrendChart";
 import { formatCurrency } from "@/features/kuroji/lib/format";
+import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
 import { endOfMonth, format, startOfMonth } from "date-fns";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 
 function fmt(d: Date) {
 	return format(d, "yyyy-MM-dd");
@@ -82,7 +83,9 @@ export default async function KurojiPage({
 	const tagId = rawTag && UUID.test(rawTag) ? rawTag : undefined;
 
 	const workspace = await initializeWorkspace(session.user.id);
-	await generateDueRecurring(workspace.id);
+	// The daily cron materializes recurring transactions; this only covers a missed run,
+	// after the response is sent, so it never delays the page.
+	after(() => generateDueForWorkspace(workspace));
 
 	// ── Overview ────────────────────────────────────────────────────────────────
 	if (tab === "expense") {
