@@ -1,52 +1,19 @@
 "use server";
 
 import { auth } from "@/auth";
-import { accounts, db, eq, workspaces } from "@seikatsu/db";
+import { getCurrentWorkspace, getOwnedWorkspace, getSessionUserId } from "@/lib/session";
+import { db, eq, workspaces } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 export async function getWorkspace(userId: string) {
-	const session = await auth();
-	if (!session?.user?.id || session.user.id !== userId) throw new Error("Unauthorized");
-
-	const [workspace] = await db
-		.select()
-		.from(workspaces)
-		.where(eq(workspaces.userId, userId))
-		.limit(1);
-	return workspace ?? null;
+	if ((await getSessionUserId()) !== userId) throw new Error("Unauthorized");
+	return getCurrentWorkspace();
 }
 
 export async function initializeWorkspace(userId: string) {
-	const session = await auth();
-	if (!session?.user?.id || session.user.id !== userId) throw new Error("Unauthorized");
-
-	const [inserted] = await db
-		.insert(workspaces)
-		.values({ userId, name: "Kuroji", baseCurrency: "PLN" })
-		.onConflictDoNothing()
-		.returning();
-
-	if (inserted) {
-		await db.insert(accounts).values([
-			{ workspaceId: inserted.id, name: "Wallet", type: "ASSET", currency: "PLN" },
-			{ workspaceId: inserted.id, name: "Bank Account", type: "ASSET", currency: "PLN" },
-			{ workspaceId: inserted.id, name: "Savings", type: "ASSET", currency: "PLN" },
-			{ workspaceId: inserted.id, name: "Salary", type: "INCOME", currency: "PLN" },
-			{ workspaceId: inserted.id, name: "Groceries", type: "EXPENSE", currency: "PLN" },
-			{ workspaceId: inserted.id, name: "Transport", type: "EXPENSE", currency: "PLN" },
-			{ workspaceId: inserted.id, name: "Dining", type: "EXPENSE", currency: "PLN" },
-			{ workspaceId: inserted.id, name: "Utilities", type: "EXPENSE", currency: "PLN" },
-			{ workspaceId: inserted.id, name: "Entertainment", type: "EXPENSE", currency: "PLN" },
-		]);
-		return inserted;
-	}
-
-	const [existing] = await db
-		.select()
-		.from(workspaces)
-		.where(eq(workspaces.userId, userId))
-		.limit(1);
-	return existing;
+	const workspace = await getWorkspace(userId);
+	if (!workspace) throw new Error("Unauthorized");
+	return workspace;
 }
 
 export async function updateWorkspace(
@@ -56,8 +23,8 @@ export async function updateWorkspace(
 	const session = await auth();
 	if (!session?.user?.id) return { error: "Unauthorized" };
 
-	const [ws] = await db.select().from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1);
-	if (!ws || ws.userId !== session.user.id) return { error: "Forbidden" };
+	const ws = await getOwnedWorkspace(workspaceId);
+	if (!ws) return { error: "Forbidden" };
 
 	const name = data.name.trim();
 	if (!name) return { error: "Name is required" };
