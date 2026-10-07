@@ -1,21 +1,13 @@
 // Shared ownership guards for aisha server actions.
 // Not a "use server" module — these are helpers called inside server actions.
 
-import { auth } from "@/auth";
+import { getSessionUserId } from "@/lib/session";
 import { aishaVehicles, db, eq, workspaces } from "@seikatsu/db";
 
-export async function requireUser(): Promise<string | null> {
-	const session = await auth();
-	return session?.user?.id ?? null;
-}
+export { getOwnedWorkspace } from "@/lib/session";
 
-/** Returns the workspace row if it belongs to the current user, else null. */
-export async function getOwnedWorkspace(workspaceId: string) {
-	const userId = await requireUser();
-	if (!userId) return null;
-	const [ws] = await db.select().from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1);
-	if (!ws || ws.userId !== userId) return null;
-	return ws;
+export async function requireUser(): Promise<string | null> {
+	return getSessionUserId();
 }
 
 /** Returns the vehicle row if it belongs to the current user's workspace, else null. */
