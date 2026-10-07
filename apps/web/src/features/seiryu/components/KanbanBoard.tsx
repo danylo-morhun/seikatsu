@@ -26,12 +26,17 @@ import { SeiryuMobileAddFab } from "@/features/seiryu/components/SeiryuMobileAdd
 import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import { useServerState } from "@/features/seiryu/lib/server-state";
 import {
+	type CollisionDetection,
 	DndContext,
 	type DragEndEvent,
+	type DragOverEvent,
 	DragOverlay,
 	type DragStartEvent,
 	PointerSensor,
+	type UniqueIdentifier,
+	closestCenter,
 	closestCorners,
+	pointerWithin,
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
@@ -260,7 +265,41 @@ export function KanbanBoard({
 	const activeColumn = activeType === "column" ? columns.find((c) => c.id === activeId) : null;
 	const activeCard = activeType === "card" ? cards.find((c) => c.id === activeId) : null;
 
+	// Cards target the column under the pointer, then the nearest card in it. Comparing the
+	// dragged card's corners instead flips between two columns near their border.
+	const lastOverId = useRef<UniqueIdentifier | null>(null);
+	const collisionDetection: CollisionDetection = useCallback((args) => {
+		const { active, droppableContainers } = args;
+		if (active.data.current?.type === "column") {
+			return closestCorners({
+				...args,
+				droppableContainers: droppableContainers.filter((c) => c.data.current?.type === "column"),
+			});
+		}
+
+		const hits = pointerWithin(args);
+		const typeOf = (id: UniqueIdentifier) =>
+			droppableContainers.find((c) => c.id === id)?.data.current?.type;
+		const cardHit = hits.find((h) => typeOf(h.id) === "card");
+		const columnHit = hits.find((h) => typeOf(h.id) === "column");
+
+		let overId: UniqueIdentifier | null = cardHit?.id ?? null;
+		if (!overId && columnHit) {
+			const inColumn = droppableContainers.filter(
+				(c) => c.data.current?.type === "card" && c.data.current?.columnId === columnHit.id,
+			);
+			overId =
+				inColumn.length > 0
+					? (closestCenter({ ...args, droppableContainers: inColumn })[0]?.id ?? columnHit.id)
+					: columnHit.id;
+		}
+		// Between columns: keep the last target so dropping there doesn't cancel the move.
+		if (overId) lastOverId.current = overId;
+		return lastOverId.current ? [{ id: lastOverId.current }] : [];
+	}, []);
+
 	function handleDragStart(event: DragStartEvent) {
+		lastOverId.current = null;
 		const type = event.active.data.current?.type ?? null;
 		setActiveId(event.active.id as string);
 		setActiveType(type);
@@ -268,6 +307,31 @@ export function KanbanBoard({
 			const card = cards.find((c) => c.id === event.active.id);
 			if (card) dragStart.current = { cards, columnId: card.columnId, release: holdCards() };
 		}
+	}
+
+	// Move the card into the column it hovers, so that column opens a gap for it while dragging.
+	function handleDragOver({ active, over }: DragOverEvent) {
+		if (!over || over.id === active.id || active.data.current?.type !== "card") return;
+		const card = cards.find((c) => c.id === active.id);
+		if (!card) return;
+
+		const overIsColumn = over.data.current?.type === "column";
+		const overColumnId = overIsColumn ? (over.id as string) : over.data.current?.columnId;
+		if (!overColumnId || overColumnId === card.columnId) return;
+
+		const target = cards.filter((c) => c.columnId === overColumnId).sort(byPosition);
+		let index = target.length;
+		if (!overIsColumn) {
+			const overIndex = target.findIndex((c) => c.id === over.id);
+			const translated = active.rect.current.translated;
+			const below = translated && translated.top > over.rect.top + over.rect.height / 2;
+			if (overIndex !== -1) index = overIndex + (below ? 1 : 0);
+		}
+		const position = positionAt(target, index);
+
+		setCards((prev) =>
+			prev.map((c) => (c.id === card.id ? { ...c, columnId: overColumnId, position } : c)),
+		);
 	}
 
 	function handleDragCancel() {
@@ -317,41 +381,35 @@ export function KanbanBoard({
 		if (!start) return;
 
 		const card = cards.find((c) => c.id === active.id);
-		if (!card || !over || over.id === active.id) {
+		if (!card || !over) {
+			setCards(start.cards);
 			start.release(true);
 			return;
 		}
 
-		const overIsColumn = over.data.current?.type === "column";
-		const overColumnId: string = overIsColumn ? (over.id as string) : over.data.current?.columnId;
-		const column = cards.filter((c) => c.columnId === overColumnId).sort(byPosition);
-		const moved = overColumnId !== card.columnId;
-
-		let position: string;
-		if (moved) {
-			const overIdx = column.findIndex((c) => c.id === over.id);
-			position = positionAt(column, overIdx === -1 ? column.length : overIdx);
-		} else {
-			// Same order the sortable preview showed while dragging.
-			const oldIdx = column.findIndex((c) => c.id === card.id);
-			const newIdx = column.findIndex((c) => c.id === over.id);
-			if (newIdx === -1 || newIdx === oldIdx) {
-				start.release(true);
-				return;
-			}
+		// handleDragOver already put the card in its final column; settle the order inside it.
+		let position = card.position;
+		const column = cards.filter((c) => c.columnId === card.columnId).sort(byPosition);
+		const oldIdx = column.findIndex((c) => c.id === card.id);
+		const newIdx = column.findIndex((c) => c.id === over.id);
+		if (newIdx !== -1 && newIdx !== oldIdx) {
 			const reordered = arrayMove(column, oldIdx, newIdx);
 			position = generateKeyBetween(
 				reordered[newIdx - 1]?.position ?? null,
 				reordered[newIdx + 1]?.position ?? null,
 			);
+			setCards((prev) => prev.map((c) => (c.id === card.id ? { ...c, position } : c)));
 		}
 
-		setCards((prev) =>
-			prev.map((c) => (c.id === card.id ? { ...c, columnId: overColumnId, position } : c)),
-		);
+		const original = start.cards.find((c) => c.id === card.id);
+		const moved = card.columnId !== start.columnId;
+		if (!moved && position === original?.position) {
+			start.release(true);
+			return;
+		}
 
 		const save = moved
-			? moveCard({ cardId: card.id, newColumnId: overColumnId, newPosition: position })
+			? moveCard({ cardId: card.id, newColumnId: card.columnId, newPosition: position })
 			: reorderCards({ cardId: card.id, newPosition: position });
 		trackCards(save).then((result) => {
 			if ("error" in result) {
@@ -384,8 +442,9 @@ export function KanbanBoard({
 				<>
 					<DndContext
 						sensors={sensors}
-						collisionDetection={closestCorners}
+						collisionDetection={collisionDetection}
 						onDragStart={handleDragStart}
+						onDragOver={handleDragOver}
 						onDragEnd={handleDragEnd}
 						onDragCancel={handleDragCancel}
 					>
