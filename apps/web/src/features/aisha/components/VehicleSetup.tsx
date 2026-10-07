@@ -21,12 +21,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 export function VehicleSetup({ workspaceId }: { workspaceId: string }) {
-	const router = useRouter();
 	const [pending, startTransition] = useTransition();
 	const [make, setMake] = useState("");
 	const [model, setModel] = useState("");
@@ -56,7 +54,6 @@ export function VehicleSetup({ workspaceId }: { workspaceId: string }) {
 				return;
 			}
 			toast.success("Car added. Default maintenance plan created.");
-			router.refresh();
 		});
 	}
 

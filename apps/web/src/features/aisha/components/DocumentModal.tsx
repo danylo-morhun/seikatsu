@@ -23,7 +23,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -37,7 +36,6 @@ export function DocumentModal({
 	doc?: AishaDocument;
 	trigger: React.ReactNode;
 }) {
-	const router = useRouter();
 	const [open, setOpen] = useState(false);
 	const [pending, startTransition] = useTransition();
 	const [deleting, startDelete] = useTransition();
@@ -64,7 +62,6 @@ export function DocumentModal({
 				setExpiresOn("");
 				setNote("");
 			}
-			router.refresh();
 		});
 	}
 
@@ -78,7 +75,6 @@ export function DocumentModal({
 			}
 			toast.success("Deleted.");
 			setOpen(false);
-			router.refresh();
 		});
 	}
 

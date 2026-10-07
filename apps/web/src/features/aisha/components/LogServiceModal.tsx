@@ -16,7 +16,6 @@ import {
 	Input,
 	Label,
 } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -33,7 +32,6 @@ export function LogServiceModal({
 	preselected?: string[];
 	trigger: React.ReactNode;
 }) {
-	const router = useRouter();
 	const [open, setOpen] = useState(false);
 	const [pending, startTransition] = useTransition();
 	const [date, setDate] = useState(localToday);
@@ -74,7 +72,6 @@ export function LogServiceModal({
 			}
 			toast.success("Service logged.");
 			setOpen(false);
-			router.refresh();
 		});
 	}
 

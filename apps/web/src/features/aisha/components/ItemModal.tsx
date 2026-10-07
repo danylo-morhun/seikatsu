@@ -13,7 +13,6 @@ import {
 	Input,
 	Label,
 } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -32,7 +31,6 @@ export function ItemModal({
 	item?: AishaItem;
 	trigger: React.ReactNode;
 }) {
-	const router = useRouter();
 	const [open, setOpen] = useState(false);
 	const [pending, startTransition] = useTransition();
 	const [deleting, startDelete] = useTransition();
@@ -63,7 +61,6 @@ export function ItemModal({
 				setIntervalMonths("");
 				setNote("");
 			}
-			router.refresh();
 		});
 	}
 
@@ -78,7 +75,6 @@ export function ItemModal({
 			}
 			toast.success("Deleted.");
 			setOpen(false);
-			router.refresh();
 		});
 	}
 
