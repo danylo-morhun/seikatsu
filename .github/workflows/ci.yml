@@ -1,81 +1,49 @@
-name: CI Pipeline
+name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
+  push:
     branches: [main]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
-  DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/seikatsu_test"
+  # Every route is dynamic, so the build never queries Postgres — a placeholder URL is enough.
+  # Unit tests run against in-process PGlite (packages/db/src/test-utils.ts).
+  DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/seikatsu_ci"
   AUTH_SECRET: "ci-test-auth-secret-32-chars-long-seikatsu"
   AUTH_URL: "http://localhost:3010"
-  SKIP_ENV_VALIDATION: "true"
   NEXT_TELEMETRY_DISABLED: "1"
 
 jobs:
-  lint:
-    name: Code Quality (Biome)
+  lint-and-typecheck:
+    name: Code Quality & Type Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install
-      - name: Run Biome Check
-        run: pnpm exec biome check .
+      - uses: ./.github/actions/setup
+      - run: pnpm exec biome check .
+      - run: pnpm typecheck
 
-  typecheck:
-    name: Static Type Analysis
+  unit-test:
+    name: Unit Tests (Vitest)
+    needs: lint-and-typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install
-      - name: Typecheck Workspace
-        run: pnpm typecheck
-
-  test:
-    name: Unit & Integration Tests
-    needs: [lint, typecheck]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install
-      - name: Run Vitest Suite
-        run: pnpm test
+      - uses: ./.github/actions/setup
+      - run: pnpm test
 
   build:
-    name: Production Monorepo Build
-    needs: [lint, typecheck]
+    name: Production Build Verification
+    needs: lint-and-typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install
-      - name: Turbo Build
-        run: pnpm build
+      - uses: ./.github/actions/setup
+      - run: pnpm build
