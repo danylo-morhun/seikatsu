@@ -1,6 +1,7 @@
 import { NavigationProgress } from "@/components/NavigationProgress";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { TooltipProvider } from "@seikatsu/ui";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { Suspense } from "react";
@@ -42,6 +43,7 @@ export default function RootLayout({
 					<TooltipProvider delayDuration={0}>{children}</TooltipProvider>
 					<Toaster richColors position="bottom-right" />
 				</ThemeProvider>
+				<SpeedInsights />
 			</body>
 		</html>
 	);
