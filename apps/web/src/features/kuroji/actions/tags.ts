@@ -1,16 +1,8 @@
 "use server";
 
 import { auth } from "@/auth";
-import {
-	and,
-	db,
-	eq,
-	inArray,
-	tags,
-	transactionTags,
-	transactions,
-	workspaces,
-} from "@seikatsu/db";
+import { getOwnedWorkspace } from "@/lib/session";
+import { and, db, eq, inArray, tags, transactionTags, transactions } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 export type Tag = { id: string; name: string; color: string | null };
@@ -19,13 +11,9 @@ export async function getTags(workspaceId: string): Promise<Tag[]> {
 	const session = await auth();
 	if (!session?.user?.id) throw new Error("Unauthorized");
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) throw new Error("Forbidden");
+	if (!ws) throw new Error("Forbidden");
 
 	return db
 		.select({ id: tags.id, name: tags.name, color: tags.color })
@@ -41,13 +29,9 @@ export async function createTag(
 	const session = await auth();
 	if (!session?.user?.id) return { error: "Unauthorized" };
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) return { error: "Forbidden" };
+	if (!ws) return { error: "Forbidden" };
 
 	try {
 		const [tag] = await db
@@ -73,13 +57,9 @@ export async function deleteTag(tagId: string): Promise<{ error: string } | { su
 
 	if (!tag) return { error: "Tag not found" };
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, tag.workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(tag.workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) return { error: "Forbidden" };
+	if (!ws) return { error: "Forbidden" };
 
 	await db.delete(tags).where(eq(tags.id, tagId));
 	revalidatePath("/kuroji");
@@ -94,13 +74,9 @@ export async function setTransactionTags(
 	const session = await auth();
 	if (!session?.user?.id) return { error: "Unauthorized" };
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) return { error: "Forbidden" };
+	if (!ws) return { error: "Forbidden" };
 
 	const [txnRow] = await db
 		.select({ workspaceId: transactions.workspaceId })

@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { getOwnedWorkspace } from "@/lib/session";
 import {
 	accounts,
 	and,
@@ -11,7 +12,6 @@ import {
 	sql,
 	transactionEntries,
 	transactions,
-	workspaces,
 } from "@seikatsu/db";
 
 export type AccountDetail = {
@@ -39,13 +39,9 @@ export async function getAccountDetail(accountId: string): Promise<AccountDetail
 
 	if (!account) return null;
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, account.workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(account.workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) throw new Error("Forbidden");
+	if (!ws) throw new Error("Forbidden");
 
 	const [balanceRow] = await db
 		.select({ balance: sql<string>`coalesce(sum(${transactionEntries.baseAmount}), 0)` })
@@ -80,13 +76,9 @@ export async function getAccountActivity(
 
 	if (!account) return [];
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, account.workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(account.workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) throw new Error("Forbidden");
+	if (!ws) throw new Error("Forbidden");
 
 	const cutoff = new Date();
 	cutoff.setDate(1);
@@ -124,13 +116,9 @@ export async function getSubAccounts(accountId: string): Promise<AccountDetail[]
 
 	if (!account) return [];
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, account.workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(account.workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) throw new Error("Forbidden");
+	if (!ws) throw new Error("Forbidden");
 
 	const children = await db.select().from(accounts).where(eq(accounts.parentId, accountId));
 

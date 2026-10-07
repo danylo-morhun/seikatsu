@@ -1,20 +1,17 @@
 "use server";
 
 import { auth } from "@/auth";
-import { accounts, and, db, eq, isNull, transactionEntries, workspaces } from "@seikatsu/db";
+import { getOwnedWorkspace } from "@/lib/session";
+import { accounts, and, db, eq, isNull, transactionEntries } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 export async function getAccounts(workspaceId: string, opts?: { includeArchived?: boolean }) {
 	const session = await auth();
 	if (!session?.user?.id) throw new Error("Unauthorized");
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) throw new Error("Forbidden");
+	if (!ws) throw new Error("Forbidden");
 
 	const filter = opts?.includeArchived
 		? eq(accounts.workspaceId, workspaceId)
@@ -33,14 +30,8 @@ export async function createAccount(
 	const session = await auth();
 	if (!session?.user?.id) throw new Error("Unauthorized");
 
-	const [workspace] = await db
-		.select({ baseCurrency: workspaces.baseCurrency, userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, workspaceId))
-		.limit(1);
-
-	if (!workspace) throw new Error("Workspace not found");
-	if (workspace.userId !== session.user.id) throw new Error("Forbidden");
+	const workspace = await getOwnedWorkspace(workspaceId);
+	if (!workspace) throw new Error("Forbidden");
 
 	if (parentId) {
 		const [parent] = await db
@@ -88,13 +79,9 @@ export async function updateAccount(
 
 	if (!existing) throw new Error("Account not found");
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, existing.workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(existing.workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) throw new Error("Forbidden");
+	if (!ws) throw new Error("Forbidden");
 
 	const [account] = await db
 		.update(accounts)
@@ -127,13 +114,9 @@ export async function deleteAccount(
 
 	if (!account) return { error: "Account not found" };
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, account.workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(account.workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) return { error: "Forbidden" };
+	if (!ws) return { error: "Forbidden" };
 
 	const [child] = await db
 		.select({ id: accounts.id })
@@ -174,13 +157,9 @@ export async function archiveAccount(
 
 	if (!account) return { error: "Account not found" };
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, account.workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(account.workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) return { error: "Forbidden" };
+	if (!ws) return { error: "Forbidden" };
 
 	await db.update(accounts).set({ archivedAt: new Date() }).where(eq(accounts.id, accountId));
 	revalidatePath("/kuroji");
@@ -202,13 +181,9 @@ export async function unarchiveAccount(
 
 	if (!account) return { error: "Account not found" };
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, account.workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(account.workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) return { error: "Forbidden" };
+	if (!ws) return { error: "Forbidden" };
 
 	await db.update(accounts).set({ archivedAt: null }).where(eq(accounts.id, accountId));
 	revalidatePath("/kuroji");
@@ -231,13 +206,9 @@ export async function toggleAccountDashboardVisibility(
 
 	if (!account) return { error: "Account not found" };
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, account.workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(account.workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) return { error: "Forbidden" };
+	if (!ws) return { error: "Forbidden" };
 
 	await db.update(accounts).set({ hiddenFromDashboard: hidden }).where(eq(accounts.id, accountId));
 	revalidatePath("/kuroji");

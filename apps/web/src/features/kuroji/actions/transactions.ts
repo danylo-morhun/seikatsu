@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
+import { getOwnedWorkspace } from "@/lib/session";
 import {
 	accounts,
 	and,
@@ -197,13 +198,9 @@ export async function deleteTransaction(
 
 	if (!txn) return { error: "Transaction not found" };
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, txn.workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(txn.workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) return { error: "Forbidden" };
+	if (!ws) return { error: "Forbidden" };
 
 	await db.delete(transactions).where(eq(transactions.id, transactionId));
 	revalidatePath("/kuroji");
@@ -219,13 +216,9 @@ export async function deleteTransactions(
 	const session = await auth();
 	if (!session?.user?.id) return { error: "Unauthorized" };
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) return { error: "Forbidden" };
+	if (!ws) return { error: "Forbidden" };
 
 	const deleted = await db
 		.delete(transactions)
@@ -347,13 +340,9 @@ export async function getRecentTransactions(
 	const session = await auth();
 	if (!session?.user?.id) throw new Error("Unauthorized");
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) throw new Error("Forbidden");
+	if (!ws) throw new Error("Forbidden");
 
 	const accountSubquery = accountId
 		? db

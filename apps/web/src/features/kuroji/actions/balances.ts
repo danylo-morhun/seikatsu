@@ -1,17 +1,8 @@
 "use server";
 
 import { auth } from "@/auth";
-import {
-	accounts,
-	and,
-	db,
-	eq,
-	isNull,
-	sql,
-	transactionEntries,
-	transactions,
-	workspaces,
-} from "@seikatsu/db";
+import { getOwnedWorkspace } from "@/lib/session";
+import { accounts, and, db, eq, isNull, sql, transactionEntries, transactions } from "@seikatsu/db";
 
 export type AccountBalance = {
 	accountId: string;
@@ -32,13 +23,9 @@ export async function getBalances(
 	const session = await auth();
 	if (!session?.user?.id) throw new Error("Unauthorized");
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) throw new Error("Forbidden");
+	if (!ws) throw new Error("Forbidden");
 
 	const assetLiabDateClause = to
 		? sql`and (${transactions.date} is null or ${transactions.date} <= ${to})`
