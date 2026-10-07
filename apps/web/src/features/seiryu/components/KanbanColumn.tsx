@@ -21,11 +21,11 @@ export type ColumnData = {
 interface Props {
 	column: ColumnData;
 	cards: CardData[];
-	onCardClick?: (card: CardData) => void;
+	onCardOpen?: (cardId: string) => void;
 	onCardAdded?: (card: CardData) => void;
 }
 
-export function KanbanColumn({ column, cards, onCardClick, onCardAdded }: Props) {
+export function KanbanColumn({ column, cards, onCardOpen, onCardAdded }: Props) {
 	const [addingCard, setAddingCard] = useState(false);
 	const [title, setTitle] = useState("");
 	const [isCreating, startCreate] = useTransition();
@@ -188,7 +188,7 @@ export function KanbanColumn({ column, cards, onCardClick, onCardAdded }: Props)
 			<SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
 				<div className="flex flex-1 flex-col gap-2 overflow-y-auto px-3 pb-2">
 					{sortedCards.map((card) => (
-						<KanbanCard key={card.id} card={card} onClick={onCardClick} />
+						<KanbanCard key={card.id} card={card} onOpen={onCardOpen} />
 					))}
 
 					{addingCard ? (

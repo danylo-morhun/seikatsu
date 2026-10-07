@@ -93,8 +93,8 @@ export function KanbanBoard({
 		? applyFilters(cards, activePriorities, activeLabels, activeDue)
 		: cards;
 
-	function handleCardClick(card: CardData) {
-		setSelectedCard(card);
+	function handleCardOpen(cardId: string) {
+		setSelectedCard(cards.find((c) => c.id === cardId) ?? null);
 		setSheetOpen(true);
 	}
 
@@ -247,7 +247,7 @@ export function KanbanBoard({
 											key={col.id}
 											column={col}
 											cards={filteredCards.filter((c) => c.columnId === col.id)}
-											onCardClick={handleCardClick}
+											onCardOpen={handleCardOpen}
 											onCardAdded={handleCardAdded}
 										/>
 									))}
