@@ -34,7 +34,7 @@ import {
 } from "@seikatsu/ui";
 import { format } from "date-fns";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useOptimistic, useState, useTransition } from "react";
+import { memo, useCallback, useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 import type { ResumeFile, getApplications } from "../actions/applications";
 import {
@@ -55,22 +55,7 @@ function fmtDate(iso: string, short = false): string {
 	return format(new Date(`${iso}T00:00:00`), short ? "MMM d" : "MMM d, yyyy");
 }
 
-function Check({
-	done,
-	loading,
-	onClick,
-}: {
-	done: boolean;
-	loading?: boolean;
-	onClick?: () => void;
-}) {
-	if (loading) {
-		return (
-			<div className="flex items-center justify-center">
-				<Spinner className="h-4 w-4" />
-			</div>
-		);
-	}
+function Check({ done, onClick }: { done: boolean; onClick?: () => void }) {
 	return (
 		<button
 			type="button"
@@ -108,6 +93,153 @@ type OptimisticUpdate =
 	| { type: "update"; id: string; changes: Partial<Application> }
 	| { type: "delete"; id: string };
 
+interface RowProps {
+	app: Application;
+	onStatusChange: (id: string, status: KyuuStatus) => void;
+	onStageToggle: (id: string, stage: StageField, currentValue: boolean) => void;
+	onEdit: (app: Application) => void;
+	onDelete: (app: Application) => void;
+}
+
+// Field-wise equality: after a server re-render every row object is new, but only rows whose
+// data actually changed need to re-render (a 200+ row table otherwise repaints on every click).
+function sameApplication(a: Application, b: Application): boolean {
+	if (a === b) return true;
+	for (const key of Object.keys(a) as (keyof Application)[]) {
+		const x = a[key];
+		const y = b[key];
+		if (x instanceof Date && y instanceof Date ? x.getTime() !== y.getTime() : x !== y)
+			return false;
+	}
+	return true;
+}
+
+const ApplicationRow = memo(
+	function ApplicationRow({ app, onStatusChange, onStageToggle, onEdit, onDelete }: RowProps) {
+		return (
+			<TableRow>
+				<TableCell className="text-muted-foreground whitespace-nowrap">
+					<span className="sm:hidden">{fmtDate(app.dateApplied, true)}</span>
+					<span className="hidden sm:inline">{fmtDate(app.dateApplied)}</span>
+				</TableCell>
+				<TableCell className="max-w-0 w-full font-medium sm:max-w-[180px] sm:w-auto">
+					<div className="truncate" title={app.company}>
+						{app.company}
+					</div>
+					<div className="truncate text-xs font-normal text-muted-foreground sm:hidden">
+						{app.role}
+					</div>
+				</TableCell>
+				<TableCell className="hidden max-w-0 w-full sm:table-cell">
+					{app.jobUrl ? (
+						<a
+							href={app.jobUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							title={app.role}
+							className="block truncate hover:underline underline-offset-2"
+						>
+							{app.role}
+						</a>
+					) : (
+						<div className="truncate" title={app.role}>
+							{app.role}
+						</div>
+					)}
+				</TableCell>
+				<TableCell className="hidden text-muted-foreground whitespace-nowrap sm:table-cell">
+					{app.source ?? "—"}
+				</TableCell>
+				<TableCell className="hidden max-w-[140px] text-muted-foreground whitespace-nowrap md:table-cell">
+					{app.resumeFileUrl ? (
+						<a
+							href={app.resumeFileUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							download={app.resumeFileName ?? undefined}
+							title={app.resumeFileName ?? undefined}
+							className="block truncate hover:underline underline-offset-2"
+						>
+							{app.resumeFileName ?? "Resume"}
+						</a>
+					) : (
+						"—"
+					)}
+				</TableCell>
+				<TableCell className="whitespace-nowrap">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<button
+								type="button"
+								className="inline-flex cursor-pointer transition-opacity hover:opacity-80 focus:outline-hidden"
+							>
+								<StatusBadge status={isIgnored(app) ? "ignored" : app.status} />
+							</button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="start">
+							{kyuuStatusValues.map((s) => (
+								<DropdownMenuItem
+									key={s}
+									disabled={app.status === s}
+									onSelect={() => onStatusChange(app.id, s)}
+									className="cursor-pointer"
+								>
+									<StatusBadge status={s} />
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</TableCell>
+				<TableCell className="hidden text-center sm:table-cell">
+					<Check
+						done={app.hrScreening}
+						onClick={() => onStageToggle(app.id, "hrScreening", app.hrScreening)}
+					/>
+				</TableCell>
+				<TableCell className="hidden text-center sm:table-cell">
+					<Check
+						done={app.technicalInterview}
+						onClick={() => onStageToggle(app.id, "technicalInterview", app.technicalInterview)}
+					/>
+				</TableCell>
+				<TableCell className="hidden text-center sm:table-cell">
+					<Check done={app.offer} onClick={() => onStageToggle(app.id, "offer", app.offer)} />
+				</TableCell>
+				<TableCell>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="ghost" size="icon" className="h-8 w-8">
+								<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
+								<span className="sr-only">Open menu</span>
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem onSelect={() => onEdit(app)}>
+								<HugeiconsIcon icon={PencilEdit01Icon} className="mr-2 h-4 w-4" />
+								Edit
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								className="text-destructive focus:text-destructive"
+								onSelect={() => onDelete(app)}
+							>
+								<HugeiconsIcon icon={Delete01Icon} className="mr-2 h-4 w-4" />
+								Delete
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</TableCell>
+			</TableRow>
+		);
+	},
+	(prev, next) =>
+		sameApplication(prev.app, next.app) &&
+		prev.onStatusChange === next.onStatusChange &&
+		prev.onStageToggle === next.onStageToggle &&
+		prev.onEdit === next.onEdit &&
+		prev.onDelete === next.onDelete,
+);
+
 export function ApplicationsTable({
 	applications,
 	sources,
@@ -119,9 +251,9 @@ export function ApplicationsTable({
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
-	const [isPending, startTransition] = useTransition();
-	const [pendingId, setPendingId] = useState<string | null>(null);
-	const [pendingKey, setPendingKey] = useState<string | null>(null);
+	const [isDeleting, startDeleteTransition] = useTransition();
+	const [, startTransition] = useTransition();
+	const [deleteTarget, setDeleteTarget] = useState<Application | null>(null);
 	const [editTarget, setEditTarget] = useState<Application | null>(null);
 
 	const [optimisticApplications, setOptimisticApplications] = useOptimistic(
@@ -149,41 +281,35 @@ export function ApplicationsTable({
 		return sortField === field ? (sortDir === "asc" ? "↑" : "↓") : "↕";
 	}
 
-	function handleStatusChange(id: string, newStatus: KyuuStatus) {
-		const key = `${id}-status`;
-		setPendingKey(key);
-		startTransition(async () => {
-			setOptimisticApplications({ type: "update", id, changes: { status: newStatus } });
-			const result = await updateApplicationStatus(id, newStatus);
-			if ("error" in result) {
-				toast.error(result.error);
-			} else {
-				toast.success("Status updated");
-			}
-			setPendingKey(null);
-		});
-	}
+	// Inline edits apply optimistically; the action's re-render confirms them. Only errors toast.
+	const handleStatusChange = useCallback(
+		(id: string, newStatus: KyuuStatus) => {
+			startTransition(async () => {
+				setOptimisticApplications({ type: "update", id, changes: { status: newStatus } });
+				const result = await updateApplicationStatus(id, newStatus);
+				if ("error" in result) toast.error(result.error);
+			});
+		},
+		[setOptimisticApplications],
+	);
 
-	function handleStageToggle(id: string, stage: StageField, currentValue: boolean) {
-		const key = `${id}-${stage}`;
-		setPendingKey(key);
-		startTransition(async () => {
-			const nextValue = !currentValue;
-			setOptimisticApplications({ type: "update", id, changes: { [stage]: nextValue } });
-			const result = await updateApplicationStage(id, stage, nextValue);
-			if ("error" in result) {
-				toast.error(result.error);
-			} else {
-				toast.success("Stage updated");
-			}
-			setPendingKey(null);
-		});
-	}
+	const handleStageToggle = useCallback(
+		(id: string, stage: StageField, currentValue: boolean) => {
+			startTransition(async () => {
+				const nextValue = !currentValue;
+				setOptimisticApplications({ type: "update", id, changes: { [stage]: nextValue } });
+				const result = await updateApplicationStage(id, stage, nextValue);
+				if ("error" in result) toast.error(result.error);
+			});
+		},
+		[setOptimisticApplications],
+	);
+
+	const handleEdit = useCallback((app: Application) => setEditTarget(app), []);
+	const handleDeleteRequest = useCallback((app: Application) => setDeleteTarget(app), []);
 
 	function handleDelete(id: string) {
-		const key = `${id}-delete`;
-		setPendingKey(key);
-		startTransition(async () => {
+		startDeleteTransition(async () => {
 			setOptimisticApplications({ type: "delete", id });
 			const result = await deleteApplication(id);
 			if ("error" in result) {
@@ -191,8 +317,7 @@ export function ApplicationsTable({
 			} else {
 				toast.success("Application deleted.");
 			}
-			setPendingId(null);
-			setPendingKey(null);
+			setDeleteTarget(null);
 		});
 	}
 
@@ -260,179 +385,44 @@ export function ApplicationsTable({
 							</TableRow>
 						) : (
 							optimisticApplications.map((app) => (
-								<TableRow
+								<ApplicationRow
 									key={app.id}
-									className={cn(
-										pendingKey?.startsWith(app.id) &&
-											"bg-muted/20 opacity-60 transition-opacity pointer-events-none",
-									)}
-								>
-									<TableCell className="text-muted-foreground whitespace-nowrap">
-										<span className="sm:hidden">{fmtDate(app.dateApplied, true)}</span>
-										<span className="hidden sm:inline">{fmtDate(app.dateApplied)}</span>
-									</TableCell>
-									<TableCell className="max-w-0 w-full font-medium sm:max-w-[180px] sm:w-auto">
-										<div className="truncate" title={app.company}>
-											{app.company}
-										</div>
-										<div className="truncate text-xs font-normal text-muted-foreground sm:hidden">
-											{app.role}
-										</div>
-									</TableCell>
-									<TableCell className="hidden max-w-0 w-full sm:table-cell">
-										{app.jobUrl ? (
-											<a
-												href={app.jobUrl}
-												target="_blank"
-												rel="noopener noreferrer"
-												title={app.role}
-												className="block truncate hover:underline underline-offset-2"
-											>
-												{app.role}
-											</a>
-										) : (
-											<div className="truncate" title={app.role}>
-												{app.role}
-											</div>
-										)}
-									</TableCell>
-									<TableCell className="hidden text-muted-foreground whitespace-nowrap sm:table-cell">
-										{app.source ?? "—"}
-									</TableCell>
-									<TableCell className="hidden max-w-[140px] text-muted-foreground whitespace-nowrap md:table-cell">
-										{app.resumeFileUrl ? (
-											<a
-												href={app.resumeFileUrl}
-												target="_blank"
-												rel="noopener noreferrer"
-												download={app.resumeFileName ?? undefined}
-												title={app.resumeFileName ?? undefined}
-												className="block truncate hover:underline underline-offset-2"
-											>
-												{app.resumeFileName ?? "Resume"}
-											</a>
-										) : (
-											"—"
-										)}
-									</TableCell>
-									<TableCell className="whitespace-nowrap">
-										{pendingKey === `${app.id}-status` ? (
-											<span className="inline-flex items-center gap-1.5 rounded-full border border-muted-foreground/30 bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-												<Spinner className="h-3 w-3" />
-												Updating…
-											</span>
-										) : (
-											<DropdownMenu>
-												<DropdownMenuTrigger asChild>
-													<button
-														type="button"
-														className="inline-flex cursor-pointer transition-opacity hover:opacity-80 focus:outline-hidden"
-													>
-														<StatusBadge status={isIgnored(app) ? "ignored" : app.status} />
-													</button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent align="start">
-													{kyuuStatusValues.map((s) => (
-														<DropdownMenuItem
-															key={s}
-															disabled={app.status === s}
-															onSelect={() => handleStatusChange(app.id, s)}
-															className="cursor-pointer"
-														>
-															<StatusBadge status={s} />
-														</DropdownMenuItem>
-													))}
-												</DropdownMenuContent>
-											</DropdownMenu>
-										)}
-									</TableCell>
-									<TableCell className="hidden text-center sm:table-cell">
-										<Check
-											done={app.hrScreening}
-											loading={pendingKey === `${app.id}-hrScreening`}
-											onClick={() => handleStageToggle(app.id, "hrScreening", app.hrScreening)}
-										/>
-									</TableCell>
-									<TableCell className="hidden text-center sm:table-cell">
-										<Check
-											done={app.technicalInterview}
-											loading={pendingKey === `${app.id}-technicalInterview`}
-											onClick={() =>
-												handleStageToggle(app.id, "technicalInterview", app.technicalInterview)
-											}
-										/>
-									</TableCell>
-									<TableCell className="hidden text-center sm:table-cell">
-										<Check
-											done={app.offer}
-											loading={pendingKey === `${app.id}-offer`}
-											onClick={() => handleStageToggle(app.id, "offer", app.offer)}
-										/>
-									</TableCell>
-									<TableCell>
-										<AlertDialog
-											open={pendingId === app.id}
-											onOpenChange={(v) => !v && setPendingId(null)}
-										>
-											<DropdownMenu>
-												<DropdownMenuTrigger asChild>
-													<Button variant="ghost" size="icon" className="h-8 w-8">
-														<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
-														<span className="sr-only">Open menu</span>
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent align="end">
-													<DropdownMenuItem onSelect={() => setEditTarget(app)}>
-														<HugeiconsIcon icon={PencilEdit01Icon} className="mr-2 h-4 w-4" />
-														Edit
-													</DropdownMenuItem>
-													<DropdownMenuSeparator />
-													<DropdownMenuItem
-														className="text-destructive focus:text-destructive"
-														onSelect={() => setPendingId(app.id)}
-													>
-														<HugeiconsIcon icon={Delete01Icon} className="mr-2 h-4 w-4" />
-														Delete
-													</DropdownMenuItem>
-												</DropdownMenuContent>
-											</DropdownMenu>
-											<AlertDialogContent>
-												<AlertDialogHeader>
-													<AlertDialogTitle className="flex items-center gap-2">
-														<HugeiconsIcon
-															icon={Alert01Icon}
-															className="h-5 w-5 text-destructive"
-														/>
-														Delete application?
-													</AlertDialogTitle>
-													<AlertDialogDescription>
-														Permanently deletes this application. This action cannot be undone.
-													</AlertDialogDescription>
-												</AlertDialogHeader>
-												<AlertDialogFooter>
-													<AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-													<AlertDialogAction
-														className="gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-														disabled={isPending}
-														onClick={() => handleDelete(app.id)}
-													>
-														{isPending ? (
-															<Spinner />
-														) : (
-															<HugeiconsIcon icon={Delete01Icon} className="h-4 w-4" />
-														)}
-														{isPending ? "Deleting…" : "Delete"}
-													</AlertDialogAction>
-												</AlertDialogFooter>
-											</AlertDialogContent>
-										</AlertDialog>
-									</TableCell>
-								</TableRow>
+									app={app}
+									onStatusChange={handleStatusChange}
+									onStageToggle={handleStageToggle}
+									onEdit={handleEdit}
+									onDelete={handleDeleteRequest}
+								/>
 							))
 						)}
 					</TableBody>
 				</Table>
 			</div>
+
+			<AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle className="flex items-center gap-2">
+							<HugeiconsIcon icon={Alert01Icon} className="h-5 w-5 text-destructive" />
+							Delete application?
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							Permanently deletes this application. This action cannot be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							className="gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							disabled={isDeleting}
+							onClick={() => deleteTarget && handleDelete(deleteTarget.id)}
+						>
+							{isDeleting ? <Spinner /> : <HugeiconsIcon icon={Delete01Icon} className="h-4 w-4" />}
+							{isDeleting ? "Deleting…" : "Delete"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 
 			{editTarget && (
 				<EditApplicationModal
