@@ -14,7 +14,6 @@ import {
 	type TxType,
 	transactionFormSchema,
 } from "@/features/kuroji/lib/transaction-schema";
-import { useRefreshRouter } from "@/hooks/useRefreshRouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
@@ -73,7 +72,6 @@ interface Props {
 }
 
 export function EditTransactionModal({ transaction, workspaceId, open, onOpenChange }: Props) {
-	const refresh = useRefreshRouter();
 	const [accounts, setAccounts] = React.useState<Account[]>([]);
 	const [workspaceTags, setWorkspaceTags] = React.useState<Tag[]>([]);
 	const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>(() =>
@@ -139,7 +137,6 @@ export function EditTransactionModal({ transaction, workspaceId, open, onOpenCha
 			toast.error(result.error);
 		} else {
 			toast.success("Transaction updated.");
-			refresh();
 			onOpenChange(false);
 		}
 	};

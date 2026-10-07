@@ -16,7 +16,6 @@ import {
 	AlertDialogTitle,
 	Button,
 } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useTransition } from "react";
 import { toast } from "sonner";
@@ -44,7 +43,6 @@ export function RecurringTransactionsList({
 	items: RecurringTransaction[];
 	currency: string;
 }) {
-	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [loadingId, setLoadingId] = React.useState<string | null>(null);
 	const [deleteTarget, setDeleteTarget] = React.useState<{ id: string } | null>(null);
@@ -54,7 +52,6 @@ export function RecurringTransactionsList({
 		startTransition(async () => {
 			const result = await toggleRecurring(id);
 			if ("error" in result) toast.error(result.error);
-			else router.refresh();
 			setLoadingId(null);
 		});
 	}
@@ -67,7 +64,6 @@ export function RecurringTransactionsList({
 			if ("error" in result) toast.error(result.error);
 			else {
 				toast.success("Recurring transaction deleted.");
-				router.refresh();
 			}
 			setDeleteTarget(null);
 		});

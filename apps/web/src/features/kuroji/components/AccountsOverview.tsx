@@ -207,7 +207,6 @@ export function AccountsOverview({
 				toast.error(result.error);
 			} else {
 				toast.success(`"${name}" deleted`);
-				router.refresh();
 			}
 			setConfirmTarget(null);
 		});
@@ -222,7 +221,6 @@ export function AccountsOverview({
 				toast.error(result.error);
 			} else {
 				toast.success(`"${name}" archived`);
-				router.refresh();
 			}
 			setArchiveTarget(null);
 		});
@@ -232,7 +230,6 @@ export function AccountsOverview({
 		startTransition(async () => {
 			const result = await toggleAccountDashboardVisibility(id, hidden);
 			if ("error" in result) toast.error(result.error);
-			else router.refresh();
 		});
 	}
 

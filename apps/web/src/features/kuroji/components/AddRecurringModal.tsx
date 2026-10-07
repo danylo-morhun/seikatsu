@@ -20,7 +20,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import * as React from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -51,7 +50,6 @@ export function AddRecurringModal({
 }) {
 	const [open, setOpen] = React.useState(false);
 	const [accounts, setAccounts] = React.useState<Account[]>([]);
-	const router = useRouter();
 
 	const {
 		register,
@@ -94,7 +92,6 @@ export function AddRecurringModal({
 			toast.error(result.error);
 		} else {
 			toast.success("Recurring transaction created.");
-			router.refresh();
 			setOpen(false);
 		}
 	};

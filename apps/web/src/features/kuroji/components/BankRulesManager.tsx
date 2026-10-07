@@ -15,7 +15,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -31,7 +30,6 @@ export function BankRulesManager({
 	rules: Rule[];
 	accounts: Account[];
 }) {
-	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [matchText, setMatchText] = useState("");
 	const [accountId, setAccountId] = useState("");
@@ -53,7 +51,6 @@ export function BankRulesManager({
 				toast.success("Rule added.");
 				setMatchText("");
 				setAccountId("");
-				router.refresh();
 			}
 		});
 	}
@@ -63,7 +60,6 @@ export function BankRulesManager({
 		startTransition(async () => {
 			const result = await deleteBankRule(id);
 			if ("error" in result) toast.error(result.error);
-			else router.refresh();
 			setDeletingId(null);
 		});
 	}
