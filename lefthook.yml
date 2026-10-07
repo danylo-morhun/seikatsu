@@ -1,0 +1,14 @@
+# Git hooks (installed by `pnpm install` via the prepare script)
+pre-commit:
+  commands:
+    biome:
+      glob: "*.{js,jsx,ts,tsx,mjs,cjs,json,jsonc,css}"
+      run: pnpm exec biome check --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+    gitleaks:
+      # Skipped when gitleaks isn't installed (brew install gitleaks)
+      run: if command -v gitleaks >/dev/null 2>&1; then gitleaks git --staged --redact --no-banner .; fi
+
+commit-msg:
+  commands:
+    commitlint:
+      run: pnpm exec commitlint --edit {1}
