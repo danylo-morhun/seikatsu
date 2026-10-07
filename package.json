@@ -6,10 +6,14 @@
 		"dev": "turbo dev",
 		"typecheck": "turbo typecheck",
 		"test": "turbo test",
-		"biome": "biome check --write ."
+		"biome": "biome check --write .",
+		"prepare": "git rev-parse --git-dir >/dev/null 2>&1 && lefthook install || true"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
+		"@commitlint/cli": "^21.2.3",
+		"@commitlint/config-conventional": "^21.2.3",
+		"lefthook": "^2.1.17",
 		"turbo": "^2.3.3",
 		"typescript": "^5.7.2"
 	},
