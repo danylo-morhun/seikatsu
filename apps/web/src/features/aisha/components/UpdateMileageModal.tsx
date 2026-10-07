@@ -13,7 +13,6 @@ import {
 	Input,
 	Label,
 } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -26,7 +25,6 @@ export function UpdateMileageModal({
 	currentKm: number;
 	trigger: React.ReactNode;
 }) {
-	const router = useRouter();
 	const [open, setOpen] = useState(false);
 	const [pending, startTransition] = useTransition();
 	const [date, setDate] = useState(localToday);
@@ -46,7 +44,6 @@ export function UpdateMileageModal({
 			toast.success("Mileage updated.");
 			setOpen(false);
 			setKm("");
-			router.refresh();
 		});
 	}
 

@@ -19,7 +19,6 @@ import {
 import { Add01Icon, Delete02Icon, Tick02Icon, WrenchIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, cn } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
@@ -258,7 +257,6 @@ export function AishaDashboard({ data, today }: { data: Data; today: string }) {
 }
 
 function ServiceRow({ service: s }: { service: Data["services"][number] }) {
-	const router = useRouter();
 	const [pending, startTransition] = useTransition();
 
 	function onDelete() {
@@ -266,7 +264,6 @@ function ServiceRow({ service: s }: { service: Data["services"][number] }) {
 		startTransition(async () => {
 			const res = await deleteService(s.id);
 			if ("error" in res) toast.error(res.error);
-			else router.refresh();
 		});
 	}
 
