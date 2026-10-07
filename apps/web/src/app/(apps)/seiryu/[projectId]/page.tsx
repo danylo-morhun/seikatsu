@@ -5,7 +5,7 @@ import { getColumns } from "@/features/seiryu/actions/columns";
 import { getLabels } from "@/features/seiryu/actions/labels";
 import { getProjects } from "@/features/seiryu/actions/projects";
 import { KanbanBoard } from "@/features/seiryu/components/KanbanBoard";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 export default async function SeiryuProjectPage({
@@ -23,7 +23,8 @@ export default async function SeiryuProjectPage({
 	const projects = await getProjects();
 	const project = projects.find((p) => p.id === projectId);
 
-	if (!project) notFound();
+	// Stale links (deleted/archived project) land on the Seiryu index instead of a 404.
+	if (!project) redirect("/seiryu");
 
 	const [columns, cards, projectLabels] = await Promise.all([
 		getColumns(projectId),
