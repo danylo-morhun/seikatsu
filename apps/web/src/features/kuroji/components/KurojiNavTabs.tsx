@@ -14,6 +14,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { preloadFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
 export type { KurojiTab };
 
@@ -41,6 +42,11 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 	useEffect(() => {
 		setPendingTab(null);
 	}, [activeTab, pathname]);
+
+	// Warm accounts/tags so the transaction form opens fully populated.
+	useEffect(() => {
+		preloadFormOptions(workspaceId);
+	}, [workspaceId]);
 
 	function tabHref(tab: KurojiTab) {
 		return buildTabHref(tab, searchParams.toString());
