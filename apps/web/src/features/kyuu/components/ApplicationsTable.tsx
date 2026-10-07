@@ -1,5 +1,6 @@
 "use client";
 
+import { startNavigationProgress } from "@/components/NavigationProgress";
 import { Spinner } from "@/components/Spinner";
 import {
 	Alert01Icon,
@@ -274,6 +275,7 @@ export function ApplicationsTable({
 			params.set("sort", field);
 			params.delete("dir");
 		}
+		startNavigationProgress();
 		router.push(`${pathname}?${params.toString()}`);
 	}
 
