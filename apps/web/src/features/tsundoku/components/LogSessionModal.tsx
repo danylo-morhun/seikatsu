@@ -12,7 +12,6 @@ import {
 	Input,
 	Label,
 } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -27,7 +26,6 @@ export function LogSessionModal({
 	const [saving, setSaving] = useState(false);
 	const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
 	const [pages, setPages] = useState("");
-	const router = useRouter();
 
 	async function onSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -46,7 +44,6 @@ export function LogSessionModal({
 		toast.success("Session logged.");
 		setPages("");
 		setOpen(false);
-		router.refresh();
 	}
 
 	return (

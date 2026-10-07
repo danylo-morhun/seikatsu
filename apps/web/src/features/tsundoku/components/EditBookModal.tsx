@@ -18,7 +18,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -31,7 +30,6 @@ export function EditBookModal({
 }) {
 	const [open, setOpen] = useState(false);
 	const [saving, setSaving] = useState(false);
-	const router = useRouter();
 
 	const [form, setForm] = useState({
 		title: book.title,
@@ -80,7 +78,6 @@ export function EditBookModal({
 		}
 		toast.success("Saved.");
 		setOpen(false);
-		router.refresh();
 	}
 
 	return (

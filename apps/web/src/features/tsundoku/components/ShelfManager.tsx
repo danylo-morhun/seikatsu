@@ -8,7 +8,6 @@ import { SHELF_COLORS } from "@/features/tsundoku/lib/constants";
 import { Add01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Input, cn } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -23,7 +22,6 @@ export function ShelfManager({
 	shelves: TsundokuShelf[];
 	bookShelfIds: string[];
 }) {
-	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [busyId, setBusyId] = useState<string | null>(null);
 	const [creating, setCreating] = useState(false);
@@ -41,7 +39,6 @@ export function ShelfManager({
 			const res = await setBookShelves(bookId, Array.from(next));
 			setBusyId(null);
 			if ("error" in res) toast.error(res.error);
-			else router.refresh();
 		});
 	}
 
@@ -58,7 +55,6 @@ export function ShelfManager({
 		}
 		setNewName("");
 		setShowCreate(false);
-		router.refresh();
 	}
 
 	return (
