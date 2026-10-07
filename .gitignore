@@ -22,3 +22,4 @@ docs/
 
 # playwright mcp debug output
 .playwright-mcp
+.vercel
