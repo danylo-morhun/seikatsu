@@ -34,6 +34,17 @@ async function getAuthedWorkspace() {
 	return { workspace };
 }
 
+/** The card's project and column if it belongs to the workspace — one query. */
+async function getOwnedCard(cardId: string, workspaceId: string) {
+	const [card] = await db
+		.select({ projectId: seiryuCards.projectId, columnId: seiryuCards.columnId })
+		.from(seiryuCards)
+		.innerJoin(seiryuProjects, eq(seiryuProjects.id, seiryuCards.projectId))
+		.where(and(eq(seiryuCards.id, cardId), eq(seiryuProjects.workspaceId, workspaceId)))
+		.limit(1);
+	return card ?? null;
+}
+
 export async function getCard(cardId: string) {
 	const { workspace } = await getAuthedWorkspace();
 
@@ -161,21 +172,8 @@ export async function updateCard(input: unknown): Promise<{ error: string } | { 
 
 	const { cardId, ...updates } = parsed.data;
 
-	const [card] = await db
-		.select({ projectId: seiryuCards.projectId })
-		.from(seiryuCards)
-		.where(eq(seiryuCards.id, cardId))
-		.limit(1);
-
+	const card = await getOwnedCard(cardId, workspace.id);
 	if (!card) return { error: "Card not found" };
-
-	const [project] = await db
-		.select({ id: seiryuProjects.id })
-		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.id, card.projectId), eq(seiryuProjects.workspaceId, workspace.id)))
-		.limit(1);
-
-	if (!project) return { error: "Forbidden" };
 
 	await db.update(seiryuCards).set(updates).where(eq(seiryuCards.id, cardId));
 
@@ -191,21 +189,8 @@ export async function archiveCard(input: unknown): Promise<{ error: string } | {
 
 	const { cardId } = parsed.data;
 
-	const [card] = await db
-		.select({ projectId: seiryuCards.projectId })
-		.from(seiryuCards)
-		.where(eq(seiryuCards.id, cardId))
-		.limit(1);
-
+	const card = await getOwnedCard(cardId, workspace.id);
 	if (!card) return { error: "Card not found" };
-
-	const [project] = await db
-		.select({ id: seiryuProjects.id })
-		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.id, card.projectId), eq(seiryuProjects.workspaceId, workspace.id)))
-		.limit(1);
-
-	if (!project) return { error: "Forbidden" };
 
 	await db.update(seiryuCards).set({ archivedAt: new Date() }).where(eq(seiryuCards.id, cardId));
 
@@ -221,29 +206,16 @@ export async function moveCard(input: unknown): Promise<{ error: string } | { su
 
 	const { cardId, newColumnId, newPosition } = parsed.data;
 
-	const [card] = await db
-		.select({ projectId: seiryuCards.projectId })
-		.from(seiryuCards)
-		.where(eq(seiryuCards.id, cardId))
-		.limit(1);
-
+	const [card, [col]] = await Promise.all([
+		getOwnedCard(cardId, workspace.id),
+		db
+			.select({ projectId: seiryuColumns.projectId })
+			.from(seiryuColumns)
+			.where(eq(seiryuColumns.id, newColumnId))
+			.limit(1),
+	]);
 	if (!card) return { error: "Card not found" };
-
-	const [project] = await db
-		.select({ id: seiryuProjects.id })
-		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.id, card.projectId), eq(seiryuProjects.workspaceId, workspace.id)))
-		.limit(1);
-
-	if (!project) return { error: "Forbidden" };
-
-	const [col] = await db
-		.select({ id: seiryuColumns.id })
-		.from(seiryuColumns)
-		.where(and(eq(seiryuColumns.id, newColumnId), eq(seiryuColumns.projectId, card.projectId)))
-		.limit(1);
-
-	if (!col) return { error: "Invalid column" };
+	if (col?.projectId !== card.projectId) return { error: "Invalid column" };
 
 	await db
 		.update(seiryuCards)
@@ -262,21 +234,8 @@ export async function reorderCards(input: unknown): Promise<{ error: string } | 
 
 	const { cardId, newPosition } = parsed.data;
 
-	const [card] = await db
-		.select({ projectId: seiryuCards.projectId })
-		.from(seiryuCards)
-		.where(eq(seiryuCards.id, cardId))
-		.limit(1);
-
+	const card = await getOwnedCard(cardId, workspace.id);
 	if (!card) return { error: "Card not found" };
-
-	const [project] = await db
-		.select({ id: seiryuProjects.id })
-		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.id, card.projectId), eq(seiryuProjects.workspaceId, workspace.id)))
-		.limit(1);
-
-	if (!project) return { error: "Forbidden" };
 
 	await db.update(seiryuCards).set({ position: newPosition }).where(eq(seiryuCards.id, cardId));
 
@@ -326,21 +285,8 @@ export async function restoreCard(
 
 	const { cardId } = parsed.data;
 
-	const [card] = await db
-		.select({ projectId: seiryuCards.projectId, columnId: seiryuCards.columnId })
-		.from(seiryuCards)
-		.where(eq(seiryuCards.id, cardId))
-		.limit(1);
-
+	const card = await getOwnedCard(cardId, workspace.id);
 	if (!card) return { error: "Card not found" };
-
-	const [project] = await db
-		.select({ id: seiryuProjects.id })
-		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.id, card.projectId), eq(seiryuProjects.workspaceId, workspace.id)))
-		.limit(1);
-
-	if (!project) return { error: "Forbidden" };
 
 	const lastInCol = await db
 		.select({ position: seiryuCards.position })
@@ -370,21 +316,8 @@ export async function deleteCard(input: unknown): Promise<{ error: string } | { 
 
 	const { cardId } = parsed.data;
 
-	const [card] = await db
-		.select({ projectId: seiryuCards.projectId })
-		.from(seiryuCards)
-		.where(eq(seiryuCards.id, cardId))
-		.limit(1);
-
+	const card = await getOwnedCard(cardId, workspace.id);
 	if (!card) return { error: "Card not found" };
-
-	const [project] = await db
-		.select({ id: seiryuProjects.id })
-		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.id, card.projectId), eq(seiryuProjects.workspaceId, workspace.id)))
-		.limit(1);
-
-	if (!project) return { error: "Forbidden" };
 
 	await db.delete(seiryuCards).where(eq(seiryuCards.id, cardId));
 
