@@ -10,10 +10,8 @@ import { toast } from "sonner";
 
 export function ArchivedHabitsList({
 	habits,
-	onChange,
 }: {
 	habits: KeizokuHabit[];
-	onChange: () => void;
 }) {
 	const [isPending, startTransition] = useTransition();
 	const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -27,7 +25,6 @@ export function ArchivedHabitsList({
 			if ("error" in result) toast.error(result.error);
 			else {
 				toast.success(`"${name}" restored`);
-				onChange();
 			}
 			setLoadingId(null);
 		});
@@ -40,7 +37,6 @@ export function ArchivedHabitsList({
 			if ("error" in result) toast.error(result.error);
 			else {
 				toast.success(`"${name}" deleted`);
-				onChange();
 			}
 			setLoadingId(null);
 		});

@@ -1,55 +1,41 @@
 "use client";
 
-import { PageLoader } from "@/components/PageLoader";
-import { getArchivedHabits } from "@/features/keizoku/actions/habits";
 import type { KeizokuHabit } from "@/features/keizoku/actions/habits";
-import { getTodayHabits } from "@/features/keizoku/actions/logs";
 import type { TodayHabit } from "@/features/keizoku/actions/logs";
-import { getActivityHeatmap } from "@/features/keizoku/actions/stats";
-import type { ActivityDay } from "@/features/keizoku/actions/stats";
 import { AddHabitModal } from "@/features/keizoku/components/AddHabitModal";
 import { ArchivedHabitsList } from "@/features/keizoku/components/ArchivedHabitsList";
 import { HabitCard } from "@/features/keizoku/components/HabitCard";
-import { KeizokuActivityHeatmap } from "@/features/keizoku/components/KeizokuActivityHeatmap";
 import { TIME_OF_DAY_LABELS, TIME_OF_DAY_VALUES } from "@/features/keizoku/lib/constants";
 import { localToday } from "@/features/keizoku/lib/dates";
 import { Add01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@seikatsu/ui";
-import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-interface Data {
+interface Props {
+	workspaceId: string;
 	date: string;
 	todayHabits: TodayHabit[];
 	archivedHabits: KeizokuHabit[];
-	heatmap: ActivityDay[];
+	/** Server-rendered activity heatmap (see KeizokuActivityHeatmap). */
+	heatmap: React.ReactNode;
 }
 
-// "Today" is resolved client-side (localToday(), never toISOString()) so the day
-// boundary matches the user's own timezone rather than the server's. Because this
-// tree is client-only, router.refresh() is a no-op for it — mutations call refetch()
-// (passed down as onChange) instead of relying on RSC re-render.
-export function TodayList({ workspaceId }: { workspaceId: string }) {
-	const [data, setData] = useState<Data | null>(null);
+// Rendered on the server for the user's local day (see lib/timezone.ts). Mutations revalidate
+// /keizoku, so fresh props arrive with each action response — no client refetch.
+export function TodayList({ workspaceId, date, todayHabits, archivedHabits, heatmap }: Props) {
+	const router = useRouter();
 
-	const refetch = useCallback(() => {
-		const date = localToday();
-		return Promise.all([
-			getTodayHabits(workspaceId, date),
-			getArchivedHabits(workspaceId),
-			getActivityHeatmap(workspaceId),
-		]).then(([todayHabits, archivedHabits, heatmap]) => {
-			setData({ date, todayHabits, archivedHabits, heatmap });
-		});
-	}, [workspaceId]);
-
+	// First visit before the tz cookie existed: the server guessed the day. If the browser's
+	// day differs, store the zone (TimezoneSync may not have run yet) and re-render.
 	useEffect(() => {
-		refetch();
-	}, [refetch]);
+		if (localToday() === date) return;
+		const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		document.cookie = `tz=${encodeURIComponent(zone)}; path=/; max-age=31536000; samesite=lax`;
+		router.refresh();
+	}, [date, router]);
 
-	if (!data) return <PageLoader />;
-
-	const { date, todayHabits, archivedHabits, heatmap } = data;
 	const done = todayHabits.filter((t) => t.log != null).length;
 	const total = todayHabits.length;
 
@@ -71,7 +57,6 @@ export function TodayList({ workspaceId }: { workspaceId: string }) {
 				</div>
 				<AddHabitModal
 					workspaceId={workspaceId}
-					onChange={refetch}
 					trigger={
 						<Button size="sm" className="gap-1.5">
 							<HugeiconsIcon icon={Add01Icon} className="h-4 w-4" />
@@ -94,14 +79,7 @@ export function TodayList({ workspaceId }: { workspaceId: string }) {
 							</h2>
 							<div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-2">
 								{habits.map(({ habit, log, streak }) => (
-									<HabitCard
-										key={habit.id}
-										habit={habit}
-										log={log}
-										streak={streak}
-										date={date}
-										onChange={refetch}
-									/>
+									<HabitCard key={habit.id} habit={habit} log={log} streak={streak} date={date} />
 								))}
 							</div>
 						</div>
@@ -109,11 +87,9 @@ export function TodayList({ workspaceId }: { workspaceId: string }) {
 				</div>
 			)}
 
-			<div className="mt-6">
-				<KeizokuActivityHeatmap days={heatmap} />
-			</div>
+			<div className="mt-6">{heatmap}</div>
 
-			<ArchivedHabitsList habits={archivedHabits} onChange={refetch} />
+			<ArchivedHabitsList habits={archivedHabits} />
 		</div>
 	);
 }

@@ -1,14 +1,29 @@
-import { auth } from "@/auth";
+import { getArchivedHabits } from "@/features/keizoku/actions/habits";
+import { getTodayHabits } from "@/features/keizoku/actions/logs";
+import { getActivityHeatmap } from "@/features/keizoku/actions/stats";
+import { KeizokuActivityHeatmap } from "@/features/keizoku/components/KeizokuActivityHeatmap";
 import { TodayList } from "@/features/keizoku/components/TodayList";
-import { getWorkspace, initializeWorkspace } from "@/features/kuroji/actions/workspace";
+import { getCurrentWorkspace } from "@/lib/session";
+import { getUserToday } from "@/lib/timezone";
 import { redirect } from "next/navigation";
 
 export default async function KeizokuPage() {
-	const session = await auth();
-	if (!session?.user?.id) redirect("/");
+	const [workspace, date] = await Promise.all([getCurrentWorkspace(), getUserToday()]);
+	if (!workspace) redirect("/");
 
-	const workspace =
-		(await getWorkspace(session.user.id)) ?? (await initializeWorkspace(session.user.id));
+	const [todayHabits, archivedHabits, heatmap] = await Promise.all([
+		getTodayHabits(workspace.id, date),
+		getArchivedHabits(workspace.id),
+		getActivityHeatmap(workspace.id, undefined, date),
+	]);
 
-	return <TodayList workspaceId={workspace.id} />;
+	return (
+		<TodayList
+			workspaceId={workspace.id}
+			date={date}
+			todayHabits={todayHabits}
+			archivedHabits={archivedHabits}
+			heatmap={<KeizokuActivityHeatmap days={heatmap} today={date} />}
+		/>
+	);
 }
