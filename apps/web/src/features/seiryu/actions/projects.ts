@@ -22,6 +22,7 @@ import {
 	sql,
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
+import { cache } from "react";
 
 async function getAuthedWorkspace() {
 	const session = await auth();
@@ -31,14 +32,18 @@ async function getAuthedWorkspace() {
 	return { session, workspace };
 }
 
-export async function getProjects() {
-	const { workspace } = await getAuthedWorkspace();
-
-	return db
+// Layout and page both need the list; cache() makes it one query per request.
+const listProjects = cache((workspaceId: string) =>
+	db
 		.select()
 		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.workspaceId, workspace.id), isNull(seiryuProjects.archivedAt)))
-		.orderBy(asc(seiryuProjects.position));
+		.where(and(eq(seiryuProjects.workspaceId, workspaceId), isNull(seiryuProjects.archivedAt)))
+		.orderBy(asc(seiryuProjects.position)),
+);
+
+export async function getProjects() {
+	const { workspace } = await getAuthedWorkspace();
+	return listProjects(workspace.id);
 }
 
 export async function getNotDoneCardCounts(): Promise<Record<string, number>> {
