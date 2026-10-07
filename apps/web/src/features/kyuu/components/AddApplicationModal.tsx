@@ -1,7 +1,6 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { useRefreshRouter } from "@/hooks/useRefreshRouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
@@ -48,7 +47,6 @@ export function AddApplicationModal({
 	const [pasteMode, setPasteMode] = React.useState(false);
 	const [pasteText, setPasteText] = React.useState("");
 	const [isExtracting, startExtracting] = React.useTransition();
-	const refresh = useRefreshRouter();
 
 	const {
 		register,
@@ -129,7 +127,6 @@ export function AddApplicationModal({
 			return;
 		}
 		toast.success(`"${values.company}" added`);
-		refresh();
 		setOpen(false);
 	};
 

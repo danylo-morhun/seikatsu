@@ -1,7 +1,6 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { useRefreshRouter } from "@/hooks/useRefreshRouter";
 import {
 	Alert01Icon,
 	CheckmarkCircle02Icon,
@@ -121,7 +120,6 @@ export function ApplicationsTable({
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
 	const [isPending, startTransition] = useTransition();
-	const refresh = useRefreshRouter();
 	const [pendingId, setPendingId] = useState<string | null>(null);
 	const [pendingKey, setPendingKey] = useState<string | null>(null);
 	const [editTarget, setEditTarget] = useState<Application | null>(null);
@@ -161,7 +159,6 @@ export function ApplicationsTable({
 				toast.error(result.error);
 			} else {
 				toast.success("Status updated");
-				refresh();
 			}
 			setPendingKey(null);
 		});
@@ -178,7 +175,6 @@ export function ApplicationsTable({
 				toast.error(result.error);
 			} else {
 				toast.success("Stage updated");
-				refresh();
 			}
 			setPendingKey(null);
 		});
@@ -194,7 +190,6 @@ export function ApplicationsTable({
 				toast.error(result.error);
 			} else {
 				toast.success("Application deleted.");
-				refresh();
 			}
 			setPendingId(null);
 			setPendingKey(null);
