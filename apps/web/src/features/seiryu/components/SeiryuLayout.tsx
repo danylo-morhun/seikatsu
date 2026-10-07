@@ -1,11 +1,12 @@
 "use client";
 
 import { ProjectSidebar } from "@/features/seiryu/components/ProjectSidebar";
+import { rememberAppEntry } from "@/lib/app-entry";
 import { Menu01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Sheet, SheetContent, SheetTrigger } from "@seikatsu/ui";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Project = {
 	id: string;
@@ -27,6 +28,10 @@ export function SeiryuLayout({ projects, workspaceId, cardCounts, children }: Pr
 	// /seiryu/<projectId>/... → extract second segment
 	const activeProjectId = pathname.split("/")[2] ?? undefined;
 	const activeProject = projects.find((p) => p.id === activeProjectId);
+
+	useEffect(() => {
+		if (activeProject) rememberAppEntry("/seiryu", `/seiryu/${activeProject.id}`);
+	}, [activeProject]);
 
 	return (
 		<div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
