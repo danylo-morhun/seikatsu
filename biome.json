@@ -48,7 +48,8 @@
 			".turbo",
 			"*.lock",
 			"graphify-out",
-			".playwright-mcp"
+			".playwright-mcp",
+			".vercel"
 		]
 	}
 }
