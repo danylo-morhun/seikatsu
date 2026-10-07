@@ -1,15 +1,26 @@
 "use client";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { AddTransactionModal } from "@/features/kuroji/components/AddTransactionModal";
-import { DateRangePicker } from "@/features/kuroji/components/DateRangePicker";
 import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
 import { getAppForPath } from "@/lib/app-themes";
 import { Chart01Icon, Clock01Icon, Wallet01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { SidebarTrigger, cn } from "@seikatsu/ui";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+
+// Kuroji-only controls load on demand so the other apps' shells don't ship the
+// form/date-picker code (zod, react-hook-form, react-day-picker).
+const DateRangePicker = dynamic(
+	() => import("@/features/kuroji/components/DateRangePicker").then((m) => m.DateRangePicker),
+	{ loading: () => <div className="h-9 w-32" /> },
+);
+const AddTransactionModal = dynamic(
+	() =>
+		import("@/features/kuroji/components/AddTransactionModal").then((m) => m.AddTransactionModal),
+	{ loading: () => <div className="h-9 w-40" /> },
+);
 
 const KUROJI_TABS: { value: KurojiTab; label: string; icon: typeof Chart01Icon }[] = [
 	{ value: "expense", label: "Expenses", icon: Chart01Icon },
