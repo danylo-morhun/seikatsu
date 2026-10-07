@@ -4,6 +4,7 @@ interface Props {
 	overlay?: boolean;
 }
 
+// Fades in only after 300 ms, so fast loads never flash a spinner.
 export function PageLoader({ overlay = false }: Props) {
 	const spinner = (
 		<div className="relative flex items-center justify-center">
@@ -16,14 +17,14 @@ export function PageLoader({ overlay = false }: Props) {
 
 	if (overlay) {
 		return (
-			<div className="fixed inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-[2px] [animation:loader-appear_0.2s_ease_0.15s_both] opacity-0">
+			<div className="fixed inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-[2px] [animation:loader-appear_0.2s_ease_0.3s_both] opacity-0">
 				{spinner}
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex min-h-[60vh] items-center justify-center [animation:loader-appear_0.2s_ease_0.1s_both] opacity-0">
+		<div className="flex min-h-[60vh] items-center justify-center [animation:loader-appear_0.2s_ease_0.3s_both] opacity-0">
 			{spinner}
 		</div>
 	);
