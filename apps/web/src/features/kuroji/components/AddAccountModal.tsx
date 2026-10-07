@@ -1,8 +1,9 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { createAccount, getAccounts } from "@/features/kuroji/actions/accounts";
+import { createAccount, type getAccounts } from "@/features/kuroji/actions/accounts";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
+import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
@@ -42,7 +43,7 @@ export function AddAccountModal({
 	baseCurrency,
 }: { workspaceId: string; baseCurrency?: string }) {
 	const [open, setOpen] = React.useState(false);
-	const [accounts, setAccounts] = React.useState<Account[]>([]);
+	const { accounts } = useFormOptions(workspaceId, open);
 
 	const {
 		register,
@@ -63,10 +64,6 @@ export function AddAccountModal({
 	});
 
 	const selectedType = watch("type");
-
-	React.useEffect(() => {
-		if (open) getAccounts(workspaceId).then(setAccounts);
-	}, [open, workspaceId]);
 
 	const onOpenChange = (val: boolean) => {
 		setOpen(val);

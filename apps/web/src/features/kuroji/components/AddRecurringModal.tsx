@@ -1,9 +1,10 @@
 "use client";
 
-import { getAccounts } from "@/features/kuroji/actions/accounts";
+import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import { createRecurringTransaction } from "@/features/kuroji/actions/recurring";
 import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
+import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
@@ -49,7 +50,7 @@ export function AddRecurringModal({
 	baseCurrency: string;
 }) {
 	const [open, setOpen] = React.useState(false);
-	const [accounts, setAccounts] = React.useState<Account[]>([]);
+	const { accounts } = useFormOptions(workspaceId, open);
 
 	const {
 		register,
@@ -65,10 +66,6 @@ export function AddRecurringModal({
 			startDate: new Date().toISOString().slice(0, 10),
 		} as Partial<FormValues>,
 	});
-
-	React.useEffect(() => {
-		if (open) getAccounts(workspaceId).then(setAccounts);
-	}, [open, workspaceId]);
 
 	const onOpenChange = (val: boolean) => {
 		setOpen(val);

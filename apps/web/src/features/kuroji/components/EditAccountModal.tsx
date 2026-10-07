@@ -1,8 +1,9 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { getAccounts, updateAccount } from "@/features/kuroji/actions/accounts";
+import { type getAccounts, updateAccount } from "@/features/kuroji/actions/accounts";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
+import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
@@ -44,7 +45,7 @@ interface Props {
 }
 
 export function EditAccountModal({ account, workspaceId, open, onOpenChange }: Props) {
-	const [accounts, setAccounts] = React.useState<Account[]>([]);
+	const { accounts } = useFormOptions(workspaceId, open);
 
 	const {
 		register,
@@ -68,7 +69,6 @@ export function EditAccountModal({ account, workspaceId, open, onOpenChange }: P
 
 	React.useEffect(() => {
 		if (open) {
-			getAccounts(workspaceId).then(setAccounts);
 			reset({
 				name: account.name,
 				type: account.type,
@@ -77,7 +77,7 @@ export function EditAccountModal({ account, workspaceId, open, onOpenChange }: P
 				budget: account.budget != null ? Number(account.budget) : undefined,
 			});
 		}
-	}, [open, workspaceId, account, reset]);
+	}, [open, account, reset]);
 
 	const onSubmit = async (values: FormValues) => {
 		try {
