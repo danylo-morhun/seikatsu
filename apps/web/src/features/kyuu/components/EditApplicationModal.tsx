@@ -1,7 +1,6 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { useRefreshRouter } from "@/hooks/useRefreshRouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
@@ -66,8 +65,6 @@ export function EditApplicationModal({
 	open,
 	onOpenChange,
 }: Props) {
-	const refresh = useRefreshRouter();
-
 	const {
 		register,
 		handleSubmit,
@@ -92,7 +89,6 @@ export function EditApplicationModal({
 			return;
 		}
 		toast.success("Application updated");
-		refresh();
 		onOpenChange(false);
 	};
 
