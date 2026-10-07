@@ -121,11 +121,14 @@ function inActiveWindow(
  * times_per_week habits have no fixed due date, so they're excluded from the
  * required set entirely — a missed weekly habit never drags a day to partial/none.
  */
-export async function getActivityHeatmap(workspaceId: string, days = 371): Promise<ActivityDay[]> {
+export async function getActivityHeatmap(
+	workspaceId: string,
+	days = 371,
+	today: string = localToday(),
+): Promise<ActivityDay[]> {
 	const ws = await getOwnedWorkspace(workspaceId);
 	if (!ws) return [];
 
-	const today = localToday();
 	const start = addDays(today, -(days - 1));
 
 	const habits = await db
