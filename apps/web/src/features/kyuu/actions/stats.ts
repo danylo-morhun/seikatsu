@@ -1,18 +1,14 @@
 "use server";
 
 import { auth } from "@/auth";
-import { and, db, eq, kyuuApplications, notInArray, sql, workspaces } from "@seikatsu/db";
+import { getOwnedWorkspace } from "@/lib/session";
+import { and, db, kyuuApplications, notInArray, sql } from "@seikatsu/db";
 import { IGNORE_THRESHOLD_DAYS, PRE_APPLICATION_STATUSES } from "../lib/constants";
 import type { KyuuStatus } from "../lib/kyuu-schemas";
 import { type KyuuFilters, buildKyuuConditions } from "./filters";
 
-async function assertWorkspaceOwner(workspaceId: string, userId: string) {
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, workspaceId))
-		.limit(1);
-	if (!ws || ws.userId !== userId) throw new Error("Forbidden");
+async function assertWorkspaceOwner(workspaceId: string) {
+	if (!(await getOwnedWorkspace(workspaceId))) throw new Error("Forbidden");
 }
 
 export interface SourceStat {
@@ -47,7 +43,7 @@ export async function getKyuuStats(
 	const session = await auth();
 	if (!session?.user?.id) return null;
 	try {
-		await assertWorkspaceOwner(workspaceId, session.user.id);
+		await assertWorkspaceOwner(workspaceId);
 	} catch {
 		return null;
 	}
