@@ -1,8 +1,8 @@
 "use client";
 
-import { PageLoader } from "@/components/PageLoader";
 import type { TsundokuShelf } from "@/features/tsundoku/actions/shelves";
 import { BOOK_STATUSES, STATUS_CONFIG } from "@/features/tsundoku/lib/constants";
+import { usePendingProgress } from "@/hooks/usePendingProgress";
 import { GridViewIcon, ListViewIcon, Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -36,6 +36,7 @@ export function FilterBar({ shelves, genres }: Props) {
 	const pathname = usePathname();
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
+	usePendingProgress(isPending);
 	const [q, setQ] = useState(params.get("q") ?? "");
 
 	const view = params.get("view") === "list" ? "list" : "grid";
@@ -61,7 +62,6 @@ export function FilterBar({ shelves, genres }: Props) {
 
 	return (
 		<div className="space-y-3">
-			{isPending && <PageLoader overlay />}
 			<div className="flex flex-wrap items-center gap-2">
 				<div className="relative min-w-[200px] flex-1">
 					<HugeiconsIcon
