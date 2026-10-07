@@ -1,10 +1,16 @@
 "use client";
 
-import { moveCard, reorderCards } from "@/features/seiryu/actions/cards";
-import { reorderColumns } from "@/features/seiryu/actions/columns";
+import {
+	archiveCard,
+	createCard,
+	moveCard,
+	reorderCards,
+	updateCard,
+} from "@/features/seiryu/actions/cards";
+import { deleteColumn, reorderColumns, updateColumn } from "@/features/seiryu/actions/columns";
 import { AddColumnButton } from "@/features/seiryu/components/AddColumnButton";
 import { ArchivedCardsSheet } from "@/features/seiryu/components/ArchivedCardsSheet";
-import { CardSheet } from "@/features/seiryu/components/CardSheet";
+import { CardSheet, type CardUpdates } from "@/features/seiryu/components/CardSheet";
 import { FilterBar } from "@/features/seiryu/components/FilterBar";
 import {
 	type CardData,
@@ -18,6 +24,7 @@ import {
 } from "@/features/seiryu/components/KanbanColumn";
 import { SeiryuMobileAddFab } from "@/features/seiryu/components/SeiryuMobileAddFab";
 import { generateKeyBetween } from "@/features/seiryu/lib/position";
+import { useServerState } from "@/features/seiryu/lib/server-state";
 import {
 	DndContext,
 	type DragEndEvent,
@@ -30,7 +37,8 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 interface Props {
 	columns: ColumnData[];
@@ -39,7 +47,8 @@ interface Props {
 	projectLabels: LabelData[];
 }
 
-type Priority = "low" | "medium" | "high" | "urgent";
+const byPosition = (a: { position: string }, b: { position: string }) =>
+	a.position < b.position ? -1 : 1;
 
 function applyFilters(
 	cards: CardData[],
@@ -69,48 +78,173 @@ function applyFilters(
 	});
 }
 
+/** Position for a card placed at `index` among `others` (the column without that card). */
+function positionAt(others: CardData[], index: number) {
+	return generateKeyBetween(others[index - 1]?.position ?? null, others[index]?.position ?? null);
+}
+
 export function KanbanBoard({
-	columns: initialColumns,
-	cards: initialCards,
+	columns: serverColumns,
+	cards: serverCards,
 	projectId,
-	projectLabels: initialProjectLabels,
+	projectLabels: serverLabels,
 }: Props) {
-	const [columns, setColumns] = useState(initialColumns);
-	const [cards, setCards] = useState(initialCards);
-	const [projectLabels, setProjectLabels] = useState(initialProjectLabels);
+	// Local copies change optimistically; fresh props from each action's re-render replace
+	// them once nothing is in flight (see useServerState).
+	const {
+		state: columns,
+		setState: setColumns,
+		track: trackColumns,
+		reset: resetColumns,
+	} = useServerState(serverColumns);
+	const {
+		state: cards,
+		setState: setCards,
+		hold: holdCards,
+		track: trackCards,
+		reset: resetCards,
+	} = useServerState(serverCards);
+	const { state: projectLabels, setState: setProjectLabels } = useServerState(serverLabels);
+
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const [activeType, setActiveType] = useState<"column" | "card" | null>(null);
-	const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
+	const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 	const [sheetOpen, setSheetOpen] = useState(false);
-	const [, startTransition] = useTransition();
+
+	// Card drag state: where it started, and the hold that keeps fresh props out meanwhile.
+	const dragStart = useRef<{
+		cards: CardData[];
+		columnId: string;
+		release: (sync?: boolean) => void;
+	} | null>(null);
+	// Latest cards for event handlers, so callbacks stay stable for the memoized columns.
+	const cardsRef = useRef(cards);
+	cardsRef.current = cards;
 
 	const searchParams = useSearchParams();
-	const activePriorities = (searchParams.get("priority") ?? "").split(",").filter(Boolean);
-	const activeLabels = (searchParams.get("label") ?? "").split(",").filter(Boolean);
+	const priorityParam = searchParams.get("priority") ?? "";
+	const labelParam = searchParams.get("label") ?? "";
 	const activeDue = searchParams.get("due") ?? "";
-	const isFiltered = activePriorities.length > 0 || activeLabels.length > 0 || activeDue !== "";
-	const filteredCards = isFiltered
-		? applyFilters(cards, activePriorities, activeLabels, activeDue)
-		: cards;
 
-	function handleCardOpen(cardId: string) {
-		setSelectedCard(cards.find((c) => c.id === cardId) ?? null);
+	const filteredCards = useMemo(() => {
+		const priorities = priorityParam.split(",").filter(Boolean);
+		const labelIds = labelParam.split(",").filter(Boolean);
+		const isFiltered = priorities.length > 0 || labelIds.length > 0 || activeDue !== "";
+		return isFiltered ? applyFilters(cards, priorities, labelIds, activeDue) : cards;
+	}, [cards, priorityParam, labelParam, activeDue]);
+
+	const cardsByColumn = useMemo(() => {
+		const map = new Map<string, CardData[]>();
+		for (const card of filteredCards) {
+			const list = map.get(card.columnId);
+			if (list) list.push(card);
+			else map.set(card.columnId, [card]);
+		}
+		return map;
+	}, [filteredCards]);
+
+	const sortedColumns = useMemo(() => [...columns].sort(byPosition), [columns]);
+	const columnIds = useMemo(() => sortedColumns.map((c) => c.id), [sortedColumns]);
+
+	const selectedCard = useMemo(
+		() => cards.find((c) => c.id === selectedCardId) ?? null,
+		[cards, selectedCardId],
+	);
+
+	const handleCardOpen = useCallback((cardId: string) => {
+		setSelectedCardId(cardId);
 		setSheetOpen(true);
+	}, []);
+
+	const handleAddCard = useCallback(
+		(columnId: string, title: string) => {
+			const last = cardsRef.current
+				.filter((c) => c.columnId === columnId)
+				.sort(byPosition)
+				.at(-1);
+			const tempId = `temp-${crypto.randomUUID()}`;
+			const temp: CardData = {
+				id: tempId,
+				columnId,
+				projectId,
+				title,
+				description: null,
+				priority: null,
+				dueDate: null,
+				position: generateKeyBetween(last?.position ?? null, null),
+				checklistItems: [],
+				labels: [],
+			};
+			setCards((prev) => [...prev, temp]);
+
+			trackCards(createCard({ columnId, projectId, title })).then((result) => {
+				if ("error" in result) {
+					toast.error(result.error);
+					setCards((prev) => prev.filter((c) => c.id !== tempId));
+					return;
+				}
+				setCards((prev) =>
+					prev.map((c) =>
+						c.id === tempId ? { ...c, id: result.data.id, position: result.data.position } : c,
+					),
+				);
+			});
+		},
+		[projectId, setCards, trackCards],
+	);
+
+	const handleRenameColumn = useCallback(
+		(columnId: string, name: string) => {
+			setColumns((prev) => prev.map((c) => (c.id === columnId ? { ...c, name } : c)));
+			trackColumns(updateColumn({ columnId, name })).then((result) => {
+				if ("error" in result) {
+					toast.error(result.error);
+					resetColumns();
+				}
+			});
+		},
+		[setColumns, trackColumns, resetColumns],
+	);
+
+	const handleDeleteColumn = useCallback(
+		(columnId: string) => {
+			setColumns((prev) => prev.filter((c) => c.id !== columnId));
+			setCards((prev) => prev.filter((c) => c.columnId !== columnId));
+			trackColumns(trackCards(deleteColumn({ columnId }))).then((result) => {
+				if ("error" in result) {
+					toast.error(result.error);
+					resetColumns();
+					resetCards();
+				}
+			});
+		},
+		[setColumns, setCards, trackColumns, trackCards, resetColumns, resetCards],
+	);
+
+	function handleCardSave(cardId: string, updates: CardUpdates) {
+		setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, ...updates } : c)));
+		trackCards(updateCard({ cardId, ...updates })).then((result) => {
+			if ("error" in result) {
+				toast.error(result.error);
+				resetCards();
+			}
+		});
 	}
 
-	function handleCardUpdate(
-		cardId: string,
-		updates: Partial<
-			Pick<CardData, "title" | "description" | "priority" | "dueDate" | "checklistItems" | "labels">
-		>,
-	) {
+	// Checklist and label edits save themselves; this only mirrors them on the board.
+	function handleCardChange(cardId: string, updates: Partial<CardData>) {
 		setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, ...updates } : c)));
-		setSelectedCard((prev) => (prev?.id === cardId ? { ...prev, ...updates } : prev));
 	}
 
 	function handleCardArchive(cardId: string) {
 		setCards((prev) => prev.filter((c) => c.id !== cardId));
 		setSheetOpen(false);
+		trackCards(archiveCard({ cardId })).then((result) => {
+			if ("error" in result) {
+				toast.error(result.error);
+				resetCards();
+			} else toast.success("Card archived");
+		});
 	}
 
 	function handleColumnAdded(column: ColumnData) {
@@ -121,21 +255,30 @@ export function KanbanBoard({
 		setCards((prev) => [...prev, card]);
 	}
 
-	function handleCardAdded(card: CardData) {
-		setCards((prev) => [...prev, card]);
-	}
-
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
-
-	const sortedColumns = [...columns].sort((a, b) => (a.position < b.position ? -1 : 1));
-	const columnIds = sortedColumns.map((c) => c.id);
 
 	const activeColumn = activeType === "column" ? columns.find((c) => c.id === activeId) : null;
 	const activeCard = activeType === "card" ? cards.find((c) => c.id === activeId) : null;
 
 	function handleDragStart(event: DragStartEvent) {
+		const type = event.active.data.current?.type ?? null;
 		setActiveId(event.active.id as string);
-		setActiveType(event.active.data.current?.type ?? null);
+		setActiveType(type);
+		if (type === "card") {
+			const card = cards.find((c) => c.id === event.active.id);
+			if (card) dragStart.current = { cards, columnId: card.columnId, release: holdCards() };
+		}
+	}
+
+	function handleDragCancel() {
+		const start = dragStart.current;
+		dragStart.current = null;
+		setActiveId(null);
+		setActiveType(null);
+		if (start) {
+			setCards(start.cards);
+			start.release(true);
+		}
 	}
 
 	function handleDragEnd(event: DragEndEvent) {
@@ -143,12 +286,11 @@ export function KanbanBoard({
 		setActiveId(null);
 		setActiveType(null);
 
-		if (!over || active.id === over.id) return;
-
 		if (active.data.current?.type === "column") {
+			if (!over || active.id === over.id) return;
 			const oldIdx = sortedColumns.findIndex((c) => c.id === active.id);
 			const newIdx = sortedColumns.findIndex((c) => c.id === over.id);
-			if (oldIdx === newIdx) return;
+			if (oldIdx === -1 || newIdx === -1 || oldIdx === newIdx) return;
 
 			const reordered = arrayMove(sortedColumns, oldIdx, newIdx);
 			const newPosition = generateKeyBetween(
@@ -159,58 +301,65 @@ export function KanbanBoard({
 			setColumns((prev) =>
 				prev.map((c) => (c.id === active.id ? { ...c, position: newPosition } : c)),
 			);
-
-			startTransition(async () => {
-				await reorderColumns({ columnId: active.id as string, newPosition });
-			});
+			trackColumns(reorderColumns({ columnId: active.id as string, newPosition })).then(
+				(result) => {
+					if ("error" in result) {
+						toast.error(result.error);
+						resetColumns();
+					}
+				},
+			);
 			return;
 		}
 
-		if (active.data.current?.type === "card") {
-			const activeCard = cards.find((c) => c.id === active.id);
-			if (!activeCard) return;
+		const start = dragStart.current;
+		dragStart.current = null;
+		if (!start) return;
 
-			const overType = over.data.current?.type as "column" | "card" | undefined;
-			const overColumnId =
-				overType === "column" ? (over.id as string) : (over.data.current?.columnId as string);
-
-			const isNewColumn = activeCard.columnId !== overColumnId;
-
-			const targetColCards = cards
-				.filter((c) => c.columnId === overColumnId && c.id !== active.id)
-				.sort((a, b) => (a.position < b.position ? -1 : 1));
-
-			let newPosition: string;
-
-			if (overType === "column") {
-				newPosition = generateKeyBetween(targetColCards.at(-1)?.position ?? null, null);
-			} else {
-				const overIdx = targetColCards.findIndex((c) => c.id === over.id);
-				if (overIdx === -1) return;
-				newPosition = generateKeyBetween(
-					targetColCards[overIdx - 1]?.position ?? null,
-					targetColCards[overIdx]?.position ?? null,
-				);
-			}
-
-			setCards((prev) =>
-				prev.map((c) =>
-					c.id === active.id ? { ...c, columnId: overColumnId, position: newPosition } : c,
-				),
-			);
-
-			startTransition(async () => {
-				if (isNewColumn) {
-					await moveCard({
-						cardId: active.id as string,
-						newColumnId: overColumnId,
-						newPosition,
-					});
-				} else {
-					await reorderCards({ cardId: active.id as string, newPosition });
-				}
-			});
+		const card = cards.find((c) => c.id === active.id);
+		if (!card || !over || over.id === active.id) {
+			start.release(true);
+			return;
 		}
+
+		const overIsColumn = over.data.current?.type === "column";
+		const overColumnId: string = overIsColumn ? (over.id as string) : over.data.current?.columnId;
+		const column = cards.filter((c) => c.columnId === overColumnId).sort(byPosition);
+		const moved = overColumnId !== card.columnId;
+
+		let position: string;
+		if (moved) {
+			const overIdx = column.findIndex((c) => c.id === over.id);
+			position = positionAt(column, overIdx === -1 ? column.length : overIdx);
+		} else {
+			// Same order the sortable preview showed while dragging.
+			const oldIdx = column.findIndex((c) => c.id === card.id);
+			const newIdx = column.findIndex((c) => c.id === over.id);
+			if (newIdx === -1 || newIdx === oldIdx) {
+				start.release(true);
+				return;
+			}
+			const reordered = arrayMove(column, oldIdx, newIdx);
+			position = generateKeyBetween(
+				reordered[newIdx - 1]?.position ?? null,
+				reordered[newIdx + 1]?.position ?? null,
+			);
+		}
+
+		setCards((prev) =>
+			prev.map((c) => (c.id === card.id ? { ...c, columnId: overColumnId, position } : c)),
+		);
+
+		const save = moved
+			? moveCard({ cardId: card.id, newColumnId: overColumnId, newPosition: position })
+			: reorderCards({ cardId: card.id, newPosition: position });
+		trackCards(save).then((result) => {
+			if ("error" in result) {
+				toast.error(result.error);
+				resetCards();
+			}
+		});
+		start.release();
 	}
 
 	return (
@@ -238,6 +387,7 @@ export function KanbanBoard({
 						collisionDetection={closestCorners}
 						onDragStart={handleDragStart}
 						onDragEnd={handleDragEnd}
+						onDragCancel={handleDragCancel}
 					>
 						<SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
 							<div className="relative flex-1">
@@ -246,9 +396,11 @@ export function KanbanBoard({
 										<KanbanColumn
 											key={col.id}
 											column={col}
-											cards={filteredCards.filter((c) => c.columnId === col.id)}
+											cards={cardsByColumn.get(col.id) ?? NO_CARDS}
 											onCardOpen={handleCardOpen}
-											onCardAdded={handleCardAdded}
+											onAddCard={handleAddCard}
+											onRename={handleRenameColumn}
+											onDelete={handleDeleteColumn}
 										/>
 									))}
 									<AddColumnButton projectId={projectId} onColumnAdded={handleColumnAdded} />
@@ -260,7 +412,7 @@ export function KanbanBoard({
 							{activeColumn && (
 								<KanbanColumnOverlay
 									column={activeColumn}
-									cardCount={filteredCards.filter((c) => c.columnId === activeColumn.id).length}
+									cardCount={cardsByColumn.get(activeColumn.id)?.length ?? 0}
 								/>
 							)}
 							{activeCard && <KanbanCardOverlay card={activeCard} />}
@@ -272,18 +424,17 @@ export function KanbanBoard({
 						open={sheetOpen}
 						onOpenChange={setSheetOpen}
 						projectLabels={projectLabels}
-						onUpdate={handleCardUpdate}
+						onSave={handleCardSave}
+						onChange={handleCardChange}
 						onArchive={handleCardArchive}
 						onProjectLabelsChange={setProjectLabels}
 					/>
 				</>
 			)}
 
-			<SeiryuMobileAddFab
-				columns={sortedColumns}
-				projectId={projectId}
-				onCardAdded={handleCardAdded}
-			/>
+			<SeiryuMobileAddFab columns={sortedColumns} onAddCard={handleAddCard} />
 		</div>
 	);
 }
+
+const NO_CARDS: CardData[] = [];

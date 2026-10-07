@@ -1,14 +1,10 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
-import { createCard } from "@/features/seiryu/actions/cards";
-import { deleteColumn, updateColumn } from "@/features/seiryu/actions/columns";
 import { type CardData, KanbanCard } from "@/features/seiryu/components/KanbanCard";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@seikatsu/ui";
-import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { memo, useMemo, useState } from "react";
 
 export type ColumnData = {
 	id: string;
@@ -21,18 +17,25 @@ export type ColumnData = {
 interface Props {
 	column: ColumnData;
 	cards: CardData[];
-	onCardOpen?: (cardId: string) => void;
-	onCardAdded?: (card: CardData) => void;
+	onCardOpen: (cardId: string) => void;
+	onAddCard: (columnId: string, title: string) => void;
+	onRename: (columnId: string, name: string) => void;
+	onDelete: (columnId: string) => void;
 }
 
-export function KanbanColumn({ column, cards, onCardOpen, onCardAdded }: Props) {
+// Skips re-rendering when the board changes another column (cards compared by reference).
+export const KanbanColumn = memo(function KanbanColumn({
+	column,
+	cards,
+	onCardOpen,
+	onAddCard,
+	onRename,
+	onDelete,
+}: Props) {
 	const [addingCard, setAddingCard] = useState(false);
 	const [title, setTitle] = useState("");
-	const [isCreating, startCreate] = useTransition();
-	const [isDeleting, startDelete] = useTransition();
 	const [isEditing, setIsEditing] = useState(false);
 	const [editName, setEditName] = useState("");
-	const [, startRename] = useTransition();
 
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 		id: column.id,
@@ -44,8 +47,11 @@ export function KanbanColumn({ column, cards, onCardOpen, onCardAdded }: Props) 
 		transition,
 	};
 
-	const sortedCards = [...cards].sort((a, b) => (a.position < b.position ? -1 : 1));
-	const cardIds = sortedCards.map((c) => c.id);
+	const sortedCards = useMemo(
+		() => [...cards].sort((a, b) => (a.position < b.position ? -1 : 1)),
+		[cards],
+	);
+	const cardIds = useMemo(() => sortedCards.map((c) => c.id), [sortedCards]);
 
 	function openAddCard() {
 		setAddingCard(true);
@@ -57,36 +63,13 @@ export function KanbanColumn({ column, cards, onCardOpen, onCardAdded }: Props) 
 		setTitle("");
 	}
 
-	async function handleCreateCard(e: React.FormEvent) {
+	function handleCreateCard(e: React.FormEvent) {
 		e.preventDefault();
 		const trimmed = title.trim();
 		if (!trimmed) return;
-		startCreate(async () => {
-			const result = await createCard({
-				columnId: column.id,
-				projectId: column.projectId,
-				title: trimmed,
-			});
-			if ("error" in result) {
-				toast.error(result.error);
-				return;
-			}
-			setTitle("");
-			setAddingCard(false);
-			toast.success("Card created");
-			onCardAdded?.({
-				id: result.data.id,
-				columnId: column.id,
-				projectId: column.projectId,
-				title: trimmed,
-				description: null,
-				priority: null,
-				dueDate: null,
-				position: result.data.position,
-				checklistItems: [],
-				labels: [],
-			});
-		});
+		setTitle("");
+		setAddingCard(false);
+		onAddCard(column.id, trimmed);
 	}
 
 	function handleRenameStart() {
@@ -102,19 +85,12 @@ export function KanbanColumn({ column, cards, onCardOpen, onCardAdded }: Props) 
 		const trimmed = editName.trim();
 		setIsEditing(false);
 		if (!trimmed || trimmed === column.name) return;
-		startRename(async () => {
-			const result = await updateColumn({ columnId: column.id, name: trimmed });
-			if ("error" in result) toast.error(result.error);
-		});
+		onRename(column.id, trimmed);
 	}
 
 	function handleDeleteColumn() {
 		if (!confirm(`Delete column "${column.name}"? All cards inside will be deleted.`)) return;
-		startDelete(async () => {
-			const result = await deleteColumn({ columnId: column.id });
-			if ("error" in result) toast.error(result.error);
-			else toast.success("Column deleted");
-		});
+		onDelete(column.id);
 	}
 
 	return (
@@ -172,7 +148,6 @@ export function KanbanColumn({ column, cards, onCardOpen, onCardAdded }: Props) 
 				</div>
 				<button
 					type="button"
-					disabled={isDeleting}
 					onClick={handleDeleteColumn}
 					className={cn(
 						"ml-1 flex h-5 w-5 items-center justify-center rounded text-muted-foreground",
@@ -180,7 +155,7 @@ export function KanbanColumn({ column, cards, onCardOpen, onCardAdded }: Props) 
 					)}
 					aria-label={`Delete column ${column.name}`}
 				>
-					{isDeleting ? <Spinner className="h-3 w-3" /> : "×"}
+					×
 				</button>
 			</div>
 
@@ -211,11 +186,10 @@ export function KanbanColumn({ column, cards, onCardOpen, onCardAdded }: Props) 
 							<div className="flex items-center gap-1.5">
 								<button
 									type="submit"
-									disabled={isCreating || !title.trim()}
-									className="flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground disabled:opacity-50"
+									disabled={!title.trim()}
+									className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground disabled:opacity-50"
 								>
-									{isCreating && <Spinner className="h-3 w-3" />}
-									{isCreating ? "Adding…" : "Add card"}
+									Add card
 								</button>
 								<button
 									type="button"
@@ -239,6 +213,21 @@ export function KanbanColumn({ column, cards, onCardOpen, onCardAdded }: Props) 
 				</div>
 			</SortableContext>
 		</div>
+	);
+}, sameColumnProps);
+
+function sameColumnProps(a: Props, b: Props) {
+	return (
+		a.column.id === b.column.id &&
+		a.column.name === b.column.name &&
+		a.column.color === b.column.color &&
+		a.column.position === b.column.position &&
+		a.onCardOpen === b.onCardOpen &&
+		a.onAddCard === b.onAddCard &&
+		a.onRename === b.onRename &&
+		a.onDelete === b.onDelete &&
+		a.cards.length === b.cards.length &&
+		a.cards.every((c, i) => c === b.cards[i])
 	);
 }
 
