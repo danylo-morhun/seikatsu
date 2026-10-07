@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
+import { getOwnedWorkspace } from "@/lib/session";
 import {
 	accounts,
 	and,
@@ -63,13 +64,9 @@ export async function getRecurringTransactions(
 	const session = await auth();
 	if (!session?.user?.id) throw new Error("Unauthorized");
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) throw new Error("Forbidden");
+	if (!ws) throw new Error("Forbidden");
 
 	const rows = await db.query.recurringTransactions.findMany({
 		where: eq(recurringTransactions.workspaceId, workspaceId),
@@ -156,12 +153,8 @@ export async function toggleRecurring(id: string): Promise<{ error: string } | {
 		.limit(1);
 	if (!rt) return { error: "Not found" };
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, rt.workspaceId))
-		.limit(1);
-	if (!ws || ws.userId !== session.user.id) return { error: "Forbidden" };
+	const ws = await getOwnedWorkspace(rt.workspaceId);
+	if (!ws) return { error: "Forbidden" };
 
 	await db
 		.update(recurringTransactions)
@@ -184,12 +177,8 @@ export async function deleteRecurringTransaction(
 		.limit(1);
 	if (!rt) return { error: "Not found" };
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, rt.workspaceId))
-		.limit(1);
-	if (!ws || ws.userId !== session.user.id) return { error: "Forbidden" };
+	const ws = await getOwnedWorkspace(rt.workspaceId);
+	if (!ws) return { error: "Forbidden" };
 
 	await db.delete(recurringTransactions).where(eq(recurringTransactions.id, id));
 	revalidatePath("/kuroji");
@@ -200,13 +189,9 @@ export async function generateDueRecurring(workspaceId: string): Promise<{ gener
 	const session = await auth();
 	if (!session?.user?.id) return { generated: 0 };
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId, baseCurrency: workspaces.baseCurrency })
-		.from(workspaces)
-		.where(eq(workspaces.id, workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) return { generated: 0 };
+	if (!ws) return { generated: 0 };
 
 	const today = new Date().toISOString().slice(0, 10);
 

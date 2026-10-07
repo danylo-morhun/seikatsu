@@ -15,6 +15,7 @@ import {
 	privat24ExternalId,
 	privat24IsInflow,
 } from "@/features/kuroji/lib/privat24";
+import { getOwnedWorkspace } from "@/lib/session";
 import {
 	accounts,
 	and,
@@ -26,7 +27,6 @@ import {
 	ilike,
 	isNull,
 	transactions,
-	workspaces,
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
@@ -55,13 +55,8 @@ export async function importPrivat24Statement(
 	if (file.size > MAX_BYTES) return { error: "File too large (max 5 MB)" };
 
 	// Workspace ownership.
-	const [ws] = await db
-		.select({ userId: workspaces.userId, baseCurrency: workspaces.baseCurrency })
-		.from(workspaces)
-		.where(eq(workspaces.id, workspaceId))
-		.limit(1);
-	if (!ws) return { error: "Workspace not found" };
-	if (ws.userId !== session.user.id) return { error: "Forbidden" };
+	const ws = await getOwnedWorkspace(workspaceId);
+	if (!ws) return { error: "Forbidden" };
 
 	// Target account must belong to the workspace and be asset/liability.
 	const [acct] = await db

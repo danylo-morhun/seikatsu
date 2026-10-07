@@ -1,8 +1,8 @@
 "use server";
 
 import { auth } from "@/auth";
+import { getOwnedWorkspace } from "@/lib/session";
 import {
-	accounts,
 	and,
 	db,
 	desc,
@@ -13,7 +13,6 @@ import {
 	lte,
 	transactionEntries,
 	transactions,
-	workspaces,
 } from "@seikatsu/db";
 
 export async function exportTransactionsCsv(
@@ -26,13 +25,9 @@ export async function exportTransactionsCsv(
 	const session = await auth();
 	if (!session?.user?.id) return { error: "Unauthorized" };
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) return { error: "Forbidden" };
+	if (!ws) return { error: "Forbidden" };
 
 	const accountSubquery = accountId
 		? db

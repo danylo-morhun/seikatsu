@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { getOwnedWorkspace } from "@/lib/session";
 import {
 	accounts,
 	and,
@@ -13,7 +14,6 @@ import {
 	sql,
 	transactionEntries,
 	transactions,
-	workspaces,
 } from "@seikatsu/db";
 
 export type MonthlyTrend = {
@@ -31,13 +31,9 @@ export async function getMonthlyTrends(
 	const session = await auth();
 	if (!session?.user?.id) throw new Error("Unauthorized");
 
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, workspaceId))
-		.limit(1);
+	const ws = await getOwnedWorkspace(workspaceId);
 
-	if (!ws || ws.userId !== session.user.id) throw new Error("Forbidden");
+	if (!ws) throw new Error("Forbidden");
 
 	let cutoffDate: string;
 	if (from) {

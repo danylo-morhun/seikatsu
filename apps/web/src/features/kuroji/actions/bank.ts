@@ -8,6 +8,7 @@ import {
 	newAuthState,
 	startAuth,
 } from "@/features/kuroji/lib/enablebanking";
+import { getOwnedWorkspace } from "@/lib/session";
 import {
 	accounts,
 	and,
@@ -21,7 +22,6 @@ import {
 	inArray,
 	transactionEntries,
 	transactions,
-	workspaces,
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
@@ -31,13 +31,8 @@ type Result<T = unknown> = { error: string } | ({ success: true } & T);
 async function ownedWorkspace(workspaceId: string): Promise<{ error: string } | null> {
 	const session = await auth();
 	if (!session?.user?.id) return { error: "Unauthorized" };
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, workspaceId))
-		.limit(1);
-	if (!ws) return { error: "Workspace not found" };
-	if (ws.userId !== session.user.id) return { error: "Forbidden" };
+	const ws = await getOwnedWorkspace(workspaceId);
+	if (!ws) return { error: "Forbidden" };
 	return null;
 }
 
