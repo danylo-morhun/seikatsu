@@ -1,12 +1,11 @@
 "use client";
 
-import { PageLoader } from "@/components/PageLoader";
 import { ProjectSidebar } from "@/features/seiryu/components/ProjectSidebar";
 import { Menu01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Sheet, SheetContent, SheetTrigger } from "@seikatsu/ui";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 
 type Project = {
 	id: string;
@@ -22,7 +21,6 @@ interface Props {
 }
 
 export function SeiryuLayout({ projects, workspaceId, cardCounts, children }: Props) {
-	const [isPending, startTransition] = useTransition();
 	const [mobileNavOpen, setMobileNavOpen] = useState(false);
 	const pathname = usePathname();
 
@@ -71,7 +69,6 @@ export function SeiryuLayout({ projects, workspaceId, cardCounts, children }: Pr
 					</Sheet>
 				</div>
 
-				{isPending && <PageLoader overlay />}
 				{children}
 			</main>
 		</div>
