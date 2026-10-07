@@ -40,13 +40,11 @@ export function HabitCard({
 	log,
 	streak,
 	date,
-	onChange,
 }: {
 	habit: KeizokuHabit;
 	log: KeizokuHabitLog | null;
 	streak: number;
 	date: string;
-	onChange: () => void;
 }) {
 	const [pending, startTransition] = useTransition();
 	const [photoModalOpen, setPhotoModalOpen] = useState(false);
@@ -61,7 +59,6 @@ export function HabitCard({
 			startTransition(async () => {
 				const res = await unlogHabit(habit.id, date);
 				if ("error" in res) toast.error(res.error);
-				else onChange();
 			});
 			return;
 		}
@@ -71,7 +68,6 @@ export function HabitCard({
 		startTransition(async () => {
 			const res = await logHabit(formData);
 			if ("error" in res) toast.error(res.error);
-			else onChange();
 		});
 		if (habit.requiresPhoto) fileInputRef.current?.click();
 	}
@@ -87,7 +83,6 @@ export function HabitCard({
 		startTransition(async () => {
 			const res = await logHabit(formData);
 			if ("error" in res) toast.error(res.error);
-			else onChange();
 		});
 	}
 
@@ -97,7 +92,6 @@ export function HabitCard({
 			if ("error" in res) toast.error(res.error);
 			else {
 				toast.success(`"${habit.name}" archived`);
-				onChange();
 			}
 		});
 	}
@@ -189,14 +183,8 @@ export function HabitCard({
 				log={log}
 				open={photoModalOpen}
 				onOpenChange={setPhotoModalOpen}
-				onChange={onChange}
 			/>
-			<EditHabitModal
-				habit={habit}
-				open={editOpen}
-				onOpenChange={setEditOpen}
-				onChange={onChange}
-			/>
+			<EditHabitModal habit={habit} open={editOpen} onOpenChange={setEditOpen} />
 		</div>
 	);
 }
