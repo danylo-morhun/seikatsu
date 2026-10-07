@@ -4,7 +4,6 @@ import { Spinner } from "@/components/Spinner";
 import { updateWorkspace } from "@/features/kuroji/actions/workspace";
 import { CURRENCIES } from "@/features/kuroji/lib/constants";
 import { Button, Input, Label } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -17,7 +16,6 @@ interface Props {
 export function WorkspaceSettingsForm({ workspaceId, initialName, baseCurrency }: Props) {
 	const [name, setName] = useState(initialName);
 	const [isPending, startTransition] = useTransition();
-	const router = useRouter();
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -27,7 +25,6 @@ export function WorkspaceSettingsForm({ workspaceId, initialName, baseCurrency }
 				toast.error(result.error);
 			} else {
 				toast.success("Workspace updated.");
-				router.refresh();
 			}
 		});
 	}

@@ -15,7 +15,6 @@ import {
 	type TxType,
 	addTransactionFormSchema,
 } from "@/features/kuroji/lib/transaction-schema";
-import { useRefreshRouter } from "@/hooks/useRefreshRouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Add01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -62,7 +61,6 @@ export function AddTransactionModal({
 	const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>([]);
 	const [accountsLoading, setAccountsLoading] = React.useState(false);
 	const [txType, setTxType] = React.useState<TxType>("expense");
-	const refresh = useRefreshRouter();
 
 	const defaultCurrency = toCurrency(baseCurrency);
 	const today = format(new Date(), "yyyy-MM-dd");
@@ -213,7 +211,6 @@ export function AddTransactionModal({
 		}
 
 		toast.success("Transaction recorded.");
-		refresh();
 		setOpen(false);
 	};
 

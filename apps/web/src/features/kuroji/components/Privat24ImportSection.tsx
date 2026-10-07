@@ -13,7 +13,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -26,7 +25,6 @@ export function Privat24ImportSection({
 	workspaceId: string;
 	accounts: Account[];
 }) {
-	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [accountId, setAccountId] = useState("");
 	const [file, setFile] = useState<File | null>(null);
@@ -60,7 +58,6 @@ export function Privat24ImportSection({
 			);
 			setFile(null);
 			if (fileInputRef.current) fileInputRef.current.value = "";
-			router.refresh();
 		});
 	}
 

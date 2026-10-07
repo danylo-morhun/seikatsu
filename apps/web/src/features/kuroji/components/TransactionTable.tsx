@@ -7,7 +7,6 @@ import type { RecentTransaction } from "@/features/kuroji/actions/transactions";
 import { EditTransactionModal } from "@/features/kuroji/components/EditTransactionModal";
 import { parseLocal } from "@/features/kuroji/lib/dates";
 import { formatCurrency } from "@/features/kuroji/lib/format";
-import { useRefreshRouter } from "@/hooks/useRefreshRouter";
 import {
 	Alert01Icon,
 	Cancel01Icon,
@@ -94,7 +93,6 @@ export function TransactionTable({
 	const searchParams = useSearchParams();
 	const [isPending, startTransition] = useTransition();
 	const [isExporting, setIsExporting] = useState(false);
-	const refresh = useRefreshRouter();
 	const [pendingId, setPendingId] = useState<string | null>(null);
 	const [editTarget, setEditTarget] = useState<RecentTransaction | null>(null);
 	const [localQuery, setLocalQuery] = useState(searchQuery ?? "");
@@ -187,7 +185,6 @@ export function TransactionTable({
 				toast.error(result.error);
 			} else {
 				toast.success("Transaction deleted.");
-				refresh();
 			}
 			setPendingId(null);
 		});
@@ -219,7 +216,6 @@ export function TransactionTable({
 			} else {
 				toast.success(`${result.deleted} transaction${result.deleted !== 1 ? "s" : ""} deleted.`);
 				setSelectedIds(new Set());
-				refresh();
 			}
 			setBulkDeleteOpen(false);
 		});

@@ -3,7 +3,6 @@
 import { Spinner } from "@/components/Spinner";
 import { getAccounts, updateAccount } from "@/features/kuroji/actions/accounts";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
-import { useRefreshRouter } from "@/hooks/useRefreshRouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
@@ -46,7 +45,6 @@ interface Props {
 
 export function EditAccountModal({ account, workspaceId, open, onOpenChange }: Props) {
 	const [accounts, setAccounts] = React.useState<Account[]>([]);
-	const refresh = useRefreshRouter();
 
 	const {
 		register,
@@ -92,7 +90,6 @@ export function EditAccountModal({ account, workspaceId, open, onOpenChange }: P
 					values.type === "EXPENSE" || values.type === "INCOME" ? (values.budget ?? null) : null,
 			});
 			toast.success("Account updated");
-			refresh();
 			onOpenChange(false);
 		} catch {
 			toast.error("Failed to update account");

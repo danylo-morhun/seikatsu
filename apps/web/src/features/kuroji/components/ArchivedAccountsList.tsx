@@ -5,7 +5,6 @@ import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import { Archive01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useTransition } from "react";
 import { toast } from "sonner";
@@ -13,7 +12,6 @@ import { toast } from "sonner";
 type Account = Awaited<ReturnType<typeof getAccounts>>[number];
 
 export function ArchivedAccountsList({ accounts }: { accounts: Account[] }) {
-	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [loadingId, setLoadingId] = React.useState<string | null>(null);
 
@@ -27,7 +25,6 @@ export function ArchivedAccountsList({ accounts }: { accounts: Account[] }) {
 				toast.error(result.error);
 			} else {
 				toast.success(`"${name}" restored`);
-				router.refresh();
 			}
 			setLoadingId(null);
 		});
