@@ -1,6 +1,5 @@
 "use client";
 
-import { PageLoader } from "@/components/PageLoader";
 import { AddTransactionModal } from "@/features/kuroji/components/AddTransactionModal";
 import {
 	Add01Icon,
@@ -12,8 +11,8 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, cn } from "@seikatsu/ui";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
 export type { KurojiTab };
@@ -32,8 +31,7 @@ interface Props {
 export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 	const searchParams = useSearchParams();
 	const pathname = usePathname();
-	const router = useRouter();
-	const [isPending, startTransition] = useTransition();
+	// Highlight the tapped tab immediately; the URL catches up when navigation commits.
 	const [pendingTab, setPendingTab] = useState<KurojiTab | null>(null);
 
 	const activeTab = (searchParams.get("tab") as KurojiTab) || "expense";
@@ -41,32 +39,22 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 	const isSettings = pathname.startsWith("/settings");
 
 	useEffect(() => {
-		if (!isPending) setPendingTab(null);
-	}, [isPending]);
+		setPendingTab(null);
+	}, [activeTab, pathname]);
 
 	function tabHref(tab: KurojiTab) {
 		return buildTabHref(tab, searchParams.toString());
 	}
 
-	function handleTabClick(tab: KurojiTab) {
-		if (tab === displayTab && !isSettings) return;
-		setPendingTab(tab);
-		startTransition(() => {
-			router.push(tabHref(tab));
-		});
-	}
-
-	function tabCls(active: boolean, loading = false) {
+	function tabCls(active: boolean) {
 		return cn(
-			"flex flex-col items-center gap-0.5 rounded-xl px-3 py-1.5 transition-all duration-200",
+			"flex flex-col items-center gap-0.5 rounded-xl px-3 py-1.5 transition-colors duration-150",
 			active ? "text-primary" : "text-muted-foreground",
-			loading && "opacity-50",
 		);
 	}
 
 	return (
 		<>
-			{isPending && <PageLoader overlay />}
 			<nav
 				className="fixed inset-x-0 bottom-0 z-40 md:hidden"
 				style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
@@ -76,18 +64,16 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 						{/* Left: Expenses, Accounts */}
 						<div className="flex flex-1 items-center justify-around">
 							{TABS.slice(0, 2).map(({ value, label, icon }) => (
-								<button
+								<Link
 									key={value}
-									type="button"
-									onClick={() => handleTabClick(value)}
-									className={tabCls(
-										displayTab === value && !isSettings,
-										isPending && pendingTab === value,
-									)}
+									href={tabHref(value)}
+									prefetch
+									onClick={() => setPendingTab(value)}
+									className={tabCls(displayTab === value && !isSettings)}
 								>
 									<HugeiconsIcon icon={icon} className="h-5 w-5" />
 									<span className="text-[10px] font-medium leading-none">{label}</span>
-								</button>
+								</Link>
 							))}
 						</div>
 
@@ -109,17 +95,15 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 
 						{/* Right: History, Settings */}
 						<div className="flex flex-1 items-center justify-around">
-							<button
-								type="button"
-								onClick={() => handleTabClick("transactions")}
-								className={tabCls(
-									displayTab === "transactions" && !isSettings,
-									isPending && pendingTab === "transactions",
-								)}
+							<Link
+								href={tabHref("transactions")}
+								prefetch
+								onClick={() => setPendingTab("transactions")}
+								className={tabCls(displayTab === "transactions" && !isSettings)}
 							>
 								<HugeiconsIcon icon={Clock01Icon} className="h-5 w-5" />
 								<span className="text-[10px] font-medium leading-none">Transactions</span>
-							</button>
+							</Link>
 							<Link href="/settings" className={tabCls(isSettings)}>
 								<HugeiconsIcon icon={Settings01Icon} className="h-5 w-5" />
 								<span className="text-[10px] font-medium leading-none">Settings</span>
