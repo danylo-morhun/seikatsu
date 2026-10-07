@@ -7,7 +7,6 @@ import { logHabit } from "@/features/keizoku/actions/logs";
 import { Cancel01Icon, ImageUpload01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Label, cn } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { type ChangeEvent, type DragEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -21,7 +20,6 @@ interface Props {
 }
 
 export function LogPhotoModal({ habit, date, log, open, onOpenChange, onChange }: Props) {
-	const router = useRouter();
 	const [saving, setSaving] = useState(false);
 	const [note, setNote] = useState(log?.note ?? "");
 	const [file, setFile] = useState<File | null>(null);
@@ -70,7 +68,6 @@ export function LogPhotoModal({ habit, date, log, open, onOpenChange, onChange }
 		toast.success("Saved.");
 		onOpenChange(false);
 		if (onChange) onChange();
-		else router.refresh();
 	}
 
 	return (

@@ -27,7 +27,6 @@ import {
 	SelectValue,
 	cn,
 } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -42,7 +41,6 @@ export function AddHabitModal({
 }) {
 	const [open, setOpen] = useState(false);
 	const [saving, setSaving] = useState(false);
-	const router = useRouter();
 
 	const [name, setName] = useState("");
 	const [emoji, setEmoji] = useState("🎯");
@@ -88,7 +86,6 @@ export function AddHabitModal({
 		reset();
 		setOpen(false);
 		if (onChange) onChange();
-		else router.refresh();
 	}
 
 	return (
