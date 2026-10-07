@@ -12,7 +12,6 @@ import { Archive01Icon, ArrowLeft01Icon, PencilEdit01Icon } from "@hugeicons/cor
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@seikatsu/ui";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -25,7 +24,6 @@ interface Props {
 }
 
 export function HabitDetailView({ habit, logs, photos, streak, completionRate }: Props) {
-	const router = useRouter();
 	const [editOpen, setEditOpen] = useState(false);
 	const [pending, startTransition] = useTransition();
 
@@ -35,7 +33,6 @@ export function HabitDetailView({ habit, logs, photos, streak, completionRate }:
 			if ("error" in res) toast.error(res.error);
 			else {
 				toast.success(habit.archivedAt ? "Restored" : "Archived");
-				router.refresh();
 			}
 		});
 	}

@@ -27,7 +27,6 @@ import {
 	SelectValue,
 	cn,
 } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -40,7 +39,6 @@ interface Props {
 
 export function EditHabitModal({ habit, open, onOpenChange, onChange }: Props) {
 	const [saving, setSaving] = useState(false);
-	const router = useRouter();
 
 	const [name, setName] = useState(habit.name);
 	const [emoji, setEmoji] = useState(habit.emoji);
@@ -86,7 +84,6 @@ export function EditHabitModal({ habit, open, onOpenChange, onChange }: Props) {
 		toast.success("Saved.");
 		onOpenChange(false);
 		if (onChange) onChange();
-		else router.refresh();
 	}
 
 	return (
