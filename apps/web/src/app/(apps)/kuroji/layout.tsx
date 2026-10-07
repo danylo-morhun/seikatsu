@@ -1,6 +1,5 @@
 import { auth } from "@/auth";
 import { getWorkspace } from "@/features/kuroji/actions/workspace";
-import { KurojiContentShell } from "@/features/kuroji/components/KurojiContentShell";
 import { KurojiNavTabs } from "@/features/kuroji/components/KurojiNavTabs";
 
 export default async function KurojiLayout({ children }: { children: React.ReactNode }) {
@@ -9,7 +8,7 @@ export default async function KurojiLayout({ children }: { children: React.React
 
 	return (
 		<>
-			<KurojiContentShell>{children}</KurojiContentShell>
+			{children}
 			{workspace && (
 				<KurojiNavTabs workspaceId={workspace.id} baseCurrency={workspace.baseCurrency} />
 			)}
