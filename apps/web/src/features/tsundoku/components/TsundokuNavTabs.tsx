@@ -1,13 +1,11 @@
 "use client";
 
-import { PageLoader } from "@/components/PageLoader";
 import { AddBookModal } from "@/features/tsundoku/components/AddBookModal";
 import { Add01Icon, Book01Icon, Chart01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, cn } from "@seikatsu/ui";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { usePathname } from "next/navigation";
 
 const TABS = [
 	{ href: "/tsundoku", label: "Library", icon: Book01Icon, exact: true },
@@ -16,22 +14,13 @@ const TABS = [
 
 export function TsundokuNavTabs({ workspaceId }: { workspaceId: string }) {
 	const pathname = usePathname();
-	const router = useRouter();
-	const [isPending, startTransition] = useTransition();
 
 	function isActive(href: string, exact: boolean) {
 		return exact ? pathname === href : pathname.startsWith(href);
 	}
 
-	function nav(href: string) {
-		if (pathname === href) return;
-		startTransition(() => router.push(href));
-	}
-
 	return (
 		<>
-			{isPending && <PageLoader overlay />}
-
 			{/* Desktop tab nav */}
 			<div className="hidden border-b border-border/60 md:block">
 				<div className="flex items-center gap-1 px-4 sm:px-6">
@@ -39,6 +28,7 @@ export function TsundokuNavTabs({ workspaceId }: { workspaceId: string }) {
 						<Link
 							key={href}
 							href={href}
+							prefetch
 							className={cn(
 								"flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-medium transition-colors",
 								isActive(href, exact)
@@ -60,9 +50,9 @@ export function TsundokuNavTabs({ workspaceId }: { workspaceId: string }) {
 			>
 				<div className="mx-3 mb-3">
 					<div className="flex items-center justify-between rounded-2xl border border-border/60 bg-background/85 px-2 py-1.5 shadow-lg backdrop-blur-xl">
-						<button
-							type="button"
-							onClick={() => nav("/tsundoku")}
+						<Link
+							href="/tsundoku"
+							prefetch
 							className={cn(
 								"flex flex-1 flex-col items-center gap-0.5 rounded-xl px-3 py-1.5",
 								isActive("/tsundoku", true) ? "text-primary" : "text-muted-foreground",
@@ -70,7 +60,7 @@ export function TsundokuNavTabs({ workspaceId }: { workspaceId: string }) {
 						>
 							<HugeiconsIcon icon={Book01Icon} className="h-5 w-5" />
 							<span className="text-[10px] font-medium leading-none">Library</span>
-						</button>
+						</Link>
 
 						<div className="flex shrink-0 items-center justify-center px-1">
 							<AddBookModal
@@ -86,9 +76,9 @@ export function TsundokuNavTabs({ workspaceId }: { workspaceId: string }) {
 							/>
 						</div>
 
-						<button
-							type="button"
-							onClick={() => nav("/tsundoku/stats")}
+						<Link
+							href="/tsundoku/stats"
+							prefetch
 							className={cn(
 								"flex flex-1 flex-col items-center gap-0.5 rounded-xl px-3 py-1.5",
 								isActive("/tsundoku/stats", false) ? "text-primary" : "text-muted-foreground",
@@ -96,7 +86,7 @@ export function TsundokuNavTabs({ workspaceId }: { workspaceId: string }) {
 						>
 							<HugeiconsIcon icon={Chart01Icon} className="h-5 w-5" />
 							<span className="text-[10px] font-medium leading-none">Stats</span>
-						</button>
+						</Link>
 					</div>
 				</div>
 			</nav>
