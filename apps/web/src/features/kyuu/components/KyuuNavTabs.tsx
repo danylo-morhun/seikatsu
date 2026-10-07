@@ -1,12 +1,10 @@
 "use client";
 
-import { PageLoader } from "@/components/PageLoader";
 import { Briefcase01Icon, ChartLineData01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 
 const TABS = [
 	{ href: "/kyuu", label: "Applications", icon: Briefcase01Icon, exact: true },
@@ -18,9 +16,7 @@ const CARRY_PARAMS = ["status", "source", "stage", "from", "to", "q"];
 
 export function KyuuNavTabs() {
 	const pathname = usePathname();
-	const router = useRouter();
 	const searchParams = useSearchParams();
-	const [isPending, startTransition] = useTransition();
 
 	function tabHref(href: string) {
 		const params = new URLSearchParams();
@@ -36,16 +32,8 @@ export function KyuuNavTabs() {
 		return exact ? pathname === href : pathname.startsWith(href);
 	}
 
-	function nav(href: string) {
-		const target = tabHref(href);
-		if (pathname === href && !searchParams.toString()) return;
-		startTransition(() => router.push(target));
-	}
-
 	return (
 		<>
-			{isPending && <PageLoader overlay />}
-
 			{/* Desktop tab nav */}
 			<div className="hidden border-b border-border/60 md:block">
 				<div className="flex items-center gap-1 px-4 sm:px-6">
@@ -53,6 +41,7 @@ export function KyuuNavTabs() {
 						<Link
 							key={href}
 							href={tabHref(href)}
+							prefetch
 							className={cn(
 								"flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-medium transition-colors",
 								isActive(href, exact)
@@ -75,10 +64,10 @@ export function KyuuNavTabs() {
 				<div className="mx-3 mb-3">
 					<div className="flex items-center justify-around rounded-2xl border border-border/60 bg-background/85 px-2 py-1.5 shadow-lg backdrop-blur-xl">
 						{TABS.map(({ href, label, icon, exact }) => (
-							<button
+							<Link
 								key={href}
-								type="button"
-								onClick={() => nav(href)}
+								href={tabHref(href)}
+								prefetch
 								className={cn(
 									"flex flex-1 flex-col items-center gap-0.5 rounded-xl px-3 py-1.5",
 									isActive(href, exact) ? "text-primary" : "text-muted-foreground",
@@ -86,7 +75,7 @@ export function KyuuNavTabs() {
 							>
 								<HugeiconsIcon icon={icon} className="h-5 w-5" />
 								<span className="text-[10px] font-medium leading-none">{label}</span>
-							</button>
+							</Link>
 						))}
 					</div>
 				</div>
