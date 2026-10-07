@@ -25,7 +25,7 @@ jobs:
     name: Code Quality & Type Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: pnpm exec biome check .
       - run: pnpm typecheck
@@ -35,7 +35,7 @@ jobs:
     needs: lint-and-typecheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: pnpm test
 
@@ -44,6 +44,6 @@ jobs:
     needs: lint-and-typecheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: pnpm build
