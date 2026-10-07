@@ -1,0 +1,140 @@
+name: Deploy
+
+# Production deploy after CI passes on main (or by hand from the Actions tab).
+# Migrations run only when packages/db/drizzle changed since the live deployment,
+# and only after approval in the `production-migrations` environment.
+# Builds run on Vercel with the project's own env; the job only triggers them.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+  SITE_URL: https://seikatsu.danylomorhun.com
+
+jobs:
+  plan:
+    name: Plan
+    # Gated until Vercel git auto-deploy for main is switched off (vars.DEPLOY_ENABLED)
+    if: >-
+      vars.DEPLOY_ENABLED == 'true' && (github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'))
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.target.outputs.sha }}
+      migrations: ${{ steps.diff.outputs.migrations }}
+    steps:
+      - id: target
+        run: echo "sha=${{ github.event.workflow_run.head_sha || github.sha }}" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.target.outputs.sha }}
+          fetch-depth: 0
+      - name: Diff migrations against the live deployment
+        id: diff
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          live=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v13/deployments/${SITE_URL#https://}?teamId=$VERCEL_ORG_ID" \
+            | jq -r '.meta.githubCommitSha // .meta.gitCommitSha // empty')
+          echo "Live deployment: ${live:-unknown}"
+          if [ -z "$live" ] || ! git cat-file -e "$live^{commit}" 2>/dev/null; then
+            echo "Live commit unknown here — treating migrations as pending"
+            echo "migrations=true" >> "$GITHUB_OUTPUT"
+          elif git diff --quiet "$live" HEAD -- packages/db/drizzle; then
+            echo "migrations=false" >> "$GITHUB_OUTPUT"
+          else
+            git diff --name-only "$live" HEAD -- packages/db/drizzle
+            echo "migrations=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  migrate:
+    name: Migrate production DB
+    needs: plan
+    if: needs.plan.outputs.migrations == 'true'
+    runs-on: ubuntu-latest
+    environment: production-migrations
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ needs.plan.outputs.sha }}" }
+      - uses: ./.github/actions/setup
+      - run: pnpm -F @seikatsu/db db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  deploy:
+    name: Deploy to Vercel
+    needs: [plan, migrate]
+    if: always() && needs.plan.result == 'success' && (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: ${{ env.SITE_URL }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ needs.plan.outputs.sha }}" }
+      - name: Remember the live deployment
+        id: previous
+        run: |
+          url=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v13/deployments/${SITE_URL#https://}?teamId=$VERCEL_ORG_ID" \
+            | jq -r '.url // empty')
+          echo "Live before deploy: ${url:-none}"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+      - name: Build and deploy on Vercel
+        id: deploy
+        run: |
+          set -o pipefail
+          VERCEL_GUIDANCE_DISABLED=1 npx -y vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN" | tee "$RUNNER_TEMP/deploy.log"
+          # stdout may still carry hints besides the URL — take the last deployment URL
+          url=$(grep -oE 'https://[a-z0-9-]+\.vercel\.app' "$RUNNER_TEMP/deploy.log" | tail -1)
+          [ -n "$url" ] || { echo "No deployment URL in vercel output"; exit 1; }
+          echo "Deployed: $url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+      # After a rollback Vercel stops auto-assigning production domains until a
+      # deployment is promoted explicitly (promoting the current one is a 409).
+      - name: Promote to production domains
+        env:
+          DEPLOY_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          live=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v13/deployments/${SITE_URL#https://}?teamId=$VERCEL_ORG_ID" \
+            | jq -r '.url // empty')
+          if [ "https://$live" = "$DEPLOY_URL" ]; then
+            echo "Domains already on the new deployment"
+          else
+            echo "Domains on ${live:-none} — promoting"
+            npx -y vercel@latest promote "$DEPLOY_URL" --yes --token "$VERCEL_TOKEN"
+          fi
+      - name: Smoke test
+        id: smoke
+        run: |
+          sleep 10
+          fail=0
+          # /kuroji without a session redirects to the sign-in page (curl -L follows it)
+          for url in "$SITE_URL/" "$SITE_URL/privacy" "$SITE_URL/terms" \
+                     "$SITE_URL/manifest.webmanifest" "$SITE_URL/api/auth/providers" \
+                     "$SITE_URL/kuroji"; do
+            code=$(curl -sL -o /dev/null -w "%{http_code}" "$url")
+            echo "$code $url"
+            [ "$code" = 200 ] || fail=1
+          done
+          exit $fail
+      - name: Roll back on failed smoke test
+        if: failure() && steps.smoke.outcome == 'failure' && steps.previous.outputs.url != ''
+        run: npx -y vercel@latest rollback "${{ steps.previous.outputs.url }}" --yes --token "$VERCEL_TOKEN"
