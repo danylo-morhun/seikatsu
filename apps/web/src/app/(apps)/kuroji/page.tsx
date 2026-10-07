@@ -6,17 +6,24 @@ import { getRecentTransactions } from "@/features/kuroji/actions/transactions";
 import { getMonthlyTrends } from "@/features/kuroji/actions/trends";
 import { initializeWorkspace } from "@/features/kuroji/actions/workspace";
 import { AccountsOverview } from "@/features/kuroji/components/AccountsOverview";
-import { ExpenseBreakdown } from "@/features/kuroji/components/ExpenseBreakdown";
 import { ExpensesEmptyState } from "@/features/kuroji/components/ExpensesEmptyState";
 import type { KurojiTab } from "@/features/kuroji/components/KurojiNavTabs";
 import { OnboardingCard } from "@/features/kuroji/components/OnboardingCard";
 import { TransactionTable } from "@/features/kuroji/components/TransactionTable";
-import { TrendChart } from "@/features/kuroji/components/TrendChart";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
 import { endOfMonth, format, startOfMonth } from "date-fns";
+import dynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
+
+// Charts (recharts) only render on the overview tab — split them out of the route bundle.
+const ExpenseBreakdown = dynamic(() =>
+	import("@/features/kuroji/components/ExpenseBreakdown").then((m) => m.ExpenseBreakdown),
+);
+const TrendChart = dynamic(() =>
+	import("@/features/kuroji/components/TrendChart").then((m) => m.TrendChart),
+);
 
 function fmt(d: Date) {
 	return format(d, "yyyy-MM-dd");
