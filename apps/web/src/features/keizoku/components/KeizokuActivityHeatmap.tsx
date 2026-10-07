@@ -1,8 +1,5 @@
-"use client";
-
 import type { ActivityDay } from "@/features/keizoku/actions/stats";
 import { GithubHeatmap, type HeatmapCell } from "@/features/keizoku/components/GithubHeatmap";
-import { useMemo } from "react";
 
 const LEGEND = [
 	{ label: "None", className: "bg-muted" },
@@ -16,19 +13,19 @@ function bucket(status: ActivityDay["status"]): string {
 	return "bg-muted";
 }
 
-export function KeizokuActivityHeatmap({ days }: { days: ActivityDay[] }) {
-	const cellByDate = useMemo(() => {
-		const map = new Map<string, HeatmapCell>();
-		for (const d of days) {
-			map.set(d.date, { className: bucket(d.status), title: `${d.date}: ${d.status}` });
-		}
-		return map;
-	}, [days]);
+// Server component: rendered by the Keizoku page and handed to TodayList as a slot, so the
+// year of day statuses never crosses the client boundary as props.
+export function KeizokuActivityHeatmap({ days, today }: { days: ActivityDay[]; today?: string }) {
+	const cellByDate = new Map<string, HeatmapCell>();
+	for (const d of days) {
+		cellByDate.set(d.date, { className: bucket(d.status), title: `${d.date}: ${d.status}` });
+	}
 
 	const fullDays = days.filter((d) => d.status === "all").length;
 
 	return (
 		<GithubHeatmap
+			today={today}
 			cellByDate={cellByDate}
 			emptyClassName="bg-muted"
 			legend={LEGEND}

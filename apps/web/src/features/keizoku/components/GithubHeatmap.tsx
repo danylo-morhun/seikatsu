@@ -1,7 +1,6 @@
-"use client";
-
+// No hooks or "use client": renders on the server (Keizoku page) or inside client
+// components (habit calendar) alike.
 import { cn } from "@seikatsu/ui";
-import { useMemo } from "react";
 
 function addDays(d: Date, n: number): Date {
 	const copy = new Date(d);
@@ -42,32 +41,48 @@ export interface LegendItem {
 
 interface Props {
 	weeks?: number;
+	/** YYYY-MM-DD the grid ends on; defaults to the local clock (client usage). */
+	today?: string;
 	cellByDate: Map<string, HeatmapCell>;
 	emptyClassName: string;
 	legend: LegendItem[];
 	summary?: React.ReactNode;
 }
 
-export function GithubHeatmap({ weeks = 53, cellByDate, emptyClassName, legend, summary }: Props) {
-	const columns = useMemo(() => {
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-		// Align grid end to the upcoming Saturday so columns are whole weeks.
-		const end = addDays(today, 6 - today.getDay());
-		const start = addDays(end, -(weeks * 7 - 1));
+function buildColumns(weeks: number, todayIso?: string) {
+	const today = todayIso ? parseIso(todayIso) : new Date();
+	today.setHours(0, 0, 0, 0);
+	// Align grid end to the upcoming Saturday so columns are whole weeks.
+	const end = addDays(today, 6 - today.getDay());
+	const start = addDays(end, -(weeks * 7 - 1));
 
-		const cols: { date: string; future: boolean }[][] = [];
-		let cursor = new Date(start);
-		for (let w = 0; w < weeks; w++) {
-			const col: { date: string; future: boolean }[] = [];
-			for (let d = 0; d < 7; d++) {
-				col.push({ date: iso(cursor), future: cursor > today });
-				cursor = addDays(cursor, 1);
-			}
-			cols.push(col);
+	const cols: { date: string; future: boolean }[][] = [];
+	let cursor = new Date(start);
+	for (let w = 0; w < weeks; w++) {
+		const col: { date: string; future: boolean }[] = [];
+		for (let d = 0; d < 7; d++) {
+			col.push({ date: iso(cursor), future: cursor > today });
+			cursor = addDays(cursor, 1);
 		}
-		return cols;
-	}, [weeks]);
+		cols.push(col);
+	}
+	return cols;
+}
+
+function parseIso(value: string): Date {
+	const [y, m, d] = value.split("-").map(Number);
+	return new Date(y, m - 1, d);
+}
+
+export function GithubHeatmap({
+	weeks = 53,
+	today,
+	cellByDate,
+	emptyClassName,
+	legend,
+	summary,
+}: Props) {
+	const columns = buildColumns(weeks, today);
 
 	let lastMonth = -1;
 	const monthLabels = columns.map((col) => {
