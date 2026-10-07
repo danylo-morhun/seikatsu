@@ -19,7 +19,14 @@
 	},
 	"packageManager": "pnpm@10.33.2",
 	"pnpm": {
-		"onlyBuiltDependencies": ["@biomejs/biome", "esbuild", "sharp"]
+		"onlyBuiltDependencies": ["@biomejs/biome", "esbuild", "sharp"],
+		"packageExtensions": {
+			"@hookform/resolvers": {
+				"peerDependencies": {
+					"zod": "^4"
+				}
+			}
+		}
 	},
 	"dependencies": {
 		"@dnd-kit/core": "^6.3.1",
