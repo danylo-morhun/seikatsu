@@ -12,16 +12,21 @@ const APP_ICONS: Record<string, typeof CoinsYenIcon> = {
 	"/seiryu": KanbanIcon,
 };
 
+// Only apps that have a settings page (app/(apps)/settings/<app>); others would 404.
+const APPS_WITH_SETTINGS = new Set(["/kuroji"]);
+
 const ACCOUNT_LINKS = [{ href: "/settings/account", label: "Account", icon: UserCircleIcon }];
 
 export function SettingsNav() {
 	const pathname = usePathname();
 
-	const appLinks = Object.entries(APPS_CONFIG).map(([appHref, { name }]) => ({
-		href: `/settings${appHref}`,
-		label: name,
-		icon: APP_ICONS[appHref],
-	}));
+	const appLinks = Object.entries(APPS_CONFIG)
+		.filter(([appHref]) => APPS_WITH_SETTINGS.has(appHref))
+		.map(([appHref, { name }]) => ({
+			href: `/settings${appHref}`,
+			label: name,
+			icon: APP_ICONS[appHref],
+		}));
 
 	const allLinks = [...ACCOUNT_LINKS, ...appLinks];
 
