@@ -1,6 +1,7 @@
 "use client";
 
 import { signOutAction } from "@/features/auth/actions/auth";
+import { readAppEntry } from "@/lib/app-entry";
 import { APPS_CONFIG } from "@/lib/app-themes";
 import {
 	ArrowUpDownIcon,
@@ -34,6 +35,7 @@ import {
 } from "@seikatsu/ui";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const APP_ICONS: Record<string, typeof YenSquareIcon> = {
 	"/kuroji": YenSquareIcon,
@@ -58,6 +60,17 @@ interface Props {
 
 export function AppSidebar({ workspaceName, user }: Props) {
 	const pathname = usePathname();
+	const [entryHrefs, setEntryHrefs] = useState<Record<string, string>>({});
+
+	// Re-read on every navigation so the link follows the last project/page visited.
+	useEffect(() => {
+		const next: Record<string, string> = {};
+		for (const href of Object.keys(APPS_CONFIG)) {
+			const entry = readAppEntry(href);
+			if (entry) next[href] = entry;
+		}
+		setEntryHrefs(next);
+	}, [pathname]);
 
 	return (
 		<Sidebar collapsible="icon">
@@ -86,7 +99,7 @@ export function AppSidebar({ workspaceName, user }: Props) {
 								return (
 									<SidebarMenuItem key={href}>
 										<SidebarMenuButton asChild isActive={pathname.startsWith(href)} tooltip={name}>
-											<Link href={href}>
+											<Link href={entryHrefs[href] ?? href} prefetch>
 												{icon && <HugeiconsIcon icon={icon} className="h-4 w-4 shrink-0" />}
 												<span>{name}</span>
 											</Link>
