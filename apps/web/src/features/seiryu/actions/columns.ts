@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { getWorkspace } from "@/features/kuroji/actions/workspace";
+import { isOwnedProject } from "@/features/seiryu/actions/guard";
 import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import {
 	createColumnSchema,
@@ -9,7 +10,7 @@ import {
 	reorderColumnSchema,
 	updateColumnSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
-import { and, asc, db, eq, seiryuColumns, seiryuProjects } from "@seikatsu/db";
+import { asc, db, eq, seiryuColumns } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 async function getAuthedWorkspace() {
@@ -21,12 +22,7 @@ async function getAuthedWorkspace() {
 }
 
 async function assertProjectOwnership(projectId: string, workspaceId: string) {
-	const [project] = await db
-		.select({ id: seiryuProjects.id })
-		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspaceId)))
-		.limit(1);
-	return project ?? null;
+	return (await isOwnedProject(projectId, workspaceId)) ? { id: projectId } : null;
 }
 
 export async function getColumns(projectId: string) {

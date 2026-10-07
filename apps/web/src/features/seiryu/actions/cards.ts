@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { getWorkspace } from "@/features/kuroji/actions/workspace";
+import { isOwnedProject } from "@/features/seiryu/actions/guard";
 import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import {
 	archiveCardSchema,
@@ -87,13 +88,7 @@ export async function getCard(cardId: string) {
 export async function getCards(projectId: string) {
 	const { workspace } = await getAuthedWorkspace();
 
-	const [project] = await db
-		.select({ id: seiryuProjects.id })
-		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspace.id)))
-		.limit(1);
-
-	if (!project) throw new Error("Forbidden");
+	if (!(await isOwnedProject(projectId, workspace.id))) throw new Error("Forbidden");
 
 	const rows = await db.query.seiryuCards.findMany({
 		where: and(eq(seiryuCards.projectId, projectId), isNull(seiryuCards.archivedAt)),

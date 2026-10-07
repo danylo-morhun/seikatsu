@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { getWorkspace } from "@/features/kuroji/actions/workspace";
+import { isOwnedProject } from "@/features/seiryu/actions/guard";
 import {
 	createLabelSchema,
 	deleteLabelSchema,
@@ -30,12 +31,7 @@ async function getAuthedWorkspace() {
 export async function getLabels(projectId: string) {
 	const { workspace } = await getAuthedWorkspace();
 
-	const [project] = await db
-		.select({ id: seiryuProjects.id })
-		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspace.id)))
-		.limit(1);
-	if (!project) throw new Error("Forbidden");
+	if (!(await isOwnedProject(projectId, workspace.id))) throw new Error("Forbidden");
 
 	return db.select().from(seiryuLabels).where(eq(seiryuLabels.projectId, projectId));
 }
