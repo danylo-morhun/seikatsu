@@ -6,12 +6,10 @@ import { Delete02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@seikatsu/ui";
 import { format } from "date-fns";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 export function SessionLog({ sessions }: { sessions: TsundokuSession[] }) {
-	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -21,7 +19,6 @@ export function SessionLog({ sessions }: { sessions: TsundokuSession[] }) {
 			const res = await deleteSession(id);
 			setDeletingId(null);
 			if ("error" in res) toast.error(res.error);
-			else router.refresh();
 		});
 	}
 

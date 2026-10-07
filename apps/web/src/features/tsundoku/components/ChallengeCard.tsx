@@ -5,7 +5,6 @@ import { setGoal } from "@/features/tsundoku/actions/goals";
 import { Target02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Card, CardContent, Input } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -20,7 +19,6 @@ export function ChallengeCard({
 	target: number | null;
 	booksRead: number;
 }) {
-	const router = useRouter();
 	const [editing, setEditing] = useState(target == null);
 	const [value, setValue] = useState(target?.toString() ?? "");
 	const [saving, setSaving] = useState(false);
@@ -40,7 +38,6 @@ export function ChallengeCard({
 			return;
 		}
 		setEditing(false);
-		router.refresh();
 	}
 
 	const pct = target ? Math.min(100, Math.round((booksRead / target) * 100)) : 0;

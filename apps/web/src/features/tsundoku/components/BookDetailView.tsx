@@ -61,7 +61,6 @@ export function BookDetailView({
 		startTransition(async () => {
 			const res = await updateRating(book.id, value);
 			if ("error" in res) toast.error(res.error);
-			else router.refresh();
 		});
 	}
 

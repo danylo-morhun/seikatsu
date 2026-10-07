@@ -5,7 +5,6 @@ import { type TsundokuQuote, createQuote, deleteQuote } from "@/features/tsundok
 import { Delete02Icon, QuoteUpIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Input } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -16,7 +15,6 @@ export function QuoteSection({
 	bookId: string;
 	quotes: TsundokuQuote[];
 }) {
-	const router = useRouter();
 	const [text, setText] = useState("");
 	const [page, setPage] = useState("");
 	const [adding, setAdding] = useState(false);
@@ -38,7 +36,6 @@ export function QuoteSection({
 		}
 		setText("");
 		setPage("");
-		router.refresh();
 	}
 
 	function onDelete(id: string) {
@@ -47,7 +44,6 @@ export function QuoteSection({
 			const res = await deleteQuote(id);
 			setDeletingId(null);
 			if ("error" in res) toast.error(res.error);
-			else router.refresh();
 		});
 	}
 
