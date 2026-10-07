@@ -6,6 +6,7 @@ import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import Resend from "next-auth/providers/resend";
+import { authConfig } from "./auth.config";
 
 declare module "next-auth" {
 	interface Session {
@@ -14,13 +15,13 @@ declare module "next-auth" {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+	...authConfig,
 	adapter: DrizzleAdapter(db, {
 		usersTable: authUsers,
 		accountsTable: authAccounts,
 		sessionsTable: authSessions,
 		verificationTokensTable: verificationTokens,
 	}),
-	session: { strategy: "jwt" },
 	providers: [
 		GitHub({ allowDangerousEmailAccountLinking: true }),
 		Google({
@@ -50,18 +51,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 			},
 		}),
 	],
-	callbacks: {
-		jwt({ token, user }) {
-			if (user?.id) token.sub = user.id;
-			return token;
-		},
-		session({ session, token }) {
-			if (token.sub) session.user.id = token.sub;
-			return session;
-		},
-	},
-	pages: {
-		signIn: "/",
-		verifyRequest: "/auth/verify",
-	},
 });
