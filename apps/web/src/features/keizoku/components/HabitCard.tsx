@@ -1,6 +1,5 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
 import type { KeizokuHabit } from "@/features/keizoku/actions/habits";
 import { archiveHabit } from "@/features/keizoku/actions/habits";
 import type { KeizokuHabitLog } from "@/features/keizoku/actions/logs";
@@ -18,7 +17,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
-import { type ChangeEvent, useRef, useState, useTransition } from "react";
+import { type ChangeEvent, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 function frequencySubtitle(habit: KeizokuHabit): string {
@@ -50,24 +49,35 @@ export function HabitCard({
 	const [photoModalOpen, setPhotoModalOpen] = useState(false);
 	const [editOpen, setEditOpen] = useState(false);
 	const fileInputRef = useRef<HTMLInputElement>(null);
-	const done = log != null;
+	// Flip the check instantly; fresh props from the action's re-render replace the guess.
+	const [optimisticDone, setOptimisticDone] = useState<boolean | null>(null);
+	const done = optimisticDone ?? log != null;
+	useEffect(() => setOptimisticDone(null), [log]);
 
 	// Marking done fires immediately; requiresPhoto opens the capture picker in the same
 	// gesture, but the picker is a soft second step — dismissing it never undoes the log.
 	function toggle() {
 		if (done) {
+			setOptimisticDone(false);
 			startTransition(async () => {
 				const res = await unlogHabit(habit.id, date);
-				if ("error" in res) toast.error(res.error);
+				if ("error" in res) {
+					setOptimisticDone(null);
+					toast.error(res.error);
+				}
 			});
 			return;
 		}
 		const formData = new FormData();
 		formData.set("habitId", habit.id);
 		formData.set("date", date);
+		setOptimisticDone(true);
 		startTransition(async () => {
 			const res = await logHabit(formData);
-			if ("error" in res) toast.error(res.error);
+			if ("error" in res) {
+				setOptimisticDone(null);
+				toast.error(res.error);
+			}
 		});
 		if (habit.requiresPhoto) fileInputRef.current?.click();
 	}
@@ -109,13 +119,7 @@ export function HabitCard({
 					)}
 					aria-label={done ? "Mark not done" : "Mark done"}
 				>
-					{pending ? (
-						<Spinner className="h-4 w-4" />
-					) : done ? (
-						<HugeiconsIcon icon={Tick02Icon} className="h-4 w-4" />
-					) : (
-						habit.emoji
-					)}
+					{done ? <HugeiconsIcon icon={Tick02Icon} className="h-4 w-4" /> : habit.emoji}
 				</button>
 
 				<Link href={`/keizoku/${habit.id}`} className="min-w-0 flex-1">
