@@ -315,6 +315,15 @@
 	--chart-5: oklch(0.42 0.14 300);
 }
 
+@keyframes progress-grow {
+	from {
+		width: 0;
+	}
+	to {
+		width: 85%;
+	}
+}
+
 @keyframes loader-appear {
 	from {
 		opacity: 0;
