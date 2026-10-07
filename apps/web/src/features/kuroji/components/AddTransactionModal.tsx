@@ -1,13 +1,12 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { getAccounts } from "@/features/kuroji/actions/accounts";
-import { getTags } from "@/features/kuroji/actions/tags";
-import type { Tag } from "@/features/kuroji/actions/tags";
+import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import { createTransaction } from "@/features/kuroji/actions/transactions";
 import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
 import { TagSelect } from "@/features/kuroji/components/TagSelect";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
+import { addTagToFormOptions, useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import {
 	type AddTransactionFormValues,
@@ -56,10 +55,7 @@ export function AddTransactionModal({
 	trigger?: React.ReactNode;
 }) {
 	const [open, setOpen] = React.useState(false);
-	const [accounts, setAccounts] = React.useState<Account[]>([]);
-	const [workspaceTags, setWorkspaceTags] = React.useState<Tag[]>([]);
 	const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>([]);
-	const [accountsLoading, setAccountsLoading] = React.useState(false);
 	const [txType, setTxType] = React.useState<TxType>("expense");
 
 	const defaultCurrency = toCurrency(baseCurrency);
@@ -101,16 +97,7 @@ export function AddTransactionModal({
 	const watchCurrency = (watch("currency") as string | undefined) ?? defaultCurrency;
 	const splitTotal = watchSplits?.reduce((s, r) => s + (Number(r?.amount) || 0), 0) ?? 0;
 
-	React.useEffect(() => {
-		if (open) {
-			setAccountsLoading(true);
-			Promise.all([getAccounts(workspaceId), getTags(workspaceId)]).then(([accts, tags]) => {
-				setAccounts(accts);
-				setWorkspaceTags(tags);
-				setAccountsLoading(false);
-			});
-		}
-	}, [open, workspaceId]);
+	const { accounts, tags: workspaceTags } = useFormOptions(workspaceId, open);
 
 	React.useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
@@ -465,7 +452,7 @@ export function AddTransactionModal({
 								)
 							}
 							onTagCreated={(tag) => {
-								setWorkspaceTags((prev) => [...prev, tag]);
+								addTagToFormOptions(workspaceId, tag);
 								setSelectedTagIds((prev) => [...prev, tag.id]);
 							}}
 						/>
