@@ -1,14 +1,12 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { getAccounts } from "@/features/kuroji/actions/accounts";
-import { getTags } from "@/features/kuroji/actions/tags";
-import type { Tag } from "@/features/kuroji/actions/tags";
 import { updateTransaction } from "@/features/kuroji/actions/transactions";
 import type { RecentTransaction } from "@/features/kuroji/actions/transactions";
 import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
 import { TagSelect } from "@/features/kuroji/components/TagSelect";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
+import { addTagToFormOptions, useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import {
 	type TransactionFormValues,
 	type TxType,
@@ -36,8 +34,6 @@ import {
 import * as React from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
-
-type Account = Awaited<ReturnType<typeof getAccounts>>[number];
 
 function inferTxType(txn: RecentTransaction): TxType {
 	if (txn.toAccountType === "EXPENSE") return "expense";
@@ -72,8 +68,7 @@ interface Props {
 }
 
 export function EditTransactionModal({ transaction, workspaceId, open, onOpenChange }: Props) {
-	const [accounts, setAccounts] = React.useState<Account[]>([]);
-	const [workspaceTags, setWorkspaceTags] = React.useState<Tag[]>([]);
+	const { accounts, tags: workspaceTags } = useFormOptions(workspaceId, open);
 	const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>(() =>
 		transaction.tags.map((t) => t.id),
 	);
@@ -95,12 +90,8 @@ export function EditTransactionModal({ transaction, workspaceId, open, onOpenCha
 	});
 
 	React.useEffect(() => {
-		if (open) {
-			getAccounts(workspaceId).then(setAccounts);
-			getTags(workspaceId).then(setWorkspaceTags);
-			setSelectedTagIds(transaction.tags.map((t) => t.id));
-		}
-	}, [open, workspaceId, transaction]);
+		if (open) setSelectedTagIds(transaction.tags.map((t) => t.id));
+	}, [open, transaction]);
 
 	const handleTabChange = (val: string) => {
 		const next = val as TxType;
@@ -298,7 +289,7 @@ export function EditTransactionModal({ transaction, workspaceId, open, onOpenCha
 								)
 							}
 							onTagCreated={(tag) => {
-								setWorkspaceTags((prev) => [...prev, tag]);
+								addTagToFormOptions(workspaceId, tag);
 								setSelectedTagIds((prev) => [...prev, tag.id]);
 							}}
 						/>
