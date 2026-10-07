@@ -7,7 +7,7 @@ import { BookCard } from "@/features/tsundoku/components/BookCard";
 import { BookListRow } from "@/features/tsundoku/components/BookListRow";
 import { FilterBar } from "@/features/tsundoku/components/FilterBar";
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useDeferredValue, useMemo } from "react";
 
 interface Props {
 	books: TsundokuBook[];
@@ -22,7 +22,8 @@ export function LibraryView({ books, shelves, workspaceId }: Props) {
 	const shelf = params.get("shelf");
 	const genre = params.get("genre");
 	const sort = params.get("sort") ?? "added";
-	const q = (params.get("q") ?? "").toLowerCase().trim();
+	// Typing stays responsive; the list catches up in a background render.
+	const q = useDeferredValue((params.get("q") ?? "").toLowerCase().trim());
 
 	const genres = useMemo(
 		() => Array.from(new Set(books.map((b) => b.genre).filter((g): g is string => !!g))).sort(),

@@ -2,7 +2,6 @@
 
 import type { TsundokuShelf } from "@/features/tsundoku/actions/shelves";
 import { BOOK_STATUSES, STATUS_CONFIG } from "@/features/tsundoku/lib/constants";
-import { usePendingProgress } from "@/hooks/usePendingProgress";
 import { GridViewIcon, ListViewIcon, Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -15,8 +14,8 @@ import {
 	SelectValue,
 	cn,
 } from "@seikatsu/ui";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useState } from "react";
 
 const SORTS = [
 	{ value: "added", label: "Recently added" },
@@ -34,9 +33,6 @@ interface Props {
 export function FilterBar({ shelves, genres }: Props) {
 	const params = useSearchParams();
 	const pathname = usePathname();
-	const router = useRouter();
-	const [isPending, startTransition] = useTransition();
-	usePendingProgress(isPending);
 	const [q, setQ] = useState(params.get("q") ?? "");
 
 	const view = params.get("view") === "list" ? "list" : "grid";
@@ -45,20 +41,20 @@ export function FilterBar({ shelves, genres }: Props) {
 	const genre = params.get("genre") ?? "all";
 	const sort = params.get("sort") ?? "added";
 
+	// LibraryView filters on the client, so only the URL changes: replaceState updates
+	// useSearchParams without a server round trip (router.push re-rendered the whole page).
 	function setParam(key: string, value: string, clearOnAll = true) {
-		const next = new URLSearchParams(params.toString());
+		const next = new URLSearchParams(window.location.search);
 		if ((clearOnAll && value === "all") || value === "") next.delete(key);
 		else next.set(key, value);
-		startTransition(() => router.push(`${pathname}?${next.toString()}`));
+		const qs = next.toString();
+		window.history.replaceState(null, "", qs ? `${pathname}?${qs}` : pathname);
 	}
 
-	// Debounced search → URL. Only `q` should re-trigger; params/setParam are stable enough here.
-	useEffect(() => {
-		const t = setTimeout(() => {
-			if ((params.get("q") ?? "") !== q) setParam("q", q.trim());
-		}, 400);
-		return () => clearTimeout(t);
-	}, [q]);
+	function onSearch(value: string) {
+		setQ(value);
+		setParam("q", value.trim());
+	}
 
 	return (
 		<div className="space-y-3">
@@ -70,7 +66,7 @@ export function FilterBar({ shelves, genres }: Props) {
 					/>
 					<Input
 						value={q}
-						onChange={(e) => setQ(e.target.value)}
+						onChange={(e) => onSearch(e.target.value)}
 						placeholder="Search your library…"
 						className="pl-9"
 					/>
