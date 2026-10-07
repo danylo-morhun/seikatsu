@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly, day: monday, time: "06:00", timezone: Europe/Warsaw }
+    open-pull-requests-limit: 5
+    commit-message: { prefix: "chore", include: scope }
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # next-auth betas and Next majors need a planned migration
+      - dependency-name: next-auth
+      - dependency-name: next
+        update-types: [version-update:semver-major]
+  - package-ecosystem: github-actions
+    directories: ["/", "/.github/actions/*"]
+    schedule: { interval: monthly }
+    commit-message: { prefix: "ci", include: scope }
+    groups:
+      actions:
+        patterns: ["*"]
