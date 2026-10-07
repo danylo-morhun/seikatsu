@@ -4,6 +4,7 @@ import type { AccountBalance } from "@/features/kuroji/actions/balances";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { Card } from "@seikatsu/ui";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Cell, Label, Pie, PieChart, Tooltip } from "recharts";
 
 const COLORS = [
@@ -46,6 +47,10 @@ interface Props {
 }
 
 export function ExpenseBreakdown({ balances, currency }: Props) {
+	// Recharts' pie doesn't hydrate cleanly (ids and sector markup differ), so draw it after mount.
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => setMounted(true), []);
+
 	const expenses = balances
 		.filter((b) => b.type === "EXPENSE")
 		.map((b) => ({ accountId: b.accountId, name: b.name, value: Math.abs(Number(b.balance)) }))
@@ -69,50 +74,54 @@ export function ExpenseBreakdown({ balances, currency }: Props) {
 				<Card className="w-52 h-52 shrink-0 p-3 flex flex-col gap-0">
 					<p className="text-xs font-medium text-muted-foreground">Total</p>
 					<div className="flex flex-1 items-center justify-center">
-						<PieChart
-							width={PIE_SIZE}
-							height={PIE_SIZE}
-							margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
-							style={{ outline: "none", border: "none" }}
-						>
-							<Tooltip content={(props) => <PieTooltip {...props} currency={currency} />} />
-							<Pie
-								data={expenses}
-								dataKey="value"
-								nameKey="name"
-								cx={PIE_SIZE / 2}
-								cy={PIE_SIZE / 2}
-								innerRadius={46}
-								outerRadius={70}
-								strokeWidth={0}
+						{!mounted ? (
+							<div className="h-40 w-40" />
+						) : (
+							<PieChart
+								width={PIE_SIZE}
+								height={PIE_SIZE}
+								margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+								style={{ outline: "none", border: "none" }}
 							>
-								{expenses.map((entry) => (
-									<Cell key={entry.accountId} fill={entry.fill} />
-								))}
-								<Label
-									content={({ viewBox }) => {
-										if (!viewBox || !("cx" in viewBox) || !("cy" in viewBox)) return null;
-										return (
-											<text
-												x={viewBox.cx}
-												y={viewBox.cy}
-												textAnchor="middle"
-												dominantBaseline="middle"
-											>
-												<tspan x={viewBox.cx} className="fill-foreground text-[12px] font-bold">
-													{new Intl.NumberFormat("en", {
-														notation: "compact",
-														style: "currency",
-														currency,
-														maximumFractionDigits: 2,
-													}).format(total)}
-												</tspan>
-											</text>
-										);
-									}}
-								/>
-							</Pie>
-						</PieChart>
+								<Tooltip content={(props) => <PieTooltip {...props} currency={currency} />} />
+								<Pie
+									data={expenses}
+									dataKey="value"
+									nameKey="name"
+									cx={PIE_SIZE / 2}
+									cy={PIE_SIZE / 2}
+									innerRadius={46}
+									outerRadius={70}
+									strokeWidth={0}
+								>
+									{expenses.map((entry) => (
+										<Cell key={entry.accountId} fill={entry.fill} />
+									))}
+									<Label
+										content={({ viewBox }) => {
+											if (!viewBox || !("cx" in viewBox) || !("cy" in viewBox)) return null;
+											return (
+												<text
+													x={viewBox.cx}
+													y={viewBox.cy}
+													textAnchor="middle"
+													dominantBaseline="middle"
+												>
+													<tspan x={viewBox.cx} className="fill-foreground text-[12px] font-bold">
+														{new Intl.NumberFormat("en", {
+															notation: "compact",
+															style: "currency",
+															currency,
+															maximumFractionDigits: 2,
+														}).format(total)}
+													</tspan>
+												</text>
+											);
+										}}
+									/>
+								</Pie>
+							</PieChart>
+						)}
 					</div>
 				</Card>
 
