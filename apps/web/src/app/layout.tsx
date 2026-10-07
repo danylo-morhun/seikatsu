@@ -1,5 +1,6 @@
 import { NavigationProgress } from "@/components/NavigationProgress";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { TimezoneSync } from "@/components/TimezoneSync";
 import { TooltipProvider } from "@seikatsu/ui";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
@@ -44,6 +45,7 @@ export default function RootLayout({
 					<Toaster richColors position="bottom-right" />
 				</ThemeProvider>
 				<SpeedInsights />
+				<TimezoneSync />
 			</body>
 		</html>
 	);
