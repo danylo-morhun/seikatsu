@@ -1,18 +1,14 @@
 "use server";
 
 import { auth } from "@/auth";
-import { and, asc, db, desc, eq, isNotNull, kyuuApplications, workspaces } from "@seikatsu/db";
+import { getOwnedWorkspace } from "@/lib/session";
+import { and, asc, db, desc, eq, isNotNull, kyuuApplications } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 import { type KyuuStatus, applicationSchema, kyuuStatusValues } from "../lib/kyuu-schemas";
 import { type KyuuFilters, buildKyuuConditions } from "./filters";
 
-async function assertWorkspaceOwner(workspaceId: string, userId: string) {
-	const [ws] = await db
-		.select({ userId: workspaces.userId })
-		.from(workspaces)
-		.where(eq(workspaces.id, workspaceId))
-		.limit(1);
-	if (!ws || ws.userId !== userId) throw new Error("Forbidden");
+async function assertWorkspaceOwner(workspaceId: string) {
+	if (!(await getOwnedWorkspace(workspaceId))) throw new Error("Forbidden");
 }
 
 const SORT_COLUMNS = {
@@ -27,7 +23,7 @@ export async function getApplications(
 ) {
 	const session = await auth();
 	if (!session?.user?.id) throw new Error("Unauthorized");
-	await assertWorkspaceOwner(workspaceId, session.user.id);
+	await assertWorkspaceOwner(workspaceId);
 
 	const where = buildKyuuConditions(workspaceId, opts ?? {});
 	const sortCol = SORT_COLUMNS[opts?.sort ?? "date"];
@@ -39,7 +35,7 @@ export async function getApplications(
 export async function getSources(workspaceId: string) {
 	const session = await auth();
 	if (!session?.user?.id) throw new Error("Unauthorized");
-	await assertWorkspaceOwner(workspaceId, session.user.id);
+	await assertWorkspaceOwner(workspaceId);
 
 	const rows = await db
 		.selectDistinct({ source: kyuuApplications.source })
@@ -57,7 +53,7 @@ export interface ResumeFile {
 export async function getResumeFiles(workspaceId: string): Promise<ResumeFile[]> {
 	const session = await auth();
 	if (!session?.user?.id) throw new Error("Unauthorized");
-	await assertWorkspaceOwner(workspaceId, session.user.id);
+	await assertWorkspaceOwner(workspaceId);
 
 	const rows = await db
 		.selectDistinct({
@@ -75,7 +71,7 @@ export async function getResumeFiles(workspaceId: string): Promise<ResumeFile[]>
 export async function createApplication(workspaceId: string, data: unknown) {
 	const session = await auth();
 	if (!session?.user?.id) return { error: "Unauthorized" };
-	await assertWorkspaceOwner(workspaceId, session.user.id);
+	await assertWorkspaceOwner(workspaceId);
 
 	const parsed = applicationSchema.safeParse(data);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid data" };
@@ -128,7 +124,7 @@ export async function updateApplication(applicationId: string, data: unknown) {
 		.where(eq(kyuuApplications.id, applicationId))
 		.limit(1);
 	if (!existing) return { error: "Application not found" };
-	await assertWorkspaceOwner(existing.workspaceId, session.user.id);
+	await assertWorkspaceOwner(existing.workspaceId);
 
 	const parsed = applicationSchema.safeParse(data);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid data" };
@@ -185,7 +181,7 @@ export async function deleteApplication(
 		.where(eq(kyuuApplications.id, applicationId))
 		.limit(1);
 	if (!existing) return { error: "Application not found" };
-	await assertWorkspaceOwner(existing.workspaceId, session.user.id);
+	await assertWorkspaceOwner(existing.workspaceId);
 
 	await db.delete(kyuuApplications).where(eq(kyuuApplications.id, applicationId));
 	revalidatePath("/kyuu");
@@ -206,7 +202,7 @@ export async function updateApplicationStatus(applicationId: string, status: unk
 		.where(eq(kyuuApplications.id, applicationId))
 		.limit(1);
 	if (!existing) return { error: "Application not found" };
-	await assertWorkspaceOwner(existing.workspaceId, session.user.id);
+	await assertWorkspaceOwner(existing.workspaceId);
 
 	if (typeof status !== "string" || !(kyuuStatusValues as readonly string[]).includes(status)) {
 		return { error: "Invalid status" };
@@ -255,7 +251,7 @@ export async function updateApplicationStage(
 		.where(eq(kyuuApplications.id, applicationId))
 		.limit(1);
 	if (!existing) return { error: "Application not found" };
-	await assertWorkspaceOwner(existing.workspaceId, session.user.id);
+	await assertWorkspaceOwner(existing.workspaceId);
 
 	const now = new Date();
 	const updatePayload: Record<string, unknown> = {
