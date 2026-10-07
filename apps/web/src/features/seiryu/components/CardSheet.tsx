@@ -1,13 +1,7 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
-import { archiveCard, updateCard } from "@/features/seiryu/actions/cards";
 import { ChecklistSection } from "@/features/seiryu/components/ChecklistSection";
-import type {
-	CardData,
-	ChecklistItemData,
-	LabelData,
-} from "@/features/seiryu/components/KanbanCard";
+import type { CardData, LabelData } from "@/features/seiryu/components/KanbanCard";
 import { LabelManager } from "@/features/seiryu/components/LabelManager";
 import {
 	Label,
@@ -24,23 +18,22 @@ import {
 	SheetTitle,
 } from "@seikatsu/ui";
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
-import { toast } from "sonner";
+import { useEffect, useState } from "react";
 
 type Priority = "low" | "medium" | "high" | "urgent";
+
+export type CardUpdates = Pick<CardData, "title" | "description" | "priority" | "dueDate">;
 
 interface Props {
 	card: CardData | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	projectLabels: LabelData[];
-	onUpdate?: (
-		cardId: string,
-		updates: Partial<
-			Pick<CardData, "title" | "description" | "priority" | "dueDate" | "checklistItems" | "labels">
-		>,
-	) => void;
-	onArchive?: (cardId: string) => void;
+	/** Saves the form fields (the board applies them at once and persists). */
+	onSave: (cardId: string, updates: CardUpdates) => void;
+	/** Mirrors checklist/label edits, which persist themselves. */
+	onChange: (cardId: string, updates: Partial<CardData>) => void;
+	onArchive: (cardId: string) => void;
 	onProjectLabelsChange?: (labels: LabelData[]) => void;
 }
 
@@ -49,7 +42,8 @@ export function CardSheet({
 	open,
 	onOpenChange,
 	projectLabels,
-	onUpdate,
+	onSave,
+	onChange,
 	onArchive,
 	onProjectLabelsChange,
 }: Props) {
@@ -57,8 +51,6 @@ export function CardSheet({
 	const [description, setDescription] = useState(card?.description ?? "");
 	const [priority, setPriority] = useState<Priority | "">(card?.priority ?? "");
 	const [dueDate, setDueDate] = useState(card?.dueDate ?? "");
-	const [isSaving, startSave] = useTransition();
-	const [isArchiving, startArchive] = useTransition();
 
 	useEffect(() => {
 		if (card) {
@@ -71,45 +63,16 @@ export function CardSheet({
 
 	function handleSave() {
 		if (!card) return;
-		const resolvedTitle = title.trim() || card.title;
-		const resolvedPriority = (priority || null) as Priority | null;
-		const resolvedDueDate = dueDate || null;
-		const resolvedDescription = description || null;
-
-		startSave(async () => {
-			const result = await updateCard({
-				cardId: card.id,
-				title: resolvedTitle,
-				description: resolvedDescription,
-				priority: resolvedPriority,
-				dueDate: resolvedDueDate,
-			});
-			if ("error" in result) {
-				toast.error(result.error);
-				return;
-			}
-			toast.success("Card updated");
-			onUpdate?.(card.id, {
-				title: resolvedTitle,
-				description: resolvedDescription,
-				priority: resolvedPriority,
-				dueDate: resolvedDueDate,
-			});
+		onSave(card.id, {
+			title: title.trim() || card.title,
+			description: description || null,
+			priority: (priority || null) as Priority | null,
+			dueDate: dueDate || null,
 		});
 	}
 
 	function handleArchive() {
-		if (!card) return;
-		startArchive(async () => {
-			const result = await archiveCard({ cardId: card.id });
-			if ("error" in result) {
-				toast.error(result.error);
-				return;
-			}
-			toast.success("Card archived");
-			onArchive?.(card.id);
-			onOpenChange(false);
-		});
+		if (card) onArchive(card.id);
 	}
 
 	return (
@@ -186,7 +149,7 @@ export function CardSheet({
 						projectId={card?.projectId ?? ""}
 						projectLabels={projectLabels}
 						cardLabelIds={card?.labels.map((l) => l.id) ?? []}
-						onChange={(labels) => card && onUpdate?.(card.id, { labels })}
+						onChange={(labels) => card && onChange(card.id, { labels })}
 						onProjectLabelsChange={onProjectLabelsChange}
 					/>
 
@@ -196,7 +159,7 @@ export function CardSheet({
 						key={`checklist-${card?.id ?? "none"}`}
 						cardId={card?.id ?? ""}
 						initialItems={card?.checklistItems ?? []}
-						onChange={(checklistItems) => card && onUpdate?.(card.id, { checklistItems })}
+						onChange={(checklistItems) => card && onChange(card.id, { checklistItems })}
 					/>
 				</div>
 
@@ -205,22 +168,19 @@ export function CardSheet({
 				<div className="flex items-center justify-between px-6 py-4">
 					<button
 						type="button"
-						disabled={isArchiving}
 						onClick={handleArchive}
-						className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-destructive disabled:opacity-50"
+						className="text-xs text-muted-foreground transition-colors hover:text-destructive"
 					>
-						{isArchiving && <Spinner className="h-3 w-3" />}
 						Archive card
 					</button>
 
 					<button
 						type="button"
-						disabled={isSaving || !title.trim()}
+						disabled={!title.trim()}
 						onClick={handleSave}
-						className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
+						className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
 					>
-						{isSaving && <Spinner className="h-3 w-3" />}
-						{isSaving ? "Saving…" : "Save"}
+						Save
 					</button>
 				</div>
 			</SheetContent>

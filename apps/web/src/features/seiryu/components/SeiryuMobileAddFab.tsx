@@ -1,8 +1,5 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
-import { createCard } from "@/features/seiryu/actions/cards";
-import type { CardData } from "@/features/seiryu/components/KanbanCard";
 import type { ColumnData } from "@/features/seiryu/components/KanbanColumn";
 import { Add01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -19,22 +16,18 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@seikatsu/ui";
-import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
 
 interface Props {
+	/** Sorted by position. */
 	columns: ColumnData[];
-	projectId: string;
-	onCardAdded: (card: CardData) => void;
+	onAddCard: (columnId: string, title: string) => void;
 }
 
-export function SeiryuMobileAddFab({ columns, projectId, onCardAdded }: Props) {
+export function SeiryuMobileAddFab({ columns: sortedColumns, onAddCard }: Props) {
 	const [open, setOpen] = useState(false);
 	const [title, setTitle] = useState("");
 	const [columnId, setColumnId] = useState<string>("");
-	const [isPending, startTransition] = useTransition();
-
-	const sortedColumns = [...columns].sort((a, b) => (a.position < b.position ? -1 : 1));
 
 	function handleOpen(val: boolean) {
 		setOpen(val);
@@ -51,28 +44,9 @@ export function SeiryuMobileAddFab({ columns, projectId, onCardAdded }: Props) {
 		const trimmed = title.trim();
 		if (!trimmed || !columnId) return;
 
-		startTransition(async () => {
-			const result = await createCard({ columnId, projectId, title: trimmed });
-			if ("error" in result) {
-				toast.error(result.error);
-				return;
-			}
-			onCardAdded({
-				id: result.data.id,
-				columnId,
-				projectId,
-				title: trimmed,
-				description: null,
-				priority: null,
-				dueDate: null,
-				position: result.data.position,
-				checklistItems: [],
-				labels: [],
-			});
-			setTitle("");
-			setOpen(false);
-			toast.success("Card created");
-		});
+		onAddCard(columnId, trimmed);
+		setTitle("");
+		setOpen(false);
 	}
 
 	if (sortedColumns.length === 0) return null;
@@ -112,13 +86,8 @@ export function SeiryuMobileAddFab({ columns, projectId, onCardAdded }: Props) {
 							className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
 						/>
 
-						<Button
-							type="submit"
-							disabled={isPending || !title.trim() || !columnId}
-							className="gap-1.5"
-						>
-							{isPending && <Spinner className="h-3.5 w-3.5" />}
-							{isPending ? "Adding…" : "Add card"}
+						<Button type="submit" disabled={!title.trim() || !columnId}>
+							Add card
 						</Button>
 					</form>
 				</DialogContent>
