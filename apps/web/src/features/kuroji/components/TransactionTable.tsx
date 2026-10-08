@@ -1,5 +1,6 @@
 "use client";
 
+import { startNavigationProgress } from "@/components/NavigationProgress";
 import { Spinner } from "@/components/Spinner";
 import { exportTransactionsCsv } from "@/features/kuroji/actions/export";
 import { deleteTransaction, deleteTransactions } from "@/features/kuroji/actions/transactions";
@@ -103,6 +104,7 @@ export function TransactionTable({
 		const params = new URLSearchParams(searchParams.toString());
 		if (newPage === 0) params.delete("page");
 		else params.set("page", String(newPage));
+		startNavigationProgress();
 		router.push(`${pathname}?${params.toString()}`);
 	}
 
@@ -110,6 +112,7 @@ export function TransactionTable({
 		const params = new URLSearchParams(searchParams.toString());
 		params.set("account", id);
 		params.delete("page");
+		startNavigationProgress();
 		router.push(`${pathname}?${params.toString()}`);
 	}
 
@@ -117,6 +120,7 @@ export function TransactionTable({
 		const params = new URLSearchParams(searchParams.toString());
 		params.delete("account");
 		params.delete("page");
+		startNavigationProgress();
 		router.push(`${pathname}?${params.toString()}`);
 	}
 
@@ -124,6 +128,7 @@ export function TransactionTable({
 		const params = new URLSearchParams(searchParams.toString());
 		params.set("tag", id);
 		params.delete("page");
+		startNavigationProgress();
 		router.push(`${pathname}?${params.toString()}`);
 	}
 
@@ -131,6 +136,7 @@ export function TransactionTable({
 		const params = new URLSearchParams(searchParams.toString());
 		params.delete("tag");
 		params.delete("page");
+		startNavigationProgress();
 		router.push(`${pathname}?${params.toString()}`);
 	}
 
@@ -139,6 +145,7 @@ export function TransactionTable({
 		if (value.trim()) params.set("q", value.trim());
 		else params.delete("q");
 		params.delete("page");
+		startNavigationProgress();
 		router.push(`${pathname}?${params.toString()}`);
 	}
 
@@ -151,6 +158,7 @@ export function TransactionTable({
 			params.delete("dir");
 		}
 		params.delete("page");
+		startNavigationProgress();
 		router.push(`${pathname}?${params.toString()}`);
 	}
 

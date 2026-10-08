@@ -1,5 +1,6 @@
 "use client";
 
+import { startNavigationProgress } from "@/components/NavigationProgress";
 import {
 	archiveAccount,
 	deleteAccount,
@@ -257,7 +258,10 @@ export function AccountsOverview({
 				<div className={`flex flex-col ${isChild ? "bg-muted/30" : ""}`}>
 					<div
 						className={`flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-muted/40 transition-colors ${isChild ? "pl-8" : ""}`}
-						onClick={() => router.push(`/kuroji/accounts/${row.accountId}`)}
+						onClick={() => {
+							startNavigationProgress();
+							router.push(`/kuroji/accounts/${row.accountId}`);
+						}}
 					>
 						{hasChildren ? (
 							<button

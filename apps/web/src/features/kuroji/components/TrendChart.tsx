@@ -1,5 +1,6 @@
 "use client";
 
+import { startNavigationProgress } from "@/components/NavigationProgress";
 import type { MonthlyTrend } from "@/features/kuroji/actions/trends";
 import { ChartBarLineIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -44,6 +45,7 @@ export function TrendChart({ data, currency, trendParam, hasDateFilter }: Props)
 		if (value === "6m") params.delete("trend");
 		else params.set("trend", value);
 		const qs = params.toString();
+		startNavigationProgress();
 		router.push(qs ? `${pathname}?${qs}` : pathname);
 	}
 
