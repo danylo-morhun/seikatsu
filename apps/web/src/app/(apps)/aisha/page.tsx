@@ -4,6 +4,7 @@ import { getVehicles } from "@/features/aisha/actions/vehicles";
 import { AishaDashboard } from "@/features/aisha/components/AishaDashboard";
 import { VehicleSetup } from "@/features/aisha/components/VehicleSetup";
 import { getWorkspace, initializeWorkspace } from "@/features/kuroji/actions/workspace";
+import { getUserToday } from "@/lib/timezone";
 import { redirect } from "next/navigation";
 
 export default async function AishaPage() {
@@ -17,7 +18,7 @@ export default async function AishaPage() {
 	const [vehicle] = await getVehicles(workspace.id);
 	if (!vehicle) return <VehicleSetup workspaceId={workspace.id} />;
 
-	const today = new Date().toISOString().slice(0, 10);
+	const today = await getUserToday();
 	const data = await getDashboard(vehicle, today);
 
 	return <AishaDashboard data={data} today={today} />;
