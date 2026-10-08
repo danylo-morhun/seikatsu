@@ -38,7 +38,7 @@ jobs:
     steps:
       - id: target
         run: echo "sha=${{ github.event.workflow_run.head_sha || github.sha }}" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ steps.target.outputs.sha }}
           fetch-depth: 0
@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production-migrations
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: { ref: "${{ needs.plan.outputs.sha }}" }
       - uses: ./.github/actions/setup
       - run: pnpm -F @seikatsu/db db:migrate
@@ -86,7 +86,7 @@ jobs:
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: { ref: "${{ needs.plan.outputs.sha }}" }
       - name: Remember the live deployment
         id: previous
