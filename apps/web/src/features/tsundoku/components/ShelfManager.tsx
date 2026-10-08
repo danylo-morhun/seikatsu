@@ -8,7 +8,7 @@ import { SHELF_COLORS } from "@/features/tsundoku/lib/constants";
 import { Add01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Input, cn } from "@seikatsu/ui";
-import { useState, useTransition } from "react";
+import { useOptimistic, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 export function ShelfManager({
@@ -22,22 +22,27 @@ export function ShelfManager({
 	shelves: TsundokuShelf[];
 	bookShelfIds: string[];
 }) {
-	const [isPending, startTransition] = useTransition();
-	const [busyId, setBusyId] = useState<string | null>(null);
+	const [, startTransition] = useTransition();
+	// Each click builds on the previous (still unsaved) one, so quick toggles don't drop
+	// each other; the actions run in order and the last re-render brings the saved set.
+	const [selectedIds, setSelectedIds] = useOptimistic(bookShelfIds);
 	const [creating, setCreating] = useState(false);
 	const [newName, setNewName] = useState("");
 	const [showCreate, setShowCreate] = useState(false);
 
-	const selected = new Set(bookShelfIds);
+	const selected = new Set(selectedIds);
+	const latest = useRef(selectedIds);
+	latest.current = selectedIds;
 
 	function toggle(shelfId: string) {
-		const next = new Set(selected);
+		const next = new Set(latest.current);
 		if (next.has(shelfId)) next.delete(shelfId);
 		else next.add(shelfId);
-		setBusyId(shelfId);
+		const ids = Array.from(next);
+		latest.current = ids;
 		startTransition(async () => {
-			const res = await setBookShelves(bookId, Array.from(next));
-			setBusyId(null);
+			setSelectedIds(ids);
+			const res = await setBookShelves(bookId, ids);
 			if ("error" in res) toast.error(res.error);
 		});
 	}
@@ -67,7 +72,6 @@ export function ShelfManager({
 							key={s.id}
 							type="button"
 							onClick={() => toggle(s.id)}
-							disabled={isPending && busyId === s.id}
 							className={cn(
 								"inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors",
 								on
@@ -79,11 +83,7 @@ export function ShelfManager({
 								<span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
 							)}
 							{s.name}
-							{isPending && busyId === s.id ? (
-								<Spinner />
-							) : on ? (
-								<HugeiconsIcon icon={Tick02Icon} className="h-3 w-3" />
-							) : null}
+							{on && <HugeiconsIcon icon={Tick02Icon} className="h-3 w-3" />}
 						</button>
 					);
 				})}
