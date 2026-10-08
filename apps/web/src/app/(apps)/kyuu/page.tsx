@@ -3,7 +3,11 @@ import { getWorkspace, initializeWorkspace } from "@/features/kuroji/actions/wor
 import { getApplications, getResumeFiles, getSources } from "@/features/kyuu/actions/applications";
 import { AddApplicationModal } from "@/features/kyuu/components/AddApplicationModal";
 import { ApplicationsTable } from "@/features/kyuu/components/ApplicationsTable";
-import { hasActiveKyuuFilters, parseKyuuFilters } from "@/features/kyuu/lib/search-params";
+import {
+	APPLICATIONS_PAGE_SIZE,
+	hasActiveKyuuFilters,
+	parseKyuuFilters,
+} from "@/features/kyuu/lib/search-params";
 import { redirect } from "next/navigation";
 
 const SORT_FIELDS = ["date", "company", "status"] as const;
@@ -21,6 +25,7 @@ export default async function KyuuPage({
 		q?: string;
 		sort?: string;
 		dir?: string;
+		page?: string;
 	}>;
 }) {
 	const session = await auth();
@@ -36,9 +41,10 @@ export default async function KyuuPage({
 		? (raw.sort as SortField)
 		: "date";
 	const dir = raw.dir === "asc" ? "asc" : "desc";
+	const page = raw.page && /^\d+$/.test(raw.page) ? Number.parseInt(raw.page, 10) : 0;
 
-	const [applications, sources, resumeFiles] = await Promise.all([
-		getApplications(workspace.id, { ...filters, sort, dir }),
+	const [{ rows: applications, total }, sources, resumeFiles] = await Promise.all([
+		getApplications(workspace.id, { ...filters, sort, dir, page }),
 		getSources(workspace.id),
 		getResumeFiles(workspace.id),
 	]);
@@ -50,7 +56,7 @@ export default async function KyuuPage({
 					<div>
 						<h1 className="text-lg font-semibold">Applications</h1>
 						<p className="text-sm text-muted-foreground">
-							{applications.length} application{applications.length !== 1 ? "s" : ""}
+							{total} application{total !== 1 ? "s" : ""}
 							{hasFilters ? " matching filters" : ""}
 						</p>
 					</div>
@@ -67,6 +73,8 @@ export default async function KyuuPage({
 					hasFilters={hasFilters}
 					sortField={sort}
 					sortDir={dir}
+					page={page}
+					pageCount={Math.ceil(total / APPLICATIONS_PAGE_SIZE)}
 				/>
 			</div>
 		</main>

@@ -34,6 +34,7 @@ import {
 	cn,
 } from "@seikatsu/ui";
 import { format } from "date-fns";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { memo, useCallback, useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -50,7 +51,7 @@ import { EditApplicationModal } from "./EditApplicationModal";
 import { KyuuFilterBar } from "./KyuuFilterBar";
 import { StatusBadge } from "./StatusBadge";
 
-type Application = Awaited<ReturnType<typeof getApplications>>[number];
+type Application = Awaited<ReturnType<typeof getApplications>>["rows"][number];
 
 function fmtDate(iso: string, short = false): string {
 	return format(new Date(`${iso}T00:00:00`), short ? "MMM d" : "MMM d, yyyy");
@@ -88,6 +89,9 @@ interface Props {
 	hasFilters: boolean;
 	sortField: SortColumn;
 	sortDir: "asc" | "desc";
+	/** 0-based. */
+	page: number;
+	pageCount: number;
 }
 
 type OptimisticUpdate =
@@ -245,6 +249,8 @@ export function ApplicationsTable({
 	hasFilters,
 	sortField,
 	sortDir,
+	page,
+	pageCount,
 }: Props) {
 	const router = useRouter();
 	const pathname = usePathname();
@@ -272,8 +278,17 @@ export function ApplicationsTable({
 			params.set("sort", field);
 			params.delete("dir");
 		}
+		params.delete("page");
 		startNavigationProgress();
 		router.push(`${pathname}?${params.toString()}`);
+	}
+
+	function pageHref(target: number) {
+		const params = new URLSearchParams(searchParams.toString());
+		if (target === 0) params.delete("page");
+		else params.set("page", String(target));
+		const qs = params.toString();
+		return qs ? `${pathname}?${qs}` : pathname;
 	}
 
 	function sortIndicator(field: SortColumn) {
@@ -397,6 +412,36 @@ export function ApplicationsTable({
 					</TableBody>
 				</Table>
 			</div>
+
+			{pageCount > 1 && (
+				<div className="flex items-center justify-between gap-2 pt-3 text-sm">
+					{page > 0 ? (
+						<Button asChild variant="outline" size="sm">
+							<Link href={pageHref(page - 1)} prefetch scroll={false}>
+								Previous
+							</Link>
+						</Button>
+					) : (
+						<Button variant="outline" size="sm" disabled>
+							Previous
+						</Button>
+					)}
+					<span className="text-muted-foreground tabular-nums">
+						Page {page + 1} of {pageCount}
+					</span>
+					{page + 1 < pageCount ? (
+						<Button asChild variant="outline" size="sm">
+							<Link href={pageHref(page + 1)} prefetch scroll={false}>
+								Next
+							</Link>
+						</Button>
+					) : (
+						<Button variant="outline" size="sm" disabled>
+							Next
+						</Button>
+					)}
+				</div>
+			)}
 
 			<AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
 				<AlertDialogContent>

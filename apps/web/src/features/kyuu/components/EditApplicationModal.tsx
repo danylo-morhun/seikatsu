@@ -31,7 +31,7 @@ import {
 import { ResumeUploadField } from "./ResumeUploadField";
 import { STATUS_CONFIG } from "./StatusBadge";
 
-type Application = Awaited<ReturnType<typeof getApplications>>[number];
+type Application = Awaited<ReturnType<typeof getApplications>>["rows"][number];
 
 function toFormValues(app: Application): ApplicationFormValues {
 	return {
