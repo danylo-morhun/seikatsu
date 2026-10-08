@@ -4,7 +4,7 @@ import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@seikatsu/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { kyuuFilterStatusValues } from "../lib/kyuu-schemas";
 import { KyuuDateRangeFilter } from "./KyuuDateRangeFilter";
 import { StageFilter, type StageKey } from "./StageFilter";
@@ -22,6 +22,9 @@ export function KyuuFilterBar({ sources }: Props) {
 	const searchParams = useSearchParams();
 	const urlQuery = searchParams.get("q") ?? "";
 	const [localQuery, setLocalQuery] = useState(urlQuery);
+	// The q this input pushed last. When that push lands, the user may already have typed
+	// more, so only a URL change from elsewhere (back, clear, link) resets the input.
+	const pushedQuery = useRef(urlQuery);
 
 	function setParam(key: string, value: string | null) {
 		const params = new URLSearchParams(searchParams.toString());
@@ -32,10 +35,13 @@ export function KyuuFilterBar({ sources }: Props) {
 	}
 
 	function submitSearch(value: string) {
+		pushedQuery.current = value.trim();
 		setParam("q", value.trim() || null);
 	}
 
 	useEffect(() => {
+		if (urlQuery === pushedQuery.current) return;
+		pushedQuery.current = urlQuery;
 		setLocalQuery(urlQuery);
 	}, [urlQuery]);
 
