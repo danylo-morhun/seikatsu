@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { getWorkspace, initializeWorkspace } from "@/features/kuroji/actions/workspace";
-import { getBook, getBooks } from "@/features/tsundoku/actions/books";
+import { getBook, getSeriesBooks } from "@/features/tsundoku/actions/books";
 import { getQuotes } from "@/features/tsundoku/actions/quotes";
 import { getSessions } from "@/features/tsundoku/actions/sessions";
 import { getShelves } from "@/features/tsundoku/actions/shelves";
@@ -18,16 +18,12 @@ export default async function BookPage({ params }: { params: Promise<{ bookId: s
 	const workspace =
 		(await getWorkspace(session.user.id)) ?? (await initializeWorkspace(session.user.id));
 
-	const [sessions, quotes, shelves, allBooks] = await Promise.all([
+	const [sessions, quotes, shelves, seriesBooks] = await Promise.all([
 		getSessions(bookId),
 		getQuotes(bookId),
 		getShelves(workspace.id),
-		book.seriesName ? getBooks(workspace.id) : Promise.resolve([]),
+		book.seriesName ? getSeriesBooks(workspace.id, book.seriesName) : Promise.resolve([]),
 	]);
-
-	const seriesBooks = book.seriesName
-		? allBooks.filter((b) => b.seriesName === book.seriesName)
-		: [];
 
 	return (
 		<BookDetailView

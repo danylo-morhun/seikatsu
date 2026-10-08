@@ -1,6 +1,6 @@
 "use client";
 
-import type { TsundokuBook } from "@/features/tsundoku/actions/books";
+import type { LibraryBook } from "@/features/tsundoku/actions/books";
 import type { TsundokuShelf } from "@/features/tsundoku/actions/shelves";
 import { AddBookModal } from "@/features/tsundoku/components/AddBookModal";
 import { BookCard } from "@/features/tsundoku/components/BookCard";
@@ -10,7 +10,7 @@ import { useSearchParams } from "next/navigation";
 import { useDeferredValue, useMemo } from "react";
 
 interface Props {
-	books: TsundokuBook[];
+	books: LibraryBook[];
 	shelves: TsundokuShelf[];
 	workspaceId: string;
 }

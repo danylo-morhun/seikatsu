@@ -1,4 +1,4 @@
-import type { TsundokuBook } from "@/features/tsundoku/actions/books";
+import type { SeriesBook } from "@/features/tsundoku/actions/books";
 import { Progress } from "@seikatsu/ui";
 import Link from "next/link";
 
@@ -9,7 +9,7 @@ export function SeriesProgress({
 	currentId,
 }: {
 	seriesName: string;
-	seriesBooks: TsundokuBook[];
+	seriesBooks: SeriesBook[];
 	currentId: string;
 }) {
 	if (seriesBooks.length < 2) return null;

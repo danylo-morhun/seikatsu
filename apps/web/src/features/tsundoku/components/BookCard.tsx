@@ -1,4 +1,4 @@
-import type { TsundokuBook } from "@/features/tsundoku/actions/books";
+import type { LibraryBook } from "@/features/tsundoku/actions/books";
 import { BookCover } from "@/features/tsundoku/components/BookCover";
 import { StatusBadge } from "@/features/tsundoku/components/StatusBadge";
 import { progressPercent } from "@/features/tsundoku/lib/pace";
@@ -7,7 +7,7 @@ import Link from "next/link";
 import { memo } from "react";
 
 // Memoized: the library re-renders on every filter keystroke; unchanged books skip.
-export const BookCard = memo(function BookCard({ book }: { book: TsundokuBook }) {
+export const BookCard = memo(function BookCard({ book }: { book: LibraryBook }) {
 	const pct = book.status === "reading" ? progressPercent(book.currentPage, book.pageCount) : null;
 
 	return (

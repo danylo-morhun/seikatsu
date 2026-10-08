@@ -1,7 +1,12 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { type TsundokuBook, deleteBook, updateRating } from "@/features/tsundoku/actions/books";
+import {
+	type SeriesBook,
+	type TsundokuBook,
+	deleteBook,
+	updateRating,
+} from "@/features/tsundoku/actions/books";
 import type { TsundokuQuote } from "@/features/tsundoku/actions/quotes";
 import type { TsundokuSession } from "@/features/tsundoku/actions/sessions";
 import type { TsundokuShelf } from "@/features/tsundoku/actions/shelves";
@@ -42,7 +47,7 @@ interface Props {
 	sessions: TsundokuSession[];
 	quotes: TsundokuQuote[];
 	shelves: TsundokuShelf[];
-	seriesBooks: TsundokuBook[];
+	seriesBooks: SeriesBook[];
 	workspaceId: string;
 }
 
