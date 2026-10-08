@@ -96,15 +96,23 @@ export function HabitCard({
 		});
 	}
 
+	// The card leaves the list at once; the action's re-render moves it to "Archived".
+	const [archived, setArchived] = useState(false);
+
 	function handleArchive() {
+		setArchived(true);
 		startTransition(async () => {
 			const res = await archiveHabit(habit.id);
-			if ("error" in res) toast.error(res.error);
-			else {
+			if ("error" in res) {
+				setArchived(false);
+				toast.error(res.error);
+			} else {
 				toast.success(`"${habit.name}" archived`);
 			}
 		});
 	}
+
+	if (archived) return null;
 
 	return (
 		<div className="flex flex-col gap-2 rounded-lg border border-border/50 bg-card px-3 py-2.5">
