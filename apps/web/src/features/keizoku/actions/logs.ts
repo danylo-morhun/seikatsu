@@ -1,6 +1,6 @@
 "use server";
 
-import { getOwnedHabit, getOwnedWorkspace } from "@/features/keizoku/actions/guard";
+import { getOwnedHabit, getOwnedWorkspace, isOwnedHabit } from "@/features/keizoku/actions/guard";
 import { logHabitSchema } from "@/features/keizoku/lib/keizoku-schemas";
 import { computeStreak } from "@/features/keizoku/lib/streak";
 import {
@@ -140,8 +140,7 @@ export async function getHabitLogs(
 	from?: string,
 	to?: string,
 ): Promise<KeizokuHabitLog[]> {
-	const habit = await getOwnedHabit(habitId);
-	if (!habit) return [];
+	if (!(await isOwnedHabit(habitId))) return [];
 
 	const conditions = [eq(keizokuHabitLogs.habitId, habitId)];
 	if (from) conditions.push(gte(keizokuHabitLogs.date, from));
@@ -155,8 +154,7 @@ export async function getHabitLogs(
 }
 
 export async function getHabitPhotos(habitId: string): Promise<KeizokuHabitLog[]> {
-	const habit = await getOwnedHabit(habitId);
-	if (!habit) return [];
+	if (!(await isOwnedHabit(habitId))) return [];
 
 	return db
 		.select()
