@@ -1,6 +1,6 @@
 "use server";
 
-import { getOwnedBook, getOwnedWorkspace } from "@/features/tsundoku/actions/guard";
+import { getOwnedBook, getOwnedWorkspace, isOwnedBook } from "@/features/tsundoku/actions/guard";
 import { type LogSessionValues, logSessionSchema } from "@/features/tsundoku/lib/tsundoku-schemas";
 import { and, db, desc, eq, gte, sql, tsundokuBooks, tsundokuSessions } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
@@ -12,8 +12,7 @@ function today(): string {
 }
 
 export async function getSessions(bookId: string): Promise<TsundokuSession[]> {
-	const book = await getOwnedBook(bookId);
-	if (!book) return [];
+	if (!(await isOwnedBook(bookId))) return [];
 	return db
 		.select()
 		.from(tsundokuSessions)
