@@ -1,5 +1,6 @@
 "use client";
 
+import { startNavigationProgress } from "@/components/NavigationProgress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@seikatsu/ui";
 import { endOfMonth, format, startOfMonth, subMonths } from "date-fns";
 import { useRouter } from "next/navigation";
@@ -29,6 +30,7 @@ export function MonthPicker({ from, to }: Props) {
 			value={`${from}_${to}`}
 			onValueChange={(v) => {
 				const [f, t] = v.split("_");
+				startNavigationProgress();
 				router.push(`?from=${f}&to=${t}`);
 			}}
 		>
