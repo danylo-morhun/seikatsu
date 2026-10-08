@@ -12,7 +12,7 @@ export const BookListRow = memo(function BookListRow({ book }: { book: LibraryBo
 	return (
 		<Link
 			href={`/tsundoku/${book.id}`}
-			className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-2.5 transition-colors hover:bg-accent/40"
+			className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-2.5 transition-colors [contain-intrinsic-size:auto_4.5rem] [content-visibility:auto] hover:bg-accent/40"
 		>
 			<BookCover coverUrl={book.coverUrl} title={book.title} className="w-10 shrink-0 rounded" />
 			<div className="min-w-0 flex-1">
