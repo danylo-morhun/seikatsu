@@ -1,6 +1,5 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
 import type { AishaDashboard as Data } from "@/features/aisha/actions/data";
 import { deleteService } from "@/features/aisha/actions/services";
 import { DocumentModal } from "@/features/aisha/components/DocumentModal";
@@ -19,7 +18,7 @@ import {
 import { Add01Icon, Delete02Icon, Tick02Icon, WrenchIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, cn } from "@seikatsu/ui";
-import { useTransition } from "react";
+import { memo, useCallback, useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
 
 const STATUS_STYLES: Record<DueStatus, string> = {
@@ -63,7 +62,24 @@ function Section({
 }
 
 export function AishaDashboard({ data, today }: { data: Data; today: string }) {
-	const { vehicle, currentKm, kmPerDay, items, documents, services } = data;
+	const { vehicle, currentKm, kmPerDay, items, documents } = data;
+	const [, startTransition] = useTransition();
+	// Deleted rows disappear at once; the action's re-render brings the saved list.
+	const [services, removeService] = useOptimistic(data.services, (list, id: string) =>
+		list.filter((s) => s.id !== id),
+	);
+
+	const onDeleteService = useCallback(
+		(id: string) => {
+			if (!confirm("Delete this service record?")) return;
+			startTransition(async () => {
+				removeService(id);
+				const res = await deleteService(id);
+				if ("error" in res) toast.error(res.error);
+			});
+		},
+		[removeService],
+	);
 	const itemOptions = items.map((i) => ({ id: i.id, name: i.name }));
 	const attention =
 		items.filter((i) => i.due.status === "overdue" || i.due.status === "soon").length +
@@ -246,7 +262,7 @@ export function AishaDashboard({ data, today }: { data: Data; today: string }) {
 					) : (
 						<ul className="divide-y divide-border/50 rounded-lg border border-border/60">
 							{services.map((s) => (
-								<ServiceRow key={s.id} service={s} />
+								<ServiceRow key={s.id} service={s} onDelete={onDeleteService} />
 							))}
 						</ul>
 					)}
@@ -256,17 +272,16 @@ export function AishaDashboard({ data, today }: { data: Data; today: string }) {
 	);
 }
 
-function ServiceRow({ service: s }: { service: Data["services"][number] }) {
-	const [pending, startTransition] = useTransition();
+type Service = Data["services"][number];
 
-	function onDelete() {
-		if (!confirm("Delete this service record?")) return;
-		startTransition(async () => {
-			const res = await deleteService(s.id);
-			if ("error" in res) toast.error(res.error);
-		});
-	}
-
+// Memoized: a save re-renders the whole dashboard; unchanged history rows skip.
+const ServiceRow = memo(function ServiceRow({
+	service: s,
+	onDelete,
+}: {
+	service: Service;
+	onDelete: (id: string) => void;
+}) {
 	return (
 		<li className="flex items-start gap-3 px-4 py-3">
 			<div className="min-w-0 flex-1">
@@ -290,12 +305,31 @@ function ServiceRow({ service: s }: { service: Data["services"][number] }) {
 				size="icon"
 				variant="ghost"
 				className="h-8 w-8 shrink-0 text-muted-foreground"
-				disabled={pending}
-				onClick={onDelete}
+				onClick={() => onDelete(s.id)}
 				title="Delete"
 			>
-				{pending ? <Spinner /> : <HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />}
+				<HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />
 			</Button>
 		</li>
+	);
+}, sameServiceRow);
+
+// Field-wise: a server re-render sends new objects for unchanged records.
+function sameServiceRow(
+	a: { service: Service; onDelete: unknown },
+	b: { service: Service; onDelete: unknown },
+) {
+	const x = a.service;
+	const y = b.service;
+	return (
+		a.onDelete === b.onDelete &&
+		x.id === y.id &&
+		x.date === y.date &&
+		x.km === y.km &&
+		x.cost === y.cost &&
+		x.currency === y.currency &&
+		x.shop === y.shop &&
+		x.note === y.note &&
+		x.items.map((i) => i.name).join() === y.items.map((i) => i.name).join()
 	);
 }
