@@ -1,5 +1,6 @@
 "use client";
 
+import { startNavigationProgress } from "@/components/NavigationProgress";
 import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@seikatsu/ui";
@@ -31,6 +32,7 @@ export function KyuuFilterBar({ sources }: Props) {
 		if (value === null) params.delete(key);
 		else params.set(key, value);
 		params.delete("page");
+		startNavigationProgress();
 		router.push(`${pathname}?${params.toString()}`);
 	}
 
@@ -63,6 +65,7 @@ export function KyuuFilterBar({ sources }: Props) {
 		for (const k of [...FILTER_KEYS, "page"]) params.delete(k);
 		setLocalQuery("");
 		const qs = params.toString();
+		startNavigationProgress();
 		router.push(qs ? `${pathname}?${qs}` : pathname);
 	}
 
