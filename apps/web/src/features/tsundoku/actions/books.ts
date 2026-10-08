@@ -13,21 +13,45 @@ import {
 	createBookSchema,
 	updateBookSchema,
 } from "@/features/tsundoku/lib/tsundoku-schemas";
-import { asc, db, desc, eq, inArray, tsundokuBookShelves, tsundokuBooks } from "@seikatsu/db";
+import { and, asc, db, desc, eq, inArray, tsundokuBookShelves, tsundokuBooks } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 export type TsundokuBook = typeof tsundokuBooks.$inferSelect & { shelfIds: string[] };
+
+// What the library grid/list, filters and sorts read. The full row (description, review…)
+// is only needed on the book page, and the library list is sent to the client whole.
+const libraryColumns = {
+	id: tsundokuBooks.id,
+	title: tsundokuBooks.title,
+	authors: tsundokuBooks.authors,
+	coverUrl: tsundokuBooks.coverUrl,
+	status: tsundokuBooks.status,
+	rating: tsundokuBooks.rating,
+	currentPage: tsundokuBooks.currentPage,
+	pageCount: tsundokuBooks.pageCount,
+	genre: tsundokuBooks.genre,
+	seriesName: tsundokuBooks.seriesName,
+	seriesPosition: tsundokuBooks.seriesPosition,
+	position: tsundokuBooks.position,
+	finishedAt: tsundokuBooks.finishedAt,
+};
+
+export type LibraryBook = Pick<TsundokuBook, keyof typeof libraryColumns> & {
+	shelfIds: string[];
+};
+
+export type SeriesBook = Pick<TsundokuBook, "id" | "title" | "status" | "seriesPosition">;
 
 function today(): string {
 	return new Date().toISOString().slice(0, 10);
 }
 
-export async function getBooks(workspaceId: string): Promise<TsundokuBook[]> {
+export async function getBooks(workspaceId: string): Promise<LibraryBook[]> {
 	const ws = await getOwnedWorkspace(workspaceId);
 	if (!ws) throw new Error("Forbidden");
 
 	const books = await db
-		.select()
+		.select(libraryColumns)
 		.from(tsundokuBooks)
 		.where(eq(tsundokuBooks.workspaceId, workspaceId))
 		.orderBy(asc(tsundokuBooks.position), desc(tsundokuBooks.createdAt));
@@ -52,6 +76,26 @@ export async function getBooks(workspaceId: string): Promise<TsundokuBook[]> {
 	}
 
 	return books.map((b) => ({ ...b, shelfIds: byBook.get(b.id) ?? [] }));
+}
+
+/** Books of one series in the workspace (includes the current book). */
+export async function getSeriesBooks(
+	workspaceId: string,
+	seriesName: string,
+): Promise<SeriesBook[]> {
+	const ws = await getOwnedWorkspace(workspaceId);
+	if (!ws) throw new Error("Forbidden");
+	return db
+		.select({
+			id: tsundokuBooks.id,
+			title: tsundokuBooks.title,
+			status: tsundokuBooks.status,
+			seriesPosition: tsundokuBooks.seriesPosition,
+		})
+		.from(tsundokuBooks)
+		.where(
+			and(eq(tsundokuBooks.workspaceId, workspaceId), eq(tsundokuBooks.seriesName, seriesName)),
+		);
 }
 
 export async function getBook(bookId: string): Promise<TsundokuBook | null> {
