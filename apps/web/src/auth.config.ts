@@ -1,7 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 
 // Edge-safe slice of the auth config: no adapter, no DB, no bcrypt.
-// The middleware only decodes the JWT, so it imports this instead of `@/auth`.
+// The proxy (src/proxy.ts) only decodes the JWT, so it imports this instead of `@/auth`.
 export const authConfig = {
 	session: { strategy: "jwt" },
 	providers: [],
