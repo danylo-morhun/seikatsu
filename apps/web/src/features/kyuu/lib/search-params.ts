@@ -36,3 +36,7 @@ export function parseKyuuFilters(raw: RawKyuuSearchParams) {
 export function hasActiveKyuuFilters(f: ReturnType<typeof parseKyuuFilters>): boolean {
 	return Boolean(f.status || f.source || f.stages || f.from || f.to || f.q);
 }
+
+// One page of the table. The page is resent after every inline edit, and on phones a few
+// hundred rows made the first render and every re-render slow.
+export const APPLICATIONS_PAGE_SIZE = 50;

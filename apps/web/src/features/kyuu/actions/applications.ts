@@ -2,9 +2,10 @@
 
 import { auth } from "@/auth";
 import { getOwnedWorkspace } from "@/lib/session";
-import { and, asc, db, desc, eq, isNotNull, kyuuApplications } from "@seikatsu/db";
+import { and, asc, count, db, desc, eq, isNotNull, kyuuApplications } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 import { type KyuuStatus, applicationSchema, kyuuStatusValues } from "../lib/kyuu-schemas";
+import { APPLICATIONS_PAGE_SIZE } from "../lib/search-params";
 import { type KyuuFilters, buildKyuuConditions } from "./filters";
 
 async function assertWorkspaceOwner(workspaceId: string) {
@@ -37,7 +38,7 @@ const tableColumns = {
 
 export async function getApplications(
 	workspaceId: string,
-	opts?: KyuuFilters & { sort?: keyof typeof SORT_COLUMNS; dir?: "asc" | "desc" },
+	opts?: KyuuFilters & { sort?: keyof typeof SORT_COLUMNS; dir?: "asc" | "desc"; page?: number },
 ) {
 	const session = await auth();
 	if (!session?.user?.id) throw new Error("Unauthorized");
@@ -47,7 +48,19 @@ export async function getApplications(
 	const sortCol = SORT_COLUMNS[opts?.sort ?? "date"];
 	const orderFn = opts?.dir === "asc" ? asc : desc;
 
-	return db.select(tableColumns).from(kyuuApplications).where(where).orderBy(orderFn(sortCol));
+	const page = opts?.page ?? 0;
+	const [rows, [counted]] = await Promise.all([
+		db
+			.select(tableColumns)
+			.from(kyuuApplications)
+			.where(where)
+			// id as a tie-breaker keeps rows from jumping between pages on equal dates.
+			.orderBy(orderFn(sortCol), asc(kyuuApplications.id))
+			.limit(APPLICATIONS_PAGE_SIZE)
+			.offset(page * APPLICATIONS_PAGE_SIZE),
+		db.select({ total: count() }).from(kyuuApplications).where(where),
+	]);
+	return { rows, total: counted?.total ?? 0 };
 }
 
 export async function getSources(workspaceId: string) {
