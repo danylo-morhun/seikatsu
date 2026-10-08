@@ -32,7 +32,8 @@ import {
 	type DragOverEvent,
 	DragOverlay,
 	type DragStartEvent,
-	PointerSensor,
+	MouseSensor,
+	TouchSensor,
 	type UniqueIdentifier,
 	closestCenter,
 	closestCorners,
@@ -260,7 +261,12 @@ export function KanbanBoard({
 		setCards((prev) => [...prev, card]);
 	}
 
-	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+	// Mouse drags after 5 px. Touch needs a 250 ms press first, so swipes over cards scroll
+	// the column and the board (PointerSensor + touch-action: none blocked scrolling on phones).
+	const sensors = useSensors(
+		useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+		useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+	);
 
 	const activeColumn = activeType === "column" ? columns.find((c) => c.id === activeId) : null;
 	const activeCard = activeType === "card" ? cards.find((c) => c.id === activeId) : null;

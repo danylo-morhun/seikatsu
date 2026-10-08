@@ -71,7 +71,7 @@ export const KanbanCard = memo(function KanbanCard({ card, onOpen }: Props) {
 				"rounded-md border border-border bg-card px-3 py-2.5",
 				"cursor-grab text-left transition-colors hover:border-border/80 hover:bg-accent/30",
 				"focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-				"active:cursor-grabbing touch-none",
+				"active:cursor-grabbing select-none [-webkit-touch-callout:none]",
 				isDragging && "opacity-40",
 				isTemp && "cursor-default",
 			)}
