@@ -11,7 +11,10 @@ export const BookCard = memo(function BookCard({ book }: { book: LibraryBook }) 
 	const pct = book.status === "reading" ? progressPercent(book.currentPage, book.pageCount) : null;
 
 	return (
-		<Link href={`/tsundoku/${book.id}`} className="group flex flex-col gap-2">
+		<Link
+			href={`/tsundoku/${book.id}`}
+			className="group flex flex-col gap-2 [contain-intrinsic-size:auto_16rem] [content-visibility:auto]"
+		>
 			<BookCover
 				coverUrl={book.coverUrl}
 				title={book.title}
