@@ -44,8 +44,10 @@ export default async function AccountDetailPage({
 	const page = rawPage && /^\d+$/.test(rawPage) ? Math.max(0, Number.parseInt(rawPage, 10)) : 0;
 	const q = rawQ?.trim() || undefined;
 
-	const workspace = await initializeWorkspace(session.user.id);
-	const account = await getAccountDetail(id);
+	const [workspace, account] = await Promise.all([
+		initializeWorkspace(session.user.id),
+		getAccountDetail(id),
+	]);
 	if (!account || account.workspaceId !== workspace.id) notFound();
 
 	const [activity, subAccounts, txResult, allAccounts] = await Promise.all([
