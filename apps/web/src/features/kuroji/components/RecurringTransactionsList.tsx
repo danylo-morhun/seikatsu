@@ -37,22 +37,24 @@ function fmtDate(iso: string) {
 }
 
 export function RecurringTransactionsList({
-	items,
+	items: saved,
 	currency,
 }: {
 	items: RecurringTransaction[];
 	currency: string;
 }) {
 	const [isPending, startTransition] = useTransition();
-	const [loadingId, setLoadingId] = React.useState<string | null>(null);
+	// Pause/resume flips at once; the action's re-render brings the saved state.
+	const [items, toggleItem] = React.useOptimistic(saved, (list, id: string) =>
+		list.map((rt) => (rt.id === id ? { ...rt, isActive: !rt.isActive } : rt)),
+	);
 	const [deleteTarget, setDeleteTarget] = React.useState<{ id: string } | null>(null);
 
 	function handleToggle(id: string) {
-		setLoadingId(id);
 		startTransition(async () => {
+			toggleItem(id);
 			const result = await toggleRecurring(id);
 			if ("error" in result) toast.error(result.error);
-			setLoadingId(null);
 		});
 	}
 
@@ -112,7 +114,6 @@ export function RecurringTransactionsList({
 								variant="ghost"
 								size="icon"
 								className="h-7 w-7"
-								disabled={isPending && loadingId === rt.id}
 								onClick={() => handleToggle(rt.id)}
 								title={rt.isActive ? "Pause" : "Resume"}
 							>
