@@ -107,10 +107,7 @@ interface RowProps {
 function sameApplication(a: Application, b: Application): boolean {
 	if (a === b) return true;
 	for (const key of Object.keys(a) as (keyof Application)[]) {
-		const x = a[key];
-		const y = b[key];
-		if (x instanceof Date && y instanceof Date ? x.getTime() !== y.getTime() : x !== y)
-			return false;
+		if (a[key] !== b[key]) return false;
 	}
 	return true;
 }
