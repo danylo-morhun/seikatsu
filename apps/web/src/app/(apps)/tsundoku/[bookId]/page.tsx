@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { getWorkspace, initializeWorkspace } from "@/features/kuroji/actions/workspace";
+import { initializeWorkspace } from "@/features/kuroji/actions/workspace";
 import { getBook, getSeriesBooks } from "@/features/tsundoku/actions/books";
 import { getQuotes } from "@/features/tsundoku/actions/quotes";
 import { getSessions } from "@/features/tsundoku/actions/sessions";
@@ -12,11 +12,11 @@ export default async function BookPage({ params }: { params: Promise<{ bookId: s
 	if (!session?.user?.id) redirect("/");
 
 	const { bookId } = await params;
-	const book = await getBook(bookId);
+	const [book, workspace] = await Promise.all([
+		getBook(bookId),
+		initializeWorkspace(session.user.id),
+	]);
 	if (!book) notFound();
-
-	const workspace =
-		(await getWorkspace(session.user.id)) ?? (await initializeWorkspace(session.user.id));
 
 	const [sessions, quotes, shelves, seriesBooks] = await Promise.all([
 		getSessions(bookId),

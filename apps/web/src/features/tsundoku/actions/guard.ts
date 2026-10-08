@@ -1,8 +1,9 @@
 // Shared ownership guards for tsundoku server actions.
 // Not a "use server" module — these are helpers called inside server actions.
 
-import { getSessionUserId } from "@/lib/session";
-import { and, db, eq, inArray, tsundokuBooks, tsundokuShelves, workspaces } from "@seikatsu/db";
+import { getCurrentWorkspace, getSessionUserId } from "@/lib/session";
+import { and, db, eq, inArray, tsundokuBooks, tsundokuShelves } from "@seikatsu/db";
+import { cache } from "react";
 
 export { getOwnedWorkspace } from "@/lib/session";
 
@@ -12,17 +13,22 @@ export async function requireUser(): Promise<string | null> {
 
 /** Returns the book row if it belongs to the current user's workspace, else null. */
 export async function getOwnedBook(bookId: string) {
-	const userId = await requireUser();
-	if (!userId) return null;
-	const [row] = await db
-		.select({ book: tsundokuBooks, ownerId: workspaces.userId })
+	const ws = await getCurrentWorkspace();
+	if (!ws) return null;
+	const [book] = await db
+		.select()
 		.from(tsundokuBooks)
-		.innerJoin(workspaces, eq(tsundokuBooks.workspaceId, workspaces.id))
-		.where(eq(tsundokuBooks.id, bookId))
+		.where(and(eq(tsundokuBooks.id, bookId), eq(tsundokuBooks.workspaceId, ws.id)))
 		.limit(1);
-	if (!row || row.ownerId !== userId) return null;
-	return row.book;
+	return book ?? null;
 }
+
+/**
+ * Ownership only, cached per request: the book page loads sessions and quotes in parallel
+ * and both check the same book. (The row itself isn't cached — after an action the
+ * re-render must read the updated book.)
+ */
+export const isOwnedBook = cache(async (bookId: string) => (await getOwnedBook(bookId)) != null);
 
 /** Verify all shelfIds belong to the given workspace (mirrors assertTagsInWorkspace). */
 export async function assertShelvesInWorkspace(

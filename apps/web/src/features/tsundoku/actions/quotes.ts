@@ -1,6 +1,6 @@
 "use server";
 
-import { getOwnedBook } from "@/features/tsundoku/actions/guard";
+import { getOwnedBook, isOwnedBook } from "@/features/tsundoku/actions/guard";
 import {
 	type CreateQuoteValues,
 	createQuoteSchema,
@@ -11,8 +11,7 @@ import { revalidatePath } from "next/cache";
 export type TsundokuQuote = typeof tsundokuQuotes.$inferSelect;
 
 export async function getQuotes(bookId: string): Promise<TsundokuQuote[]> {
-	const book = await getOwnedBook(bookId);
-	if (!book) return [];
+	if (!(await isOwnedBook(bookId))) return [];
 	return db
 		.select()
 		.from(tsundokuQuotes)
