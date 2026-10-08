@@ -3,10 +3,12 @@ import { getOwnedHabit } from "@/features/keizoku/actions/guard";
 import { getHabitLogs, getHabitPhotos } from "@/features/keizoku/actions/logs";
 import { getHabitCompletionRate, getHabitStreaks } from "@/features/keizoku/actions/stats";
 import { HabitDetailView } from "@/features/keizoku/components/HabitDetailView";
+import { getUserToday } from "@/lib/timezone";
 import { notFound, redirect } from "next/navigation";
 
-function today(): string {
-	return new Date().toISOString().slice(0, 10);
+/** `date` (YYYY-MM-DD) minus `days`, as YYYY-MM-DD. Pure calendar math in UTC. */
+function daysBefore(date: string, days: number): string {
+	return new Date(Date.parse(`${date}T00:00:00Z`) - days * 86_400_000).toISOString().slice(0, 10);
 }
 
 export default async function HabitPage({ params }: { params: Promise<{ habitId: string }> }) {
@@ -17,12 +19,10 @@ export default async function HabitPage({ params }: { params: Promise<{ habitId:
 	const habit = await getOwnedHabit(habitId);
 	if (!habit) notFound();
 
-	const to = today();
-	const now = new Date();
-	const from30 = new Date(now.getTime() - 29 * 86_400_000).toISOString().slice(0, 10);
-	const fromHeatmap = new Date(now.getTime() - (53 * 7 - 1) * 86_400_000)
-		.toISOString()
-		.slice(0, 10);
+	// The user's day, not the server's UTC one: right after local midnight that differs.
+	const to = await getUserToday();
+	const from30 = daysBefore(to, 29);
+	const fromHeatmap = daysBefore(to, 53 * 7 - 1);
 
 	const [logs, photos, streak, completionRate] = await Promise.all([
 		getHabitLogs(habitId, fromHeatmap, to),
