@@ -235,11 +235,13 @@ export async function syncBankConnection(
 
 	try {
 		const { imported, skipped } = await syncConnection(conn);
-		revalidatePath("/kuroji");
-		revalidatePath("/settings/kuroji");
 		return { success: true, imported, skipped };
 	} catch (e) {
 		return { error: e instanceof Error ? e.message : "Sync failed" };
+	} finally {
+		// Failures change the connection's status/lastError too, so the page re-renders either way.
+		revalidatePath("/kuroji");
+		revalidatePath("/settings/kuroji");
 	}
 }
 
@@ -294,11 +296,12 @@ export async function resetAndResync(
 
 		const fresh = { ...conn, lastSyncedAt: null, status: "LINKED" as const, lastError: null };
 		const { imported, skipped } = await syncConnection(fresh);
-		revalidatePath("/kuroji");
-		revalidatePath("/settings/kuroji");
 		return { success: true, imported, skipped };
 	} catch (e) {
 		return { error: e instanceof Error ? e.message : "Reset failed" };
+	} finally {
+		revalidatePath("/kuroji");
+		revalidatePath("/settings/kuroji");
 	}
 }
 

@@ -27,7 +27,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -53,7 +52,6 @@ export function BankConnectionsSection({
 	connections: Connection[];
 	accounts: Account[];
 }) {
-	const router = useRouter();
 	const linkTargets = accounts.filter((a) => a.type === "ASSET" || a.type === "LIABILITY");
 
 	return (
@@ -70,7 +68,6 @@ export function BankConnectionsSection({
 							connection={conn}
 							linkTargets={linkTargets}
 							workspaceId={workspaceId}
-							onChanged={() => router.refresh()}
 						/>
 					))}
 				</div>
@@ -84,12 +81,10 @@ function ConnectionCard({
 	connection,
 	linkTargets,
 	workspaceId,
-	onChanged,
 }: {
 	connection: Connection;
 	linkTargets: Account[];
 	workspaceId: string;
-	onChanged: () => void;
 }) {
 	const [isPending, startTransition] = useTransition();
 	const [action, setAction] = useState<"sync" | "delete" | "reset" | null>(null);
@@ -102,7 +97,6 @@ function ConnectionCard({
 			if ("error" in result) toast.error(result.error);
 			else toast.success(`Imported ${result.imported} transaction(s).`);
 			setAction(null);
-			onChanged();
 		});
 	}
 
@@ -120,7 +114,6 @@ function ConnectionCard({
 			if ("error" in result) toast.error(result.error);
 			else toast.success(`Re-imported ${result.imported} transaction(s).`);
 			setAction(null);
-			onChanged();
 		});
 	}
 
@@ -134,7 +127,6 @@ function ConnectionCard({
 			if ("error" in result) toast.error(result.error);
 			else toast.success("Bank disconnected.");
 			setAction(null);
-			onChanged();
 		});
 	}
 
@@ -143,7 +135,6 @@ function ConnectionCard({
 			const result = await linkBankAccount(workspaceId, accountUid, value === NONE ? null : value);
 			if ("error" in result) toast.error(result.error);
 			else toast.success("Account link updated.");
-			onChanged();
 		});
 	}
 
