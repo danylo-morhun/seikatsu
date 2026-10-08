@@ -38,8 +38,7 @@ import {
 	Separator,
 } from "@seikatsu/ui";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
 
 interface Props {
@@ -59,24 +58,23 @@ export function BookDetailView({
 	seriesBooks,
 	workspaceId,
 }: Props) {
-	const router = useRouter();
-	const [isPending, startTransition] = useTransition();
+	const [, startRating] = useTransition();
+	const [isDeleting, startDelete] = useTransition();
+	const [rating, setRating] = useOptimistic(book.rating);
 
 	function onRating(value: number | null) {
-		startTransition(async () => {
+		startRating(async () => {
+			setRating(value);
 			const res = await updateRating(book.id, value);
 			if ("error" in res) toast.error(res.error);
 		});
 	}
 
+	// deleteBook redirects to the library itself, in the same round trip.
 	function onDelete() {
-		startTransition(async () => {
+		startDelete(async () => {
 			const res = await deleteBook(book.id);
-			if ("error" in res) toast.error(res.error);
-			else {
-				toast.success("Book deleted.");
-				router.push("/tsundoku");
-			}
+			if (res && "error" in res) toast.error(res.error);
 		});
 	}
 
@@ -122,7 +120,7 @@ export function BookDetailView({
 										className="text-muted-foreground hover:text-destructive"
 										aria-label="Delete book"
 									>
-										{isPending ? (
+										{isDeleting ? (
 											<Spinner />
 										) : (
 											<HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />
@@ -167,7 +165,7 @@ export function BookDetailView({
 
 						<div className="flex flex-wrap items-center gap-3">
 							<StatusSelect bookId={book.id} status={book.status} />
-							<RatingInput value={book.rating} onChange={onRating} />
+							<RatingInput value={rating} onChange={onRating} />
 						</div>
 
 						<ProgressBar

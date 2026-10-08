@@ -15,6 +15,7 @@ import {
 } from "@/features/tsundoku/lib/tsundoku-schemas";
 import { and, asc, db, desc, eq, inArray, tsundokuBookShelves, tsundokuBooks } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export type TsundokuBook = typeof tsundokuBooks.$inferSelect & { shelfIds: string[] };
 
@@ -258,12 +259,13 @@ export async function updateRating(
 	return { success: true };
 }
 
-export async function deleteBook(bookId: string): Promise<{ error: string } | { success: true }> {
+/** Deletes and redirects to the library (one round trip; the book page can't re-render). */
+export async function deleteBook(bookId: string): Promise<{ error: string }> {
 	const book = await getOwnedBook(bookId);
 	if (!book) return { error: "Book not found" };
 	await db.delete(tsundokuBooks).where(eq(tsundokuBooks.id, bookId));
 	revalidatePath("/tsundoku");
-	return { success: true };
+	redirect("/tsundoku");
 }
 
 export async function setBookShelves(
