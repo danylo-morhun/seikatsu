@@ -21,17 +21,15 @@ export default async function KurojiSettingsPage() {
 	if (!session?.user?.id) redirect("/");
 
 	const workspace = await initializeWorkspace(session.user.id);
-	const [accounts, archivedAccounts, balances, recurringItems, bankConnections, bankRules] =
-		await Promise.all([
-			getAccounts(workspace.id),
-			getAccounts(workspace.id, { includeArchived: true }).then((all) =>
-				all.filter((a) => a.archivedAt !== null),
-			),
-			getBalances(workspace.id, undefined, undefined),
-			getRecurringTransactions(workspace.id),
-			getBankConnections(workspace.id),
-			getBankRules(workspace.id),
-		]);
+	const [allAccounts, balances, recurringItems, bankConnections, bankRules] = await Promise.all([
+		getAccounts(workspace.id, { includeArchived: true }),
+		getBalances(workspace.id, undefined, undefined),
+		getRecurringTransactions(workspace.id),
+		getBankConnections(workspace.id),
+		getBankRules(workspace.id),
+	]);
+	const accounts = allAccounts.filter((a) => a.archivedAt === null);
+	const archivedAccounts = allAccounts.filter((a) => a.archivedAt !== null);
 
 	return (
 		<main className="px-4 py-6 sm:px-6 max-w-3xl">
