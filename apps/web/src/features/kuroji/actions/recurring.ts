@@ -5,6 +5,7 @@ import { type Frequency, generateDueForWorkspace } from "@/features/kuroji/lib/r
 import { getOwnedWorkspace } from "@/lib/session";
 import { accounts, and, db, eq, or, recurringTransactions } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 
 export type { Frequency };
 
@@ -126,8 +127,9 @@ export async function toggleRecurring(id: string): Promise<{ error: string } | {
 		.update(recurringTransactions)
 		.set({ isActive: !rt.isActive, updatedAt: new Date() })
 		.where(eq(recurringTransactions.id, id));
-	// Resuming catches up on periods missed while paused, as the page used to on next visit.
-	if (!rt.isActive) await generateDueForWorkspace(ws);
+	// Resuming catches up on periods missed while paused. It can fetch exchange rates, so it
+	// runs after the response; the dashboard reads fresh data on the next visit anyway.
+	if (!rt.isActive) after(() => generateDueForWorkspace(ws));
 	revalidatePath("/kuroji");
 	return { success: true };
 }
