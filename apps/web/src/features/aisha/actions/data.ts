@@ -1,7 +1,7 @@
 // Read-side queries for aisha. Not a "use server" module, so nothing here is
 // callable from the client — import only from RSC pages or server actions.
 
-import { getOwnedVehicle } from "@/features/aisha/actions/guard";
+import type { AishaVehicle } from "@/features/aisha/actions/vehicles";
 import {
 	type DueStatus,
 	type MaintenanceDue,
@@ -42,9 +42,9 @@ export async function getReadings(vehicleId: string) {
 		.orderBy(asc(aishaOdometerReadings.date));
 }
 
-export async function getDashboard(vehicleId: string, today: string) {
-	const vehicle = await getOwnedVehicle(vehicleId);
-	if (!vehicle) return null;
+/** `vehicle` must already be checked against the workspace (the page got it from getVehicles). */
+export async function getDashboard(vehicle: AishaVehicle, today: string) {
+	const vehicleId = vehicle.id;
 
 	const [readings, items, services, links, documents] = await Promise.all([
 		getReadings(vehicleId),
@@ -73,13 +73,18 @@ export async function getDashboard(vehicleId: string, today: string) {
 	const pace = kmPerDay(readings);
 	const itemById = new Map(items.map((i) => [i.id, i]));
 
+	const itemIdsByRecord = new Map<string, string[]>();
+	for (const l of links) {
+		const ids = itemIdsByRecord.get(l.recordId);
+		if (ids) ids.push(l.itemId);
+		else itemIdsByRecord.set(l.recordId, [l.itemId]);
+	}
+
 	// services are newest-first, so the first one seen per item is its latest.
 	const lastDoneByItem = new Map<string, { date: string; km: number }>();
 	for (const s of services) {
-		for (const l of links) {
-			if (l.recordId === s.id && !lastDoneByItem.has(l.itemId)) {
-				lastDoneByItem.set(l.itemId, { date: s.date, km: s.km });
-			}
+		for (const itemId of itemIdsByRecord.get(s.id) ?? []) {
+			if (!lastDoneByItem.has(itemId)) lastDoneByItem.set(itemId, { date: s.date, km: s.km });
 		}
 	}
 
@@ -105,9 +110,8 @@ export async function getDashboard(vehicleId: string, today: string) {
 
 	const servicesWithItems: ServiceWithItems[] = services.map((s) => ({
 		...s,
-		items: links
-			.filter((l) => l.recordId === s.id)
-			.map((l) => itemById.get(l.itemId))
+		items: (itemIdsByRecord.get(s.id) ?? [])
+			.map((id) => itemById.get(id))
 			.filter((i): i is AishaItem => i != null)
 			.map((i) => ({ id: i.id, name: i.name })),
 	}));

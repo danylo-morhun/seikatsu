@@ -18,8 +18,7 @@ export default async function AishaPage() {
 	if (!vehicle) return <VehicleSetup workspaceId={workspace.id} />;
 
 	const today = new Date().toISOString().slice(0, 10);
-	const data = await getDashboard(vehicle.id, today);
-	if (!data) redirect("/");
+	const data = await getDashboard(vehicle, today);
 
 	return <AishaDashboard data={data} today={today} />;
 }
