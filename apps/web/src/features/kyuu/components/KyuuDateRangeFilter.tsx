@@ -1,5 +1,6 @@
 "use client";
 
+import { startNavigationProgress } from "@/components/NavigationProgress";
 import { parseLocal } from "@/features/kuroji/lib/dates";
 import { Calendar01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -87,6 +88,7 @@ export function KyuuDateRangeFilter() {
 		else params.delete("to");
 		params.delete("page");
 		const qs = params.toString();
+		startNavigationProgress();
 		router.push(qs ? `${pathname}?${qs}` : pathname);
 	}
 
