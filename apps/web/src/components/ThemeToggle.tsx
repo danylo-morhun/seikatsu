@@ -1,18 +1,18 @@
 "use client";
 
+import { type Theme, currentTheme, setTheme } from "@/lib/theme";
 import { Moon02Icon, Sun01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@seikatsu/ui";
-import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
 export function ThemeToggle() {
-	const { theme, setTheme } = useTheme();
-	const [mounted, setMounted] = useState(false);
+	// Unknown until mounted: the server can't know the saved theme.
+	const [theme, setThemeState] = useState<Theme | null>(null);
 
-	useEffect(() => setMounted(true), []);
+	useEffect(() => setThemeState(currentTheme()), []);
 
-	if (!mounted) {
+	if (!theme) {
 		return <div className="h-8 w-8" />;
 	}
 
@@ -21,7 +21,11 @@ export function ThemeToggle() {
 			variant="ghost"
 			size="icon"
 			className="h-8 w-8"
-			onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+			onClick={() => {
+				const next = theme === "dark" ? "light" : "dark";
+				setTheme(next);
+				setThemeState(next);
+			}}
 			aria-label="Toggle theme"
 		>
 			<HugeiconsIcon icon={theme === "dark" ? Sun01Icon : Moon02Icon} className="h-4 w-4" />
