@@ -1,8 +1,9 @@
 // Shared ownership guards for keizoku server actions.
 // Not a "use server" module — these are helpers called inside server actions.
 
-import { getSessionUserId } from "@/lib/session";
-import { db, eq, keizokuHabits, workspaces } from "@seikatsu/db";
+import { getCurrentWorkspace, getSessionUserId } from "@/lib/session";
+import { and, db, eq, keizokuHabits } from "@seikatsu/db";
+import { cache } from "react";
 
 export { getOwnedWorkspace } from "@/lib/session";
 
@@ -12,14 +13,21 @@ export async function requireUser(): Promise<string | null> {
 
 /** Returns the habit row if it belongs to the current user's workspace, else null. */
 export async function getOwnedHabit(habitId: string) {
-	const userId = await requireUser();
-	if (!userId) return null;
-	const [row] = await db
-		.select({ habit: keizokuHabits, ownerId: workspaces.userId })
+	const ws = await getCurrentWorkspace();
+	if (!ws) return null;
+	const [habit] = await db
+		.select()
 		.from(keizokuHabits)
-		.innerJoin(workspaces, eq(keizokuHabits.workspaceId, workspaces.id))
-		.where(eq(keizokuHabits.id, habitId))
+		.where(and(eq(keizokuHabits.id, habitId), eq(keizokuHabits.workspaceId, ws.id)))
 		.limit(1);
-	if (!row || row.ownerId !== userId) return null;
-	return row.habit;
+	return habit ?? null;
 }
+
+/**
+ * Ownership only, cached per request: the habit page loads logs and photos in parallel and
+ * both check the same habit. (The row isn't cached — after an edit the re-render must read
+ * the updated habit.)
+ */
+export const isOwnedHabit = cache(
+	async (habitId: string) => (await getOwnedHabit(habitId)) != null,
+);
