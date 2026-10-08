@@ -5,12 +5,12 @@ import { type TsundokuQuote, createQuote, deleteQuote } from "@/features/tsundok
 import { Delete02Icon, QuoteUpIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Input } from "@seikatsu/ui";
-import { useState, useTransition } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 export function QuoteSection({
 	bookId,
-	quotes,
+	quotes: saved,
 }: {
 	bookId: string;
 	quotes: TsundokuQuote[];
@@ -18,8 +18,10 @@ export function QuoteSection({
 	const [text, setText] = useState("");
 	const [page, setPage] = useState("");
 	const [adding, setAdding] = useState(false);
-	const [isPending, startTransition] = useTransition();
-	const [deletingId, setDeletingId] = useState<string | null>(null);
+	const [, startTransition] = useTransition();
+	const [quotes, removeQuote] = useOptimistic(saved, (list, id: string) =>
+		list.filter((q) => q.id !== id),
+	);
 
 	async function onAdd(e: React.FormEvent) {
 		e.preventDefault();
@@ -39,10 +41,9 @@ export function QuoteSection({
 	}
 
 	function onDelete(id: string) {
-		setDeletingId(id);
 		startTransition(async () => {
+			removeQuote(id);
 			const res = await deleteQuote(id);
-			setDeletingId(null);
 			if ("error" in res) toast.error(res.error);
 		});
 	}
@@ -98,14 +99,9 @@ export function QuoteSection({
 									size="icon"
 									className="h-6 w-6 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
 									onClick={() => onDelete(qt.id)}
-									disabled={isPending && deletingId === qt.id}
 									aria-label="Delete quote"
 								>
-									{isPending && deletingId === qt.id ? (
-										<Spinner />
-									) : (
-										<HugeiconsIcon icon={Delete02Icon} className="h-3.5 w-3.5" />
-									)}
+									<HugeiconsIcon icon={Delete02Icon} className="h-3.5 w-3.5" />
 								</Button>
 							</div>
 						</li>

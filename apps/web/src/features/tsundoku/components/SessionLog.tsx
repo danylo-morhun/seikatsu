@@ -1,23 +1,23 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
 import { type TsundokuSession, deleteSession } from "@/features/tsundoku/actions/sessions";
 import { Delete02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@seikatsu/ui";
 import { format } from "date-fns";
-import { useState, useTransition } from "react";
+import { useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
 
-export function SessionLog({ sessions }: { sessions: TsundokuSession[] }) {
-	const [isPending, startTransition] = useTransition();
-	const [deletingId, setDeletingId] = useState<string | null>(null);
+export function SessionLog({ sessions: saved }: { sessions: TsundokuSession[] }) {
+	const [, startTransition] = useTransition();
+	const [sessions, removeSession] = useOptimistic(saved, (list, id: string) =>
+		list.filter((s) => s.id !== id),
+	);
 
 	function onDelete(id: string) {
-		setDeletingId(id);
 		startTransition(async () => {
+			removeSession(id);
 			const res = await deleteSession(id);
-			setDeletingId(null);
 			if ("error" in res) toast.error(res.error);
 		});
 	}
@@ -42,14 +42,9 @@ export function SessionLog({ sessions }: { sessions: TsundokuSession[] }) {
 							size="icon"
 							className="h-7 w-7 text-muted-foreground hover:text-destructive"
 							onClick={() => onDelete(s.id)}
-							disabled={isPending && deletingId === s.id}
 							aria-label="Delete session"
 						>
-							{isPending && deletingId === s.id ? (
-								<Spinner />
-							) : (
-								<HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />
-							)}
+							<HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />
 						</Button>
 					</span>
 				</li>
