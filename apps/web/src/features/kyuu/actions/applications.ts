@@ -17,6 +17,24 @@ const SORT_COLUMNS = {
 	status: kyuuApplications.status,
 } as const;
 
+// What the table and the edit form show. The whole list goes to the client and is resent
+// after every inline edit, so stage timestamps, archive/update stamps etc. stay behind.
+const tableColumns = {
+	id: kyuuApplications.id,
+	company: kyuuApplications.company,
+	role: kyuuApplications.role,
+	jobUrl: kyuuApplications.jobUrl,
+	source: kyuuApplications.source,
+	resumeFileUrl: kyuuApplications.resumeFileUrl,
+	resumeFileName: kyuuApplications.resumeFileName,
+	status: kyuuApplications.status,
+	hrScreening: kyuuApplications.hrScreening,
+	technicalInterview: kyuuApplications.technicalInterview,
+	offer: kyuuApplications.offer,
+	dateApplied: kyuuApplications.dateApplied,
+	notes: kyuuApplications.notes,
+};
+
 export async function getApplications(
 	workspaceId: string,
 	opts?: KyuuFilters & { sort?: keyof typeof SORT_COLUMNS; dir?: "asc" | "desc" },
@@ -29,7 +47,7 @@ export async function getApplications(
 	const sortCol = SORT_COLUMNS[opts?.sort ?? "date"];
 	const orderFn = opts?.dir === "asc" ? asc : desc;
 
-	return db.select().from(kyuuApplications).where(where).orderBy(orderFn(sortCol));
+	return db.select(tableColumns).from(kyuuApplications).where(where).orderBy(orderFn(sortCol));
 }
 
 export async function getSources(workspaceId: string) {
