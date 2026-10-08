@@ -7,7 +7,14 @@ import { getWorkspace, initializeWorkspace } from "@/features/kuroji/actions/wor
 import { getUserToday } from "@/lib/timezone";
 import { redirect } from "next/navigation";
 
-export default async function AishaPage() {
+// Every save re-renders the page and resends the dashboard; the full history is one click away.
+const RECENT_SERVICES = 30;
+
+export default async function AishaPage({
+	searchParams,
+}: {
+	searchParams: Promise<{ history?: string }>;
+}) {
 	const session = await auth();
 	if (!session?.user?.id) redirect("/");
 
@@ -21,5 +28,14 @@ export default async function AishaPage() {
 	const today = await getUserToday();
 	const data = await getDashboard(vehicle, today);
 
-	return <AishaDashboard data={data} today={today} />;
+	const showAll = (await searchParams).history === "all";
+	const services = showAll ? data.services : data.services.slice(0, RECENT_SERVICES);
+
+	return (
+		<AishaDashboard
+			data={{ ...data, services }}
+			serviceCount={data.services.length}
+			today={today}
+		/>
+	);
 }

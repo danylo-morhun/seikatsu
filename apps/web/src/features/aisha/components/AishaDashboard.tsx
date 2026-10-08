@@ -18,6 +18,7 @@ import {
 import { Add01Icon, Delete02Icon, Tick02Icon, WrenchIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, cn } from "@seikatsu/ui";
+import Link from "next/link";
 import { memo, useCallback, useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -61,7 +62,16 @@ function Section({
 	);
 }
 
-export function AishaDashboard({ data, today }: { data: Data; today: string }) {
+export function AishaDashboard({
+	data,
+	serviceCount,
+	today,
+}: {
+	data: Data;
+	/** All records; `data.services` may hold only the latest ones. */
+	serviceCount: number;
+	today: string;
+}) {
 	const { vehicle, currentKm, kmPerDay, items, documents } = data;
 	const [, startTransition] = useTransition();
 	// Deleted rows disappear at once; the action's re-render brings the saved list.
@@ -265,6 +275,16 @@ export function AishaDashboard({ data, today }: { data: Data; today: string }) {
 								<ServiceRow key={s.id} service={s} onDelete={onDeleteService} />
 							))}
 						</ul>
+					)}
+					{data.services.length < serviceCount && (
+						<Link
+							href="/aisha?history=all"
+							prefetch
+							scroll={false}
+							className="mt-2 block text-center text-sm text-muted-foreground hover:text-foreground"
+						>
+							Show all {serviceCount}
+						</Link>
 					)}
 				</Section>
 			</div>
