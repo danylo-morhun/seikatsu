@@ -8,6 +8,7 @@ import { TagSelect } from "@/features/kuroji/components/TagSelect";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
 import { addTagToFormOptions, useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import {
+	DESCRIPTION_PLACEHOLDER,
 	type TransactionFormValues,
 	type TxType,
 	transactionFormSchema,
@@ -240,7 +241,7 @@ export function EditTransactionModal({ transaction, workspaceId, open, onOpenCha
 						<Label htmlFor="edit-description">Description</Label>
 						<Input
 							id="edit-description"
-							placeholder="e.g. Grocery run"
+							placeholder={DESCRIPTION_PLACEHOLDER[txType]}
 							{...register("description")}
 						/>
 					</div>

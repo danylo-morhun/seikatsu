@@ -10,6 +10,7 @@ import { addTagToFormOptions, useFormOptions } from "@/features/kuroji/lib/form-
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import {
 	type AddTransactionFormValues,
+	DESCRIPTION_PLACEHOLDER,
 	type SplitItem,
 	type TxType,
 	addTransactionFormSchema,
@@ -459,7 +460,7 @@ export function AddTransactionModal({
 						<Label htmlFor="add-description">Description</Label>
 						<Input
 							id="add-description"
-							placeholder="e.g. Grocery run"
+							placeholder={DESCRIPTION_PLACEHOLDER[txType]}
 							{...register("description")}
 						/>
 					</div>
