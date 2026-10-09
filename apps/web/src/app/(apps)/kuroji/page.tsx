@@ -226,7 +226,7 @@ export default async function KurojiPage({
 					transactions={recentTransactions.rows}
 					currency={workspace.baseCurrency}
 					workspaceId={workspace.id}
-					page={pageNum}
+					page={recentTransactions.page}
 					hasMore={recentTransactions.hasMore}
 					total={recentTransactions.total}
 					filters={filters}

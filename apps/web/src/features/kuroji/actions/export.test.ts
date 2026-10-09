@@ -132,6 +132,13 @@ describe("exportTransactionsCsv — same rows as the list", () => {
 		expect(csvRows(result.csv)).toEqual([expect.stringContaining("Trip dinner")]);
 	});
 
+	it("a list page past the end shows the last page", async () => {
+		const { getRecentTransactions } = await import("./transactions");
+		const list = await getRecentTransactions(ids.ws, {}, 99);
+		expect(list.page).toBe(0);
+		expect(list.rows).toHaveLength(4);
+	});
+
 	it("rejects malformed filters", async () => {
 		const { exportTransactionsCsv } = await import("./export");
 		expect(await exportTransactionsCsv(ids.ws, { tagId: "not-a-uuid" })).toEqual({

@@ -186,7 +186,7 @@ export default async function AccountDetailPage({
 					transactions={txResult.rows}
 					currency={workspace.baseCurrency}
 					workspaceId={workspace.id}
-					page={page}
+					page={txResult.page}
 					hasMore={txResult.hasMore}
 					total={txResult.total}
 					filters={filters}
