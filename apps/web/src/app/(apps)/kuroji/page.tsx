@@ -153,6 +153,8 @@ export default async function KurojiPage({
 							<ExpensesEmptyState
 								workspaceId={workspace.id}
 								baseCurrency={workspace.baseCurrency}
+								from={from}
+								to={to}
 							/>
 						) : (
 							<>
