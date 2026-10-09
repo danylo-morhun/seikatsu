@@ -246,3 +246,119 @@ describe("recategorizeTransactions", () => {
 		expect(result).toEqual({ error: "Pick an income or expense category" });
 	});
 });
+
+describe("updateTransaction", () => {
+	beforeAll(async () => {
+		testDb ??= await createTestDb();
+	}, 30_000);
+
+	afterEach(async () => {
+		await testDb.delete(schema.transactions);
+		await testDb.delete(schema.accounts);
+		await testDb.delete(schema.workspaces);
+	});
+
+	async function entriesOf(transactionId: string) {
+		const rows = await testDb
+			.select()
+			.from(schema.transactionEntries)
+			.where(ops.eq(schema.transactionEntries.transactionId, transactionId));
+		return rows.map((e) => [e.accountId, e.amount]).sort();
+	}
+
+	async function seedSplit() {
+		const seeded = await seedWorkspaceWithAccounts("USD");
+		const { createTransaction } = await import("./transactions");
+		await createTransaction({
+			workspaceId: seeded.workspace.id,
+			fromAccountId: seeded.checking.id,
+			toSplits: [
+				{ accountId: seeded.groceries.id, amount: 10 },
+				{ accountId: seeded.dining.id, amount: 5 },
+			],
+			currency: "USD",
+			description: "Market",
+			date: "2026-09-01",
+		});
+		const [txn] = await testDb.select().from(schema.transactions);
+		return { ...seeded, txn };
+	}
+
+	it("editing a split's description keeps every leg and amount", async () => {
+		const { checking, groceries, dining, txn } = await seedSplit();
+		const before = await entriesOf(txn.id);
+		const { updateTransaction } = await import("./transactions");
+
+		const result = await updateTransaction({
+			transactionId: txn.id,
+			fromAccountId: checking.id,
+			toSplits: [
+				{ accountId: groceries.id, amount: 10 },
+				{ accountId: dining.id, amount: 5 },
+			],
+			currency: "USD",
+			description: "Farmers market",
+			date: "2026-09-01",
+		});
+
+		expect(result).toEqual({ success: true });
+		expect(await entriesOf(txn.id)).toEqual(before);
+		const [updated] = await testDb.select().from(schema.transactions);
+		expect(updated.description).toBe("Farmers market");
+	});
+
+	it("editing split amounts rebalances the wallet leg", async () => {
+		const { checking, groceries, dining, txn } = await seedSplit();
+		const { updateTransaction } = await import("./transactions");
+
+		await updateTransaction({
+			transactionId: txn.id,
+			fromAccountId: checking.id,
+			toSplits: [
+				{ accountId: groceries.id, amount: 10.1 },
+				{ accountId: dining.id, amount: 20.2 },
+				{ accountId: groceries.id, amount: 33.33 },
+			],
+			currency: "USD",
+			description: "Market",
+			date: "2026-09-01",
+		});
+
+		const entries = await entriesOf(txn.id);
+		expect(entries).toHaveLength(4);
+		expect(entries.find(([id]) => id === checking.id)?.[1]).toBe("-63.6300");
+		expect(await sumBaseAmount(txn.id)).toBe(0);
+	});
+
+	it("a plain two-leg edit still rewrites one pair", async () => {
+		const { workspace, checking, groceries, dining } = await seedWorkspaceWithAccounts("USD");
+		const { createTransaction, updateTransaction } = await import("./transactions");
+		await createTransaction({
+			workspaceId: workspace.id,
+			fromAccountId: checking.id,
+			toAccountId: groceries.id,
+			amount: 12,
+			currency: "USD",
+			date: "2026-09-01",
+		});
+		const [txn] = await testDb.select().from(schema.transactions);
+
+		await updateTransaction({
+			transactionId: txn.id,
+			fromAccountId: checking.id,
+			toAccountId: dining.id,
+			amount: 15,
+			currency: "USD",
+			description: undefined,
+			date: "2026-09-02",
+		});
+
+		expect(await entriesOf(txn.id)).toEqual(
+			[
+				[checking.id, "-15.0000"],
+				[dining.id, "15.0000"],
+			].sort(),
+		);
+		expect(await sumBaseAmount(txn.id)).toBe(0);
+	});
+});
