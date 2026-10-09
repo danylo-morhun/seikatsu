@@ -48,7 +48,13 @@ export function WorkspaceSettingsForm({ workspaceId, initialName, baseCurrency }
 					<span className="text-xs text-muted-foreground">Currency change not yet supported</span>
 				</div>
 			</div>
-			<Button type="submit" disabled={isPending || name.trim() === initialName} className="gap-1.5">
+			{/* Quiet until there is something to save, so the idle state never reads as broken. */}
+			<Button
+				type="submit"
+				variant={name.trim() === initialName ? "outline" : "default"}
+				disabled={isPending || name.trim() === initialName}
+				className="gap-1.5"
+			>
 				{isPending && <Spinner />}
 				{isPending ? "Saving…" : "Save changes"}
 			</Button>
