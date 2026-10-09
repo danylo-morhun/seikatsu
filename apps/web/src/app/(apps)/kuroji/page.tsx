@@ -229,6 +229,7 @@ export default async function KurojiPage({
 					page={pageNum}
 					hasMore={recentTransactions.hasMore}
 					total={recentTransactions.total}
+					filters={filters}
 					accountFilterId={accountId}
 					accountFilterName={accountId ? accounts.find((a) => a.id === accountId)?.name : undefined}
 					tagFilterId={tagId}

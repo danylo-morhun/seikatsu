@@ -188,6 +188,7 @@ export default async function AccountDetailPage({
 					page={page}
 					hasMore={txResult.hasMore}
 					total={txResult.total}
+					filters={filters}
 					accountFilterId={id}
 					accountFilterName={account.name}
 					searchQuery={q}

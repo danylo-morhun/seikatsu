@@ -1,26 +1,18 @@
 "use server";
 
 import { auth } from "@/auth";
-import { getOwnedWorkspace } from "@/lib/session";
 import {
-	and,
-	db,
-	desc,
-	eq,
-	gte,
-	ilike,
-	inArray,
-	lte,
-	transactionEntries,
-	transactions,
-} from "@seikatsu/db";
+	type TransactionFilters,
+	transactionFiltersSchema,
+} from "@/features/kuroji/lib/transaction-filters";
+import { transactionOrder, transactionWhere } from "@/features/kuroji/lib/transaction-query";
+import { getOwnedWorkspace } from "@/lib/session";
+import { db } from "@seikatsu/db";
 
+/** The list's rows as CSV: same filters, same order, up to 10,000 rows. */
 export async function exportTransactionsCsv(
 	workspaceId: string,
-	from: string | undefined,
-	to: string | undefined,
-	accountId: string | undefined,
-	q: string | undefined,
+	filters: TransactionFilters,
 ): Promise<{ error: string } | { csv: string }> {
 	const session = await auth();
 	if (!session?.user?.id) return { error: "Unauthorized" };
@@ -29,22 +21,12 @@ export async function exportTransactionsCsv(
 
 	if (!ws) return { error: "Forbidden" };
 
-	const accountSubquery = accountId
-		? db
-				.selectDistinct({ id: transactionEntries.transactionId })
-				.from(transactionEntries)
-				.where(eq(transactionEntries.accountId, accountId))
-		: undefined;
+	const parsed = transactionFiltersSchema.safeParse(filters);
+	if (!parsed.success) return { error: "Invalid filters" };
 
 	const rows = await db.query.transactions.findMany({
-		where: and(
-			eq(transactions.workspaceId, workspaceId),
-			from ? gte(transactions.date, from) : undefined,
-			to ? lte(transactions.date, to) : undefined,
-			q ? ilike(transactions.description, `%${q}%`) : undefined,
-			accountSubquery ? inArray(transactions.id, accountSubquery) : undefined,
-		),
-		orderBy: [desc(transactions.date), desc(transactions.createdAt)],
+		where: transactionWhere(workspaceId, parsed.data),
+		orderBy: transactionOrder(parsed.data),
 		limit: 10_000,
 		with: { entries: { with: { account: true } } },
 	});
