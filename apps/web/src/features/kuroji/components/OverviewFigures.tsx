@@ -71,7 +71,12 @@ export function OverviewFigures({
 					value={netWorth}
 					currency={currency}
 					tone={netWorth < 0 ? "negative" : undefined}
-					note={`${formatCurrency(assets, currency)} assets · ${formatCurrency(liabilities, currency)} debts`}
+					note={
+						// Debts only earn a mention when there are any.
+						liabilities !== 0
+							? `${formatCurrency(assets, currency)} assets · ${formatCurrency(liabilities, currency)} debts`
+							: undefined
+					}
 				/>
 			</div>
 			<Figure
