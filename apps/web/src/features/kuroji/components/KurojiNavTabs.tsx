@@ -78,7 +78,7 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 									className={tabCls(displayTab === value && !isSettings)}
 								>
 									<HugeiconsIcon icon={icon} className="h-5 w-5" />
-									<span className="text-[10px] font-medium leading-none">{label}</span>
+									<span className="text-[11px] font-medium leading-none">{label}</span>
 								</Link>
 							))}
 						</div>
@@ -108,11 +108,11 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 								className={tabCls(displayTab === "transactions" && !isSettings)}
 							>
 								<HugeiconsIcon icon={Clock01Icon} className="h-5 w-5" />
-								<span className="text-[10px] font-medium leading-none">Transactions</span>
+								<span className="text-[11px] font-medium leading-none">Transactions</span>
 							</Link>
 							<Link href="/settings" className={tabCls(isSettings)}>
 								<HugeiconsIcon icon={Settings01Icon} className="h-5 w-5" />
-								<span className="text-[10px] font-medium leading-none">Settings</span>
+								<span className="text-[11px] font-medium leading-none">Settings</span>
 							</Link>
 						</div>
 					</div>
