@@ -39,7 +39,6 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-	Progress,
 	cn,
 } from "@seikatsu/ui";
 import Link from "next/link";
@@ -143,8 +142,8 @@ function BalanceDisplay({
 	return (
 		<span
 			className={cn(
-				"text-sm whitespace-nowrap text-right tabular-nums",
-				isNeg ? "text-red-500" : "text-muted-foreground",
+				"whitespace-nowrap text-right font-figures text-sm",
+				isNeg ? "text-negative" : baseAmt === 0 ? "text-muted-foreground" : "text-foreground",
 			)}
 		>
 			{isMulti ? (
@@ -266,11 +265,11 @@ export function AccountsOverview({
 
 		return (
 			<React.Fragment key={row.accountId}>
-				<div className={`flex flex-col ${isChild ? "bg-muted/30" : ""}`}>
+				<div className="flex flex-col">
 					<div
 						className={cn(
-							"relative flex items-center gap-2 px-3 py-2.5 hover:bg-muted/40 transition-colors",
-							isChild && "pl-8",
+							"relative flex items-center gap-2 py-2.5 pr-1 pl-1 transition-colors hover:bg-surface",
+							isChild && "pl-7",
 						)}
 					>
 						{hasChildren ? (
@@ -294,7 +293,10 @@ export function AccountsOverview({
 						<Link
 							href={`/kuroji/accounts/${row.accountId}${detailQuery}`}
 							prefetch
-							className="flex-1 min-w-0 truncate text-sm font-medium outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+							className={cn(
+								"flex-1 min-w-0 truncate text-sm outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring",
+								isChild ? "text-muted-foreground" : "font-medium",
+							)}
 						>
 							{row.name}
 						</Link>
@@ -315,24 +317,31 @@ export function AccountsOverview({
 					</div>
 
 					{showBudget && pct !== null && (
-						<div className={`flex flex-col gap-1 px-3 pb-2.5 ${isChild ? "pl-8" : "pl-8"}`}>
-							<Progress
-								value={pct}
-								className="h-1"
-								indicatorClassName={
-									isIncome
-										? overBudget
-											? "bg-green-500"
-											: undefined
-										: overBudget
-											? "bg-destructive"
-											: undefined
-								}
-							/>
-							<p className="text-xs text-muted-foreground">
-								{formatCurrency(used, currency)} / {formatCurrency(budget!, currency)}
-								{isIncome && overBudget && " · target reached"}
-							</p>
+						// Budget as capacity: the bar fills its track; going over spills past the end.
+						<div
+							className={cn("flex items-center gap-3 pb-2.5", isChild ? "pl-7" : "pl-6.5", "pr-11")}
+						>
+							<span aria-hidden className="relative h-1 flex-1 rounded-full bg-surface-2">
+								<span
+									className={cn(
+										"absolute inset-y-0 left-0 rounded-full",
+										overBudget ? (isIncome ? "bg-positive" : "bg-negative") : "bg-primary/80",
+									)}
+									style={{ width: `${pct}%` }}
+								/>
+							</span>
+							<span
+								className={cn(
+									"shrink-0 font-figures text-xs",
+									overBudget && !isIncome ? "text-negative" : "text-muted-foreground",
+								)}
+							>
+								{overBudget && !isIncome
+									? `${formatCurrency(used - budget!, currency)} over ${formatCurrency(budget!, currency)}`
+									: overBudget
+										? `Target ${formatCurrency(budget!, currency)} reached`
+										: `${formatCurrency(budget! - used, currency)} left of ${formatCurrency(budget!, currency)}`}
+							</span>
 						</div>
 					)}
 				</div>
@@ -343,7 +352,7 @@ export function AccountsOverview({
 	}
 
 	const content = (
-		<div className="space-y-6">
+		<div className="space-y-8">
 			{TYPE_ORDER.map((type) => {
 				const group = grouped[type] ?? [];
 				const parents = group.filter(
@@ -361,6 +370,15 @@ export function AccountsOverview({
 				const hiddenParents = parents.filter(
 					(r) => r.hidden && (type === "ASSET" || r.name !== "Opening Balance"),
 				);
+				// Nothing to show and nothing hidden: leave the group out instead of an empty box.
+				if (!listMode && visibleParents.length === 0 && hiddenParents.length === 0) return null;
+				// Flows read best busiest-first; balances keep their own order.
+				if (!listMode && (type === "INCOME" || type === "EXPENSE")) {
+					visibleParents.sort(
+						(a, b) =>
+							displayBalance(type, Number(b.balance)) - displayBalance(type, Number(a.balance)),
+					);
+				}
 				const typeTotal = displayBalance(
 					type,
 					visibleParents.reduce((acc, b) => acc + Number(b.balance), 0),
@@ -368,20 +386,20 @@ export function AccountsOverview({
 
 				return (
 					<div key={type}>
-						<div className="mb-2 flex items-baseline justify-between">
-							<p className="text-xs text-muted-foreground">
-								<span className="font-semibold uppercase tracking-wide">{TYPE_LABELS[type]}</span>
+						<div className="mb-1 flex items-baseline justify-between gap-3">
+							<h3 className="text-sm">
+								<span className="font-semibold">{TYPE_LABELS[type]}</span>
 								{!listMode && (
-									<span className="ml-2">
+									<span className="ml-2 text-xs text-muted-foreground">
 										{type === "ASSET" || type === "LIABILITY" ? asOfLabel : periodLabel}
 									</span>
 								)}
-							</p>
+							</h3>
 							{!listMode && visibleParents.length > 0 && (
 								<p
 									className={cn(
-										"text-sm font-semibold tabular-nums",
-										typeTotal < 0 && "text-red-500",
+										"font-figures text-base font-semibold",
+										typeTotal < 0 && "text-negative",
 									)}
 								>
 									{formatCurrency(typeTotal, currency)}
@@ -389,12 +407,12 @@ export function AccountsOverview({
 							)}
 						</div>
 
-						<div className="rounded-lg border divide-y overflow-hidden">
+						<div className="divide-y divide-rule border-y border-rule">
 							{listMode ? (
 								typeAccounts.map((acct) => {
 									const row = rowMap.get(acct.id);
 									return (
-										<div key={acct.id} className="flex items-center justify-between px-3 py-2.5">
+										<div key={acct.id} className="flex items-center justify-between py-2.5 pl-1">
 											<span className="text-sm font-medium">{acct.name}</span>
 											<div className="flex items-center gap-2">
 												{row && <BalanceDisplay row={row} acct={acct} currency={currency} />}
