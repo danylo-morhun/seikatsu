@@ -1,17 +1,17 @@
 import { auth } from "@/auth";
-import {
-	getAccountActivity,
-	getAccountDetail,
-	getSubAccounts,
-} from "@/features/kuroji/actions/account-detail";
+import { getAccountActivity, getAccountDetail } from "@/features/kuroji/actions/account-detail";
 import { getAccounts } from "@/features/kuroji/actions/accounts";
+import { getBalances } from "@/features/kuroji/actions/balances";
 import { getRecentTransactions } from "@/features/kuroji/actions/transactions";
 import { initializeWorkspace } from "@/features/kuroji/actions/workspace";
 import { AccountActivityChart } from "@/features/kuroji/components/AccountActivityChart";
 import { AccountEditButton } from "@/features/kuroji/components/AccountEditButton";
 import { TransactionTable } from "@/features/kuroji/components/TransactionTable";
+import { displayBalance } from "@/features/kuroji/lib/balance";
 import { formatCurrency } from "@/features/kuroji/lib/format";
-import { Progress } from "@seikatsu/ui";
+import { asOfLabel, resolvePeriod } from "@/features/kuroji/lib/period";
+import { getUserToday } from "@/lib/timezone";
+import { Progress, cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -34,35 +34,45 @@ export default async function AccountDetailPage({
 	searchParams,
 }: {
 	params: Promise<{ id: string }>;
-	searchParams: Promise<{ page?: string; q?: string }>;
+	searchParams: Promise<{ page?: string; q?: string; from?: string; to?: string; all?: string }>;
 }) {
 	const session = await auth();
 	if (!session?.user?.id) redirect("/");
 
 	const { id } = await params;
-	const { page: rawPage, q: rawQ } = await searchParams;
+	const { page: rawPage, q: rawQ, from: rawFrom, to: rawTo, all: rawAll } = await searchParams;
 	const page = rawPage && /^\d+$/.test(rawPage) ? Math.max(0, Number.parseInt(rawPage, 10)) : 0;
 	const q = rawQ?.trim() || undefined;
 
-	const [workspace, account] = await Promise.all([
+	const [workspace, account, today] = await Promise.all([
 		initializeWorkspace(session.user.id),
 		getAccountDetail(id),
+		getUserToday(),
 	]);
 	if (!account || account.workspaceId !== workspace.id) notFound();
 
-	const [activity, subAccounts, txResult, allAccounts] = await Promise.all([
+	// Same balances (period, sub-account rollup, FX revaluation) as the Accounts tab.
+	const period = resolvePeriod({ from: rawFrom, to: rawTo, all: rawAll }, today);
+	const [activity, balances, txResult, allAccounts] = await Promise.all([
 		getAccountActivity(id),
-		getSubAccounts(id),
+		getBalances(workspace.id, period.from, period.to),
 		getRecentTransactions(workspace.id, undefined, undefined, page, id, q),
 		getAccounts(workspace.id),
 	]);
 
-	const balance = account.balance;
+	const isStock = account.type === "ASSET" || account.type === "LIABILITY";
+	const row = balances.find((b) => b.accountId === id);
+	const balance = displayBalance(account.type, Number(row?.balance ?? 0));
+	const nativeBalance = displayBalance(account.type, Number(row?.nativeBalance ?? 0));
+	const isForeign = account.currency !== workspace.baseCurrency;
+	const subAccounts = balances.filter((b) => b.parentId === id);
+	const rolledUp = subAccounts.filter((b) => !b.hidden && b.type === account.type).length;
+
 	const budget = account.budget != null ? Number(account.budget) : null;
-	const showBudget =
-		(account.type === "EXPENSE" || account.type === "INCOME") && budget != null && budget > 0;
-	const pct = showBudget ? Math.min((Math.abs(balance) / budget) * 100, 100) : null;
-	const overBudget = showBudget && Math.abs(balance) > budget;
+	const showBudget = !isStock && budget != null && budget > 0;
+	const used = Math.max(balance, 0);
+	const pct = showBudget ? Math.min((used / budget) * 100, 100) : null;
+	const overBudget = showBudget && used > budget;
 
 	const accountForEdit = allAccounts.find((a) => a.id === id);
 
@@ -85,9 +95,19 @@ export default async function AccountDetailPage({
 					</div>
 					<h1 className="text-2xl font-bold">{account.name}</h1>
 					<p
-						className={`mt-1 text-3xl font-bold tracking-tight ${balance < 0 ? "text-destructive" : ""}`}
+						className={cn(
+							"mt-1 text-3xl font-bold tracking-tight tabular-nums",
+							balance < 0 && "text-destructive",
+						)}
 					>
-						{formatCurrency(Math.abs(balance), workspace.baseCurrency)}
+						{isForeign
+							? formatCurrency(nativeBalance, account.currency)
+							: formatCurrency(balance, workspace.baseCurrency)}
+					</p>
+					<p className="mt-1 text-sm text-muted-foreground">
+						{isForeign && `≈ ${formatCurrency(balance, workspace.baseCurrency)} · `}
+						{isStock ? asOfLabel(period.to, today) : period.label}
+						{rolledUp > 0 && ` · incl. ${rolledUp} sub-account${rolledUp === 1 ? "" : "s"}`}
 					</p>
 				</div>
 				{accountForEdit && (
@@ -100,7 +120,7 @@ export default async function AccountDetailPage({
 					<div className="mb-2 flex items-center justify-between text-sm">
 						<span className="font-medium">{account.type === "EXPENSE" ? "Budget" : "Target"}</span>
 						<span className={overBudget ? "text-destructive" : "text-muted-foreground"}>
-							{formatCurrency(Math.abs(balance), workspace.baseCurrency)} /{" "}
+							{formatCurrency(used, workspace.baseCurrency)} /{" "}
 							{formatCurrency(budget!, workspace.baseCurrency)}
 							{overBudget && " · over budget"}
 						</span>
@@ -120,19 +140,27 @@ export default async function AccountDetailPage({
 					<section>
 						<h2 className="mb-3 text-base font-semibold">Sub-accounts</h2>
 						<div className="rounded-lg border divide-y">
-							{subAccounts.map((sub) => (
-								<div key={sub.id} className="flex items-center justify-between px-4 py-3">
-									<Link
-										href={`/kuroji/accounts/${sub.id}`}
-										className="text-sm font-medium hover:underline"
-									>
-										{sub.name}
-									</Link>
-									<span className="text-sm text-muted-foreground">
-										{formatCurrency(Math.abs(sub.balance), workspace.baseCurrency)}
-									</span>
-								</div>
-							))}
+							{subAccounts.map((sub) => {
+								const subBalance = displayBalance(sub.type, Number(sub.balance));
+								return (
+									<div key={sub.accountId} className="flex items-center justify-between px-4 py-3">
+										<Link
+											href={`/kuroji/accounts/${sub.accountId}`}
+											className="text-sm font-medium hover:underline"
+										>
+											{sub.name}
+										</Link>
+										<span
+											className={cn(
+												"text-sm tabular-nums",
+												subBalance < 0 ? "text-destructive" : "text-muted-foreground",
+											)}
+										>
+											{formatCurrency(subBalance, workspace.baseCurrency)}
+										</span>
+									</div>
+								);
+							})}
 						</div>
 					</section>
 				)}
