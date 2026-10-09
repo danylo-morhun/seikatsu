@@ -53,10 +53,9 @@ export default async function AccountDetailPage({
 
 	// Same balances (period, sub-account rollup, FX revaluation) as the Accounts tab.
 	const period = resolvePeriod({ from: rawFrom, to: rawTo, all: rawAll }, today);
-	const [activity, balances, txResult, allAccounts] = await Promise.all([
+	const [activity, balances, allAccounts] = await Promise.all([
 		getAccountActivity(id),
 		getBalances(workspace.id, period.from, period.to),
-		getRecentTransactions(workspace.id, undefined, undefined, page, id, q),
 		getAccounts(workspace.id),
 	]);
 
@@ -66,7 +65,19 @@ export default async function AccountDetailPage({
 	const nativeBalance = displayBalance(account.type, Number(row?.nativeBalance ?? 0));
 	const isForeign = account.currency !== workspace.baseCurrency;
 	const subAccounts = balances.filter((b) => b.parentId === id);
-	const rolledUp = subAccounts.filter((b) => !b.hidden && b.type === account.type).length;
+	const rolledUpIds = subAccounts
+		.filter((b) => !b.hidden && b.type === account.type)
+		.map((b) => b.accountId);
+	const rolledUp = rolledUpIds.length;
+	// The list covers what the balance covers: this period, this account and its rolled-up subs.
+	const txResult = await getRecentTransactions(
+		workspace.id,
+		period.from,
+		period.to,
+		page,
+		[id, ...rolledUpIds],
+		q,
+	);
 
 	const budget = account.budget != null ? Number(account.budget) : null;
 	const showBudget = !isStock && budget != null && budget > 0;
@@ -175,6 +186,8 @@ export default async function AccountDetailPage({
 					accountFilterId={id}
 					accountFilterName={account.name}
 					searchQuery={q}
+					dateFrom={period.from}
+					dateTo={period.to}
 				/>
 			</div>
 		</main>
