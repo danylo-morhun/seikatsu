@@ -14,6 +14,7 @@ import {
 	type SplitItem,
 	type TxType,
 	addTransactionFormSchema,
+	parseAmount,
 } from "@/features/kuroji/lib/transaction-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Add01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
@@ -33,7 +34,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Tabs,
-	TabsContent,
 	TabsList,
 	TabsTrigger,
 } from "@seikatsu/ui";
@@ -58,6 +58,8 @@ export function AddTransactionModal({
 	const [open, setOpen] = React.useState(false);
 	const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>([]);
 	const [txType, setTxType] = React.useState<TxType>("expense");
+	// Text as typed ("12,50"); the form holds the parsed number.
+	const [amountText, setAmountText] = React.useState("");
 
 	const defaultCurrency = toCurrency(baseCurrency);
 	const today = format(new Date(), "yyyy-MM-dd");
@@ -70,6 +72,8 @@ export function AddTransactionModal({
 		reset,
 		watch,
 		setValue,
+		setFocus,
+		getValues,
 		formState: { errors, isSubmitting },
 	} = useForm<AddTransactionFormValues>({
 		resolver: zodResolver(addTransactionFormSchema),
@@ -162,13 +166,19 @@ export function AddTransactionModal({
 			resetToType("expense");
 			setTxType("expense");
 			setSelectedTagIds([]);
+			setAmountText("");
 		}
 	};
+
+	const amountField = (type: TxType) => (type === "transfer" ? "amount" : "splits.0.amount");
 
 	const handleTabChange = (val: string) => {
 		const next = val as TxType;
 		setTxType(next);
 		resetToType(next);
+		// Picking the type after typing the amount is common: keep the amount, reset the rest.
+		if (amountText) setValue(amountField(next) as never, parseAmount(amountText) as never);
+		requestAnimationFrame(() => setFocus(amountField(next) as never));
 	};
 
 	const onSubmit = async (values: AddTransactionFormValues) => {
@@ -226,13 +236,31 @@ export function AddTransactionModal({
 		{ categoryId?: { message?: string }; amount?: { message?: string } }
 	>;
 
+	const registerAny = register as (name: string, opts?: object) => object;
+	const amountInputProps = {
+		type: "text",
+		inputMode: "decimal" as const,
+		autoComplete: "off",
+		placeholder: "0,00",
+	};
+	const isSplit = txType !== "transfer" && typedSplitFields.length > 1;
+	// Back to one category: the amount field takes over whatever the remaining row holds.
+	React.useEffect(() => {
+		if (isSplit) return;
+		const value = getValues("splits.0.amount" as never) as unknown as number | undefined;
+		setAmountText(value === undefined || Number.isNaN(value) ? "" : String(value));
+	}, [isSplit, getValues]);
+	const amountError = (txType === "transfer" ? errs.amount : (splitErrs[0]?.amount as unknown)) as
+		| { message?: string }
+		| undefined;
+
 	const currencySelect = (
 		<Controller
 			control={control}
 			name="currency"
 			render={({ field }: { field: { onChange: (v: string) => void; value: string } }) => (
 				<Select onValueChange={field.onChange} value={field.value ?? defaultCurrency}>
-					<SelectTrigger className="h-7 w-[80px] text-xs">
+					<SelectTrigger className="h-12 w-[88px] shrink-0" aria-label="Currency">
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
@@ -247,19 +275,48 @@ export function AddTransactionModal({
 		/>
 	);
 
+	// One amount field up front; with splits it becomes the read-only total of the rows below.
+	const amountHero = (
+		<div className="space-y-2">
+			<Label htmlFor={isSplit ? undefined : "add-amount"}>{isSplit ? "Total" : "Amount"}</Label>
+			<div className="flex gap-2">
+				{isSplit ? (
+					<p className="flex h-12 flex-1 items-center rounded-md border bg-muted/40 px-3 text-2xl font-semibold tabular-nums">
+						{formatCurrency(splitTotal, watchCurrency)}
+					</p>
+				) : (
+					<Controller
+						key={amountField(txType)}
+						control={control as never}
+						name={amountField(txType) as never}
+						render={({
+							field,
+						}: { field: { onChange: (v: unknown) => void; ref: React.Ref<HTMLInputElement> } }) => (
+							<Input
+								id="add-amount"
+								{...amountInputProps}
+								ref={field.ref}
+								value={amountText}
+								onChange={(e) => {
+									setAmountText(e.target.value);
+									field.onChange(parseAmount(e.target.value));
+								}}
+								className="h-12 flex-1 text-2xl font-semibold tabular-nums md:text-2xl"
+							/>
+						)}
+					/>
+				)}
+				{currencySelect}
+			</div>
+			{!isSplit && amountError?.message && (
+				<p className="text-destructive text-[0.8rem]">{amountError.message}</p>
+			)}
+		</div>
+	);
+
 	const renderSplitRows = (categories: Account[]) => (
 		<div className="space-y-2">
-			<div className="flex items-center justify-between">
-				<Label>{typedSplitFields.length > 1 ? "Categories" : "Category"}</Label>
-				<div className="flex items-center gap-2">
-					{typedSplitFields.length > 1 && (
-						<span className="text-xs text-muted-foreground tabular-nums">
-							Total: {formatCurrency(splitTotal, watchCurrency)}
-						</span>
-					)}
-					{currencySelect}
-				</div>
-			</div>
+			<Label>{isSplit ? "Categories" : "Category"}</Label>
 
 			{typedSplitFields.map((field, index) => (
 				<div key={field.id} className="flex items-start gap-2">
@@ -272,26 +329,26 @@ export function AddTransactionModal({
 							error={splitErrs[index]?.categoryId?.message}
 						/>
 					</div>
-					<div className="flex flex-col gap-1">
-						<Input
-							type="number"
-							step="0.01"
-							placeholder="0.00"
-							className="w-24 shrink-0"
-							{...(register as (name: string, opts?: object) => object)(`splits.${index}.amount`, {
-								valueAsNumber: true,
-							})}
-						/>
-						{splitErrs[index]?.amount?.message && (
-							<p className="text-destructive text-[0.8rem]">{splitErrs[index].amount?.message}</p>
-						)}
-					</div>
-					{typedSplitFields.length > 1 && (
+					{isSplit && (
+						<div className="flex flex-col gap-1">
+							<Input
+								{...amountInputProps}
+								aria-label={`Amount for category ${index + 1}`}
+								className="w-28 shrink-0 tabular-nums"
+								{...registerAny(`splits.${index}.amount`, { setValueAs: parseAmount })}
+							/>
+							{splitErrs[index]?.amount?.message && (
+								<p className="text-destructive text-[0.8rem]">{splitErrs[index].amount?.message}</p>
+							)}
+						</div>
+					)}
+					{isSplit && (
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon"
 							className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
+							aria-label={`Remove category ${index + 1}`}
 							onClick={() => removeSplit(index)}
 						>
 							<HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
@@ -304,10 +361,10 @@ export function AddTransactionModal({
 				type="button"
 				variant="ghost"
 				size="sm"
-				className="h-7 w-full text-xs text-muted-foreground hover:text-foreground"
+				className="h-8 w-full text-xs text-muted-foreground hover:text-foreground"
 				onClick={() => (appendSplit as (v: SplitItem) => void)({ ...blankSplit })}
 			>
-				+ Add split
+				+ Split across categories
 			</Button>
 		</div>
 	);
@@ -322,17 +379,26 @@ export function AddTransactionModal({
 					</Button>
 				)}
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-md">
+			<DialogContent
+				className="sm:max-w-md max-sm:flex max-sm:flex-col"
+				onOpenAutoFocus={(e) => {
+					e.preventDefault();
+					setFocus(amountField(txType) as never);
+				}}
+			>
 				<DialogHeader>
 					<DialogTitle className="flex items-center justify-between">
 						New Transaction
-						<kbd className="hidden md:inline-flex items-center rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+						<kbd
+							aria-hidden
+							className="mr-8 hidden items-center rounded border border-border bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground md:inline-flex"
+						>
 							N
 						</kbd>
 					</DialogTitle>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+				<form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col gap-4">
 					<Tabs value={txType} onValueChange={handleTabChange} className="w-full">
 						<TabsList className="w-full">
 							<TabsTrigger value="expense" className="flex-1">
@@ -345,24 +411,15 @@ export function AddTransactionModal({
 								Transfer
 							</TabsTrigger>
 						</TabsList>
+					</Tabs>
 
-						<TabsContent value="expense" className="space-y-4">
-							<div className="space-y-2">
-								<Label>Account</Label>
-								<AccountSelect
-									control={control as never}
-									name="walletId"
-									accounts={wallets}
-									placeholder="Select account"
-									error={(errs.walletId as { message?: string })?.message}
-								/>
-							</div>
+					{amountHero}
+
+					{txType === "expense" && (
+						<>
 							{renderSplitRows(expenseCategories)}
-						</TabsContent>
-
-						<TabsContent value="income" className="space-y-4">
 							<div className="space-y-2">
-								<Label>Account</Label>
+								<Label>Paid from</Label>
 								<AccountSelect
 									control={control as never}
 									name="walletId"
@@ -371,80 +428,55 @@ export function AddTransactionModal({
 									error={(errs.walletId as { message?: string })?.message}
 								/>
 							</div>
-							{renderSplitRows(incomeCategories)}
-						</TabsContent>
+						</>
+					)}
 
-						<TabsContent value="transfer" className="space-y-4">
+					{txType === "income" && (
+						<>
+							{renderSplitRows(incomeCategories)}
 							<div className="space-y-2">
-								<Label>From Account</Label>
+								<Label>Received in</Label>
+								<AccountSelect
+									control={control as never}
+									name="walletId"
+									accounts={wallets}
+									placeholder="Select account"
+									error={(errs.walletId as { message?: string })?.message}
+								/>
+							</div>
+						</>
+					)}
+
+					{txType === "transfer" && (
+						<>
+							<div className="space-y-2">
+								<Label>From</Label>
 								<AccountSelect
 									control={control as never}
 									name="fromWalletId"
 									accounts={wallets}
-									placeholder="Select source wallet"
+									placeholder="Select source account"
 									error={(errs.fromWalletId as { message?: string })?.message}
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label>To Account</Label>
+								<Label>To</Label>
 								<AccountSelect
 									control={control as never}
 									name="toWalletId"
 									accounts={wallets}
-									placeholder="Select destination wallet"
+									placeholder="Select destination account"
 									error={(errs.toWalletId as { message?: string })?.message}
 								/>
-							</div>
-							<div className="space-y-2">
-								<Label>Amount</Label>
-								<div className="flex gap-2">
-									<Input
-										type="number"
-										step="0.01"
-										placeholder="0.00"
-										className="flex-1"
-										{...(register as (name: string, opts?: object) => object)("amount", {
-											valueAsNumber: true,
-										})}
-									/>
-									<Controller
-										control={control as never}
-										name="currency"
-										render={({
-											field,
-										}: { field: { onChange: (v: string) => void; value: string } }) => (
-											<Select onValueChange={field.onChange} value={field.value ?? defaultCurrency}>
-												<SelectTrigger className="w-[90px]">
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent>
-													{CURRENCIES.map((c) => (
-														<SelectItem key={c} value={c}>
-															{c}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										)}
-									/>
-								</div>
-								{(errs.amount as { message?: string })?.message && (
-									<p className="text-destructive text-[0.8rem]">
-										{(errs.amount as { message?: string }).message}
-									</p>
-								)}
 							</div>
 							{showReceived && (
 								<div className="space-y-2">
 									<Label htmlFor="add-received">Received ({toCurrencyCode})</Label>
 									<Input
 										id="add-received"
-										type="number"
-										step="0.01"
+										{...amountInputProps}
 										placeholder="Blank = convert at the day's rate"
-										{...(register as (name: string, opts?: object) => object)("received", {
-											setValueAs: (v: string) => (v === "" ? undefined : Number(v)),
-										})}
+										{...registerAny("received", { setValueAs: parseAmount })}
 									/>
 									{(errs.received as { message?: string })?.message && (
 										<p className="text-destructive text-[0.8rem]">
@@ -453,8 +485,8 @@ export function AddTransactionModal({
 									)}
 								</div>
 							)}
-						</TabsContent>
-					</Tabs>
+						</>
+					)}
 
 					<div className="space-y-2">
 						<Label htmlFor="add-description">Description</Label>
@@ -493,11 +525,17 @@ export function AddTransactionModal({
 						/>
 					</div>
 
-					<div className="flex justify-end gap-2 pt-2">
-						<Button type="button" variant="outline" onClick={() => setOpen(false)}>
+					{/* Phones: actions sit at the bottom of the full-screen sheet, in thumb reach. */}
+					<div className="mt-auto flex justify-end gap-2 pt-2 max-sm:sticky max-sm:bottom-0 max-sm:-mx-6 max-sm:-mb-6 max-sm:border-t max-sm:bg-background max-sm:px-6 max-sm:py-4">
+						<Button
+							type="button"
+							variant="outline"
+							className="max-sm:flex-1"
+							onClick={() => setOpen(false)}
+						>
 							Cancel
 						</Button>
-						<Button type="submit" disabled={isSubmitting} className="gap-1.5">
+						<Button type="submit" disabled={isSubmitting} className="gap-1.5 max-sm:flex-1">
 							{isSubmitting && <Spinner />}
 							{isSubmitting ? "Saving…" : "Save"}
 						</Button>
