@@ -42,6 +42,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	cn,
 } from "@seikatsu/ui";
 import { format } from "date-fns";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -247,21 +248,24 @@ export function TransactionTable({
 					? `No transactions in ${accountFilterName ?? "this account"} yet`
 					: "No transactions match these filters";
 
+	// Money in reads "+", money out "−"; transfers between own accounts carry no sign.
 	function renderAmount(txn: RecentTransaction) {
-		if (txn.currency && txn.currency !== currency) {
-			return (
-				<div className="text-right tabular-nums">
-					<p className="font-medium">{formatCurrency(Number(txn.amount), txn.currency)}</p>
-					<p className="text-xs text-muted-foreground">
-						≈ {formatCurrency(Number(txn.baseAmount), currency)}
-					</p>
-				</div>
-			);
-		}
+		const flow = txn.fromAccountType === "INCOME" ? 1 : txn.toAccountType === "EXPENSE" ? -1 : 0;
+		const signed = (value: string, cur: string) => {
+			const n = Math.abs(Number(value));
+			const text = formatCurrency(flow < 0 ? -n : n, cur);
+			return flow > 0 ? `+${text}` : text;
+		};
+		const isForeign = txn.currency && txn.currency !== currency;
 		return (
-			<span className="font-medium tabular-nums">
-				{formatCurrency(Number(txn.baseAmount), currency)}
-			</span>
+			<div className="text-right tabular-nums">
+				<p className={cn("font-medium", flow > 0 && "text-green-500")}>
+					{isForeign ? signed(txn.amount, txn.currency) : signed(txn.baseAmount, currency)}
+				</p>
+				{isForeign && (
+					<p className="text-xs text-muted-foreground">≈ {signed(txn.baseAmount, currency)}</p>
+				)}
+			</div>
 		);
 	}
 
