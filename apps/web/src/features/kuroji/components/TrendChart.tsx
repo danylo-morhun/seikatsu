@@ -2,6 +2,7 @@
 
 import { startNavigationProgress } from "@/components/NavigationProgress";
 import type { MonthlyTrend } from "@/features/kuroji/actions/trends";
+import { formatCompactNumber, monthTickLabels } from "@/features/kuroji/lib/format";
 import { ChartBarLineIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -50,6 +51,7 @@ export function TrendChart({ data, currency, trendParam, hasDateFilter }: Props)
 	}
 
 	const formatted = data.map((d) => ({ ...d, label: d.month.slice(0, 7) }));
+	const monthTick = monthTickLabels(formatted.map((d) => d.label));
 
 	return (
 		<Card>
@@ -83,18 +85,18 @@ export function TrendChart({ data, currency, trendParam, hasDateFilter }: Props)
 					<ChartContainer config={chartConfig} className="h-[220px] w-full">
 						<BarChart data={formatted} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
 							<CartesianGrid vertical={false} strokeDasharray="3 3" />
-							<XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+							<XAxis
+								dataKey="label"
+								tickLine={false}
+								axisLine={false}
+								tick={{ fontSize: 11 }}
+								tickFormatter={monthTick}
+							/>
 							<YAxis
 								tickLine={false}
 								axisLine={false}
 								tick={{ fontSize: 11 }}
-								tickFormatter={(v) =>
-									new Intl.NumberFormat("en", {
-										notation: "compact",
-										currency,
-										style: "currency",
-									}).format(v)
-								}
+								tickFormatter={formatCompactNumber}
 							/>
 							<ChartTooltip content={<ChartTooltipContent />} />
 							<ChartLegend content={<ChartLegendContent />} />
