@@ -85,7 +85,11 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 						<>
 							<DateRangePicker />
 							<span className="hidden md:contents">
-								<AddTransactionModal workspaceId={workspaceId} baseCurrency={baseCurrency} />
+								<AddTransactionModal
+									workspaceId={workspaceId}
+									baseCurrency={baseCurrency}
+									shortcut
+								/>
 							</span>
 						</>
 					)}

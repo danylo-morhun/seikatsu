@@ -50,10 +50,13 @@ export function AddTransactionModal({
 	workspaceId,
 	baseCurrency,
 	trigger,
+	shortcut = false,
 }: {
 	workspaceId: string;
 	baseCurrency: string;
 	trigger?: React.ReactNode;
+	/** Own the global "N" shortcut. Exactly one mounted instance should, or N opens several. */
+	shortcut?: boolean;
 }) {
 	const [open, setOpen] = React.useState(false);
 	const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>([]);
@@ -119,6 +122,7 @@ export function AddTransactionModal({
 		txType === "transfer" && !!toCurrencyCode && toCurrencyCode !== watchCurrency;
 
 	React.useEffect(() => {
+		if (!shortcut) return;
 		function onKeyDown(e: KeyboardEvent) {
 			if (open) return;
 			const target = e.target as HTMLElement;
@@ -131,7 +135,7 @@ export function AddTransactionModal({
 		}
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [open]);
+	}, [open, shortcut]);
 
 	const resetToType = (type: TxType) => {
 		const base = { description: undefined, currency: defaultCurrency, date: today };
