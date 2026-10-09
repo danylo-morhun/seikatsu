@@ -8,7 +8,7 @@ import { AccountActivityChart } from "@/features/kuroji/components/AccountActivi
 import { AccountEditButton } from "@/features/kuroji/components/AccountEditButton";
 import { BudgetMeter } from "@/features/kuroji/components/BudgetMeter";
 import { TransactionTable } from "@/features/kuroji/components/TransactionTable";
-import { displayBalance } from "@/features/kuroji/lib/balance";
+import { accountScope, displayBalance } from "@/features/kuroji/lib/balance";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { asOfLabel, resolvePeriod } from "@/features/kuroji/lib/period";
 import type { TransactionFilters } from "@/features/kuroji/lib/transaction-filters";
@@ -60,15 +60,13 @@ export default async function AccountDetailPage({
 	const nativeBalance = displayBalance(account.type, Number(row?.nativeBalance ?? 0));
 	const isForeign = account.currency !== workspace.baseCurrency;
 	const subAccounts = balances.filter((b) => b.parentId === id);
-	const rolledUpIds = subAccounts
-		.filter((b) => !b.hidden && b.type === account.type)
-		.map((b) => b.accountId);
-	const rolledUp = rolledUpIds.length;
+	const scope = accountScope(id, account.type, balances);
+	const rolledUp = scope.length - 1;
 	// The list covers what the balance covers: this period, this account and its rolled-up subs.
 	const filters: TransactionFilters = {
 		from: period.from,
 		to: period.to,
-		accountIds: [id, ...rolledUpIds],
+		accountIds: scope,
 		q,
 	};
 	const txResult = await getRecentTransactions(workspace.id, filters, page);
