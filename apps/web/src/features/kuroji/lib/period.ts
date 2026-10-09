@@ -37,3 +37,9 @@ export function resolvePeriod(
 		label: buildPeriodLabel(from, to, isAllTime),
 	};
 }
+
+/** When asset/liability balances are measured: the period end, or "Now" once it reaches today. */
+export function asOfLabel(to: string | undefined, today: string) {
+	if (!to || to >= today) return "Now";
+	return `As of ${format(parseLocal(to), "d MMM yyyy")}`;
+}

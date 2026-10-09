@@ -68,7 +68,10 @@ interface Props {
 	currency: string;
 	workspaceId: string;
 	accounts: Account[];
+	/** Range income and expense totals cover. */
 	periodLabel: string;
+	/** Point in time asset and liability balances are measured at. */
+	asOfLabel?: string;
 	hideHeader?: boolean;
 	listMode?: boolean;
 }
@@ -163,7 +166,8 @@ export function AccountsOverview({
 	currency,
 	workspaceId,
 	accounts,
-	periodLabel: _periodLabel,
+	periodLabel,
+	asOfLabel,
 	hideHeader = false,
 	listMode = false,
 }: Props) {
@@ -360,8 +364,13 @@ export function AccountsOverview({
 				return (
 					<div key={type}>
 						<div className="mb-2 flex items-baseline justify-between">
-							<p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-								{TYPE_LABELS[type]}
+							<p className="text-xs text-muted-foreground">
+								<span className="font-semibold uppercase tracking-wide">{TYPE_LABELS[type]}</span>
+								{!listMode && (
+									<span className="ml-2">
+										{type === "ASSET" || type === "LIABILITY" ? asOfLabel : periodLabel}
+									</span>
+								)}
 							</p>
 							{!listMode && visibleParents.length > 0 && (
 								<p
