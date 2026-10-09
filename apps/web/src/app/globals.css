@@ -57,86 +57,92 @@
 	--font-figures: var(--figures-font);
 }
 
+/* ── World: Kakeibo ─────────────────────────────────────────────────────────
+   The household account book. Ink on dark paper, ruled lines, figures written in a
+   book face. Red ink is spent only on a deficit; receipts are entered in indigo;
+   a total is closed with the bookkeeper's double rule.
+   ─────────────────────────────────────────────────────────────────────────── */
 :root {
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.145 0 0);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: oklch(0.565 0.225 20);
-	--primary-foreground: oklch(0.985 0.005 20);
-	--secondary: oklch(0.967 0.001 286.375);
-	--secondary-foreground: oklch(0.21 0.006 285.885);
-	--muted: oklch(0.97 0 0);
-	--muted-foreground: oklch(0.556 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
-	--destructive: oklch(0.62 0.22 42);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: oklch(0.565 0.225 20);
-	--chart-1: oklch(0.87 0.07 20);
-	--chart-2: oklch(0.75 0.14 20);
-	--chart-3: oklch(0.63 0.2 20);
-	--chart-4: oklch(0.565 0.225 20);
-	--chart-5: oklch(0.44 0.18 20);
-	--radius: 0.625rem;
-	--sidebar: oklch(0.985 0 0);
-	--sidebar-foreground: oklch(0.145 0 0);
-	--sidebar-primary: oklch(0.63 0.2 20);
-	--sidebar-primary-foreground: oklch(0.985 0.005 20);
-	--sidebar-accent: oklch(0.97 0 0);
-	--sidebar-accent-foreground: oklch(0.205 0 0);
-	--sidebar-border: oklch(0.922 0 0);
-	--sidebar-ring: oklch(0.565 0.225 20);
-	--surface: oklch(0.975 0 0);
-	--surface-2: oklch(0.95 0 0);
-	--rule: oklch(0.9 0 0);
-	--positive: oklch(0.55 0.15 150);
-	--negative: oklch(0.55 0.2 27);
-	--flow: oklch(0.6 0 0);
-	--figures-font: var(--font-sans);
+	--radius: 0.25rem;
+	--background: oklch(0.975 0.004 95);
+	--foreground: oklch(0.19 0.005 95);
+	--card: oklch(0.985 0.003 95);
+	--card-foreground: oklch(0.19 0.005 95);
+	--popover: oklch(0.985 0.003 95);
+	--popover-foreground: oklch(0.19 0.005 95);
+	--primary: oklch(0.42 0.11 255);
+	--primary-foreground: oklch(0.98 0.005 95);
+	--secondary: oklch(0.94 0.004 95);
+	--secondary-foreground: oklch(0.22 0.005 95);
+	--muted: oklch(0.94 0.004 95);
+	--muted-foreground: oklch(0.46 0.006 95);
+	--accent: oklch(0.94 0.004 95);
+	--accent-foreground: oklch(0.19 0.005 95);
+	--destructive: oklch(0.52 0.2 28);
+	--border: oklch(0.19 0.005 95 / 14%);
+	--input: oklch(0.19 0.005 95 / 22%);
+	--ring: oklch(0.42 0.11 255);
+	--chart-1: oklch(0.42 0.11 255);
+	--chart-2: oklch(0.3 0.005 95);
+	--chart-3: oklch(0.55 0.006 95);
+	--chart-4: oklch(0.52 0.2 28);
+	--chart-5: oklch(0.7 0.004 95);
+	--sidebar: oklch(0.955 0.004 95);
+	--sidebar-foreground: oklch(0.19 0.005 95);
+	--sidebar-primary: oklch(0.42 0.11 255);
+	--sidebar-primary-foreground: oklch(0.98 0.005 95);
+	--sidebar-accent: oklch(0.92 0.005 95);
+	--sidebar-accent-foreground: oklch(0.19 0.005 95);
+	--sidebar-border: oklch(0.19 0.005 95 / 12%);
+	--sidebar-ring: oklch(0.42 0.11 255);
+	--surface: oklch(0.955 0.004 95);
+	--surface-2: oklch(0.925 0.005 95);
+	--rule: oklch(0.19 0.005 95 / 12%);
+	--positive: oklch(0.42 0.11 255);
+	--negative: oklch(0.52 0.2 28);
+	--flow: oklch(0.19 0.005 95 / 45%);
+	--figures-font: var(--font-ledger);
 }
 
 .dark {
-	--background: oklch(0.145 0 0);
-	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.205 0 0);
-	--card-foreground: oklch(0.985 0 0);
-	--popover: oklch(0.205 0 0);
-	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(0.65 0.22 20);
-	--primary-foreground: oklch(0.985 0.005 20);
-	--secondary: oklch(0.274 0.006 286.033);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.269 0 0);
-	--muted-foreground: oklch(0.708 0 0);
-	--accent: oklch(0.269 0 0);
-	--accent-foreground: oklch(0.985 0 0);
-	--destructive: oklch(0.75 0.2 42);
-	--border: oklch(1 0 0 / 10%);
-	--input: oklch(1 0 0 / 15%);
-	--ring: oklch(0.65 0.22 20);
-	--chart-1: oklch(0.87 0.07 20);
-	--chart-2: oklch(0.75 0.14 20);
-	--chart-3: oklch(0.63 0.2 20);
-	--chart-4: oklch(0.565 0.225 20);
-	--chart-5: oklch(0.44 0.18 20);
-	--sidebar: oklch(0.205 0 0);
-	--sidebar-foreground: oklch(0.985 0 0);
-	--sidebar-primary: oklch(0.72 0.18 20);
-	--sidebar-primary-foreground: oklch(0.985 0.005 20);
-	--sidebar-accent: oklch(0.269 0 0);
-	--sidebar-accent-foreground: oklch(0.985 0 0);
-	--sidebar-border: oklch(1 0 0 / 10%);
-	--sidebar-ring: oklch(0.65 0.22 20);
-	--surface: oklch(0.18 0 0);
-	--surface-2: oklch(0.22 0 0);
-	--rule: oklch(1 0 0 / 9%);
-	--positive: oklch(0.74 0.15 150);
-	--negative: oklch(0.7 0.18 27);
-	--flow: oklch(0.6 0 0);
+	--background: oklch(0.155 0.003 95);
+	--foreground: oklch(0.925 0.008 90);
+	--card: oklch(0.185 0.003 95);
+	--card-foreground: oklch(0.925 0.008 90);
+	--popover: oklch(0.19 0.003 95);
+	--popover-foreground: oklch(0.925 0.008 90);
+	--primary: oklch(0.74 0.09 250);
+	--primary-foreground: oklch(0.15 0.02 255);
+	--secondary: oklch(0.22 0.003 95);
+	--secondary-foreground: oklch(0.925 0.008 90);
+	--muted: oklch(0.22 0.003 95);
+	--muted-foreground: oklch(0.68 0.006 90);
+	--accent: oklch(0.22 0.003 95);
+	--accent-foreground: oklch(0.925 0.008 90);
+	--destructive: oklch(0.66 0.19 28);
+	--border: oklch(0.925 0.008 90 / 11%);
+	--input: oklch(0.925 0.008 90 / 17%);
+	--ring: oklch(0.74 0.09 250);
+	--chart-1: oklch(0.74 0.09 250);
+	--chart-2: oklch(0.925 0.008 90);
+	--chart-3: oklch(0.6 0.006 90);
+	--chart-4: oklch(0.66 0.19 28);
+	--chart-5: oklch(0.45 0.005 90);
+	--sidebar: oklch(0.135 0.003 95);
+	--sidebar-foreground: oklch(0.9 0.008 90);
+	--sidebar-primary: oklch(0.74 0.09 250);
+	--sidebar-primary-foreground: oklch(0.15 0.02 255);
+	--sidebar-accent: oklch(0.2 0.003 95);
+	--sidebar-accent-foreground: oklch(0.925 0.008 90);
+	--sidebar-border: oklch(0.925 0.008 90 / 9%);
+	--sidebar-ring: oklch(0.74 0.09 250);
+	--surface: oklch(0.185 0.003 95);
+	--surface-2: oklch(0.225 0.003 95);
+	--rule: oklch(0.925 0.008 90 / 10%);
+	--positive: oklch(0.76 0.09 250);
+	--negative: oklch(0.67 0.19 28);
+	--flow: oklch(0.925 0.008 90 / 38%);
+	--figures-font: var(--font-ledger);
 }
 
 @layer base {
@@ -153,192 +159,99 @@
 	}
 }
 
-/* ── App themes ──────────────────────────────────────────────────────────────
-   Each app overrides --primary, --accent, --ring, and chart colors.
-   Background/foreground/border stay neutral so the UI feels cohesive.
+/* ── App inks ────────────────────────────────────────────────────────────────
+   Each app writes in its own ink. Red is never an app colour: it means a deficit.
    ─────────────────────────────────────────────────────────────────────────── */
 
-/* Kuroji — Gold (light) */
+/* Kuroji — ai (indigo), the ink receipts are entered in */
 .theme-kuroji {
-	--primary: oklch(0.72 0.2 78);
-	--primary-foreground: oklch(0.12 0.04 78);
-	--accent: oklch(0.94 0.05 80);
-	--accent-foreground: oklch(0.18 0.05 78);
-	--ring: oklch(0.72 0.2 78);
-
-	--chart-1: oklch(0.87 0.17 88);
-	--chart-2: oklch(0.78 0.18 83);
-	--chart-3: oklch(0.68 0.15 76);
-	--chart-4: oklch(0.58 0.12 70);
-	--chart-5: oklch(0.48 0.09 64);
+	--primary: oklch(0.42 0.11 255);
+	--ring: oklch(0.42 0.11 255);
 }
-
-/* Kuroji — Gold (dark) */
 .dark .theme-kuroji {
-	--primary: oklch(0.78 0.18 83);
-	--primary-foreground: oklch(0.1 0.03 83);
-	--accent: oklch(0.22 0.05 83);
-	--accent-foreground: oklch(0.95 0.04 83);
-	--ring: oklch(0.78 0.18 83);
-
-	--chart-1: oklch(0.87 0.17 88);
-	--chart-2: oklch(0.78 0.18 83);
-	--chart-3: oklch(0.68 0.15 76);
-	--chart-4: oklch(0.58 0.12 70);
-	--chart-5: oklch(0.48 0.09 64);
+	--primary: oklch(0.74 0.09 250);
+	--primary-foreground: oklch(0.15 0.02 255);
+	--ring: oklch(0.74 0.09 250);
 }
 
-/* Seiryu — Blue (light) */
+/* Seiryu — tokusa (horsetail green) */
 .theme-seiryu {
-	--primary: oklch(0.4 0.2 264);
-	--primary-foreground: oklch(0.97 0.01 264);
-	--accent: oklch(0.93 0.04 264);
-	--accent-foreground: oklch(0.18 0.06 264);
-	--ring: oklch(0.4 0.2 264);
-
-	--chart-1: oklch(0.82 0.09 264);
-	--chart-2: oklch(0.68 0.15 264);
-	--chart-3: oklch(0.55 0.18 264);
-	--chart-4: oklch(0.4 0.2 264);
-	--chart-5: oklch(0.28 0.14 264);
+	--primary: oklch(0.45 0.08 175);
+	--primary-foreground: oklch(0.98 0.005 175);
+	--ring: oklch(0.45 0.08 175);
 }
-
-/* Seiryu — Blue (dark) */
 .dark .theme-seiryu {
-	--primary: oklch(0.56 0.2 264);
-	--primary-foreground: oklch(0.97 0.01 264);
-	--accent: oklch(0.22 0.06 264);
-	--accent-foreground: oklch(0.95 0.03 264);
-	--ring: oklch(0.56 0.2 264);
-
-	--chart-1: oklch(0.82 0.09 264);
-	--chart-2: oklch(0.68 0.15 264);
-	--chart-3: oklch(0.55 0.18 264);
-	--chart-4: oklch(0.4 0.2 264);
-	--chart-5: oklch(0.28 0.14 264);
+	--primary: oklch(0.75 0.08 175);
+	--primary-foreground: oklch(0.15 0.02 175);
+	--ring: oklch(0.75 0.08 175);
 }
 
-/* Tsundoku — Teal (light) */
+/* Tsundoku — kuri (chestnut bookcloth) */
 .theme-tsundoku {
-	--primary: oklch(0.55 0.12 180);
-	--primary-foreground: oklch(0.98 0.01 180);
-	--accent: oklch(0.93 0.04 180);
-	--accent-foreground: oklch(0.2 0.05 180);
-	--ring: oklch(0.55 0.12 180);
-
-	--chart-1: oklch(0.82 0.09 180);
-	--chart-2: oklch(0.7 0.12 175);
-	--chart-3: oklch(0.6 0.13 185);
-	--chart-4: oklch(0.5 0.12 190);
-	--chart-5: oklch(0.4 0.1 195);
+	--primary: oklch(0.45 0.07 55);
+	--primary-foreground: oklch(0.98 0.005 55);
+	--ring: oklch(0.45 0.07 55);
 }
-
-/* Tsundoku — Teal (dark) */
 .dark .theme-tsundoku {
-	--primary: oklch(0.72 0.13 180);
-	--primary-foreground: oklch(0.12 0.03 180);
-	--accent: oklch(0.22 0.05 180);
-	--accent-foreground: oklch(0.95 0.03 180);
-	--ring: oklch(0.72 0.13 180);
-
-	--chart-1: oklch(0.82 0.11 180);
-	--chart-2: oklch(0.72 0.13 175);
-	--chart-3: oklch(0.62 0.13 185);
-	--chart-4: oklch(0.52 0.12 190);
-	--chart-5: oklch(0.42 0.1 195);
+	--primary: oklch(0.74 0.08 60);
+	--primary-foreground: oklch(0.15 0.02 55);
+	--ring: oklch(0.74 0.08 60);
 }
 
-/* Keizoku — Emerald (light) */
+/* Keizoku — wakatake (young bamboo) */
 .theme-keizoku {
-	--primary: oklch(0.6 0.15 150);
-	--primary-foreground: oklch(0.98 0.01 150);
-	--accent: oklch(0.93 0.05 150);
-	--accent-foreground: oklch(0.2 0.06 150);
-	--ring: oklch(0.6 0.15 150);
-
-	--chart-1: oklch(0.82 0.12 150);
-	--chart-2: oklch(0.7 0.15 145);
-	--chart-3: oklch(0.6 0.16 155);
-	--chart-4: oklch(0.5 0.14 160);
-	--chart-5: oklch(0.4 0.11 165);
+	--primary: oklch(0.48 0.1 145);
+	--primary-foreground: oklch(0.98 0.005 145);
+	--ring: oklch(0.48 0.1 145);
 }
-
-/* Keizoku — Emerald (dark) */
 .dark .theme-keizoku {
-	--primary: oklch(0.75 0.16 150);
-	--primary-foreground: oklch(0.12 0.03 150);
-	--accent: oklch(0.22 0.06 150);
-	--accent-foreground: oklch(0.95 0.04 150);
-	--ring: oklch(0.75 0.16 150);
-
-	--chart-1: oklch(0.82 0.12 150);
-	--chart-2: oklch(0.72 0.15 145);
-	--chart-3: oklch(0.62 0.16 155);
-	--chart-4: oklch(0.52 0.14 160);
-	--chart-5: oklch(0.42 0.11 165);
+	--primary: oklch(0.76 0.11 145);
+	--primary-foreground: oklch(0.15 0.02 145);
+	--ring: oklch(0.76 0.11 145);
 }
 
-/* Kyuu — Coral (light) */
+/* Kyuu — kohaku (amber) */
 .theme-kyuu {
-	--primary: oklch(0.62 0.19 35);
-	--primary-foreground: oklch(0.98 0.01 35);
-	--accent: oklch(0.93 0.05 35);
-	--accent-foreground: oklch(0.2 0.06 35);
-	--ring: oklch(0.62 0.19 35);
-
-	--chart-1: oklch(0.82 0.13 45);
-	--chart-2: oklch(0.72 0.17 38);
-	--chart-3: oklch(0.62 0.19 32);
-	--chart-4: oklch(0.52 0.16 26);
-	--chart-5: oklch(0.42 0.13 20);
+	--primary: oklch(0.55 0.12 75);
+	--primary-foreground: oklch(0.15 0.02 75);
+	--ring: oklch(0.55 0.12 75);
 }
-
-/* Kyuu — Coral (dark) */
 .dark .theme-kyuu {
-	--primary: oklch(0.72 0.18 35);
-	--primary-foreground: oklch(0.12 0.03 35);
-	--accent: oklch(0.22 0.06 35);
-	--accent-foreground: oklch(0.95 0.04 35);
-	--ring: oklch(0.72 0.18 35);
-
-	--chart-1: oklch(0.82 0.13 45);
-	--chart-2: oklch(0.74 0.17 38);
-	--chart-3: oklch(0.64 0.19 32);
-	--chart-4: oklch(0.54 0.16 26);
-	--chart-5: oklch(0.44 0.13 20);
+	--primary: oklch(0.8 0.12 80);
+	--primary-foreground: oklch(0.15 0.02 75);
+	--ring: oklch(0.8 0.12 80);
 }
 
-/* Aisha — Violet (light) */
+/* Aisha — fuji (wisteria) */
 .theme-aisha {
-	--primary: oklch(0.56 0.18 300);
-	--primary-foreground: oklch(0.98 0.01 300);
-	--accent: oklch(0.93 0.05 300);
-	--accent-foreground: oklch(0.2 0.06 300);
-	--ring: oklch(0.56 0.18 300);
-
-	--chart-1: oklch(0.82 0.1 300);
-	--chart-2: oklch(0.7 0.15 300);
-	--chart-3: oklch(0.6 0.18 300);
-	--chart-4: oklch(0.5 0.17 300);
-	--chart-5: oklch(0.4 0.14 300);
+	--primary: oklch(0.47 0.1 300);
+	--primary-foreground: oklch(0.98 0.005 300);
+	--ring: oklch(0.47 0.1 300);
+}
+.dark .theme-aisha {
+	--primary: oklch(0.74 0.09 300);
+	--primary-foreground: oklch(0.15 0.02 300);
+	--ring: oklch(0.74 0.09 300);
 }
 
-/* Aisha — Violet (dark) */
-.dark .theme-aisha {
-	--primary: oklch(0.72 0.16 300);
-	--primary-foreground: oklch(0.12 0.03 300);
-	--accent: oklch(0.22 0.06 300);
-	--accent-foreground: oklch(0.95 0.04 300);
-	--ring: oklch(0.72 0.16 300);
+/* ── Kakeibo signatures ────────────────────────────────────────────────────── */
 
-	--chart-1: oklch(0.82 0.1 300);
-	--chart-2: oklch(0.72 0.15 300);
-	--chart-3: oklch(0.62 0.18 300);
-	--chart-4: oklch(0.52 0.17 300);
-	--chart-5: oklch(0.42 0.14 300);
+/* A total is closed the way a bookkeeper closes it: a double rule under the figure. */
+[data-total] {
+	display: inline-block;
+	padding-bottom: 0.15rem;
+	border-bottom: 3px double color-mix(in oklch, var(--foreground) 55%, transparent);
 }
 
 /* Signature: the flow line between a transaction's two accounts ends in a small head. */
+/* Kakeibo: a ledger's leader dots run from one account to the other. */
+.flow-line {
+	height: 0;
+	width: 2.25rem;
+	background: none;
+	border-top: 1.5px dotted var(--flow);
+}
+
 .flow-line::after {
 	content: "";
 	position: absolute;
