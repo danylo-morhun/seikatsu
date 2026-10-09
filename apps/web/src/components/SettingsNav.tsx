@@ -53,9 +53,7 @@ export function SettingsNav() {
 
 			{/* Desktop: left sidebar */}
 			<nav className="hidden sm:block w-48 shrink-0 border-r border-border px-3 py-6">
-				<p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-					Account
-				</p>
+				<p className="mb-1 px-2 text-xs font-medium text-muted-foreground">Account</p>
 				<ul className="mb-4 space-y-0.5">
 					{ACCOUNT_LINKS.map(({ href, label, icon }) => (
 						<li key={href}>
@@ -75,9 +73,7 @@ export function SettingsNav() {
 					))}
 				</ul>
 
-				<p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-					Apps
-				</p>
+				<p className="mb-1 px-2 text-xs font-medium text-muted-foreground">Apps</p>
 				<ul className="space-y-0.5">
 					{appLinks.map(({ href, label, icon }) => (
 						<li key={href}>

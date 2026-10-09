@@ -89,9 +89,7 @@ export function HomeGrid({ user }: Props) {
 
 				{/* Active apps */}
 				<section>
-					<h2 className="mb-4 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-						Apps
-					</h2>
+					<h2 className="mb-4 text-sm font-medium text-muted-foreground">Apps</h2>
 					<div className="grid gap-4 sm:grid-cols-2">
 						{Object.entries(APPS_CONFIG).map(([href, app]) => (
 							<Link
@@ -138,9 +136,7 @@ export function HomeGrid({ user }: Props) {
 
 				{/* Planned apps */}
 				<section className="mt-14">
-					<h2 className="mb-4 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-						Coming soon
-					</h2>
+					<h2 className="mb-4 text-sm font-medium text-muted-foreground">Coming soon</h2>
 					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 						{PLANNED_APPS.map((app) => (
 							<div
@@ -164,7 +160,7 @@ export function HomeGrid({ user }: Props) {
 								</div>
 
 								{/* Top-right Soon badge */}
-								<span className="absolute top-4 right-4 inline-flex rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+								<span className="absolute top-4 right-4 inline-flex rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
 									Soon
 								</span>
 
