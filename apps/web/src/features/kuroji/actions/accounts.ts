@@ -2,7 +2,16 @@
 
 import { auth } from "@/auth";
 import { getOwnedWorkspace } from "@/lib/session";
-import { accounts, and, db, eq, isNull, transactionEntries } from "@seikatsu/db";
+import {
+	accounts,
+	and,
+	db,
+	eq,
+	isNull,
+	or,
+	recurringTransactions,
+	transactionEntries,
+} from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 export async function getAccounts(workspaceId: string, opts?: { includeArchived?: boolean }) {
@@ -136,6 +145,21 @@ export async function deleteAccount(
 
 	if (entries.length > 0) {
 		return { error: "This account has transactions. Archive it instead to keep its history." };
+	}
+
+	const [recurring] = await db
+		.select({ id: recurringTransactions.id })
+		.from(recurringTransactions)
+		.where(
+			or(
+				eq(recurringTransactions.fromAccountId, accountId),
+				eq(recurringTransactions.toAccountId, accountId),
+			),
+		)
+		.limit(1);
+
+	if (recurring) {
+		return { error: "This account is used by a recurring payment. Delete or change it first." };
 	}
 
 	await db.delete(accounts).where(eq(accounts.id, accountId));
