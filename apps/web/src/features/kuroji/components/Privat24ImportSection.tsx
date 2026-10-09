@@ -103,7 +103,7 @@ export function Privat24ImportSection({
 				{isPending && <Spinner />}
 				{isPending ? "Importing…" : "Import statement"}
 			</Button>
-			<p className="text-xs text-muted-foreground">
+			<p className="max-w-prose text-xs text-muted-foreground">
 				Export from the Privat24 app: card → Виписка → save as Excel. Import your oldest statement
 				first so the opening balance is set correctly; re-importing the same file is safe
 				(duplicates are skipped). Categories are auto-assigned by your import rules.
