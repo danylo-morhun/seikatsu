@@ -79,21 +79,22 @@ export default async function AccountDetailPage({
 
 	const accountForEdit = allAccounts.find((a) => a.id === id);
 
-	// Back to the list the visitor came from, on the same period.
-	const backQuery = [
+	// Links out of this page (back to the list, into a sub-account) keep the period.
+	const periodParams = [
 		rawAll === "1" ? "all=1" : null,
 		rawAll !== "1" && rawFrom ? `from=${rawFrom}` : null,
 		rawAll !== "1" && rawTo ? `to=${rawTo}` : null,
 	]
 		.filter(Boolean)
-		.map((p) => `&${p}`)
-		.join("");
+		.join("&");
+	const withPeriod = (href: string) =>
+		periodParams ? `${href}${href.includes("?") ? "&" : "?"}${periodParams}` : href;
 
 	return (
 		<main className="px-4 pt-6 pb-28 sm:px-8 md:pt-8 md:pb-8">
 			<div className="mb-6">
 				<Link
-					href={`/kuroji?tab=accounts${backQuery}`}
+					href={withPeriod("/kuroji?tab=accounts")}
 					prefetch
 					className="text-sm text-muted-foreground hover:text-foreground"
 				>
@@ -159,7 +160,7 @@ export default async function AccountDetailPage({
 									return (
 										<li key={sub.accountId}>
 											<Link
-												href={`/kuroji/accounts/${sub.accountId}`}
+												href={withPeriod(`/kuroji/accounts/${sub.accountId}`)}
 												prefetch
 												className="flex items-center justify-between gap-3 py-2.5 text-sm hover:bg-surface"
 											>
