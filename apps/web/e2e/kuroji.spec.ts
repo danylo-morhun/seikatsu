@@ -15,7 +15,7 @@ test("New Transaction adds an expense", async ({ page }) => {
 	await dialog.getByRole("button", { name: "Save" }).click();
 
 	await expect(dialog).toBeHidden();
-	await expect(page.getByRole("row").filter({ hasText: description })).toBeVisible();
+	await expect(page.getByRole("listitem").filter({ hasText: description })).toBeVisible();
 	await expect(
 		page.locator("header").getByRole("button", { name: "New Transaction" }),
 	).toBeEnabled();
