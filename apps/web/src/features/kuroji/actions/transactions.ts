@@ -6,6 +6,7 @@ import type { Leg } from "@/features/kuroji/lib/transaction-edit";
 import {
 	TRANSACTIONS_PAGE_SIZE,
 	type TransactionFilters,
+	clampPage,
 } from "@/features/kuroji/lib/transaction-filters";
 import { transactionOrder, transactionWhere } from "@/features/kuroji/lib/transaction-query";
 import { getOwnedWorkspace } from "@/lib/session";
@@ -422,7 +423,7 @@ export async function getRecentTransactions(
 	workspaceId: string,
 	filters: TransactionFilters,
 	page = 0,
-): Promise<{ rows: RecentTransaction[]; hasMore: boolean; total: number }> {
+): Promise<{ rows: RecentTransaction[]; hasMore: boolean; total: number; page: number }> {
 	const session = await auth();
 	if (!session?.user?.id) throw new Error("Unauthorized");
 
@@ -431,16 +432,21 @@ export async function getRecentTransactions(
 	if (!ws) throw new Error("Forbidden");
 
 	const where = transactionWhere(workspaceId, filters);
-	const [rows, [{ total }]] = await Promise.all([
+	const fetchPage = (p: number) =>
 		db.query.transactions.findMany({
 			where,
 			orderBy: transactionOrder(filters),
 			limit: TRANSACTIONS_PAGE_SIZE + 1,
-			offset: page * TRANSACTIONS_PAGE_SIZE,
+			offset: p * TRANSACTIONS_PAGE_SIZE,
 			with: { entries: { with: { account: true } }, transactionTags: { with: { tag: true } } },
-		}),
+		});
+	const [firstTry, [{ total }]] = await Promise.all([
+		fetchPage(page),
 		db.select({ total: count() }).from(transactions).where(where),
 	]);
+	// A page past the end (an old link, rows deleted since) shows the last page.
+	const shownPage = clampPage(page, total);
+	const rows = shownPage === page ? firstTry : await fetchPage(shownPage);
 
 	const hasMore = rows.length > TRANSACTIONS_PAGE_SIZE;
 	const page_rows = hasMore ? rows.slice(0, TRANSACTIONS_PAGE_SIZE) : rows;
@@ -448,6 +454,7 @@ export async function getRecentTransactions(
 	return {
 		hasMore,
 		total,
+		page: shownPage,
 		rows: page_rows.map((txn) => {
 			const fromEntries = txn.entries.filter((e) => Number(e.baseAmount) < 0);
 			const toEntries = txn.entries.filter((e) => Number(e.baseAmount) > 0);
