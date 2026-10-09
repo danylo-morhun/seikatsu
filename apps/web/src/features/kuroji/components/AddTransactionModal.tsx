@@ -421,10 +421,11 @@ export function AddTransactionModal({
 				type="button"
 				variant="ghost"
 				size="sm"
-				className="h-8 w-full text-xs text-muted-foreground hover:text-foreground"
+				className="h-8 gap-1.5 self-start px-1 text-xs text-muted-foreground hover:text-foreground"
 				onClick={() => (appendSplit as (v: SplitItem) => void)({ ...blankSplit })}
 			>
-				{isSplit ? "+ Add category" : "+ Split across categories"}
+				<HugeiconsIcon icon={Add01Icon} className="h-3.5 w-3.5" />
+				{isSplit ? "Add category" : "Split across categories"}
 			</Button>
 		</div>
 	);
@@ -585,9 +586,10 @@ export function AddTransactionModal({
 						<button
 							type="button"
 							onClick={() => setTagsOpen(true)}
-							className="self-start text-sm text-muted-foreground hover:text-foreground"
+							className="inline-flex items-center gap-1.5 self-start text-sm text-muted-foreground hover:text-foreground"
 						>
-							+ Add tags
+							<HugeiconsIcon icon={Add01Icon} className="h-3.5 w-3.5" />
+							Add tags
 						</button>
 					)}
 
