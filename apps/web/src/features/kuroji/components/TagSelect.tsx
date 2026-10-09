@@ -1,7 +1,10 @@
 "use client";
 
+import { Spinner } from "@/components/Spinner";
 import { createTag } from "@/features/kuroji/actions/tags";
 import type { Tag } from "@/features/kuroji/actions/tags";
+import { Add01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Input } from "@seikatsu/ui";
 import * as React from "react";
 
@@ -78,7 +81,6 @@ export function TagSelect({ workspaceId, tags, selectedIds, onToggle, onTagCreat
 			<div className="flex gap-1.5">
 				<Input
 					placeholder="New tag…"
-					className="h-7 text-xs"
 					value={newName}
 					onChange={(e) => setNewName(e.target.value)}
 					onKeyDown={(e) => {
@@ -90,13 +92,13 @@ export function TagSelect({ workspaceId, tags, selectedIds, onToggle, onTagCreat
 				/>
 				<Button
 					type="button"
-					size="sm"
 					variant="outline"
-					className="h-7 px-2 text-xs"
+					className="gap-1.5"
 					disabled={creating || !newName.trim()}
 					onClick={handleCreate}
 				>
-					{creating ? "…" : "+ Tag"}
+					{creating ? <Spinner /> : <HugeiconsIcon icon={Add01Icon} className="h-4 w-4" />}
+					Tag
 				</Button>
 			</div>
 		</div>
