@@ -11,6 +11,7 @@ import { TransactionTable } from "@/features/kuroji/components/TransactionTable"
 import { displayBalance } from "@/features/kuroji/lib/balance";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { asOfLabel, resolvePeriod } from "@/features/kuroji/lib/period";
+import type { TransactionFilters } from "@/features/kuroji/lib/transaction-filters";
 import { getUserToday } from "@/lib/timezone";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
@@ -64,14 +65,13 @@ export default async function AccountDetailPage({
 		.map((b) => b.accountId);
 	const rolledUp = rolledUpIds.length;
 	// The list covers what the balance covers: this period, this account and its rolled-up subs.
-	const txResult = await getRecentTransactions(
-		workspace.id,
-		period.from,
-		period.to,
-		page,
-		[id, ...rolledUpIds],
+	const filters: TransactionFilters = {
+		from: period.from,
+		to: period.to,
+		accountIds: [id, ...rolledUpIds],
 		q,
-	);
+	};
+	const txResult = await getRecentTransactions(workspace.id, filters, page);
 
 	const budget = account.budget != null ? Number(account.budget) : null;
 	const showBudget = !isStock && budget != null && budget > 0;
