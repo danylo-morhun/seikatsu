@@ -276,6 +276,20 @@ export async function deleteTransactions(
 	return { success: true, deleted: deleted.length };
 }
 
+/** Whether the workspace has recorded anything yet — the first-run welcome shows until it has. */
+export async function hasAnyTransactions(workspaceId: string): Promise<boolean> {
+	const session = await auth();
+	if (!session?.user?.id) throw new Error("Unauthorized");
+	const ws = await getOwnedWorkspace(workspaceId);
+	if (!ws) throw new Error("Forbidden");
+	const [row] = await db
+		.select({ id: transactions.id })
+		.from(transactions)
+		.where(eq(transactions.workspaceId, workspaceId))
+		.limit(1);
+	return !!row;
+}
+
 /**
  * Move transactions to another income/expense category. Only the category side changes,
  * so balances and the double-entry sum are untouched. Transactions split across several

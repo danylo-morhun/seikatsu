@@ -1,75 +1,74 @@
 "use client";
 
-import { AddAccountModal } from "@/features/kuroji/components/AddAccountModal";
 import { AddTransactionModal } from "@/features/kuroji/components/AddTransactionModal";
-import { Card, CardContent } from "@seikatsu/ui";
-
-const STEPS = [
-	{
-		num: 1,
-		title: "Add a wallet",
-		description: "Create a bank account, cash wallet, or credit card.",
-	},
-	{
-		num: 2,
-		title: "Add categories",
-		description: "Create income sources (e.g. Salary) and expense categories (e.g. Groceries).",
-	},
-	{
-		num: 3,
-		title: "Record a transaction",
-		description: "Log your first income or expense to see your dashboard come alive.",
-	},
-];
+import { Button } from "@seikatsu/ui";
+import Link from "next/link";
 
 interface Props {
 	workspaceId: string;
 	baseCurrency: string;
-	accountCount: number;
 }
 
-export function OnboardingCard({ workspaceId, baseCurrency, accountCount }: Props) {
-	const step = accountCount === 0 ? 1 : accountCount < 3 ? 2 : 3;
+const STEPS = [
+	{
+		title: "Record what you spent today",
+		body: "Amount first, then the category and the account it came from. Kuroji remembers them for next time.",
+	},
+	{
+		title: "Make the accounts yours",
+		body: "Rename the starters, add your cards and the categories you actually use.",
+		href: "/settings/kuroji?section=accounts",
+		cta: "Edit accounts",
+	},
+	{
+		title: "Let the bank fill it in",
+		body: "Connect a bank or import a statement; rules file transactions into categories.",
+		href: "/settings/kuroji?section=banks",
+		cta: "Banks & import",
+	},
+];
 
+/**
+ * First run. The workspace already has starter accounts, so there is nothing to set up
+ * before the first entry: lead with recording one, and point at the rest.
+ */
+export function OnboardingCard({ workspaceId, baseCurrency }: Props) {
 	return (
-		<Card className="border-dashed">
-			<CardContent className="py-10">
-				<div className="mx-auto max-w-md text-center">
-					<h2 className="mb-2 text-lg font-semibold">Welcome to Kuroji</h2>
-					<p className="mb-8 text-sm text-muted-foreground">
-						Follow these steps to set up your personal finance tracker.
-					</p>
+		<section aria-labelledby="welcome-title" className="max-w-2xl py-4 md:py-10">
+			<p className="text-sm text-muted-foreground">黒 Kuroji</p>
+			<h1 id="welcome-title" className="mt-1 text-2xl font-semibold md:text-3xl">
+				Your ledger is ready.
+			</h1>
+			<p className="mt-3 max-w-prose text-muted-foreground">
+				Every entry moves money from one account to another, so balances always add up. We set up a
+				wallet, a bank account, savings and a few everyday categories to start with.
+			</p>
+			<div className="mt-6">
+				<AddTransactionModal
+					workspaceId={workspaceId}
+					baseCurrency={baseCurrency}
+					trigger={<Button size="lg">Record your first transaction</Button>}
+				/>
+			</div>
 
-					<ol className="mb-8 space-y-4 text-left">
-						{STEPS.map((s) => (
-							<li key={s.num} className={`flex gap-3 ${s.num < step ? "opacity-40" : ""}`}>
-								<span
-									className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-										s.num === step
-											? "bg-primary text-primary-foreground"
-											: s.num < step
-												? "bg-muted text-muted-foreground"
-												: "border text-muted-foreground"
-									}`}
-								>
-									{s.num < step ? "✓" : s.num}
-								</span>
-								<div>
-									<p className="text-sm font-medium">{s.title}</p>
-									<p className="text-xs text-muted-foreground">{s.description}</p>
-								</div>
-							</li>
-						))}
-					</ol>
-
-					<div className="flex justify-center gap-3">
-						{step <= 2 && <AddAccountModal workspaceId={workspaceId} baseCurrency={baseCurrency} />}
-						{step === 3 && (
-							<AddTransactionModal workspaceId={workspaceId} baseCurrency={baseCurrency} />
+			<ol className="mt-12 divide-y divide-rule border-y border-rule">
+				{STEPS.map((step, i) => (
+					<li key={step.title} className="grid grid-cols-[2rem_minmax(0,1fr)_auto] gap-x-3 py-4">
+						<span className="font-figures text-sm text-muted-foreground">{i + 1}</span>
+						<span>
+							<span className="block text-sm font-medium">{step.title}</span>
+							<span className="mt-0.5 block text-sm text-muted-foreground">{step.body}</span>
+						</span>
+						{step.href && (
+							<Button asChild variant="ghost" size="sm" className="self-center">
+								<Link href={step.href} prefetch>
+									{step.cta}
+								</Link>
+							</Button>
 						)}
-					</div>
-				</div>
-			</CardContent>
-		</Card>
+					</li>
+				))}
+			</ol>
+		</section>
 	);
 }

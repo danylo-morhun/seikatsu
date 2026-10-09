@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { getAccounts } from "@/features/kuroji/actions/accounts";
 import { getBalances } from "@/features/kuroji/actions/balances";
 import { getTags } from "@/features/kuroji/actions/tags";
-import { getRecentTransactions } from "@/features/kuroji/actions/transactions";
+import { getRecentTransactions, hasAnyTransactions } from "@/features/kuroji/actions/transactions";
 import { getMonthlyTrends } from "@/features/kuroji/actions/trends";
 import { initializeWorkspace } from "@/features/kuroji/actions/workspace";
 import { AccountsOverview } from "@/features/kuroji/components/AccountsOverview";
@@ -83,7 +83,7 @@ export default async function KurojiPage({
 		const trendParam = rawTrend === "3m" || rawTrend === "1y" ? rawTrend : "6m";
 		const trendMonths = trendParam === "3m" ? 3 : trendParam === "1y" ? 12 : 6;
 
-		const [balances, trendData] = await Promise.all([
+		const [balances, trendData, started] = await Promise.all([
 			getBalances(workspace.id, from, to),
 			getMonthlyTrends(
 				workspace.id,
@@ -91,6 +91,7 @@ export default async function KurojiPage({
 				hasDateFilter ? to : undefined,
 				trendMonths,
 			),
+			hasAnyTransactions(workspace.id),
 		]);
 
 		const topLevel = (type: string, excludeOpeningBalance = false) =>
@@ -118,13 +119,9 @@ export default async function KurojiPage({
 
 		return (
 			<main className="flex flex-col pb-28 md:pb-0">
-				{balances.length === 0 ? (
-					<div className="px-4 py-6 sm:px-6">
-						<OnboardingCard
-							workspaceId={workspace.id}
-							baseCurrency={workspace.baseCurrency}
-							accountCount={0}
-						/>
+				{!started ? (
+					<div className="px-4 py-6 sm:px-8">
+						<OnboardingCard workspaceId={workspace.id} baseCurrency={workspace.baseCurrency} />
 					</div>
 				) : (
 					<div className="space-y-10 px-4 py-6 sm:px-8 md:py-8">
