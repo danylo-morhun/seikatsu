@@ -265,10 +265,23 @@
 [data-total="lead"]::after {
 	content: "";
 	display: block;
-	width: 2.5rem;
-	height: 1px;
-	margin-top: 0.75rem;
+	width: 4.5rem;
+	height: 2px;
+	margin-top: 0.875rem;
+	border-radius: 1px;
 	background: linear-gradient(90deg, var(--flow), transparent);
+}
+
+/* Native controls follow the theme: the date picker's glyph and popup stay in the lacquer. */
+.dark {
+	color-scheme: dark;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+	opacity: 0.55;
+	cursor: pointer;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+	opacity: 0.9;
 }
 
 /* Signature: the flow line between a transaction's two accounts ends in a small head. */
