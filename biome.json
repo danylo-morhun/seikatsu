@@ -48,6 +48,8 @@
 			".turbo",
 			"*.lock",
 			"graphify-out",
+			".claude",
+			".impeccable",
 			".playwright-mcp",
 			".vercel",
 			"test-results",
