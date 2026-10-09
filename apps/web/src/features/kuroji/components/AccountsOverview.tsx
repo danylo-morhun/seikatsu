@@ -341,7 +341,23 @@ export function AccountsOverview({
 				);
 				if (parents.length === 0 && !listMode) return null;
 
-				const typeAccounts = accounts.filter((a) => a.type === type);
+				// Settings list: parents first, each followed by its sub-accounts (depth for indent).
+				const ofType = accounts.filter((a) => a.type === type);
+				const ofTypeIds = new Set(ofType.map((a) => a.id));
+				const typeAccounts: (Account & { depth: number })[] = [];
+				const walk = (parentId: string | null, depth: number) => {
+					for (const a of ofType
+						.filter((x) =>
+							parentId === null
+								? !x.parentId || !ofTypeIds.has(x.parentId)
+								: x.parentId === parentId,
+						)
+						.sort((x, y) => x.name.localeCompare(y.name))) {
+						typeAccounts.push({ ...a, depth });
+						walk(a.id, depth + 1);
+					}
+				};
+				walk(null, 0);
 				if (listMode && typeAccounts.length === 0) return null;
 
 				const visibleParents = parents.filter(
@@ -393,8 +409,24 @@ export function AccountsOverview({
 								typeAccounts.map((acct) => {
 									const row = rowMap.get(acct.id);
 									return (
-										<div key={acct.id} className="flex items-center justify-between py-2.5 pl-1">
-											<span className="text-sm font-medium">{acct.name}</span>
+										<div
+											key={acct.id}
+											className="flex items-center justify-between gap-3 py-2.5 pl-1"
+											style={{ paddingLeft: `${0.25 + acct.depth * 1.25}rem` }}
+										>
+											<span
+												className={cn(
+													"min-w-0 truncate text-sm",
+													acct.depth > 0 ? "text-muted-foreground" : "font-medium",
+												)}
+											>
+												{acct.name}
+												{acct.name === "Opening Balance" && (
+													<span className="ml-2 text-xs font-normal text-muted-foreground">
+														System · balances your opening amounts, not a debt
+													</span>
+												)}
+											</span>
 											<div className="flex items-center gap-2">
 												{row && <BalanceDisplay row={row} acct={acct} currency={currency} />}
 												<AccountActions
