@@ -629,7 +629,12 @@ export function TransactionTable({
 					aria-label="Select all on this page"
 				/>
 				<span>{sortButton("date", "Date")}</span>
-				<span>From → To</span>
+				<span className="flex items-center gap-2">
+					From
+					<span aria-hidden className="flow-line relative h-px w-6 shrink-0 bg-flow" />
+					<span className="sr-only">to</span>
+					<span aria-hidden>To</span>
+				</span>
 				<span className="text-right">{sortButton("amount", "Amount")}</span>
 				<span />
 			</div>
@@ -646,14 +651,17 @@ export function TransactionTable({
 						return (
 							<section key={g.key} aria-label={g.label || undefined}>
 								{byDay && (
-									<header className="flex items-baseline justify-between border-b border-rule pt-4 pb-1.5 text-xs text-muted-foreground">
-										<span className="font-medium text-foreground/80">{g.label}</span>
-										{dayNet !== 0 && (
-											<span className={cn("font-figures", dayNet > 0 && "text-positive")}>
-												{dayNet > 0 ? "+" : ""}
-												{formatCurrency(dayNet, currency)}
-											</span>
-										)}
+									// Same columns as the rows, so the day's net sits in the amount column.
+									<header className="grid grid-cols-[minmax(0,1fr)_auto_2.25rem] items-baseline gap-x-3 border-b border-rule pt-4 pb-1.5 text-xs text-muted-foreground md:grid-cols-[1.25rem_minmax(0,1fr)_minmax(0,18rem)_8.5rem_2.25rem] md:gap-x-4">
+										<span className="font-medium text-foreground/80 md:col-span-3">{g.label}</span>
+										<span className={cn("text-right font-figures", dayNet > 0 && "text-positive")}>
+											{dayNet !== 0 && (
+												<>
+													{dayNet > 0 ? "+" : ""}
+													{formatCurrency(dayNet, currency)}
+												</>
+											)}
+										</span>
 									</header>
 								)}
 								<ul className="divide-y divide-rule">{g.rows.map(renderRow)}</ul>
