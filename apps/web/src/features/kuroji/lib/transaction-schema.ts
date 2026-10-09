@@ -75,3 +75,9 @@ export const addTransactionFormSchema = z.discriminatedUnion("txType", [
 ]);
 
 export type AddTransactionFormValues = z.infer<typeof addTransactionFormSchema>;
+
+export const DESCRIPTION_PLACEHOLDER: Record<TxType, string> = {
+	expense: "e.g. Weekly groceries",
+	income: "e.g. October salary",
+	transfer: "e.g. Card repayment",
+};
