@@ -35,8 +35,7 @@ const STEPS = [
 export function OnboardingCard({ workspaceId, baseCurrency }: Props) {
 	return (
 		<section aria-labelledby="welcome-title" className="max-w-2xl py-4 md:py-10">
-			<p className="text-sm text-muted-foreground">黒 Kuroji</p>
-			<h1 id="welcome-title" className="mt-1 text-2xl font-semibold md:text-3xl">
+			<h1 id="welcome-title" className="text-2xl font-semibold md:text-3xl">
 				Your ledger is ready.
 			</h1>
 			<p className="mt-3 max-w-prose text-muted-foreground">
