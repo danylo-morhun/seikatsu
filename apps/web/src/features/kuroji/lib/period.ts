@@ -43,3 +43,15 @@ export function asOfLabel(to: string | undefined, today: string) {
 	if (!to || to >= today) return "Now";
 	return `As of ${format(parseLocal(to), "d MMM yyyy")}`;
 }
+
+/** Query string carrying the picked period to another Kuroji page, e.g. `?from=…&to=…`. */
+export function periodQuery(params: URLSearchParams) {
+	const qs = new URLSearchParams();
+	if (params.get("all") === "1") qs.set("all", "1");
+	for (const key of ["from", "to"]) {
+		const value = params.get(key);
+		if (value && !qs.has("all")) qs.set(key, value);
+	}
+	const s = qs.toString();
+	return s ? `?${s}` : "";
+}
