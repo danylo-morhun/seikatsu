@@ -1,6 +1,5 @@
 "use client";
 
-import { startNavigationProgress } from "@/components/NavigationProgress";
 import {
 	archiveAccount,
 	deleteAccount,
@@ -12,6 +11,7 @@ import { AddAccountModal } from "@/features/kuroji/components/AddAccountModal";
 import { EditAccountModal } from "@/features/kuroji/components/EditAccountModal";
 import { displayBalance } from "@/features/kuroji/lib/balance";
 import { formatCurrency } from "@/features/kuroji/lib/format";
+import { periodQuery } from "@/features/kuroji/lib/period";
 import {
 	Alert01Icon,
 	Archive01Icon,
@@ -43,7 +43,7 @@ import {
 	cn,
 } from "@seikatsu/ui";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import * as React from "react";
 import { useTransition } from "react";
 import { toast } from "sonner";
@@ -171,7 +171,8 @@ export function AccountsOverview({
 	hideHeader = false,
 	listMode = false,
 }: Props) {
-	const router = useRouter();
+	const searchParams = useSearchParams();
+	const detailQuery = periodQuery(searchParams);
 	const [isPending, startTransition] = useTransition();
 	const [editTarget, setEditTarget] = React.useState<Account | null>(null);
 	const [confirmTarget, setConfirmTarget] = React.useState<{ id: string; name: string } | null>(
@@ -267,21 +268,18 @@ export function AccountsOverview({
 			<React.Fragment key={row.accountId}>
 				<div className={`flex flex-col ${isChild ? "bg-muted/30" : ""}`}>
 					<div
-						className={`flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-muted/40 transition-colors ${isChild ? "pl-8" : ""}`}
-						onClick={() => {
-							startNavigationProgress();
-							router.push(`/kuroji/accounts/${row.accountId}`);
-						}}
+						className={cn(
+							"relative flex items-center gap-2 px-3 py-2.5 hover:bg-muted/40 transition-colors",
+							isChild && "pl-8",
+						)}
 					>
 						{hasChildren ? (
 							<button
 								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									toggleExpand(row.accountId);
-								}}
-								className="shrink-0 text-muted-foreground/60 hover:text-foreground transition-colors"
-								aria-label={isExpanded ? "Collapse" : "Expand"}
+								onClick={() => toggleExpand(row.accountId)}
+								className="relative z-10 shrink-0 text-muted-foreground/60 hover:text-foreground transition-colors"
+								aria-label={isExpanded ? `Collapse ${row.name}` : `Expand ${row.name}`}
+								aria-expanded={isExpanded}
 							>
 								<HugeiconsIcon
 									icon={isExpanded ? ArrowDown01Icon : ArrowRight01Icon}
@@ -292,9 +290,16 @@ export function AccountsOverview({
 							<span className="w-3.5 shrink-0" />
 						)}
 
-						<span className="flex-1 min-w-0 text-sm font-medium truncate">{row.name}</span>
+						{/* Stretched link: the whole row navigates, the controls above it stay clickable. */}
+						<Link
+							href={`/kuroji/accounts/${row.accountId}${detailQuery}`}
+							prefetch
+							className="flex-1 min-w-0 truncate text-sm font-medium outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+						>
+							{row.name}
+						</Link>
 
-						<div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+						<div className="relative z-10 flex shrink-0 items-center gap-1">
 							<BalanceDisplay row={row} acct={acct} currency={currency} />
 							{!listMode && (
 								<AccountActions
