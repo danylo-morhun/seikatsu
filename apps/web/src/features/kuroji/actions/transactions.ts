@@ -20,7 +20,6 @@ import {
 	transactionEntries,
 	transactionTags,
 	transactions,
-	workspaces,
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
@@ -185,9 +184,8 @@ export async function createTransaction({
 		const specs = buildEntrySpecs(fromAccountId, toAccountId, amount, toSplits, fromSplits);
 		if (!specs) return { error: "Invalid transaction params" };
 
-		const [ws] = await db.select().from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1);
-		if (!ws) return { error: "Workspace not found" };
-		if (ws.userId !== session.user.id) return { error: "Forbidden" };
+		const ws = await getOwnedWorkspace(workspaceId);
+		if (!ws) return { error: "Forbidden" };
 
 		const allAccountIds = [...new Set(specs.map((s) => s.accountId))];
 		const validAccts = await db
@@ -393,8 +391,10 @@ export async function updateTransaction({
 
 	if (!txnRow) return { error: "Transaction not found" };
 
-	const [wsRows, fromRows, toRows] = await Promise.all([
-		db.select().from(workspaces).where(eq(workspaces.id, txnRow.workspaceId)).limit(1),
+	const workspace = await getOwnedWorkspace(txnRow.workspaceId);
+	if (!workspace) return { error: "Forbidden" };
+
+	const [fromRows, toRows] = await Promise.all([
 		db
 			.select()
 			.from(accounts)
@@ -407,8 +407,6 @@ export async function updateTransaction({
 			.limit(1),
 	]);
 
-	const workspace = wsRows[0];
-	if (!workspace || workspace.userId !== session.user.id) return { error: "Forbidden" };
 	if (!fromRows[0] || !toRows[0]) return { error: "Account not found" };
 
 	const entries = await buildEntries(
