@@ -127,29 +127,30 @@ export function DateRangePicker() {
 
 	return (
 		<Popover open={open} onOpenChange={handleOpenChange}>
-			<PopoverTrigger asChild>
-				<Button
-					variant="outline"
-					size="icon"
-					className="h-8 w-8 md:w-auto md:px-3 md:gap-2 font-normal"
-				>
-					<HugeiconsIcon icon={Calendar01Icon} className="h-4 w-4 shrink-0 opacity-70" />
-					<span className="hidden md:inline">{label}</span>
-					{hasFilter && (
-						<span
-							role="button"
-							aria-label="Clear date filter"
-							className="hidden md:inline ml-0.5 rounded opacity-50 hover:opacity-100"
-							onClick={(e) => {
-								e.stopPropagation();
-								push(undefined, undefined);
-							}}
-						>
-							<HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
-						</span>
-					)}
-				</Button>
-			</PopoverTrigger>
+			{/* The period always shows — on phones too — since every number on the page depends on it. */}
+			<div className="flex min-w-0 items-center">
+				<PopoverTrigger asChild>
+					<Button
+						variant="outline"
+						className={cn("h-8 min-w-0 gap-2 px-2.5 font-normal", hasFilter && "rounded-r-none")}
+						aria-label={`Period: ${label}. Change period`}
+					>
+						<HugeiconsIcon icon={Calendar01Icon} className="h-4 w-4 shrink-0 opacity-70" />
+						<span className="truncate">{label}</span>
+					</Button>
+				</PopoverTrigger>
+				{hasFilter && (
+					<Button
+						variant="outline"
+						size="icon"
+						className="h-8 w-8 shrink-0 rounded-l-none border-l-0 text-muted-foreground hover:text-foreground"
+						aria-label="Reset period to this month"
+						onClick={() => push(undefined, undefined)}
+					>
+						<HugeiconsIcon icon={Cancel01Icon} className="h-3.5 w-3.5" />
+					</Button>
+				)}
+			</div>
 			<PopoverContent
 				className="w-[min(420px,calc(100vw-1rem))] p-0"
 				align="end"
@@ -193,9 +194,11 @@ export function DateRangePicker() {
 					<div className="flex flex-col p-3">
 						<p className="mb-2 text-xs font-medium text-muted-foreground">Custom range</p>
 						<div className="mb-3 flex w-full items-center gap-2">
-							<span
+							<button
+								type="button"
+								aria-pressed={picking === "from"}
 								className={cn(
-									"flex-1 cursor-pointer rounded-md border px-2 py-1 text-center text-sm transition-colors",
+									"flex-1 rounded-md border px-2 py-1 text-center text-sm transition-colors",
 									picking === "from"
 										? "border-primary bg-primary/10 text-foreground"
 										: localFrom
@@ -205,11 +208,13 @@ export function DateRangePicker() {
 								onClick={() => setPicking("from")}
 							>
 								{localFrom ? format(parseLocal(localFrom), "MMM d, yyyy") : "Start date"}
-							</span>
+							</button>
 							<span className="shrink-0 text-xs text-muted-foreground">–</span>
-							<span
+							<button
+								type="button"
+								aria-pressed={picking === "to"}
 								className={cn(
-									"flex-1 cursor-pointer rounded-md border px-2 py-1 text-center text-sm transition-colors",
+									"flex-1 rounded-md border px-2 py-1 text-center text-sm transition-colors",
 									picking === "to"
 										? "border-primary bg-primary/10 text-foreground"
 										: localTo
@@ -219,7 +224,7 @@ export function DateRangePicker() {
 								onClick={() => setPicking("to")}
 							>
 								{localTo ? format(parseLocal(localTo), "MMM d, yyyy") : "End date"}
-							</span>
+							</button>
 						</div>
 						<Calendar
 							className="mx-auto"
