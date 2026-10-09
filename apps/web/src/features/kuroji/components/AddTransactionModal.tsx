@@ -5,6 +5,7 @@ import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import { createTransaction } from "@/features/kuroji/actions/transactions";
 import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
 import { TagSelect } from "@/features/kuroji/components/TagSelect";
+import { readCaptureMemory, rememberCapture } from "@/features/kuroji/lib/capture-memory";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
 import { addTagToFormOptions, useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { formatCurrency } from "@/features/kuroji/lib/format";
@@ -230,8 +231,19 @@ export function AddTransactionModal({
 			return;
 		}
 
+		rememberCapture(
+			workspaceId,
+			values.txType === "transfer"
+				? { type: "transfer", fromId: values.fromWalletId, toId: values.toWalletId }
+				: {
+						type: values.txType,
+						walletId: values.walletId,
+						categoryIds: values.splits.map((s) => s.categoryId),
+					},
+		);
 		toast.success("Transaction recorded.");
-		setOpen(false);
+		// Through onOpenChange so the next capture starts from a clean form.
+		onOpenChange(false);
 	};
 
 	const wallets = accounts.filter((a) => a.type === "ASSET" || a.type === "LIABILITY");
@@ -251,6 +263,24 @@ export function AddTransactionModal({
 		placeholder: "0,00",
 	};
 	const isSplit = txType !== "transfer" && typedSplitFields.length > 1;
+
+	// Start where the last capture left off: same paying account, recent categories at hand.
+	const [memory, setMemory] = React.useState<ReturnType<typeof readCaptureMemory>>({});
+	React.useEffect(() => {
+		if (!open || accounts.length === 0) return;
+		const mem = readCaptureMemory(workspaceId);
+		setMemory(mem);
+		const has = (id: string | undefined) => !!id && accounts.some((a) => a.id === id);
+		if (txType === "transfer") {
+			if (has(mem.transfer?.from) && !getValues("fromWalletId" as never))
+				setValue("fromWalletId" as never, mem.transfer!.from as never);
+			if (has(mem.transfer?.to) && !getValues("toWalletId" as never))
+				setValue("toWalletId" as never, mem.transfer!.to as never);
+		} else if (has(mem.wallet?.[txType]) && !getValues("walletId" as never)) {
+			setValue("walletId" as never, mem.wallet![txType] as never);
+		}
+	}, [open, txType, accounts, workspaceId, getValues, setValue]);
+	const watchCategoryId = watch("splits.0.categoryId" as never) as unknown as string | undefined;
 	// Back to one category: the amount field takes over whatever the remaining row holds.
 	React.useEffect(() => {
 		if (isSplit) return;
@@ -324,6 +354,29 @@ export function AddTransactionModal({
 	const renderSplitRows = (categories: Account[]) => (
 		<div className="space-y-2">
 			<Label>{isSplit ? "Categories" : "Category"}</Label>
+			{!isSplit && txType !== "transfer" && (memory.recent?.[txType]?.length ?? 0) > 0 && (
+				<div className="flex flex-wrap gap-1.5">
+					{(memory.recent?.[txType] ?? [])
+						.map((id) => categories.find((c) => c.id === id))
+						.filter((c): c is Account => !!c)
+						.map((c) => (
+							<button
+								key={c.id}
+								type="button"
+								aria-pressed={watchCategoryId === c.id}
+								onClick={() =>
+									setValue("splits.0.categoryId" as never, c.id as never, { shouldValidate: true })
+								}
+								className={cn(
+									"rounded-full border border-rule px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground",
+									watchCategoryId === c.id && "border-primary/60 bg-primary/10 text-foreground",
+								)}
+							>
+								{c.name}
+							</button>
+						))}
+				</div>
+			)}
 
 			{typedSplitFields.map((field, index) => (
 				<div key={field.id} className="flex items-start gap-2">
