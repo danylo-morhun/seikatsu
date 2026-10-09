@@ -1,7 +1,9 @@
 "use server";
 
 import { auth } from "@/auth";
+import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
 import { getOwnedWorkspace } from "@/lib/session";
+import { getUserToday } from "@/lib/timezone";
 import { accounts, and, db, eq, isNull, sql, transactionEntries, transactions } from "@seikatsu/db";
 
 export type AccountBalance = {
@@ -73,12 +75,43 @@ export async function getBalances(
 			accounts.hiddenFromDashboard,
 		);
 
+	// Foreign-currency assets/liabilities are worth their native balance at the period-end
+	// rate, not the sum of historical base amounts (that would leave FX residue on an
+	// emptied account). Income/expense keep transaction-date values.
+	// Clamp to today: a future date would cache today's rate under that date for good.
+	const today = await getUserToday();
+	const rateDate = to && to < today ? to : today;
+	const foreign = [
+		...new Set(
+			rows
+				.filter(
+					(r) => (r.type === "ASSET" || r.type === "LIABILITY") && r.currency !== ws.baseCurrency,
+				)
+				.map((r) => r.currency),
+		),
+	];
+	const rates = new Map(
+		await Promise.all(
+			foreign.map(async (cur) => {
+				try {
+					return [cur, await getExchangeRate(cur, ws.baseCurrency, rateDate)] as const;
+				} catch {
+					return [cur, null] as const;
+				}
+			}),
+		),
+	);
+
 	// Roll up children's baseAmount into parent balance
-	const mutable = rows.map((r) => ({
-		...r,
-		balance: Number(r.balance),
-		nativeBalance: Number(r.nativeBalance),
-	}));
+	const mutable = rows.map((r) => {
+		const rate = rates.get(r.currency);
+		const nativeBalance = Number(r.nativeBalance);
+		return {
+			...r,
+			balance: rate != null ? nativeBalance * rate : Number(r.balance),
+			nativeBalance,
+		};
+	});
 	const byId = new Map(mutable.map((r) => [r.accountId, r]));
 	for (const row of mutable) {
 		if (!row.parentId || row.hidden) continue;
