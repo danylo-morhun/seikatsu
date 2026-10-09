@@ -247,6 +247,66 @@ export function TransactionTable({
 					? `No transactions in ${accountFilterName ?? "this account"} yet`
 					: "No transactions match these filters";
 
+	function renderAmount(txn: RecentTransaction) {
+		if (txn.currency && txn.currency !== currency) {
+			return (
+				<div className="text-right tabular-nums">
+					<p className="font-medium">{formatCurrency(Number(txn.amount), txn.currency)}</p>
+					<p className="text-xs text-muted-foreground">
+						≈ {formatCurrency(Number(txn.baseAmount), currency)}
+					</p>
+				</div>
+			);
+		}
+		return (
+			<span className="font-medium tabular-nums">
+				{formatCurrency(Number(txn.baseAmount), currency)}
+			</span>
+		);
+	}
+
+	function renderActions(txn: RecentTransaction) {
+		return (
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+						<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
+						<span className="sr-only">Actions for {txn.description ?? "transaction"}</span>
+					</Button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="end">
+					<DropdownMenuItem onSelect={() => setEditTarget(txn)}>
+						<HugeiconsIcon icon={PencilEdit01Icon} className="mr-2 h-4 w-4" />
+						Edit
+					</DropdownMenuItem>
+					<DropdownMenuSeparator />
+					<DropdownMenuItem
+						className="text-destructive focus:text-destructive"
+						onSelect={() => setPendingId(txn.id)}
+					>
+						<HugeiconsIcon icon={Delete01Icon} className="mr-2 h-4 w-4" />
+						Delete
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
+		);
+	}
+
+	const emptyState = (
+		<div className="px-4 py-12 text-center">
+			<p className="text-sm font-medium">{emptyMessage}</p>
+			{isFirstUse ? (
+				<p className="mt-1 text-sm text-muted-foreground">
+					Use New Transaction to record your first one.
+				</p>
+			) : (
+				<div className="mt-4">
+					<PeriodEmptyActions from={dateFrom} to={dateTo} />
+				</div>
+			)}
+		</div>
+	);
+
 	return (
 		<section>
 			<div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
@@ -358,17 +418,8 @@ export function TransactionTable({
 					<TableBody>
 						{transactions.length === 0 ? (
 							<TableRow>
-								<TableCell colSpan={7} className="py-12 text-center whitespace-normal">
-									<p className="text-sm font-medium">{emptyMessage}</p>
-									{isFirstUse ? (
-										<p className="mt-1 text-sm text-muted-foreground">
-											Use New Transaction to record your first one.
-										</p>
-									) : (
-										<div className="mt-4">
-											<PeriodEmptyActions from={dateFrom} to={dateTo} />
-										</div>
-									)}
+								<TableCell colSpan={7} className="p-0 whitespace-normal">
+									{emptyState}
 								</TableCell>
 							</TableRow>
 						) : (
@@ -423,80 +474,8 @@ export function TransactionTable({
 											{txn.toAccount}
 										</button>
 									</TableCell>
-									<TableCell className="text-right">
-										{txn.currency && txn.currency !== currency ? (
-											<div>
-												<p className="font-mono font-medium">
-													{formatCurrency(Number(txn.amount), txn.currency)}
-												</p>
-												<p className="text-xs text-muted-foreground tabular-nums">
-													≈ {formatCurrency(Number(txn.baseAmount), currency)}
-												</p>
-											</div>
-										) : (
-											<span className="font-mono font-medium">
-												{formatCurrency(Number(txn.baseAmount), currency)}
-											</span>
-										)}
-									</TableCell>
-									<TableCell>
-										<AlertDialog
-											open={pendingId === txn.id}
-											onOpenChange={(open) => !open && setPendingId(null)}
-										>
-											<DropdownMenu>
-												<DropdownMenuTrigger asChild>
-													<Button variant="ghost" size="icon" className="h-8 w-8">
-														<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
-														<span className="sr-only">Open menu</span>
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent align="end">
-													<DropdownMenuItem onSelect={() => setEditTarget(txn)}>
-														<HugeiconsIcon icon={PencilEdit01Icon} className="mr-2 h-4 w-4" />
-														Edit
-													</DropdownMenuItem>
-													<DropdownMenuSeparator />
-													<DropdownMenuItem
-														className="text-destructive focus:text-destructive"
-														onSelect={() => setPendingId(txn.id)}
-													>
-														<HugeiconsIcon icon={Delete01Icon} className="mr-2 h-4 w-4" />
-														Delete
-													</DropdownMenuItem>
-												</DropdownMenuContent>
-											</DropdownMenu>
-											<AlertDialogContent>
-												<AlertDialogHeader>
-													<AlertDialogTitle className="flex items-center gap-2">
-														<HugeiconsIcon
-															icon={Alert01Icon}
-															className="h-5 w-5 text-destructive"
-														/>
-														Delete transaction?
-													</AlertDialogTitle>
-													<AlertDialogDescription>
-														Your account balances will be updated. This action cannot be undone.
-													</AlertDialogDescription>
-												</AlertDialogHeader>
-												<AlertDialogFooter>
-													<AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-													<AlertDialogAction
-														className="gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-														disabled={isPending}
-														onClick={() => handleDelete(txn.id)}
-													>
-														{isPending ? (
-															<Spinner />
-														) : (
-															<HugeiconsIcon icon={Delete01Icon} className="h-4 w-4" />
-														)}
-														{isPending ? "Deleting…" : "Delete"}
-													</AlertDialogAction>
-												</AlertDialogFooter>
-											</AlertDialogContent>
-										</AlertDialog>
-									</TableCell>
+									<TableCell className="text-right">{renderAmount(txn)}</TableCell>
+									<TableCell>{renderActions(txn)}</TableCell>
 								</TableRow>
 							))
 						)}
@@ -528,6 +507,31 @@ export function TransactionTable({
 					</Button>
 				</div>
 			)}
+
+			<AlertDialog open={pendingId !== null} onOpenChange={(open) => !open && setPendingId(null)}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle className="flex items-center gap-2">
+							<HugeiconsIcon icon={Alert01Icon} className="h-5 w-5 text-destructive" />
+							Delete transaction?
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							Your account balances will be updated. This action cannot be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							className="gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							disabled={isPending}
+							onClick={() => pendingId && handleDelete(pendingId)}
+						>
+							{isPending ? <Spinner /> : <HugeiconsIcon icon={Delete01Icon} className="h-4 w-4" />}
+							{isPending ? "Deleting…" : "Delete"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 
 			<AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
 				<AlertDialogContent>
