@@ -2,6 +2,7 @@
 
 import { Spinner } from "@/components/Spinner";
 import { type getAccounts, updateAccount } from "@/features/kuroji/actions/accounts";
+import { parentError } from "@/features/kuroji/lib/account-parent";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { parseAmount } from "@/features/kuroji/lib/transaction-schema";
@@ -82,7 +83,7 @@ export function EditAccountModal({ account, workspaceId, open, onOpenChange }: P
 
 	const onSubmit = async (values: FormValues) => {
 		try {
-			await updateAccount(account.id, {
+			const result = await updateAccount(account.id, {
 				name: values.name,
 				type: values.type,
 				currency: values.currency,
@@ -90,6 +91,10 @@ export function EditAccountModal({ account, workspaceId, open, onOpenChange }: P
 				budget:
 					values.type === "EXPENSE" || values.type === "INCOME" ? (values.budget ?? null) : null,
 			});
+			if ("error" in result) {
+				toast.error(result.error);
+				return;
+			}
 			toast.success("Account updated");
 			onOpenChange(false);
 		} catch {
@@ -97,7 +102,7 @@ export function EditAccountModal({ account, workspaceId, open, onOpenChange }: P
 		}
 	};
 
-	const parentOptions = accounts.filter((a) => a.id !== account.id);
+	const parentOptions = accounts.filter((a) => !parentError(account.id, a.id, accounts));
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
