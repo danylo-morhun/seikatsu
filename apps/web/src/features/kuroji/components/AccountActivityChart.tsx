@@ -28,7 +28,7 @@ export function AccountActivityChart({ data, currency }: Props) {
 	return (
 		<Card>
 			<CardHeader className="pb-2">
-				<CardTitle className="text-base">Monthly Activity</CardTitle>
+				<CardTitle className="text-base">Last 6 months</CardTitle>
 			</CardHeader>
 			<CardContent>
 				{data.length === 0 ? (
