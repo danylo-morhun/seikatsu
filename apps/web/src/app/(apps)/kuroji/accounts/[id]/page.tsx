@@ -6,6 +6,7 @@ import { getRecentTransactions } from "@/features/kuroji/actions/transactions";
 import { initializeWorkspace } from "@/features/kuroji/actions/workspace";
 import { AccountActivityChart } from "@/features/kuroji/components/AccountActivityChart";
 import { AccountEditButton } from "@/features/kuroji/components/AccountEditButton";
+import { BudgetMeter } from "@/features/kuroji/components/BudgetMeter";
 import { TransactionTable } from "@/features/kuroji/components/TransactionTable";
 import { displayBalance } from "@/features/kuroji/lib/balance";
 import { formatCurrency } from "@/features/kuroji/lib/format";
@@ -75,8 +76,6 @@ export default async function AccountDetailPage({
 	const budget = account.budget != null ? Number(account.budget) : null;
 	const showBudget = !isStock && budget != null && budget > 0;
 	const used = Math.max(balance, 0);
-	const pct = showBudget ? Math.min((used / budget) * 100, 100) : null;
-	const overBudget = showBudget && used > budget;
 
 	const accountForEdit = allAccounts.find((a) => a.id === id);
 
@@ -127,35 +126,17 @@ export default async function AccountDetailPage({
 				)}
 			</div>
 
-			{showBudget && pct !== null && (
-				<section aria-label="Budget" className="mb-10">
-					<div className="mb-2 flex items-baseline justify-between gap-3 text-sm">
-						<span className="font-medium">{account.type === "EXPENSE" ? "Budget" : "Target"}</span>
-						<span
-							className={cn(
-								"font-figures",
-								overBudget && account.type === "EXPENSE"
-									? "text-negative"
-									: "text-muted-foreground",
-							)}
-						>
-							{formatCurrency(used, workspace.baseCurrency)} of{" "}
-							{formatCurrency(budget!, workspace.baseCurrency)}
-						</span>
-					</div>
-					<span aria-hidden className="relative block h-1.5 rounded-full bg-surface-2">
-						<span
-							className={cn(
-								"absolute inset-y-0 left-0 rounded-full",
-								overBudget
-									? account.type === "EXPENSE"
-										? "bg-negative"
-										: "bg-positive"
-									: "bg-primary/80",
-							)}
-							style={{ width: `${pct}%` }}
-						/>
-					</span>
+			{showBudget && (
+				<section aria-label={account.type === "EXPENSE" ? "Budget" : "Target"} className="mb-10">
+					<p className="mb-2 text-sm font-medium">
+						{account.type === "EXPENSE" ? "Budget" : "Target"}
+					</p>
+					<BudgetMeter
+						used={used}
+						limit={budget!}
+						kind={account.type === "EXPENSE" ? "budget" : "target"}
+						currency={workspace.baseCurrency}
+					/>
 				</section>
 			)}
 
