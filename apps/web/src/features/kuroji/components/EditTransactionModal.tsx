@@ -11,6 +11,7 @@ import {
 	DESCRIPTION_PLACEHOLDER,
 	type TransactionFormValues,
 	type TxType,
+	parseAmount,
 	transactionFormSchema,
 } from "@/features/kuroji/lib/transaction-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -251,11 +252,12 @@ export function EditTransactionModal({ transaction, workspaceId, open, onOpenCha
 						<div className="flex gap-2">
 							<Input
 								id="edit-amount"
-								type="number"
-								step="0.01"
-								placeholder="0.00"
-								className="flex-1"
-								{...register("amount", { valueAsNumber: true })}
+								type="text"
+								inputMode="decimal"
+								autoComplete="off"
+								placeholder="0,00"
+								className="flex-1 tabular-nums"
+								{...register("amount", { setValueAs: parseAmount })}
 							/>
 							<Controller
 								control={control as never}
@@ -289,12 +291,11 @@ export function EditTransactionModal({ transaction, workspaceId, open, onOpenCha
 							<Label htmlFor="edit-received">Received ({toCurrencyCode})</Label>
 							<Input
 								id="edit-received"
-								type="number"
-								step="0.01"
+								type="text"
+								inputMode="decimal"
+								autoComplete="off"
 								placeholder="Blank = convert at the day's rate"
-								{...register("received" as never, {
-									setValueAs: (v: string) => (v === "" ? undefined : Number(v)),
-								})}
+								{...register("received" as never, { setValueAs: parseAmount })}
 							/>
 							{errs.received && (
 								<p className="text-destructive text-[0.8rem]">{errs.received.message}</p>
