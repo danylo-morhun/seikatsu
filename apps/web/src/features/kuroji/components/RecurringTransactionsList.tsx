@@ -29,7 +29,8 @@ const FREQ_LABELS: Record<string, string> = {
 
 function fmtDate(iso: string) {
 	const [y, m, d] = iso.split("-").map(Number);
-	return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+	// Fixed locale: `undefined` differs between server and browser (hydration mismatch).
+	return new Date(y, m - 1, d).toLocaleDateString("en-US", {
 		month: "short",
 		day: "numeric",
 		year: "numeric",
