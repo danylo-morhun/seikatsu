@@ -397,6 +397,7 @@ export function AccountsOverview({
 							</h3>
 							{!listMode && visibleParents.length > 0 && (
 								<p
+									data-total
 									className={cn(
 										"font-figures text-base font-semibold",
 										typeTotal < 0 && "text-negative",

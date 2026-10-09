@@ -29,6 +29,7 @@ function Figure({
 		<div className="min-w-0 py-1">
 			<p className="text-xs text-muted-foreground">{label}</p>
 			<p
+				data-total={lead ? "lead" : undefined}
 				className={cn(
 					"mt-1 truncate font-figures font-semibold tracking-tight",
 					lead ? "text-3xl md:text-4xl" : "text-2xl md:text-[1.75rem]",
