@@ -8,21 +8,6 @@ const baseFields = {
 	date: z.string().min(1, "Date required"),
 };
 
-// Edit modal schemas — single category per transaction
-export const expenseSchema = z.object({
-	...baseFields,
-	txType: z.literal("expense"),
-	walletId: z.string().min(1, "Select a wallet"),
-	categoryId: z.string().min(1, "Select a category"),
-});
-
-export const incomeSchema = z.object({
-	...baseFields,
-	txType: z.literal("income"),
-	categoryId: z.string().min(1, "Select a category"),
-	walletId: z.string().min(1, "Select a wallet"),
-});
-
 export const transferSchema = z.object({
 	...baseFields,
 	txType: z.literal("transfer"),
@@ -32,16 +17,9 @@ export const transferSchema = z.object({
 	received: z.number().positive("Amount must be positive").optional(),
 });
 
-export const transactionFormSchema = z.discriminatedUnion("txType", [
-	expenseSchema,
-	incomeSchema,
-	transferSchema,
-]);
-
-export type TransactionFormValues = z.infer<typeof transactionFormSchema>;
 export type TxType = "expense" | "income" | "transfer";
 
-// Add modal schemas — split-capable (multiple categories per transaction)
+// Capture and edit form — split-capable (multiple categories per transaction)
 export const splitItemSchema = z.object({
 	categoryId: z.string().min(1, "Select a category"),
 	amount: z.number({ error: "Amount required" }).positive("Amount must be positive"),
