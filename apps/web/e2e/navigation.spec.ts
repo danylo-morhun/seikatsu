@@ -11,7 +11,7 @@ test("Kuroji tabs switch content", async ({ page }) => {
 
 	await tabs.getByRole("link", { name: "Transactions" }).click();
 	await expect(page).toHaveURL(/tab=transactions/);
-	await expect(page.getByRole("table")).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Transactions", level: 2 })).toBeVisible();
 
 	await tabs.getByRole("link", { name: "Expenses" }).click();
 	await expect(page).not.toHaveURL(/tab=/);
