@@ -32,7 +32,7 @@ function Figure({
 				data-total={lead ? "lead" : undefined}
 				className={cn(
 					"mt-1 truncate font-figures font-semibold tracking-tight",
-					lead ? "text-3xl md:text-4xl" : "text-2xl md:text-[1.75rem]",
+					lead ? "text-4xl md:text-5xl" : "text-xl md:text-2xl",
 					tone === "positive" && "text-positive",
 					tone === "negative" && "text-negative",
 				)}
