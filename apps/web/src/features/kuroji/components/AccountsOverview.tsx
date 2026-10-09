@@ -132,7 +132,9 @@ function BalanceDisplay({
 	const isMulti = acctCurrency !== currency;
 	const baseAmt = Math.abs(Number(row.balance));
 	const nativeAmt = Math.abs(Number(row.nativeBalance));
-	const isNeg = Number(row.balance) < 0;
+	// Income and liabilities are credit-normal (stored negative); flag only the abnormal sign.
+	const creditNormal = row.type === "INCOME" || row.type === "LIABILITY";
+	const isNeg = creditNormal ? Number(row.balance) > 0 : Number(row.balance) < 0;
 
 	return (
 		<span
