@@ -1,6 +1,7 @@
 "use client";
 
 import type { AccountActivity } from "@/features/kuroji/actions/account-detail";
+import { formatCompactNumber, monthTickLabels } from "@/features/kuroji/lib/format";
 import {
 	type ChartConfig,
 	ChartContainer,
@@ -23,6 +24,7 @@ interface Props {
 }
 
 export function AccountActivityChart({ data, currency }: Props) {
+	const monthTick = monthTickLabels(data.map((d) => d.month));
 	return (
 		<Card>
 			<CardHeader className="pb-2">
@@ -37,18 +39,18 @@ export function AccountActivityChart({ data, currency }: Props) {
 					<ChartContainer config={chartConfig} className="h-[200px] w-full">
 						<BarChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
 							<CartesianGrid vertical={false} strokeDasharray="3 3" />
-							<XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+							<XAxis
+								dataKey="month"
+								tickLine={false}
+								axisLine={false}
+								tick={{ fontSize: 11 }}
+								tickFormatter={monthTick}
+							/>
 							<YAxis
 								tickLine={false}
 								axisLine={false}
 								tick={{ fontSize: 11 }}
-								tickFormatter={(v) =>
-									new Intl.NumberFormat("en", {
-										notation: "compact",
-										currency,
-										style: "currency",
-									}).format(v)
-								}
+								tickFormatter={formatCompactNumber}
 							/>
 							<ChartTooltip content={<ChartTooltipContent />} />
 							<ChartLegend content={<ChartLegendContent />} />
