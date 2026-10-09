@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { parentError } from "@/features/kuroji/lib/account-parent";
 import { getOwnedWorkspace } from "@/lib/session";
 import {
 	accounts,
@@ -76,9 +77,9 @@ export async function updateAccount(
 		budget?: number | null;
 		currency?: string;
 	},
-) {
+): Promise<{ error: string } | { success: true }> {
 	const session = await auth();
-	if (!session?.user?.id) throw new Error("Unauthorized");
+	if (!session?.user?.id) return { error: "Unauthorized" };
 
 	const [existing] = await db
 		.select({ workspaceId: accounts.workspaceId })
@@ -86,13 +87,22 @@ export async function updateAccount(
 		.where(eq(accounts.id, accountId))
 		.limit(1);
 
-	if (!existing) throw new Error("Account not found");
+	if (!existing) return { error: "Account not found" };
 
 	const ws = await getOwnedWorkspace(existing.workspaceId);
 
-	if (!ws) throw new Error("Forbidden");
+	if (!ws) return { error: "Forbidden" };
 
-	const [account] = await db
+	if (data.parentId) {
+		const tree = await db
+			.select({ id: accounts.id, parentId: accounts.parentId })
+			.from(accounts)
+			.where(eq(accounts.workspaceId, ws.id));
+		const error = parentError(accountId, data.parentId, tree);
+		if (error) return { error };
+	}
+
+	await db
 		.update(accounts)
 		.set({
 			name: data.name,
@@ -102,11 +112,10 @@ export async function updateAccount(
 			...(data.currency ? { currency: data.currency } : {}),
 			updatedAt: new Date(),
 		})
-		.where(eq(accounts.id, accountId))
-		.returning();
+		.where(eq(accounts.id, accountId));
 
 	revalidatePath("/kuroji");
-	return account;
+	return { success: true };
 }
 
 export async function deleteAccount(

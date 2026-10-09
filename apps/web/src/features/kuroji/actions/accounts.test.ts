@@ -80,3 +80,37 @@ describe("deleteAccount", () => {
 		expect(await testDb.select().from(schema.accounts)).toHaveLength(1);
 	});
 });
+
+describe("updateAccount", () => {
+	beforeAll(async () => {
+		testDb ??= await createTestDb();
+	}, 30_000);
+
+	afterEach(async () => {
+		await testDb.delete(schema.accounts);
+		await testDb.delete(schema.workspaces);
+	});
+
+	it("refuses a sub-account as the new parent", async () => {
+		const { workspace, rent } = await seed();
+		const [flat] = await testDb
+			.insert(schema.accounts)
+			.values({
+				workspaceId: workspace.id,
+				name: "Flat",
+				type: "EXPENSE",
+				currency: "USD",
+				parentId: rent.id,
+			})
+			.returning();
+		const { updateAccount } = await import("./accounts");
+
+		const result = await updateAccount(rent.id, {
+			name: "Rent",
+			type: "EXPENSE",
+			parentId: flat.id,
+		});
+
+		expect(result).toEqual({ error: "An account can't sit under itself or its sub-accounts" });
+	});
+});
