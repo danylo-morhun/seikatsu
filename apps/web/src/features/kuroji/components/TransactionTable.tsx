@@ -15,7 +15,10 @@ import { TransactionFlow } from "@/features/kuroji/components/TransactionFlow";
 import { buildPeriodLabel, parseLocal } from "@/features/kuroji/lib/dates";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { formatCurrency } from "@/features/kuroji/lib/format";
-import type { TransactionFilters } from "@/features/kuroji/lib/transaction-filters";
+import {
+	TRANSACTIONS_PAGE_SIZE,
+	type TransactionFilters,
+} from "@/features/kuroji/lib/transaction-filters";
 import {
 	Alert01Icon,
 	Cancel01Icon,
@@ -252,7 +255,7 @@ export function TransactionTable({
 		});
 	}
 
-	const totalPages = Math.ceil(total / 10);
+	const totalPages = Math.ceil(total / TRANSACTIONS_PAGE_SIZE);
 
 	// Say why the list is empty: a search, a filter or a quiet period is not an empty ledger.
 	const periodLabel = dateFrom && dateTo ? buildPeriodLabel(dateFrom, dateTo) : null;
