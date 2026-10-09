@@ -5,6 +5,7 @@ import { createRecurringTransaction } from "@/features/kuroji/actions/recurring"
 import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
+import { parseAmount } from "@/features/kuroji/lib/transaction-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
@@ -136,11 +137,12 @@ export function AddRecurringModal({
 						<Label>Amount</Label>
 						<div className="flex gap-2">
 							<Input
-								type="number"
-								step="0.01"
-								placeholder="0.00"
+								type="text"
+								inputMode="decimal"
+								autoComplete="off"
+								placeholder="0,00"
 								className="flex-1"
-								{...register("amount", { valueAsNumber: true })}
+								{...register("amount", { setValueAs: parseAmount })}
 							/>
 							<Controller
 								control={control}
