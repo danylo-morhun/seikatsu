@@ -1,4 +1,13 @@
-import { endOfMonth, format, isSameDay, startOfMonth } from "date-fns";
+import {
+	addDays,
+	differenceInCalendarDays,
+	differenceInCalendarMonths,
+	endOfMonth,
+	format,
+	isSameDay,
+	startOfMonth,
+	subMonths,
+} from "date-fns";
 
 export function parseLocal(str: string): Date {
 	const [y, m, d] = str.split("-").map(Number);
@@ -26,4 +35,17 @@ export function buildPeriodLabel(
 			: `${format(f, "MMM yyyy")} – ${format(t, "MMM yyyy")}`;
 	}
 	return `${format(f, "MMM d")} – ${format(t, "MMM d, yyyy")}`;
+}
+
+/** The range of the same length just before `from`–`to`; whole months stay whole months. */
+export function previousRange(from: string, to: string): { from: string; to: string } {
+	const f = parseLocal(from);
+	const t = parseLocal(to);
+	const ymd = (d: Date) => format(d, "yyyy-MM-dd");
+	if (isSameDay(f, startOfMonth(f)) && isSameDay(t, endOfMonth(t))) {
+		const months = differenceInCalendarMonths(t, f) + 1;
+		return { from: ymd(subMonths(f, months)), to: ymd(endOfMonth(subMonths(t, months))) };
+	}
+	const days = differenceInCalendarDays(t, f) + 1;
+	return { from: ymd(addDays(f, -days)), to: ymd(addDays(t, -days)) };
 }
