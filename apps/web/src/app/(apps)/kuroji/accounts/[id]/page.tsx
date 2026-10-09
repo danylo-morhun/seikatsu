@@ -77,7 +77,7 @@ export default async function AccountDetailPage({
 	const accountForEdit = allAccounts.find((a) => a.id === id);
 
 	return (
-		<main className="px-4 py-6 sm:px-6">
+		<main className="px-4 pt-6 pb-28 sm:px-6 md:pb-6">
 			<div className="mb-6">
 				<Link href="/kuroji" className="text-sm text-muted-foreground hover:text-foreground">
 					← Back to dashboard
