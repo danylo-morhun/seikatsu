@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type AccountType, displayBalance, rollupRoots } from "./balance";
+import { type AccountType, accountScope, displayBalance, rollupRoots } from "./balance";
 
 describe("displayBalance", () => {
 	it("keeps debit-normal balances as stored", () => {
@@ -39,5 +39,34 @@ describe("rollupRoots", () => {
 	it("keeps a child filed under a parent of another type", () => {
 		const rows = [row("binance", "ASSET"), row("salary", "INCOME", "binance")];
 		expect(rollupRoots(rows).map((r) => r.accountId)).toEqual(["binance", "salary"]);
+	});
+});
+
+describe("accountScope", () => {
+	const row = (accountId: string, parentId: string | null, type: AccountType, hidden = false) => ({
+		accountId,
+		parentId,
+		type,
+		hidden,
+	});
+	const balances = [
+		row("bank", null, "ASSET"),
+		row("savings", "bank", "ASSET"),
+		row("old-card", "bank", "ASSET", true),
+		row("salary", "bank", "INCOME"),
+		row("food", null, "EXPENSE"),
+	];
+
+	it("is the account plus the visible same-type sub-accounts rolled into it", () => {
+		expect(accountScope("bank", "ASSET", balances)).toEqual(["bank", "savings"]);
+	});
+
+	it("is just the account when nothing rolls into it", () => {
+		expect(accountScope("food", "EXPENSE", balances)).toEqual(["food"]);
+		expect(accountScope("savings", "ASSET", balances)).toEqual(["savings"]);
+	});
+
+	it("keeps the account itself even when it is missing from the balances", () => {
+		expect(accountScope("archived", "ASSET", balances)).toEqual(["archived"]);
 	});
 });

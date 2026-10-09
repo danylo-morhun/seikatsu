@@ -27,3 +27,16 @@ export function rollupRoots<
 	const typeById = new Map(balances.map((b) => [b.accountId, b.type]));
 	return balances.filter((b) => !b.parentId || typeById.get(b.parentId) !== b.type);
 }
+
+/**
+ * The accounts an account's balance covers: itself plus the visible sub-accounts of
+ * its own type that roll into it. Its transaction list, export and chart use the same.
+ */
+export function accountScope(
+	accountId: string,
+	type: AccountType,
+	balances: { accountId: string; parentId: string | null; type: AccountType; hidden: boolean }[],
+): string[] {
+	const rolledUp = balances.filter((b) => b.parentId === accountId && !b.hidden && b.type === type);
+	return [accountId, ...rolledUp.map((b) => b.accountId)];
+}
