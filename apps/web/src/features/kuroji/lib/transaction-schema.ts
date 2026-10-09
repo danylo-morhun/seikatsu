@@ -81,3 +81,15 @@ export const DESCRIPTION_PLACEHOLDER: Record<TxType, string> = {
 	income: "e.g. October salary",
 	transfer: "e.g. Card repayment",
 };
+
+/**
+ * Amount text field → number for the schema. Accepts "12,50", "12.50" and grouped
+ * "1 234,50"; blank → undefined so the "Amount required" message shows.
+ */
+export function parseAmount(value: unknown): number | undefined {
+	if (typeof value === "number") return value;
+	const text = String(value ?? "")
+		.replace(/[\s  ]/g, "")
+		.replace(",", ".");
+	return text === "" ? undefined : Number(text);
+}
