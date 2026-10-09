@@ -371,7 +371,8 @@ export async function getRecentTransactions(
 	from: string | undefined,
 	to: string | undefined,
 	page = 0,
-	accountId?: string,
+	/** One account, or an account plus its sub-accounts. */
+	accountId?: string | string[],
 	q?: string,
 	sortField: SortField = "date",
 	sortDir: SortDir = "desc",
@@ -384,12 +385,14 @@ export async function getRecentTransactions(
 
 	if (!ws) throw new Error("Forbidden");
 
-	const accountSubquery = accountId
-		? db
-				.selectDistinct({ id: transactionEntries.transactionId })
-				.from(transactionEntries)
-				.where(eq(transactionEntries.accountId, accountId))
-		: undefined;
+	const accountIds = accountId === undefined ? [] : [accountId].flat();
+	const accountSubquery =
+		accountIds.length > 0
+			? db
+					.selectDistinct({ id: transactionEntries.transactionId })
+					.from(transactionEntries)
+					.where(inArray(transactionEntries.accountId, accountIds))
+			: undefined;
 
 	const tagSubquery = tagId
 		? db
