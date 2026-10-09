@@ -3,18 +3,24 @@
 import { startNavigationProgress } from "@/components/NavigationProgress";
 import { Spinner } from "@/components/Spinner";
 import { exportTransactionsCsv } from "@/features/kuroji/actions/export";
-import { deleteTransaction, deleteTransactions } from "@/features/kuroji/actions/transactions";
+import {
+	deleteTransaction,
+	deleteTransactions,
+	recategorizeTransactions,
+} from "@/features/kuroji/actions/transactions";
 import type { RecentTransaction } from "@/features/kuroji/actions/transactions";
 import { EditTransactionModal } from "@/features/kuroji/components/EditTransactionModal";
 import { PeriodEmptyActions } from "@/features/kuroji/components/PeriodEmptyActions";
 import { TransactionFlow } from "@/features/kuroji/components/TransactionFlow";
 import { buildPeriodLabel, parseLocal } from "@/features/kuroji/lib/dates";
+import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import {
 	Alert01Icon,
 	Cancel01Icon,
 	Delete01Icon,
 	Download01Icon,
+	Folder01Icon,
 	MoreHorizontalIcon,
 	PencilEdit01Icon,
 	Search01Icon,
@@ -35,7 +41,11 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuLabel,
 	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 	Input,
 	cn,
@@ -290,7 +300,42 @@ export function TransactionTable({
 		);
 	}
 
+	// Categories a transaction can be moved to: postable income/expense accounts.
+	const { accounts: formAccounts } = useFormOptions(workspaceId, selectedIds.size > 0);
+	const parentIds = new Set(formAccounts.map((a) => a.parentId).filter(Boolean));
+	const categoriesOf = (type: "EXPENSE" | "INCOME") =>
+		formAccounts
+			.filter((a) => a.type === type && !parentIds.has(a.id))
+			.sort((a, b) => a.name.localeCompare(b.name));
+	const categoryKind = (txn: RecentTransaction) =>
+		txn.splitCount > 1
+			? null
+			: txn.toAccountType === "EXPENSE"
+				? "EXPENSE"
+				: txn.fromAccountType === "INCOME"
+					? "INCOME"
+					: null;
+
+	function moveTo(ids: string[], categoryId: string) {
+		startTransition(async () => {
+			const result = await recategorizeTransactions(workspaceId, ids, categoryId);
+			if ("error" in result) {
+				toast.error(result.error);
+				return;
+			}
+			const { moved, skipped } = result.data;
+			if (skipped > 0) {
+				toast(`Moved ${moved}. ${skipped} skipped: split, transfer or another currency.`);
+			} else if (ids.length > 1) {
+				toast.success(`Moved ${moved} transactions.`);
+			}
+			setSelectedIds(new Set());
+		});
+	}
+
 	function renderActions(txn: RecentTransaction) {
+		const kind = categoryKind(txn);
+		const current = kind === "EXPENSE" ? txn.toAccountId : txn.fromAccountId;
 		return (
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
@@ -308,6 +353,25 @@ export function TransactionTable({
 						<HugeiconsIcon icon={PencilEdit01Icon} className="mr-2 h-4 w-4" />
 						Edit
 					</DropdownMenuItem>
+					{kind && (
+						<DropdownMenuSub>
+							<DropdownMenuSubTrigger>
+								<HugeiconsIcon icon={Folder01Icon} className="mr-2 h-4 w-4" />
+								Move to
+							</DropdownMenuSubTrigger>
+							<DropdownMenuSubContent className="max-h-80 overflow-y-auto">
+								{categoriesOf(kind).map((c) => (
+									<DropdownMenuItem
+										key={c.id}
+										disabled={c.id === current}
+										onSelect={() => moveTo([txn.id], c.id)}
+									>
+										{c.name}
+									</DropdownMenuItem>
+								))}
+							</DropdownMenuSubContent>
+						</DropdownMenuSub>
+					)}
 					<DropdownMenuSeparator />
 					<DropdownMenuItem
 						className="text-destructive focus:text-destructive"
@@ -485,9 +549,35 @@ export function TransactionTable({
 				</div>
 				<div className="flex items-center gap-2">
 					{selectedIds.size > 0 && (
-						<Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
-							Delete {selectedIds.size}
-						</Button>
+						<>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button variant="outline" size="sm" disabled={isPending}>
+										Move {selectedIds.size} to…
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end" className="max-h-96 w-56 overflow-y-auto">
+									{(["EXPENSE", "INCOME"] as const).map((type) => (
+										<div key={type}>
+											<DropdownMenuLabel className="text-xs text-muted-foreground">
+												{type === "EXPENSE" ? "Expenses" : "Income"}
+											</DropdownMenuLabel>
+											{categoriesOf(type).map((c) => (
+												<DropdownMenuItem
+													key={c.id}
+													onSelect={() => moveTo([...selectedIds], c.id)}
+												>
+													{c.name}
+												</DropdownMenuItem>
+											))}
+										</div>
+									))}
+								</DropdownMenuContent>
+							</DropdownMenu>
+							<Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
+								Delete {selectedIds.size}
+							</Button>
+						</>
 					)}
 					<form
 						role="search"
