@@ -8,6 +8,7 @@ import {
 import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import type { AccountBalance } from "@/features/kuroji/actions/balances";
 import { AddAccountModal } from "@/features/kuroji/components/AddAccountModal";
+import { BudgetMeter } from "@/features/kuroji/components/BudgetMeter";
 import { EditAccountModal } from "@/features/kuroji/components/EditAccountModal";
 import { displayBalance } from "@/features/kuroji/lib/balance";
 import { formatCurrency } from "@/features/kuroji/lib/format";
@@ -259,8 +260,6 @@ export function AccountsOverview({
 		const used = Math.max(displayBalance(row.type, Number(row.balance)), 0);
 		const showBudget =
 			(row.type === "EXPENSE" || row.type === "INCOME") && budget != null && budget > 0;
-		const pct = showBudget ? Math.min((used / budget!) * 100, 100) : null;
-		const overBudget = showBudget && used > budget!;
 		const isIncome = row.type === "INCOME";
 
 		return (
@@ -316,33 +315,14 @@ export function AccountsOverview({
 						</div>
 					</div>
 
-					{showBudget && pct !== null && (
-						// Budget as capacity: the bar fills its track; going over spills past the end.
-						<div
-							className={cn("flex items-center gap-3 pb-2.5", isChild ? "pl-7" : "pl-6.5", "pr-11")}
-						>
-							<span aria-hidden className="relative h-1 flex-1 rounded-full bg-surface-2">
-								<span
-									className={cn(
-										"absolute inset-y-0 left-0 rounded-full",
-										overBudget ? (isIncome ? "bg-positive" : "bg-negative") : "bg-primary/80",
-									)}
-									style={{ width: `${pct}%` }}
-								/>
-							</span>
-							<span
-								className={cn(
-									"shrink-0 font-figures text-xs",
-									overBudget && !isIncome ? "text-negative" : "text-muted-foreground",
-								)}
-							>
-								{overBudget && !isIncome
-									? `${formatCurrency(used - budget!, currency)} over ${formatCurrency(budget!, currency)}`
-									: overBudget
-										? `Target ${formatCurrency(budget!, currency)} reached`
-										: `${formatCurrency(budget! - used, currency)} left of ${formatCurrency(budget!, currency)}`}
-							</span>
-						</div>
+					{showBudget && (
+						<BudgetMeter
+							used={used}
+							limit={budget!}
+							kind={isIncome ? "target" : "budget"}
+							currency={currency}
+							className={cn("pb-2.5", isChild ? "pl-7" : "pl-6.5", "pr-11")}
+						/>
 					)}
 				</div>
 
