@@ -2,7 +2,7 @@
 
 import { Spinner } from "@/components/Spinner";
 import type { getAccounts } from "@/features/kuroji/actions/accounts";
-import { createTransaction } from "@/features/kuroji/actions/transactions";
+import { createTransaction, updateTransaction } from "@/features/kuroji/actions/transactions";
 import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
 import { TagSelect } from "@/features/kuroji/components/TagSelect";
 import { readCaptureMemory, rememberCapture } from "@/features/kuroji/lib/capture-memory";
@@ -48,23 +48,43 @@ import { toast } from "sonner";
 type Account = Awaited<ReturnType<typeof getAccounts>>[number];
 type SplitField = SplitItem & { id: string };
 
+/** The amount field's text for a set of form values: blank while split across categories. */
+function amountTextOf(values: AddTransactionFormValues | undefined) {
+	if (!values) return "";
+	if (values.txType === "transfer") return String(values.amount);
+	return values.splits.length === 1 ? String(values.splits[0].amount) : "";
+}
+
 export function AddTransactionModal({
 	workspaceId,
 	baseCurrency,
 	trigger,
 	shortcut = false,
+	editing,
+	open: openProp,
+	onOpenChange: onOpenChangeProp,
 }: {
 	workspaceId: string;
 	baseCurrency: string;
 	trigger?: React.ReactNode;
 	/** Own the global "N" shortcut. Exactly one mounted instance should, or N opens several. */
 	shortcut?: boolean;
+	/** Edit this saved transaction instead of recording a new one. */
+	editing?: { transactionId: string; values: AddTransactionFormValues; tagIds: string[] };
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }) {
-	const [open, setOpen] = React.useState(false);
-	const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>([]);
-	const [txType, setTxType] = React.useState<TxType>("expense");
+	const [openState, setOpenState] = React.useState(false);
+	const open = openProp ?? openState;
+	const setOpen = (val: boolean) => {
+		setOpenState(val);
+		onOpenChangeProp?.(val);
+	};
+	const initialType: TxType = editing?.values.txType ?? "expense";
+	const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>(editing?.tagIds ?? []);
+	const [txType, setTxType] = React.useState<TxType>(initialType);
 	// Text as typed ("12,50"); the form holds the parsed number.
-	const [amountText, setAmountText] = React.useState("");
+	const [amountText, setAmountText] = React.useState(() => amountTextOf(editing?.values));
 	const [tagsOpen, setTagsOpen] = React.useState(false);
 
 	const defaultCurrency = toCurrency(baseCurrency);
@@ -83,14 +103,16 @@ export function AddTransactionModal({
 		formState: { errors, isSubmitting },
 	} = useForm<AddTransactionFormValues>({
 		resolver: zodResolver(addTransactionFormSchema),
-		defaultValues: {
-			txType: "expense",
-			description: undefined,
-			currency: defaultCurrency,
-			date: today,
-			walletId: "",
-			splits: [{ ...blankSplit }],
-		} as unknown as AddTransactionFormValues,
+		defaultValues:
+			editing?.values ??
+			({
+				txType: "expense",
+				description: undefined,
+				currency: defaultCurrency,
+				date: today,
+				walletId: "",
+				splits: [{ ...blankSplit }],
+			} as unknown as AddTransactionFormValues),
 	});
 
 	// useFieldArray needs control typed with splits — discriminated union makes this necessary
@@ -141,6 +163,11 @@ export function AddTransactionModal({
 	}, [open, shortcut]);
 
 	const resetToType = (type: TxType) => {
+		// Editing: back on the saved type, the saved values return.
+		if (editing && type === editing.values.txType) {
+			reset(editing.values);
+			return;
+		}
 		const base = { description: undefined, currency: defaultCurrency, date: today };
 		if (type === "expense") {
 			reset({
@@ -170,10 +197,10 @@ export function AddTransactionModal({
 	const onOpenChange = (val: boolean) => {
 		setOpen(val);
 		if (!val) {
-			resetToType("expense");
-			setTxType("expense");
-			setSelectedTagIds([]);
-			setAmountText("");
+			resetToType(initialType);
+			setTxType(initialType);
+			setSelectedTagIds(editing?.tagIds ?? []);
+			setAmountText(amountTextOf(editing?.values));
 			setTagsOpen(false);
 		}
 	};
@@ -190,44 +217,39 @@ export function AddTransactionModal({
 	};
 
 	const onSubmit = async (values: AddTransactionFormValues) => {
-		let result: { error: string } | { success: true };
-
-		if (values.txType === "expense") {
-			result = await createTransaction({
-				workspaceId,
-				fromAccountId: values.walletId,
-				toSplits: values.splits.map((s) => ({ accountId: s.categoryId, amount: s.amount })),
-				currency: values.currency,
-				description: values.description,
-				date: values.date,
-				tagIds: selectedTagIds,
-			});
-		} else if (values.txType === "income") {
-			result = await createTransaction({
-				workspaceId,
-				toAccountId: values.walletId,
-				fromSplits: values.splits.map((s) => ({ accountId: s.categoryId, amount: s.amount })),
-				currency: values.currency,
-				description: values.description,
-				date: values.date,
-				tagIds: selectedTagIds,
-			});
-		} else {
-			result = await createTransaction({
-				workspaceId,
-				fromAccountId: values.fromWalletId,
-				toAccountId: values.toWalletId,
-				amount: values.amount,
-				currency: values.currency,
-				received: showReceived ? values.received : undefined,
-				description: values.description,
-				date: values.date,
-				tagIds: selectedTagIds,
-			});
-		}
+		const common = {
+			currency: values.currency,
+			description: values.description,
+			date: values.date,
+			tagIds: selectedTagIds,
+		};
+		const splits =
+			values.txType === "transfer"
+				? []
+				: values.splits.map((s) => ({ accountId: s.categoryId, amount: s.amount }));
+		const legs =
+			values.txType === "expense"
+				? { fromAccountId: values.walletId, toSplits: splits }
+				: values.txType === "income"
+					? { toAccountId: values.walletId, fromSplits: splits }
+					: {
+							fromAccountId: values.fromWalletId,
+							toAccountId: values.toWalletId,
+							amount: values.amount,
+							received: showReceived ? values.received : undefined,
+						};
+		const result = editing
+			? await updateTransaction({ transactionId: editing.transactionId, ...common, ...legs })
+			: await createTransaction({ workspaceId, ...common, ...legs });
 
 		if ("error" in result) {
 			toast.error(result.error);
+			return;
+		}
+
+		if (editing) {
+			toast.success("Transaction updated.");
+			setOpen(false);
 			return;
 		}
 
@@ -282,10 +304,13 @@ export function AddTransactionModal({
 	}, [open, txType, accounts, workspaceId, getValues, setValue]);
 	const watchCategoryId = watch("splits.0.categoryId" as never) as unknown as string | undefined;
 	// Back to one category: the amount field takes over whatever the remaining row holds.
+	const wasSplit = React.useRef(isSplit);
 	React.useEffect(() => {
-		if (isSplit) return;
-		const value = getValues("splits.0.amount" as never) as unknown as number | undefined;
-		setAmountText(value === undefined || Number.isNaN(value) ? "" : String(value));
+		if (wasSplit.current && !isSplit) {
+			const value = getValues("splits.0.amount" as never) as unknown as number | undefined;
+			setAmountText(value === undefined || Number.isNaN(value) ? "" : String(value));
+		}
+		wasSplit.current = isSplit;
 	}, [isSplit, getValues]);
 	const amountError = (txType === "transfer" ? errs.amount : (splitErrs[0]?.amount as unknown)) as
 		| { message?: string }
@@ -432,14 +457,16 @@ export function AddTransactionModal({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogTrigger asChild>
-				{trigger ?? (
-					<Button size="icon" className="h-8 w-8 md:w-auto md:px-3 md:gap-2">
-						<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
-						<span className="hidden md:inline">New Transaction</span>
-					</Button>
-				)}
-			</DialogTrigger>
+			{!editing && (
+				<DialogTrigger asChild>
+					{trigger ?? (
+						<Button size="icon" className="h-8 w-8 md:w-auto md:px-3 md:gap-2">
+							<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
+							<span className="hidden md:inline">New Transaction</span>
+						</Button>
+					)}
+				</DialogTrigger>
+			)}
 			<DialogContent
 				className="sm:max-w-lg max-sm:flex max-sm:flex-col"
 				aria-describedby={undefined}
@@ -449,7 +476,7 @@ export function AddTransactionModal({
 				}}
 			>
 				<DialogHeader>
-					<DialogTitle>New Transaction</DialogTitle>
+					<DialogTitle>{editing ? "Edit Transaction" : "New Transaction"}</DialogTitle>
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col gap-4">
