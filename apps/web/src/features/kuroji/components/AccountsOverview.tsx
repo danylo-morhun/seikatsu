@@ -498,8 +498,8 @@ export function AccountsOverview({
 							Delete "{confirmTarget?.name}"?
 						</AlertDialogTitle>
 						<AlertDialogDescription>
-							Permanently deletes this account and all its transaction entries. This action cannot
-							be undone.
+							Only accounts without transactions can be deleted, and it can't be undone. To keep an
+							account's history, archive it instead.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

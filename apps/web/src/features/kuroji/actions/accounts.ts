@@ -135,7 +135,7 @@ export async function deleteAccount(
 		.limit(1);
 
 	if (entries.length > 0) {
-		return { error: "Cannot delete account with existing transactions" };
+		return { error: "This account has transactions. Archive it instead to keep its history." };
 	}
 
 	await db.delete(accounts).where(eq(accounts.id, accountId));
