@@ -151,20 +151,7 @@ async function buildEntries(
 	}));
 }
 
-export async function createTransaction({
-	workspaceId,
-	fromAccountId,
-	toAccountId,
-	amount,
-	toSplits,
-	fromSplits,
-	currency,
-	received,
-	description,
-	date,
-	tagIds,
-}: {
-	workspaceId: string;
+type TransactionInput = {
 	fromAccountId?: string;
 	toAccountId?: string;
 	amount?: number;
@@ -176,32 +163,49 @@ export async function createTransaction({
 	description?: string;
 	date: string;
 	tagIds?: string[];
-}): Promise<{ error: string } | { success: true }> {
+};
+
+/** Entry rows for a create or edit: one wallet leg against one or more category legs. */
+async function prepareEntries(
+	workspace: { id: string; baseCurrency: string },
+	input: TransactionInput,
+): Promise<{ error: string } | { entries: EntryRow[] }> {
+	const { fromAccountId, toAccountId, amount, toSplits, fromSplits } = input;
+	const specs = buildEntrySpecs(fromAccountId, toAccountId, amount, toSplits, fromSplits);
+	if (!specs) return { error: "Invalid transaction params" };
+
+	const allAccountIds = [...new Set(specs.map((s) => s.accountId))];
+	const validAccts = await db
+		.select({ id: accounts.id, currency: accounts.currency })
+		.from(accounts)
+		.where(and(inArray(accounts.id, allAccountIds), eq(accounts.workspaceId, workspace.id)));
+	if (validAccts.length !== allAccountIds.length) return { error: "Account not found" };
+
+	const entries = await buildEntries(
+		specs,
+		input.currency,
+		input.date,
+		workspace.baseCurrency,
+		new Map(validAccts.map((a) => [a.id, a.currency])),
+		input.received,
+	);
+	return { entries };
+}
+
+export async function createTransaction({
+	workspaceId,
+	...input
+}: TransactionInput & { workspaceId: string }): Promise<{ error: string } | { success: true }> {
 	try {
 		const session = await auth();
 		if (!session?.user?.id) return { error: "Unauthorized" };
 
-		const specs = buildEntrySpecs(fromAccountId, toAccountId, amount, toSplits, fromSplits);
-		if (!specs) return { error: "Invalid transaction params" };
-
 		const ws = await getOwnedWorkspace(workspaceId);
 		if (!ws) return { error: "Forbidden" };
 
-		const allAccountIds = [...new Set(specs.map((s) => s.accountId))];
-		const validAccts = await db
-			.select({ id: accounts.id, currency: accounts.currency })
-			.from(accounts)
-			.where(and(inArray(accounts.id, allAccountIds), eq(accounts.workspaceId, workspaceId)));
-		if (validAccts.length !== allAccountIds.length) return { error: "Account not found" };
-
-		const entries = await buildEntries(
-			specs,
-			currency,
-			date,
-			ws.baseCurrency,
-			new Map(validAccts.map((a) => [a.id, a.currency])),
-			received,
-		);
+		const prepared = await prepareEntries(ws, input);
+		if ("error" in prepared) return prepared;
+		const { description, date, tagIds } = input;
 
 		await db.transaction(async (tx) => {
 			const [txn] = await tx
@@ -211,7 +215,7 @@ export async function createTransaction({
 
 			await tx
 				.insert(transactionEntries)
-				.values(entries.map((e) => ({ ...e, transactionId: txn.id })));
+				.values(prepared.entries.map((e) => ({ ...e, transactionId: txn.id })));
 
 			if (tagIds && tagIds.length > 0) {
 				await assertTagsInWorkspace(tx, tagIds, workspaceId);
@@ -359,89 +363,57 @@ export async function recategorizeTransactions(
 	};
 }
 
+/** Rewrites a transaction's entries from the form: every leg, splits included, is rebuilt. */
 export async function updateTransaction({
 	transactionId,
-	fromAccountId,
-	toAccountId,
-	amount,
-	currency,
-	received,
-	description,
-	date,
-	tagIds,
-}: {
-	transactionId: string;
-	fromAccountId: string;
-	toAccountId: string;
-	amount: number;
-	currency: string;
-	received?: number;
-	description: string | undefined;
-	date: string;
-	tagIds?: string[];
-}): Promise<{ error: string } | { success: true }> {
-	const session = await auth();
-	if (!session?.user?.id) return { error: "Unauthorized" };
+	...input
+}: TransactionInput & { transactionId: string }): Promise<{ error: string } | { success: true }> {
+	try {
+		const session = await auth();
+		if (!session?.user?.id) return { error: "Unauthorized" };
 
-	const [txnRow] = await db
-		.select({ workspaceId: transactions.workspaceId })
-		.from(transactions)
-		.where(eq(transactions.id, transactionId))
-		.limit(1);
+		const [txnRow] = await db
+			.select({ workspaceId: transactions.workspaceId })
+			.from(transactions)
+			.where(eq(transactions.id, transactionId))
+			.limit(1);
+		if (!txnRow) return { error: "Transaction not found" };
 
-	if (!txnRow) return { error: "Transaction not found" };
+		const ws = await getOwnedWorkspace(txnRow.workspaceId);
+		if (!ws) return { error: "Forbidden" };
 
-	const workspace = await getOwnedWorkspace(txnRow.workspaceId);
-	if (!workspace) return { error: "Forbidden" };
+		const prepared = await prepareEntries(ws, input);
+		if ("error" in prepared) return prepared;
+		const { description, date, tagIds } = input;
 
-	const [fromRows, toRows] = await Promise.all([
-		db
-			.select()
-			.from(accounts)
-			.where(and(eq(accounts.id, fromAccountId), eq(accounts.workspaceId, txnRow.workspaceId)))
-			.limit(1),
-		db
-			.select()
-			.from(accounts)
-			.where(and(eq(accounts.id, toAccountId), eq(accounts.workspaceId, txnRow.workspaceId)))
-			.limit(1),
-	]);
-
-	if (!fromRows[0] || !toRows[0]) return { error: "Account not found" };
-
-	const entries = await buildEntries(
-		[
-			{ accountId: fromAccountId, debit: true, amount },
-			{ accountId: toAccountId, debit: false, amount },
-		],
-		currency,
-		date,
-		workspace.baseCurrency,
-		new Map([
-			[fromRows[0].id, fromRows[0].currency],
-			[toRows[0].id, toRows[0].currency],
-		]),
-		received,
-	);
-
-	await db.transaction(async (tx) => {
-		await tx
-			.update(transactions)
-			.set({ date, description: description ?? null })
-			.where(eq(transactions.id, transactionId));
-		await tx.delete(transactionEntries).where(eq(transactionEntries.transactionId, transactionId));
-		await tx.insert(transactionEntries).values(entries.map((e) => ({ ...e, transactionId })));
-		if (tagIds !== undefined) {
-			await tx.delete(transactionTags).where(eq(transactionTags.transactionId, transactionId));
-			if (tagIds.length > 0) {
-				await assertTagsInWorkspace(tx, tagIds, workspace.id);
-				await tx.insert(transactionTags).values(tagIds.map((tagId) => ({ transactionId, tagId })));
+		await db.transaction(async (tx) => {
+			await tx
+				.update(transactions)
+				.set({ date, description: description ?? null })
+				.where(eq(transactions.id, transactionId));
+			await tx
+				.delete(transactionEntries)
+				.where(eq(transactionEntries.transactionId, transactionId));
+			await tx
+				.insert(transactionEntries)
+				.values(prepared.entries.map((e) => ({ ...e, transactionId })));
+			if (tagIds !== undefined) {
+				await tx.delete(transactionTags).where(eq(transactionTags.transactionId, transactionId));
+				if (tagIds.length > 0) {
+					await assertTagsInWorkspace(tx, tagIds, ws.id);
+					await tx
+						.insert(transactionTags)
+						.values(tagIds.map((tagId) => ({ transactionId, tagId })));
+				}
 			}
-		}
-	});
+		});
 
-	revalidatePath("/kuroji");
-	return { success: true };
+		revalidatePath("/kuroji");
+		return { success: true };
+	} catch (e) {
+		const msg = e instanceof Error ? e.message : "Unknown error";
+		return { error: msg };
+	}
 }
 
 const TRANSACTIONS_PAGE_SIZE = 10;
