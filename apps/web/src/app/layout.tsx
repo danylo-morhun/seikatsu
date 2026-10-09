@@ -4,7 +4,7 @@ import { TimezoneSync } from "@/components/TimezoneSync";
 import { TooltipProvider } from "@seikatsu/ui";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Source_Serif_4 } from "next/font/google";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -12,6 +12,12 @@ import "./globals.css";
 const geistSans = Geist({
 	subsets: ["latin"],
 	variable: "--font-sans",
+});
+
+// Kakeibo: figures are written like a ledger's, in a book face with tabular numerals.
+const ledgerSerif = Source_Serif_4({
+	subsets: ["latin", "cyrillic"],
+	variable: "--font-ledger",
 });
 
 export const metadata: Metadata = {
@@ -35,7 +41,11 @@ export default function RootLayout({
 	children: React.ReactNode;
 }) {
 	return (
-		<html lang="en" className={geistSans.variable} suppressHydrationWarning>
+		<html
+			lang="en"
+			className={`${geistSans.variable} ${ledgerSerif.variable}`}
+			suppressHydrationWarning
+		>
 			<body className="antialiased">
 				<ThemeProvider>
 					<Suspense>
