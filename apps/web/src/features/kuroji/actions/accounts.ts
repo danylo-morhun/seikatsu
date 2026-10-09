@@ -125,7 +125,7 @@ export async function deleteAccount(
 		.limit(1);
 
 	if (child) {
-		return { error: "Cannot delete account with sub-accounts" };
+		return { error: "This account has sub-accounts. Move or delete them first." };
 	}
 
 	const entries = await db
