@@ -117,7 +117,7 @@ function AccountActions({
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
-					className="text-red-500 focus:text-red-500"
+					className="text-destructive focus:text-destructive"
 					onClick={() => onDelete(acct.id, acct.name)}
 				>
 					<HugeiconsIcon icon={Delete01Icon} className="mr-2 h-4 w-4" />
