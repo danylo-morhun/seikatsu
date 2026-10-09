@@ -11,7 +11,7 @@ import { displayBalance } from "@/features/kuroji/lib/balance";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { asOfLabel, resolvePeriod } from "@/features/kuroji/lib/period";
 import { getUserToday } from "@/lib/timezone";
-import { Progress, cn } from "@seikatsu/ui";
+import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -20,13 +20,6 @@ const TYPE_LABEL: Record<string, string> = {
 	LIABILITY: "Liability",
 	INCOME: "Income",
 	EXPENSE: "Expense",
-};
-
-const TYPE_COLOR: Record<string, string> = {
-	ASSET: "bg-blue-500/10 text-blue-400",
-	LIABILITY: "bg-red-500/10 text-red-400",
-	INCOME: "bg-green-500/10 text-green-400",
-	EXPENSE: "bg-orange-500/10 text-orange-400",
 };
 
 export default async function AccountDetailPage({
@@ -87,35 +80,43 @@ export default async function AccountDetailPage({
 
 	const accountForEdit = allAccounts.find((a) => a.id === id);
 
+	// Back to the list the visitor came from, on the same period.
+	const backQuery = [
+		rawAll === "1" ? "all=1" : null,
+		rawAll !== "1" && rawFrom ? `from=${rawFrom}` : null,
+		rawAll !== "1" && rawTo ? `to=${rawTo}` : null,
+	]
+		.filter(Boolean)
+		.map((p) => `&${p}`)
+		.join("");
+
 	return (
-		<main className="px-4 pt-6 pb-28 sm:px-6 md:pb-6">
+		<main className="px-4 pt-6 pb-28 sm:px-8 md:pt-8 md:pb-8">
 			<div className="mb-6">
-				<Link href="/kuroji" className="text-sm text-muted-foreground hover:text-foreground">
-					← Back to dashboard
+				<Link
+					href={`/kuroji?tab=accounts${backQuery}`}
+					prefetch
+					className="text-sm text-muted-foreground hover:text-foreground"
+				>
+					← Accounts
 				</Link>
 			</div>
 
-			<div className="mb-8 flex items-start justify-between gap-4">
-				<div>
-					<div className="mb-2 flex items-center gap-2">
-						<span
-							className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${TYPE_COLOR[account.type]}`}
-						>
-							{TYPE_LABEL[account.type]}
-						</span>
-					</div>
-					<h1 className="text-2xl font-bold">{account.name}</h1>
+			<div className="mb-10 flex items-start justify-between gap-4">
+				<div className="min-w-0">
+					<p className="text-xs text-muted-foreground">{TYPE_LABEL[account.type]}</p>
+					<h1 className="mt-0.5 truncate text-xl font-semibold">{account.name}</h1>
 					<p
 						className={cn(
-							"mt-1 text-3xl font-bold tracking-tight tabular-nums",
-							balance < 0 && "text-destructive",
+							"mt-3 font-figures text-4xl font-semibold tracking-tight",
+							balance < 0 && "text-negative",
 						)}
 					>
 						{isForeign
 							? formatCurrency(nativeBalance, account.currency)
 							: formatCurrency(balance, workspace.baseCurrency)}
 					</p>
-					<p className="mt-1 text-sm text-muted-foreground">
+					<p className="mt-1.5 text-sm text-muted-foreground">
 						{isForeign && `≈ ${formatCurrency(balance, workspace.baseCurrency)} · `}
 						{isStock ? asOfLabel(period.to, today) : period.label}
 						{rolledUp > 0 && ` · incl. ${rolledUp} sub-account${rolledUp === 1 ? "" : "s"}`}
@@ -127,54 +128,77 @@ export default async function AccountDetailPage({
 			</div>
 
 			{showBudget && pct !== null && (
-				<div className="mb-8 rounded-lg border p-4">
-					<div className="mb-2 flex items-center justify-between text-sm">
+				<section aria-label="Budget" className="mb-10">
+					<div className="mb-2 flex items-baseline justify-between gap-3 text-sm">
 						<span className="font-medium">{account.type === "EXPENSE" ? "Budget" : "Target"}</span>
-						<span className={overBudget ? "text-destructive" : "text-muted-foreground"}>
-							{formatCurrency(used, workspace.baseCurrency)} /{" "}
+						<span
+							className={cn(
+								"font-figures",
+								overBudget && account.type === "EXPENSE"
+									? "text-negative"
+									: "text-muted-foreground",
+							)}
+						>
+							{formatCurrency(used, workspace.baseCurrency)} of{" "}
 							{formatCurrency(budget!, workspace.baseCurrency)}
-							{overBudget && " · over budget"}
 						</span>
 					</div>
-					<Progress
-						value={pct}
-						className="h-2"
-						indicatorClassName={overBudget ? "bg-destructive" : undefined}
-					/>
-				</div>
+					<span aria-hidden className="relative block h-1.5 rounded-full bg-surface-2">
+						<span
+							className={cn(
+								"absolute inset-y-0 left-0 rounded-full",
+								overBudget
+									? account.type === "EXPENSE"
+										? "bg-negative"
+										: "bg-positive"
+									: "bg-primary/80",
+							)}
+							style={{ width: `${pct}%` }}
+						/>
+					</span>
+				</section>
 			)}
 
-			<div className="space-y-6">
-				<AccountActivityChart data={activity} currency={workspace.baseCurrency} />
+			<div className="space-y-10">
+				<div className={cn("grid gap-10", subAccounts.length > 0 && "lg:grid-cols-2 lg:gap-12")}>
+					<AccountActivityChart
+						data={activity}
+						currency={workspace.baseCurrency}
+						type={account.type}
+					/>
 
-				{subAccounts.length > 0 && (
-					<section>
-						<h2 className="mb-3 text-base font-semibold">Sub-accounts</h2>
-						<div className="rounded-lg border divide-y">
-							{subAccounts.map((sub) => {
-								const subBalance = displayBalance(sub.type, Number(sub.balance));
-								return (
-									<div key={sub.accountId} className="flex items-center justify-between px-4 py-3">
-										<Link
-											href={`/kuroji/accounts/${sub.accountId}`}
-											className="text-sm font-medium hover:underline"
-										>
-											{sub.name}
-										</Link>
-										<span
-											className={cn(
-												"text-sm tabular-nums",
-												subBalance < 0 ? "text-destructive" : "text-muted-foreground",
-											)}
-										>
-											{formatCurrency(subBalance, workspace.baseCurrency)}
-										</span>
-									</div>
-								);
-							})}
-						</div>
-					</section>
-				)}
+					{subAccounts.length > 0 && (
+						<section aria-labelledby="subs-title">
+							<h2 id="subs-title" className="mb-3 text-sm font-medium">
+								Sub-accounts
+							</h2>
+							<ul className="divide-y divide-rule border-y border-rule">
+								{subAccounts.map((sub) => {
+									const subBalance = displayBalance(sub.type, Number(sub.balance));
+									return (
+										<li key={sub.accountId}>
+											<Link
+												href={`/kuroji/accounts/${sub.accountId}`}
+												prefetch
+												className="flex items-center justify-between gap-3 py-2.5 text-sm hover:bg-surface"
+											>
+												<span className="truncate">{sub.name}</span>
+												<span
+													className={cn(
+														"font-figures",
+														subBalance < 0 ? "text-negative" : "text-muted-foreground",
+													)}
+												>
+													{formatCurrency(subBalance, workspace.baseCurrency)}
+												</span>
+											</Link>
+										</li>
+									);
+								})}
+							</ul>
+						</section>
+					)}
+				</div>
 
 				<TransactionTable
 					transactions={txResult.rows}
