@@ -6,7 +6,8 @@ import { exportTransactionsCsv } from "@/features/kuroji/actions/export";
 import { deleteTransaction, deleteTransactions } from "@/features/kuroji/actions/transactions";
 import type { RecentTransaction } from "@/features/kuroji/actions/transactions";
 import { EditTransactionModal } from "@/features/kuroji/components/EditTransactionModal";
-import { parseLocal } from "@/features/kuroji/lib/dates";
+import { PeriodEmptyActions } from "@/features/kuroji/components/PeriodEmptyActions";
+import { buildPeriodLabel, parseLocal } from "@/features/kuroji/lib/dates";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import {
 	Alert01Icon,
@@ -231,6 +232,21 @@ export function TransactionTable({
 
 	const totalPages = Math.ceil(total / 10);
 
+	// Say why the list is empty: a search, a filter or a quiet period is not an empty ledger.
+	const periodLabel = dateFrom && dateTo ? buildPeriodLabel(dateFrom, dateTo) : null;
+	const isFirstUse = !searchQuery && !periodLabel && !accountFilterId && !tagFilterId;
+	const emptyMessage = searchQuery
+		? periodLabel
+			? `No transactions match "${searchQuery}" in ${periodLabel}`
+			: `No transactions match "${searchQuery}"`
+		: periodLabel
+			? `No transactions in ${periodLabel}`
+			: isFirstUse
+				? "No transactions yet"
+				: accountFilterId && !tagFilterId
+					? `No transactions in ${accountFilterName ?? "this account"} yet`
+					: "No transactions match these filters";
+
 	return (
 		<section>
 			<div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
@@ -342,16 +358,16 @@ export function TransactionTable({
 					<TableBody>
 						{transactions.length === 0 ? (
 							<TableRow>
-								<TableCell colSpan={7} className="py-12 text-center">
-									<p className="text-sm font-medium text-muted-foreground">
-										{searchQuery
-											? `No transactions matching "${searchQuery}"`
-											: "No transactions yet"}
-									</p>
-									{!searchQuery && (
-										<p className="mt-1 text-xs text-muted-foreground">
-											Use the New Transaction button to record your first entry.
+								<TableCell colSpan={7} className="py-12 text-center whitespace-normal">
+									<p className="text-sm font-medium">{emptyMessage}</p>
+									{isFirstUse ? (
+										<p className="mt-1 text-sm text-muted-foreground">
+											Use New Transaction to record your first one.
 										</p>
+									) : (
+										<div className="mt-4">
+											<PeriodEmptyActions from={dateFrom} to={dateTo} />
+										</div>
 									)}
 								</TableCell>
 							</TableRow>
