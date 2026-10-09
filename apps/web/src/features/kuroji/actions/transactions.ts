@@ -36,6 +36,8 @@ export type RecentTransaction = {
 	toAccountType: string;
 	amount: string;
 	currency: string;
+	fromAmount: string;
+	fromCurrency: string;
 	baseAmount: string;
 	splitCount: number;
 	tags: { id: string; name: string; color: string | null }[];
@@ -86,6 +88,70 @@ function buildEntrySpecs(
 	return null;
 }
 
+type EntryRow = { accountId: string; amount: string; currency: string; baseAmount: string };
+
+/**
+ * Each entry is stored in its own account's currency. `amount` on a spec is in the entered
+ * `currency`; legs in another currency use `received` (2-leg only) or the day's rate.
+ * Base amounts sum to zero: 2-leg transactions take the base value from the leg already in
+ * the base currency (the real exchange), splits put the rounding remainder on the last credit.
+ */
+async function buildEntries(
+	specs: EntrySpec[],
+	currency: string,
+	date: string,
+	baseCurrency: string,
+	accountCurrency: Map<string, string>,
+	received?: number,
+): Promise<EntryRow[]> {
+	const rates = new Map<string, number>();
+	const rate = async (to: string) => {
+		if (to === currency) return 1;
+		let r = rates.get(to);
+		if (r === undefined) {
+			r = await getExchangeRate(currency, to, date);
+			rates.set(to, r);
+		}
+		return r;
+	};
+
+	const natives = await Promise.all(
+		specs.map(async (spec) => {
+			const cur = accountCurrency.get(spec.accountId) ?? currency;
+			if (cur === currency) return { cur, amount: spec.amount };
+			if (received !== undefined && specs.length === 2 && !spec.debit) {
+				return { cur, amount: received };
+			}
+			return { cur, amount: spec.amount * (await rate(cur)) };
+		}),
+	);
+
+	let bases: number[];
+	if (specs.length === 2) {
+		const baseLeg = natives.find((n) => n.cur === baseCurrency);
+		const total = baseLeg ? baseLeg.amount : specs[0].amount * (await rate(baseCurrency));
+		bases = specs.map((s) => (s.debit ? -total : total));
+	} else {
+		const r = await rate(baseCurrency);
+		const totalDebit = specs.filter((s) => s.debit).reduce((sum, s) => sum + s.amount * r, 0);
+		const lastCredit = specs.findLastIndex((s) => !s.debit);
+		let creditAccum = 0;
+		bases = specs.map((s, i) => {
+			if (s.debit) return -s.amount * r;
+			if (i === lastCredit) return totalDebit - creditAccum;
+			creditAccum += s.amount * r;
+			return s.amount * r;
+		});
+	}
+
+	return specs.map((spec, i) => ({
+		accountId: spec.accountId,
+		amount: (spec.debit ? -natives[i].amount : natives[i].amount).toFixed(4),
+		currency: natives[i].cur,
+		baseAmount: bases[i].toFixed(4),
+	}));
+}
+
 export async function createTransaction({
 	workspaceId,
 	fromAccountId,
@@ -94,6 +160,7 @@ export async function createTransaction({
 	toSplits,
 	fromSplits,
 	currency,
+	received,
 	description,
 	date,
 	tagIds,
@@ -105,6 +172,8 @@ export async function createTransaction({
 	toSplits?: { accountId: string; amount: number }[];
 	fromSplits?: { accountId: string; amount: number }[];
 	currency: string;
+	/** Amount that landed in the destination account, in its currency (cross-currency transfers). */
+	received?: number;
 	description?: string;
 	date: string;
 	tagIds?: string[];
@@ -122,14 +191,19 @@ export async function createTransaction({
 
 		const allAccountIds = [...new Set(specs.map((s) => s.accountId))];
 		const validAccts = await db
-			.select({ id: accounts.id })
+			.select({ id: accounts.id, currency: accounts.currency })
 			.from(accounts)
 			.where(and(inArray(accounts.id, allAccountIds), eq(accounts.workspaceId, workspaceId)));
 		if (validAccts.length !== allAccountIds.length) return { error: "Account not found" };
 
-		const baseCurrency = ws.baseCurrency;
-		const rate =
-			currency === baseCurrency ? 1 : await getExchangeRate(currency, baseCurrency, date);
+		const entries = await buildEntries(
+			specs,
+			currency,
+			date,
+			ws.baseCurrency,
+			new Map(validAccts.map((a) => [a.id, a.currency])),
+			received,
+		);
 
 		await db.transaction(async (tx) => {
 			const [txn] = await tx
@@ -137,36 +211,9 @@ export async function createTransaction({
 				.values({ workspaceId, date, description: description ?? null })
 				.returning();
 
-			const totalDebitBase = specs
-				.filter((s) => s.debit)
-				.reduce((sum, s) => sum + s.amount * rate, 0);
-			const creditSpecs = specs.filter((s) => !s.debit);
-			let creditBaseAccum = 0;
-
-			await tx.insert(transactionEntries).values(
-				specs.map((spec) => {
-					let baseAmount: string;
-					if (spec.debit) {
-						baseAmount = (-spec.amount * rate).toFixed(4);
-					} else {
-						const isLastCredit = spec === creditSpecs[creditSpecs.length - 1];
-						if (isLastCredit) {
-							baseAmount = (totalDebitBase - creditBaseAccum).toFixed(4);
-						} else {
-							const ba = spec.amount * rate;
-							creditBaseAccum += ba;
-							baseAmount = ba.toFixed(4);
-						}
-					}
-					return {
-						transactionId: txn.id,
-						accountId: spec.accountId,
-						amount: spec.debit ? String(-spec.amount) : String(spec.amount),
-						currency,
-						baseAmount,
-					};
-				}),
-			);
+			await tx
+				.insert(transactionEntries)
+				.values(entries.map((e) => ({ ...e, transactionId: txn.id })));
 
 			if (tagIds && tagIds.length > 0) {
 				await assertTagsInWorkspace(tx, tagIds, workspaceId);
@@ -235,6 +282,7 @@ export async function updateTransaction({
 	toAccountId,
 	amount,
 	currency,
+	received,
 	description,
 	date,
 	tagIds,
@@ -244,6 +292,7 @@ export async function updateTransaction({
 	toAccountId: string;
 	amount: number;
 	currency: string;
+	received?: number;
 	description: string | undefined;
 	date: string;
 	tagIds?: string[];
@@ -277,14 +326,20 @@ export async function updateTransaction({
 	if (!workspace || workspace.userId !== session.user.id) return { error: "Forbidden" };
 	if (!fromRows[0] || !toRows[0]) return { error: "Account not found" };
 
-	const baseCurrency = workspace.baseCurrency;
-	let baseAmount: number;
-	if (currency === baseCurrency) {
-		baseAmount = amount;
-	} else {
-		const rate = await getExchangeRate(currency, baseCurrency, date);
-		baseAmount = amount * rate;
-	}
+	const entries = await buildEntries(
+		[
+			{ accountId: fromAccountId, debit: true, amount },
+			{ accountId: toAccountId, debit: false, amount },
+		],
+		currency,
+		date,
+		workspace.baseCurrency,
+		new Map([
+			[fromRows[0].id, fromRows[0].currency],
+			[toRows[0].id, toRows[0].currency],
+		]),
+		received,
+	);
 
 	await db.transaction(async (tx) => {
 		await tx
@@ -292,22 +347,7 @@ export async function updateTransaction({
 			.set({ date, description: description ?? null })
 			.where(eq(transactions.id, transactionId));
 		await tx.delete(transactionEntries).where(eq(transactionEntries.transactionId, transactionId));
-		await tx.insert(transactionEntries).values([
-			{
-				transactionId,
-				accountId: fromAccountId,
-				amount: String(-amount),
-				currency,
-				baseAmount: (-baseAmount).toFixed(4),
-			},
-			{
-				transactionId,
-				accountId: toAccountId,
-				amount: String(amount),
-				currency,
-				baseAmount: baseAmount.toFixed(4),
-			},
-		]);
+		await tx.insert(transactionEntries).values(entries.map((e) => ({ ...e, transactionId })));
 		if (tagIds !== undefined) {
 			await tx.delete(transactionTags).where(eq(transactionTags.transactionId, transactionId));
 			if (tagIds.length > 0) {
@@ -417,6 +457,8 @@ export async function getRecentTransactions(
 				toAccountType: toEntry?.account?.type ?? "",
 				amount: totalAmount.toFixed(2),
 				currency: toEntry?.currency ?? "",
+				fromAmount: Math.abs(Number(fromEntry?.amount ?? 0)).toFixed(2),
+				fromCurrency: fromEntry?.currency ?? "",
 				baseAmount: totalBaseAmount.toFixed(4),
 				splitCount: toEntries.length,
 				tags: txn.transactionTags.map((tt) => ({

@@ -123,4 +123,60 @@ describe("createTransaction — double-entry ledger invariant", () => {
 		const total = entries.reduce((sum, e) => sum + Number(e.baseAmount), 0);
 		expect(total).toBe(0);
 	});
+
+	it("a cross-currency transfer stores each leg in its account's currency", async () => {
+		const { workspace, checking } = await seedWorkspaceWithAccounts("PLN");
+		const [eur] = await testDb
+			.insert(schema.accounts)
+			.values({ workspaceId: workspace.id, name: "EUR", type: "ASSET", currency: "EUR" })
+			.returning();
+		const { createTransaction } = await import("./transactions");
+
+		const result = await createTransaction({
+			workspaceId: workspace.id,
+			fromAccountId: eur.id,
+			toAccountId: checking.id,
+			amount: 400,
+			currency: "EUR",
+			received: 1700,
+			date: "2026-06-03",
+		});
+
+		expect(result).toEqual({ success: true });
+		const entries = await testDb.select().from(schema.transactionEntries);
+		const from = entries.find((e) => e.accountId === eur.id);
+		const to = entries.find((e) => e.accountId === checking.id);
+		expect([from?.amount, from?.currency, from?.baseAmount]).toEqual([
+			"-400.0000",
+			"EUR",
+			"-1700.0000",
+		]);
+		expect([to?.amount, to?.currency, to?.baseAmount]).toEqual(["1700.0000", "PLN", "1700.0000"]);
+	});
+
+	it("converts a leg in another currency at the day's rate when no amount is given", async () => {
+		const { workspace, groceries } = await seedWorkspaceWithAccounts("PLN");
+		const [uah] = await testDb
+			.insert(schema.accounts)
+			.values({ workspaceId: workspace.id, name: "UAH", type: "ASSET", currency: "UAH" })
+			.returning();
+		await testDb
+			.insert(schema.exchangeRates)
+			.values({ date: "2026-06-04", fromCurrency: "UAH", toCurrency: "PLN", rate: "0.09" });
+		const { createTransaction } = await import("./transactions");
+
+		await createTransaction({
+			workspaceId: workspace.id,
+			fromAccountId: uah.id,
+			toAccountId: groceries.id,
+			amount: 100,
+			currency: "UAH",
+			date: "2026-06-04",
+		});
+
+		const entries = await testDb.select().from(schema.transactionEntries);
+		const to = entries.find((e) => e.accountId === groceries.id);
+		expect([to?.amount, to?.currency]).toEqual(["9.0000", "PLN"]);
+		expect(entries.reduce((sum, e) => sum + Number(e.baseAmount), 0)).toBe(0);
+	});
 });
