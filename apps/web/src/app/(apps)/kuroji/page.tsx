@@ -17,6 +17,7 @@ import { displayBalance, rollupRoots } from "@/features/kuroji/lib/balance";
 import { parseLocal } from "@/features/kuroji/lib/dates";
 import { asOfLabel, periodQuery, resolvePeriod } from "@/features/kuroji/lib/period";
 import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
+import type { TransactionFilters } from "@/features/kuroji/lib/transaction-filters";
 import { getUserToday } from "@/lib/timezone";
 import { format, subMonths } from "date-fns";
 import { redirect } from "next/navigation";
@@ -203,8 +204,17 @@ export default async function KurojiPage({
 	}
 
 	// ── Transactions ─────────────────────────────────────────────────────────────
+	const filters: TransactionFilters = {
+		from,
+		to,
+		accountIds: accountId ? [accountId] : undefined,
+		tagId,
+		q,
+		sortField,
+		sortDir,
+	};
 	const [recentTransactions, accounts, allTags] = await Promise.all([
-		getRecentTransactions(workspace.id, from, to, pageNum, accountId, q, sortField, sortDir, tagId),
+		getRecentTransactions(workspace.id, filters, pageNum),
 		getAccounts(workspace.id),
 		getTags(workspace.id),
 	]);

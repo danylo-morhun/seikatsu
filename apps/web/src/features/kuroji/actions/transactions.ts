@@ -3,20 +3,19 @@
 import { auth } from "@/auth";
 import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
 import type { Leg } from "@/features/kuroji/lib/transaction-edit";
+import {
+	TRANSACTIONS_PAGE_SIZE,
+	type TransactionFilters,
+} from "@/features/kuroji/lib/transaction-filters";
+import { transactionOrder, transactionWhere } from "@/features/kuroji/lib/transaction-query";
 import { getOwnedWorkspace } from "@/lib/session";
 import {
 	accounts,
 	and,
-	asc,
 	count,
 	db,
-	desc,
 	eq,
-	gte,
-	ilike,
 	inArray,
-	lte,
-	sql,
 	tags,
 	transactionEntries,
 	transactionTags,
@@ -419,22 +418,10 @@ export async function updateTransaction({
 	}
 }
 
-const TRANSACTIONS_PAGE_SIZE = 10;
-
-export type SortField = "date" | "amount";
-export type SortDir = "asc" | "desc";
-
 export async function getRecentTransactions(
 	workspaceId: string,
-	from: string | undefined,
-	to: string | undefined,
+	filters: TransactionFilters,
 	page = 0,
-	/** One account, or an account plus its sub-accounts. */
-	accountId?: string | string[],
-	q?: string,
-	sortField: SortField = "date",
-	sortDir: SortDir = "desc",
-	tagId?: string,
 ): Promise<{ rows: RecentTransaction[]; hasMore: boolean; total: number }> {
 	const session = await auth();
 	if (!session?.user?.id) throw new Error("Unauthorized");
@@ -443,46 +430,16 @@ export async function getRecentTransactions(
 
 	if (!ws) throw new Error("Forbidden");
 
-	const accountIds = accountId === undefined ? [] : [accountId].flat();
-	const accountSubquery =
-		accountIds.length > 0
-			? db
-					.selectDistinct({ id: transactionEntries.transactionId })
-					.from(transactionEntries)
-					.where(inArray(transactionEntries.accountId, accountIds))
-			: undefined;
-
-	const tagSubquery = tagId
-		? db
-				.selectDistinct({ id: transactionTags.transactionId })
-				.from(transactionTags)
-				.where(eq(transactionTags.tagId, tagId))
-		: undefined;
-
-	const whereClause = and(
-		eq(transactions.workspaceId, workspaceId),
-		from ? gte(transactions.date, from) : undefined,
-		to ? lte(transactions.date, to) : undefined,
-		q ? ilike(transactions.description, `%${q}%`) : undefined,
-		accountSubquery ? inArray(transactions.id, accountSubquery) : undefined,
-		tagSubquery ? inArray(transactions.id, tagSubquery) : undefined,
-	);
-
-	const orderDate = sortDir === "asc" ? asc(transactions.date) : desc(transactions.date);
-	const orderCreated =
-		sortDir === "asc" ? asc(transactions.createdAt) : desc(transactions.createdAt);
-	const amountExpr = sql`(select coalesce(sum(abs(te.base_amount)), 0) from transaction_entries te where te.transaction_id = ${transactions.id} and cast(te.base_amount as numeric) > 0)`;
-	const orderAmount = sortDir === "asc" ? asc(amountExpr) : desc(amountExpr);
-
+	const where = transactionWhere(workspaceId, filters);
 	const [rows, [{ total }]] = await Promise.all([
 		db.query.transactions.findMany({
-			where: whereClause,
-			orderBy: sortField === "date" ? [orderDate, orderCreated] : [orderAmount, orderDate],
+			where,
+			orderBy: transactionOrder(filters),
 			limit: TRANSACTIONS_PAGE_SIZE + 1,
 			offset: page * TRANSACTIONS_PAGE_SIZE,
 			with: { entries: { with: { account: true } }, transactionTags: { with: { tag: true } } },
 		}),
-		db.select({ total: count() }).from(transactions).where(whereClause),
+		db.select({ total: count() }).from(transactions).where(where),
 	]);
 
 	const hasMore = rows.length > TRANSACTIONS_PAGE_SIZE;
