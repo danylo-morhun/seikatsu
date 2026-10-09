@@ -146,7 +146,17 @@ function ConnectionCard({
 					<p className={`text-xs ${status.cls}`}>{status.text}</p>
 					{connection.lastSyncedAt && (
 						<p className="text-xs text-muted-foreground">
-							Last synced {new Date(connection.lastSyncedAt).toLocaleString()}
+							Last synced{" "}
+							{/* Server renders in its own time zone; the browser re-renders in the user's. */}
+							<time
+								dateTime={new Date(connection.lastSyncedAt).toISOString()}
+								suppressHydrationWarning
+							>
+								{new Date(connection.lastSyncedAt).toLocaleString("en-GB", {
+									dateStyle: "medium",
+									timeStyle: "short",
+								})}
+							</time>
 						</p>
 					)}
 					{connection.lastError && connection.status === "ERROR" && (
