@@ -180,3 +180,69 @@ describe("createTransaction — double-entry ledger invariant", () => {
 		expect(entries.reduce((sum, e) => sum + Number(e.baseAmount), 0)).toBe(0);
 	});
 });
+
+describe("recategorizeTransactions", () => {
+	beforeAll(async () => {
+		testDb ??= await createTestDb();
+	}, 30_000);
+
+	afterEach(async () => {
+		await testDb.delete(schema.transactions);
+		await testDb.delete(schema.accounts);
+		await testDb.delete(schema.workspaces);
+	});
+
+	it("moves the category entry and keeps the ledger balanced", async () => {
+		const { workspace, checking, groceries, dining } = await seedWorkspaceWithAccounts("USD");
+		const { createTransaction, recategorizeTransactions } = await import("./transactions");
+		await createTransaction({
+			workspaceId: workspace.id,
+			fromAccountId: checking.id,
+			toSplits: [{ accountId: groceries.id, amount: 20 }],
+			currency: "USD",
+			description: "Lunch",
+			date: "2026-09-01",
+			tagIds: [],
+		});
+		const [txn] = await testDb.select().from(schema.transactions);
+
+		const result = await recategorizeTransactions(workspace.id, [txn.id], dining.id);
+
+		expect(result).toEqual({ success: true, data: { moved: 1, skipped: 0 } });
+		const entries = await testDb
+			.select()
+			.from(schema.transactionEntries)
+			.where(ops.eq(schema.transactionEntries.transactionId, txn.id));
+		expect(entries.map((e) => e.accountId).sort()).toEqual([checking.id, dining.id].sort());
+		expect(await sumBaseAmount(txn.id)).toBeCloseTo(0, 6);
+	});
+
+	it("skips split transactions", async () => {
+		const { workspace, checking, groceries, dining } = await seedWorkspaceWithAccounts("USD");
+		const { createTransaction, recategorizeTransactions } = await import("./transactions");
+		await createTransaction({
+			workspaceId: workspace.id,
+			fromAccountId: checking.id,
+			toSplits: [
+				{ accountId: groceries.id, amount: 10 },
+				{ accountId: dining.id, amount: 5 },
+			],
+			currency: "USD",
+			description: "Split",
+			date: "2026-09-01",
+			tagIds: [],
+		});
+		const [txn] = await testDb.select().from(schema.transactions);
+
+		const result = await recategorizeTransactions(workspace.id, [txn.id], groceries.id);
+
+		expect(result).toEqual({ success: true, data: { moved: 0, skipped: 1 } });
+	});
+
+	it("refuses a non-category target", async () => {
+		const { workspace, checking } = await seedWorkspaceWithAccounts("USD");
+		const { recategorizeTransactions } = await import("./transactions");
+		const result = await recategorizeTransactions(workspace.id, ["x"], checking.id);
+		expect(result).toEqual({ error: "Pick an income or expense category" });
+	});
+});
