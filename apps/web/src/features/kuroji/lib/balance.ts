@@ -15,3 +15,15 @@ export function displayBalance(type: AccountType, ledgerBalance: number) {
 	// Avoid rendering "-0,00".
 	return value === 0 ? 0 : value;
 }
+
+/**
+ * Accounts whose balance is not already counted in a parent's rollup: no parent, or a
+ * parent of another type (an income category filed under the asset it pays into).
+ * Summing these per type counts every entry exactly once.
+ */
+export function rollupRoots<
+	T extends { accountId: string; parentId: string | null; type: AccountType },
+>(balances: T[]): T[] {
+	const typeById = new Map(balances.map((b) => [b.accountId, b.type]));
+	return balances.filter((b) => !b.parentId || typeById.get(b.parentId) !== b.type);
+}

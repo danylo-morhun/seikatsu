@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayBalance } from "./balance";
+import { type AccountType, displayBalance, rollupRoots } from "./balance";
 
 describe("displayBalance", () => {
 	it("keeps debit-normal balances as stored", () => {
@@ -21,5 +21,23 @@ describe("displayBalance", () => {
 	it("never returns negative zero", () => {
 		expect(Object.is(displayBalance("LIABILITY", 0), 0)).toBe(true);
 		expect(Object.is(displayBalance("INCOME", -0), 0)).toBe(true);
+	});
+});
+
+describe("rollupRoots", () => {
+	const row = (accountId: string, type: AccountType, parentId: string | null = null) => ({
+		accountId,
+		type,
+		parentId,
+	});
+
+	it("keeps parents and drops children already rolled into a same-type parent", () => {
+		const rows = [row("rent", "EXPENSE"), row("rent-flat", "EXPENSE", "rent")];
+		expect(rollupRoots(rows).map((r) => r.accountId)).toEqual(["rent"]);
+	});
+
+	it("keeps a child filed under a parent of another type", () => {
+		const rows = [row("binance", "ASSET"), row("salary", "INCOME", "binance")];
+		expect(rollupRoots(rows).map((r) => r.accountId)).toEqual(["binance", "salary"]);
 	});
 });
