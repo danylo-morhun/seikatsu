@@ -4,6 +4,7 @@ import { Spinner } from "@/components/Spinner";
 import { type getAccounts, updateAccount } from "@/features/kuroji/actions/accounts";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
+import { parseAmount } from "@/features/kuroji/lib/transaction-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
@@ -169,13 +170,11 @@ export function EditAccountModal({ account, workspaceId, open, onOpenChange }: P
 							</Label>
 							<Input
 								id="edit-acc-budget"
-								type="number"
-								min="0"
-								step="0.01"
+								type="text"
+								inputMode="decimal"
+								autoComplete="off"
 								placeholder="e.g. 500"
-								{...register("budget", {
-									setValueAs: (v) => (v === "" || v === undefined ? undefined : Number(v)),
-								})}
+								{...register("budget", { setValueAs: parseAmount })}
 							/>
 							{errors.budget && (
 								<p className="text-destructive text-[0.8rem]">{errors.budget.message}</p>
