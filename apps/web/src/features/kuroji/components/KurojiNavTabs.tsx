@@ -66,7 +66,7 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 				style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
 			>
 				<div className="mx-3 mb-3">
-					<div className="flex items-center justify-between rounded-2xl border border-border/60 bg-background/85 px-2 py-1.5 shadow-lg backdrop-blur-xl">
+					<div className="flex items-center justify-between rounded-2xl border border-rule bg-sidebar px-2 py-1.5">
 						{/* Left: Expenses, Accounts */}
 						<div className="flex flex-1 items-center justify-around">
 							{TABS.slice(0, 2).map(({ value, label, icon }) => (
@@ -91,7 +91,8 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 								trigger={
 									<Button
 										size="icon"
-										className="h-11 w-11 rounded-full shadow-lg shadow-primary/25 transition-transform active:scale-95"
+										aria-label="New transaction"
+										className="h-11 w-11 rounded-full transition-transform active:scale-95"
 									>
 										<HugeiconsIcon icon={Add01Icon} className="h-5 w-5" />
 									</Button>
@@ -110,7 +111,7 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 								<HugeiconsIcon icon={Clock01Icon} className="h-5 w-5" />
 								<span className="text-[11px] font-medium leading-none">Transactions</span>
 							</Link>
-							<Link href="/settings" className={tabCls(isSettings)}>
+							<Link href="/settings/kuroji" prefetch className={tabCls(isSettings)}>
 								<HugeiconsIcon icon={Settings01Icon} className="h-5 w-5" />
 								<span className="text-[11px] font-medium leading-none">Settings</span>
 							</Link>
