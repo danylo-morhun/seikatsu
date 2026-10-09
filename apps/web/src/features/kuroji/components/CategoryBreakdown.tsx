@@ -1,5 +1,5 @@
 import type { AccountBalance } from "@/features/kuroji/actions/balances";
-import { displayBalance } from "@/features/kuroji/lib/balance";
+import { displayBalance, rollupRoots } from "@/features/kuroji/lib/balance";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import Link from "next/link";
 
@@ -17,8 +17,8 @@ const VISIBLE = 8;
  * so the comparison reads at a glance and the exact amount sits beside it.
  */
 export function CategoryBreakdown({ balances, currency, periodQuery }: Props) {
-	const rows = balances
-		.filter((b) => b.type === "EXPENSE" && !b.parentId && !b.hidden)
+	const rows = rollupRoots(balances)
+		.filter((b) => b.type === "EXPENSE" && !b.hidden)
 		.map((b) => ({
 			id: b.accountId,
 			name: b.name,
