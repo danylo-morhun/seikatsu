@@ -10,6 +10,7 @@ import { ExpensesEmptyState } from "@/features/kuroji/components/ExpensesEmptySt
 import type { KurojiTab } from "@/features/kuroji/components/KurojiNavTabs";
 import { OnboardingCard } from "@/features/kuroji/components/OnboardingCard";
 import { TransactionTable } from "@/features/kuroji/components/TransactionTable";
+import { displayBalance } from "@/features/kuroji/lib/balance";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
 import { endOfMonth, format, startOfMonth } from "date-fns";
@@ -120,11 +121,10 @@ export default async function KurojiPage({
 						(!excludeOpeningBalance || b.name !== "Opening Balance"),
 				)
 				.reduce((acc, b) => acc + Number(b.balance), 0);
-		const income = Math.abs(topLevel("INCOME"));
-		const expenses = Math.abs(topLevel("EXPENSE"));
-		const assets = topLevel("ASSET");
-		const liabilities = Math.abs(topLevel("LIABILITY", true));
-		const netWorth = assets - liabilities;
+		const income = displayBalance("INCOME", topLevel("INCOME"));
+		const expenses = displayBalance("EXPENSE", topLevel("EXPENSE"));
+		// Ledger signs already net out: liabilities are stored negative, an overpaid one positive.
+		const netWorth = topLevel("ASSET") + topLevel("LIABILITY", true);
 		return (
 			<main className="flex flex-col pb-28 md:pb-0">
 				{balances.length === 0 ? (
@@ -141,8 +141,7 @@ export default async function KurojiPage({
 							<div>
 								<p className="text-xs text-muted-foreground">Net Worth</p>
 								<p className={`text-2xl font-bold ${netWorth < 0 ? "text-destructive" : ""}`}>
-									{netWorth < 0 ? "−" : ""}
-									{formatCurrency(Math.abs(netWorth), workspace.baseCurrency)}
+									{formatCurrency(netWorth, workspace.baseCurrency)}
 								</p>
 							</div>
 							<div className="h-8 w-px bg-border" />
