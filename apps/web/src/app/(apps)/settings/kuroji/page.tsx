@@ -13,52 +13,82 @@ import { BankRulesManager } from "@/features/kuroji/components/BankRulesManager"
 import { Privat24ImportSection } from "@/features/kuroji/components/Privat24ImportSection";
 import { RecurringTransactionsList } from "@/features/kuroji/components/RecurringTransactionsList";
 import { WorkspaceSettingsForm } from "@/features/kuroji/components/WorkspaceSettingsForm";
-import { Separator } from "@seikatsu/ui";
+import { cn } from "@seikatsu/ui";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
-export default async function KurojiSettingsPage() {
+const SECTIONS = [
+	{ id: "general", label: "General" },
+	{ id: "accounts", label: "Accounts" },
+	{ id: "recurring", label: "Recurring" },
+	{ id: "banks", label: "Banks & import" },
+] as const;
+type SectionId = (typeof SECTIONS)[number]["id"];
+
+function SectionHeader({
+	title,
+	description,
+	action,
+}: {
+	title: string;
+	description: string;
+	action?: React.ReactNode;
+}) {
+	return (
+		<div className="mb-4 flex items-start justify-between gap-4">
+			<div className="min-w-0">
+				<h2 className="text-base font-semibold">{title}</h2>
+				<p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
+			</div>
+			{action}
+		</div>
+	);
+}
+
+export default async function KurojiSettingsPage({
+	searchParams,
+}: {
+	searchParams: Promise<{ section?: string }>;
+}) {
 	const session = await auth();
 	if (!session?.user?.id) redirect("/");
 
+	const { section: rawSection } = await searchParams;
+	const section: SectionId = SECTIONS.some((s) => s.id === rawSection)
+		? (rawSection as SectionId)
+		: "general";
+
 	const workspace = await initializeWorkspace(session.user.id);
-	const [allAccounts, balances, recurringItems, bankConnections, bankRules] = await Promise.all([
-		getAccounts(workspace.id, { includeArchived: true }),
-		getBalances(workspace.id, undefined, undefined),
-		getRecurringTransactions(workspace.id),
-		getBankConnections(workspace.id),
-		getBankRules(workspace.id),
-	]);
+	// Only what the open section shows is fetched.
+	const allAccounts = await getAccounts(workspace.id, { includeArchived: true });
 	const accounts = allAccounts.filter((a) => a.archivedAt === null);
-	const archivedAccounts = allAccounts.filter((a) => a.archivedAt !== null);
 
-	return (
-		<main className="px-4 py-6 sm:px-6 max-w-3xl">
-			<h1 className="mb-8 text-2xl font-semibold">黒 Kuroji</h1>
-
-			<section className="mb-10">
-				<h2 className="mb-1 text-base font-semibold">Workspace</h2>
-				<p className="mb-4 text-sm text-muted-foreground">
-					Your personal finance workspace settings.
-				</p>
+	let body: React.ReactNode;
+	if (section === "general") {
+		body = (
+			<section>
+				<SectionHeader
+					title="Workspace"
+					description="Name and the base currency every balance is converted to."
+				/>
 				<WorkspaceSettingsForm
 					workspaceId={workspace.id}
 					initialName={workspace.name}
 					baseCurrency={workspace.baseCurrency}
 				/>
 			</section>
-
-			<Separator className="my-8" />
-
+		);
+	} else if (section === "accounts") {
+		const balances = await getBalances(workspace.id, undefined, undefined);
+		body = (
 			<section>
-				<div className="mb-4 flex items-center justify-between">
-					<div>
-						<h2 className="text-base font-semibold">Accounts</h2>
-						<p className="text-sm text-muted-foreground">
-							Manage your asset, liability, income and expense accounts.
-						</p>
-					</div>
-					<AddAccountModal workspaceId={workspace.id} baseCurrency={workspace.baseCurrency} />
-				</div>
+				<SectionHeader
+					title="Accounts"
+					description="What you own and owe, and the categories money comes from and goes to."
+					action={
+						<AddAccountModal workspaceId={workspace.id} baseCurrency={workspace.baseCurrency} />
+					}
+				/>
 				<AccountsOverview
 					balances={balances}
 					accounts={accounts}
@@ -68,64 +98,83 @@ export default async function KurojiSettingsPage() {
 					hideHeader
 					listMode
 				/>
-				<ArchivedAccountsList accounts={archivedAccounts} />
+				<ArchivedAccountsList accounts={allAccounts.filter((a) => a.archivedAt !== null)} />
 			</section>
-
-			<Separator className="my-8" />
-
+		);
+	} else if (section === "recurring") {
+		const recurringItems = await getRecurringTransactions(workspace.id);
+		body = (
 			<section>
-				<div className="mb-4 flex items-center justify-between">
-					<div>
-						<h2 className="text-base font-semibold">Recurring Transactions</h2>
-						<p className="text-sm text-muted-foreground">
-							Automatically recorded on their scheduled dates when you visit.
-						</p>
-					</div>
-					<AddRecurringModal workspaceId={workspace.id} baseCurrency={workspace.baseCurrency} />
-				</div>
+				<SectionHeader
+					title="Recurring"
+					description="Recorded automatically on their dates, every morning."
+					action={
+						<AddRecurringModal workspaceId={workspace.id} baseCurrency={workspace.baseCurrency} />
+					}
+				/>
 				<RecurringTransactionsList items={recurringItems} currency={workspace.baseCurrency} />
 			</section>
+		);
+	} else {
+		const [bankConnections, bankRules] = await Promise.all([
+			getBankConnections(workspace.id),
+			getBankRules(workspace.id),
+		]);
+		body = (
+			<div className="space-y-12">
+				<section>
+					<SectionHeader
+						title="Bank connections"
+						description="Open Banking imports, synced daily."
+					/>
+					<BankConnectionsSection
+						workspaceId={workspace.id}
+						connections={bankConnections}
+						accounts={accounts}
+					/>
+				</section>
+				<section>
+					<SectionHeader
+						title="Privat24 statement"
+						description="PrivatBank has no API for personal cards; import the .xlsx the Privat24 app exports."
+					/>
+					<Privat24ImportSection workspaceId={workspace.id} accounts={accounts} />
+				</section>
+				<section>
+					<SectionHeader
+						title="Import rules"
+						description="Categorize imported transactions by keyword."
+					/>
+					<BankRulesManager workspaceId={workspace.id} rules={bankRules} accounts={accounts} />
+				</section>
+			</div>
+		);
+	}
 
-			<Separator className="my-8" />
-
-			<section>
-				<div className="mb-4">
-					<h2 className="text-base font-semibold">Bank Connections</h2>
-					<p className="text-sm text-muted-foreground">
-						Connect a bank via Open Banking to import transactions automatically (synced daily).
-					</p>
-				</div>
-				<BankConnectionsSection
-					workspaceId={workspace.id}
-					connections={bankConnections}
-					accounts={accounts}
-				/>
-			</section>
-
-			<Separator className="my-8" />
-
-			<section>
-				<div className="mb-4">
-					<h2 className="text-base font-semibold">Import Privat24 statement</h2>
-					<p className="text-sm text-muted-foreground">
-						PrivatBank has no API for personal cards — import the .xlsx statement the Privat24 app
-						exports instead.
-					</p>
-				</div>
-				<Privat24ImportSection workspaceId={workspace.id} accounts={accounts} />
-			</section>
-
-			<Separator className="my-8" />
-
-			<section>
-				<div className="mb-4">
-					<h2 className="text-base font-semibold">Import Rules</h2>
-					<p className="text-sm text-muted-foreground">
-						Auto-categorize imported bank transactions by keyword.
-					</p>
-				</div>
-				<BankRulesManager workspaceId={workspace.id} rules={bankRules} accounts={accounts} />
-			</section>
-		</main>
+	return (
+		<div className="max-w-3xl px-4 pt-6 pb-28 sm:px-8 md:pt-8 md:pb-8">
+			<h1 className="text-xl font-semibold">黒 Kuroji</h1>
+			<nav
+				aria-label="Kuroji settings"
+				className="mt-4 mb-8 flex gap-1 overflow-x-auto border-b border-rule"
+			>
+				{SECTIONS.map((s) => (
+					<Link
+						key={s.id}
+						href={s.id === "general" ? "/settings/kuroji" : `/settings/kuroji?section=${s.id}`}
+						prefetch
+						aria-current={section === s.id ? "page" : undefined}
+						className={cn(
+							"relative shrink-0 px-3 py-2.5 text-sm whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground",
+							section === s.id &&
+								"text-foreground after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary",
+						)}
+					>
+						{s.label}
+					</Link>
+				))}
+			</nav>
+			{body}
+		</div>
 	);
 }
