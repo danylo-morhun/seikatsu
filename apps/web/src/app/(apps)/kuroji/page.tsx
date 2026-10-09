@@ -12,8 +12,9 @@ import { OnboardingCard } from "@/features/kuroji/components/OnboardingCard";
 import { TransactionTable } from "@/features/kuroji/components/TransactionTable";
 import { displayBalance } from "@/features/kuroji/lib/balance";
 import { formatCurrency } from "@/features/kuroji/lib/format";
+import { resolvePeriod } from "@/features/kuroji/lib/period";
 import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
-import { endOfMonth, format, startOfMonth } from "date-fns";
+import { getUserToday } from "@/lib/timezone";
 import dynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
@@ -25,10 +26,6 @@ const ExpenseBreakdown = dynamic(() =>
 const TrendChart = dynamic(() =>
 	import("@/features/kuroji/components/TrendChart").then((m) => m.TrendChart),
 );
-
-function fmt(d: Date) {
-	return format(d, "yyyy-MM-dd");
-}
 
 const VALID_TABS: KurojiTab[] = ["expense", "accounts", "transactions"];
 
@@ -66,22 +63,15 @@ export default async function KurojiPage({
 		trend: rawTrend,
 	} = await searchParams;
 
-	const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 	const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 	const tab: KurojiTab = VALID_TABS.includes(rawTab as KurojiTab)
 		? (rawTab as KurojiTab)
 		: "expense";
 
-	const isAllTime = rawAll === "1";
-	const rawValidFrom = rawFrom && ISO_DATE.test(rawFrom) ? rawFrom : undefined;
-	const rawValidTo = rawTo && ISO_DATE.test(rawTo) ? rawTo : undefined;
-	const today = new Date();
-	const defaultFrom = fmt(startOfMonth(today));
-	const defaultTo = fmt(endOfMonth(today));
-	const swapped = rawValidFrom && rawValidTo && rawValidFrom > rawValidTo;
-	const from = isAllTime ? undefined : ((swapped ? rawValidTo : rawValidFrom) ?? defaultFrom);
-	const to = isAllTime ? undefined : ((swapped ? rawValidFrom : rawValidTo) ?? defaultTo);
+	const today = await getUserToday();
+	const period = resolvePeriod({ from: rawFrom, to: rawTo, all: rawAll }, today);
+	const { from, to, hasDateFilter } = period;
 
 	const pageNum = rawPage && /^\d+$/.test(rawPage) ? Math.max(0, Number.parseInt(rawPage, 10)) : 0;
 	const accountId = rawAccount && UUID.test(rawAccount) ? rawAccount : undefined;
@@ -99,7 +89,6 @@ export default async function KurojiPage({
 	if (tab === "expense") {
 		const trendParam = rawTrend === "3m" || rawTrend === "1y" ? rawTrend : "6m";
 		const trendMonths = trendParam === "3m" ? 3 : trendParam === "1y" ? 12 : 6;
-		const hasDateFilter = !isAllTime && (rawValidFrom !== undefined || rawValidTo !== undefined);
 
 		const [balances, trendData] = await Promise.all([
 			getBalances(workspace.id, from, to),
