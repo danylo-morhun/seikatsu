@@ -90,7 +90,7 @@ export function RecurringTransactionsList({
 									{rt.fromAccountName} → {rt.toAccountName}
 								</span>
 								<span
-									className={`shrink-0 rounded-full px-1.5 py-px text-[10px] font-medium border ${rt.isActive ? "border-green-500/40 text-green-400" : "border-muted-foreground/30 text-muted-foreground"}`}
+									className={`shrink-0 rounded-full px-1.5 py-px text-[11px] font-medium border ${rt.isActive ? "border-positive/40 text-positive" : "border-rule text-muted-foreground"}`}
 								>
 									{rt.isActive ? "active" : "paused"}
 								</span>
@@ -114,7 +114,7 @@ export function RecurringTransactionsList({
 							<Button
 								variant="ghost"
 								size="icon"
-								className="h-7 w-7"
+								className="h-9 w-9"
 								onClick={() => handleToggle(rt.id)}
 								title={rt.isActive ? "Pause" : "Resume"}
 							>
@@ -126,7 +126,7 @@ export function RecurringTransactionsList({
 							<Button
 								variant="ghost"
 								size="icon"
-								className="h-7 w-7 text-destructive hover:text-destructive"
+								className="h-9 w-9 text-destructive hover:text-destructive"
 								onClick={() => setDeleteTarget({ id: rt.id })}
 							>
 								<HugeiconsIcon icon={Delete01Icon} className="h-3.5 w-3.5" />

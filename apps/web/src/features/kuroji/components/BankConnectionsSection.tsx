@@ -38,7 +38,7 @@ const NONE = "__none__";
 
 const STATUS_LABEL: Record<string, { text: string; cls: string }> = {
 	CREATED: { text: "Awaiting authorization", cls: "text-amber-500" },
-	LINKED: { text: "Connected", cls: "text-green-500" },
+	LINKED: { text: "Connected", cls: "text-positive" },
 	EXPIRED: { text: "Access expired — reconnect", cls: "text-destructive" },
 	ERROR: { text: "Sync error", cls: "text-destructive" },
 };
