@@ -276,6 +276,77 @@ export async function deleteTransactions(
 	return { success: true, deleted: deleted.length };
 }
 
+/**
+ * Move transactions to another income/expense category. Only the category side changes,
+ * so balances and the double-entry sum are untouched. Transactions split across several
+ * categories, or whose category entry is in another currency, are skipped and counted.
+ */
+export async function recategorizeTransactions(
+	workspaceId: string,
+	transactionIds: string[],
+	categoryId: string,
+): Promise<{ error: string } | { success: true; data: { moved: number; skipped: number } }> {
+	if (transactionIds.length === 0) return { success: true, data: { moved: 0, skipped: 0 } };
+
+	const session = await auth();
+	if (!session?.user?.id) return { error: "Unauthorized" };
+
+	const ws = await getOwnedWorkspace(workspaceId);
+	if (!ws) return { error: "Forbidden" };
+
+	const [target] = await db
+		.select({ id: accounts.id, type: accounts.type, currency: accounts.currency })
+		.from(accounts)
+		.where(and(eq(accounts.id, categoryId), eq(accounts.workspaceId, workspaceId)))
+		.limit(1);
+	if (!target || (target.type !== "INCOME" && target.type !== "EXPENSE")) {
+		return { error: "Pick an income or expense category" };
+	}
+
+	const entries = await db
+		.select({
+			id: transactionEntries.id,
+			transactionId: transactionEntries.transactionId,
+			accountId: transactionEntries.accountId,
+			currency: transactionEntries.currency,
+		})
+		.from(transactionEntries)
+		.innerJoin(transactions, eq(transactions.id, transactionEntries.transactionId))
+		.innerJoin(accounts, eq(accounts.id, transactionEntries.accountId))
+		.where(
+			and(
+				inArray(transactionEntries.transactionId, transactionIds),
+				eq(transactions.workspaceId, workspaceId),
+				eq(accounts.type, target.type),
+			),
+		);
+
+	const byTxn = new Map<string, typeof entries>();
+	for (const e of entries) byTxn.set(e.transactionId, [...(byTxn.get(e.transactionId) ?? []), e]);
+
+	const movable = [...byTxn.values()]
+		.filter((es) => es.length === 1 && es[0].currency === target.currency)
+		.map((es) => es[0]);
+
+	if (movable.length > 0) {
+		await db
+			.update(transactionEntries)
+			.set({ accountId: target.id })
+			.where(
+				inArray(
+					transactionEntries.id,
+					movable.map((e) => e.id),
+				),
+			);
+		revalidatePath("/kuroji");
+	}
+
+	return {
+		success: true,
+		data: { moved: movable.length, skipped: transactionIds.length - movable.length },
+	};
+}
+
 export async function updateTransaction({
 	transactionId,
 	fromAccountId,
