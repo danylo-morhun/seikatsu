@@ -14,9 +14,11 @@ import { OnboardingCard } from "@/features/kuroji/components/OnboardingCard";
 import { OverviewFigures } from "@/features/kuroji/components/OverviewFigures";
 import { TransactionTable } from "@/features/kuroji/components/TransactionTable";
 import { displayBalance } from "@/features/kuroji/lib/balance";
+import { parseLocal } from "@/features/kuroji/lib/dates";
 import { asOfLabel, periodQuery, resolvePeriod } from "@/features/kuroji/lib/period";
 import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
 import { getUserToday } from "@/lib/timezone";
+import { format, subMonths } from "date-fns";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 
@@ -160,6 +162,13 @@ export default async function KurojiPage({
 								trendParam={trendParam}
 								hasDateFilter={hasDateFilter}
 								searchParams={{ from: rawFrom, to: rawTo, all: rawAll }}
+								range={{
+									from:
+										hasDateFilter && from
+											? from.slice(0, 7)
+											: format(subMonths(parseLocal(today), trendMonths - 1), "yyyy-MM"),
+									to: hasDateFilter && to ? to.slice(0, 7) : today.slice(0, 7),
+								}}
 							/>
 						</div>
 					</div>

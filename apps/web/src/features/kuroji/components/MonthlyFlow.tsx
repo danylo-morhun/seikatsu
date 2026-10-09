@@ -17,6 +17,23 @@ interface Props {
 	hasDateFilter: boolean;
 	/** Current search params, to keep the rest of the URL when switching range. */
 	searchParams: Record<string, string | undefined>;
+	/** First and last month shown (YYYY-MM); months without movement render as zero rows. */
+	range: { from: string; to: string };
+}
+
+function monthsBetween(from: string, to: string) {
+	const out: string[] = [];
+	let [y, m] = from.split("-").map(Number);
+	const [ty, tm] = to.split("-").map(Number);
+	while (y < ty || (y === ty && m <= tm)) {
+		out.push(`${y}-${String(m).padStart(2, "0")}`);
+		m += 1;
+		if (m > 12) {
+			m = 1;
+			y += 1;
+		}
+	}
+	return out;
 }
 
 function monthLabel(month: string, withYear: boolean) {
@@ -32,8 +49,18 @@ function monthLabel(month: string, withYear: boolean) {
  * Income against spending, one row per month, newest first. Both bars share one scale;
  * the right column says the only thing that matters about the month: what was left.
  */
-export function MonthlyFlow({ data, currency, trendParam, hasDateFilter, searchParams }: Props) {
-	const months = [...data].reverse();
+export function MonthlyFlow({
+	data,
+	currency,
+	trendParam,
+	hasDateFilter,
+	searchParams,
+	range,
+}: Props) {
+	const byMonth = new Map(data.map((d) => [d.month.slice(0, 7), d]));
+	const months = monthsBetween(range.from, range.to)
+		.map((month) => byMonth.get(month) ?? { month, income: 0, expenses: 0 })
+		.reverse();
 	const max = Math.max(1, ...months.flatMap((m) => [m.income, m.expenses]));
 	const multiYear = new Set(months.map((m) => m.month.slice(0, 4))).size > 1;
 
