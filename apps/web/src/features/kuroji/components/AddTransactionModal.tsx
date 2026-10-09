@@ -36,6 +36,7 @@ import {
 	Tabs,
 	TabsList,
 	TabsTrigger,
+	cn,
 } from "@seikatsu/ui";
 import { format } from "date-fns";
 import * as React from "react";
@@ -63,6 +64,7 @@ export function AddTransactionModal({
 	const [txType, setTxType] = React.useState<TxType>("expense");
 	// Text as typed ("12,50"); the form holds the parsed number.
 	const [amountText, setAmountText] = React.useState("");
+	const [tagsOpen, setTagsOpen] = React.useState(false);
 
 	const defaultCurrency = toCurrency(baseCurrency);
 	const today = format(new Date(), "yyyy-MM-dd");
@@ -171,6 +173,7 @@ export function AddTransactionModal({
 			setTxType("expense");
 			setSelectedTagIds([]);
 			setAmountText("");
+			setTagsOpen(false);
 		}
 	};
 
@@ -264,7 +267,7 @@ export function AddTransactionModal({
 			name="currency"
 			render={({ field }: { field: { onChange: (v: string) => void; value: string } }) => (
 				<Select onValueChange={field.onChange} value={field.value ?? defaultCurrency}>
-					<SelectTrigger className="h-12 w-[88px] shrink-0" aria-label="Currency">
+					<SelectTrigger className="w-24 shrink-0" aria-label="Currency">
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
@@ -285,7 +288,7 @@ export function AddTransactionModal({
 			<Label htmlFor={isSplit ? undefined : "add-amount"}>{isSplit ? "Total" : "Amount"}</Label>
 			<div className="flex gap-2">
 				{isSplit ? (
-					<p className="flex h-12 flex-1 items-center rounded-md border bg-muted/40 px-3 text-2xl font-semibold tabular-nums">
+					<p className="flex h-10 flex-1 items-center rounded-md border border-input bg-surface px-3 font-figures text-lg font-semibold">
 						{formatCurrency(splitTotal, watchCurrency)}
 					</p>
 				) : (
@@ -305,7 +308,7 @@ export function AddTransactionModal({
 									setAmountText(e.target.value);
 									field.onChange(parseAmount(e.target.value));
 								}}
-								className="h-12 flex-1 text-2xl font-semibold tabular-nums md:text-2xl"
+								className="flex-1 font-figures text-lg font-semibold md:text-lg"
 							/>
 						)}
 					/>
@@ -368,7 +371,7 @@ export function AddTransactionModal({
 				className="h-8 w-full text-xs text-muted-foreground hover:text-foreground"
 				onClick={() => (appendSplit as (v: SplitItem) => void)({ ...blankSplit })}
 			>
-				+ Split across categories
+				{isSplit ? "+ Add category" : "+ Split across categories"}
 			</Button>
 		</div>
 	);
@@ -384,22 +387,15 @@ export function AddTransactionModal({
 				)}
 			</DialogTrigger>
 			<DialogContent
-				className="sm:max-w-md max-sm:flex max-sm:flex-col"
+				className="sm:max-w-lg max-sm:flex max-sm:flex-col"
+				aria-describedby={undefined}
 				onOpenAutoFocus={(e) => {
 					e.preventDefault();
 					setFocus(amountField(txType) as never);
 				}}
 			>
 				<DialogHeader>
-					<DialogTitle className="flex items-center justify-between">
-						New Transaction
-						<kbd
-							aria-hidden
-							className="mr-8 hidden items-center rounded border border-border bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground md:inline-flex"
-						>
-							N
-						</kbd>
-					</DialogTitle>
+					<DialogTitle>New Transaction</DialogTitle>
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col gap-4">
@@ -420,7 +416,7 @@ export function AddTransactionModal({
 					{amountHero}
 
 					{txType === "expense" && (
-						<>
+						<div className={cn("grid gap-4", !isSplit && "sm:grid-cols-2")}>
 							{renderSplitRows(expenseCategories)}
 							<div className="space-y-2">
 								<Label>Paid from</Label>
@@ -432,11 +428,11 @@ export function AddTransactionModal({
 									error={(errs.walletId as { message?: string })?.message}
 								/>
 							</div>
-						</>
+						</div>
 					)}
 
 					{txType === "income" && (
-						<>
+						<div className={cn("grid gap-4", !isSplit && "sm:grid-cols-2")}>
 							{renderSplitRows(incomeCategories)}
 							<div className="space-y-2">
 								<Label>Received in</Label>
@@ -448,11 +444,11 @@ export function AddTransactionModal({
 									error={(errs.walletId as { message?: string })?.message}
 								/>
 							</div>
-						</>
+						</div>
 					)}
 
 					{txType === "transfer" && (
-						<>
+						<div className="grid gap-4 sm:grid-cols-2">
 							<div className="space-y-2">
 								<Label>From</Label>
 								<AccountSelect
@@ -474,7 +470,7 @@ export function AddTransactionModal({
 								/>
 							</div>
 							{showReceived && (
-								<div className="space-y-2">
+								<div className="space-y-2 sm:col-span-2">
 									<Label htmlFor="add-received">Received ({toCurrencyCode})</Label>
 									<Input
 										id="add-received"
@@ -489,45 +485,58 @@ export function AddTransactionModal({
 									)}
 								</div>
 							)}
-						</>
+						</div>
 					)}
 
-					<div className="space-y-2">
-						<Label htmlFor="add-description">Description</Label>
-						<Input
-							id="add-description"
-							placeholder={DESCRIPTION_PLACEHOLDER[txType]}
-							{...register("description")}
-						/>
+					<div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_11rem]">
+						<div className="space-y-2">
+							<Label htmlFor="add-description">Description</Label>
+							<Input
+								id="add-description"
+								placeholder={DESCRIPTION_PLACEHOLDER[txType]}
+								{...register("description")}
+							/>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="add-date">Date</Label>
+							<Input id="add-date" type="date" {...register("date")} />
+							{(errs.date as { message?: string })?.message && (
+								<p className="text-destructive text-[0.8rem]">
+									{(errs.date as { message?: string }).message}
+								</p>
+							)}
+						</div>
 					</div>
 
-					<div className="space-y-2">
-						<Label htmlFor="add-date">Date</Label>
-						<Input id="add-date" type="date" {...register("date")} />
-						{(errs.date as { message?: string })?.message && (
-							<p className="text-destructive text-[0.8rem]">
-								{(errs.date as { message?: string }).message}
-							</p>
-						)}
-					</div>
-
-					<div className="space-y-2">
-						<Label>Tags</Label>
-						<TagSelect
-							workspaceId={workspaceId}
-							tags={workspaceTags}
-							selectedIds={selectedTagIds}
-							onToggle={(id) =>
-								setSelectedTagIds((prev) =>
-									prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-								)
-							}
-							onTagCreated={(tag) => {
-								addTagToFormOptions(workspaceId, tag);
-								setSelectedTagIds((prev) => [...prev, tag.id]);
-							}}
-						/>
-					</div>
+					{/* Tags are occasional: one quiet line until asked for. */}
+					{tagsOpen || selectedTagIds.length > 0 ? (
+						<div className="space-y-2">
+							<Label>Tags</Label>
+							<TagSelect
+								workspaceId={workspaceId}
+								tags={workspaceTags}
+								selectedIds={selectedTagIds}
+								onToggle={(id) =>
+									setSelectedTagIds((prev) =>
+										prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+									)
+								}
+								onTagCreated={(tag) => {
+									addTagToFormOptions(workspaceId, tag);
+									setSelectedTagIds((prev) => [...prev, tag.id]);
+								}}
+							/>
+						</div>
+					) : (
+						<button
+							type="button"
+							onClick={() => setTagsOpen(true)}
+							className="self-start text-sm text-muted-foreground hover:text-foreground"
+						>
+							+ Add tags
+						</button>
+					)}
 
 					{/* Phones: actions sit at the bottom of the full-screen sheet, in thumb reach. */}
 					<div className="mt-auto flex justify-end gap-2 pt-2 max-sm:sticky max-sm:bottom-0 max-sm:-mx-6 max-sm:-mb-6 max-sm:border-t max-sm:bg-background max-sm:px-6 max-sm:py-4">
