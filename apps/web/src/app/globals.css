@@ -338,6 +338,17 @@
 	--chart-5: oklch(0.42 0.14 300);
 }
 
+/* Signature: the flow line between a transaction's two accounts ends in a small head. */
+.flow-line::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	right: -1px;
+	translate: 0 -50%;
+	border-block: 3px solid transparent;
+	border-inline-start: 5px solid var(--flow);
+}
+
 @keyframes progress-grow {
 	from {
 		width: 0;

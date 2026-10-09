@@ -7,6 +7,7 @@ import { deleteTransaction, deleteTransactions } from "@/features/kuroji/actions
 import type { RecentTransaction } from "@/features/kuroji/actions/transactions";
 import { EditTransactionModal } from "@/features/kuroji/components/EditTransactionModal";
 import { PeriodEmptyActions } from "@/features/kuroji/components/PeriodEmptyActions";
+import { TransactionFlow } from "@/features/kuroji/components/TransactionFlow";
 import { buildPeriodLabel, parseLocal } from "@/features/kuroji/lib/dates";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import {
@@ -16,6 +17,7 @@ import {
 	Download01Icon,
 	MoreHorizontalIcon,
 	PencilEdit01Icon,
+	Search01Icon,
 	Tag01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -36,12 +38,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 	Input,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
 	cn,
 } from "@seikatsu/ui";
 import { format } from "date-fns";
@@ -54,6 +50,16 @@ const thisYear = new Date().getFullYear();
 function fmtDate(iso: string): string {
 	const d = parseLocal(iso);
 	return d.getFullYear() === thisYear ? format(d, "MMM d") : format(d, "MMM d, yyyy");
+}
+
+function fmtDay(iso: string): string {
+	const d = parseLocal(iso);
+	return d.getFullYear() === thisYear ? format(d, "EEE, MMM d") : format(d, "EEE, MMM d, yyyy");
+}
+
+/** +1 money in, -1 money out, 0 a transfer between own accounts. */
+function flowOf(txn: RecentTransaction) {
+	return txn.fromAccountType === "INCOME" ? 1 : txn.toAccountType === "EXPENSE" ? -1 : 0;
 }
 
 interface Props {
@@ -257,7 +263,7 @@ export function TransactionTable({
 
 	// Money in reads "+", money out "−"; transfers between own accounts carry no sign.
 	function renderAmount(txn: RecentTransaction) {
-		const flow = txn.fromAccountType === "INCOME" ? 1 : txn.toAccountType === "EXPENSE" ? -1 : 0;
+		const flow = flowOf(txn);
 		const signed = (value: string, cur: string) => {
 			const n = Math.abs(Number(value));
 			const text = formatCurrency(flow < 0 ? -n : n, cur);
@@ -265,14 +271,22 @@ export function TransactionTable({
 		};
 		const isForeign = txn.currency && txn.currency !== currency;
 		return (
-			<div className="text-right tabular-nums">
-				<p className={cn("font-medium", flow > 0 && "text-green-500")}>
+			<span className="block text-right">
+				<span
+					className={cn(
+						"block font-figures text-sm font-medium",
+						flow > 0 && "text-positive",
+						flow === 0 && "text-muted-foreground",
+					)}
+				>
 					{isForeign ? signed(txn.amount, txn.currency) : signed(txn.baseAmount, currency)}
-				</p>
+				</span>
 				{isForeign && (
-					<p className="text-xs text-muted-foreground">≈ {signed(txn.baseAmount, currency)}</p>
+					<span className="block text-xs text-muted-foreground">
+						≈ {signed(txn.baseAmount, currency)}
+					</span>
 				)}
-			</div>
+			</span>
 		);
 	}
 
@@ -280,7 +294,11 @@ export function TransactionTable({
 		return (
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+					<Button
+						variant="ghost"
+						size="icon"
+						className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
+					>
 						<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
 						<span className="sr-only">Actions for {txn.description ?? "transaction"}</span>
 					</Button>
@@ -318,63 +336,190 @@ export function TransactionTable({
 		</div>
 	);
 
+	// Grouped by day when the list is in date order; the header names each day and its net.
+	const byDay = sortField === "date";
+	const groups: { key: string; label: string; rows: RecentTransaction[] }[] = [];
+	for (const txn of transactions) {
+		const key = byDay ? txn.date : "all";
+		const last = groups[groups.length - 1];
+		if (last?.key === key) last.rows.push(txn);
+		else groups.push({ key, label: byDay ? fmtDay(txn.date) : "", rows: [txn] });
+	}
+	// Like a dictionary's guide words: the span of dates on this page.
+	const dates = transactions.map((t) => t.date).sort();
+	const span =
+		dates.length === 0
+			? null
+			: dates[0] === dates[dates.length - 1]
+				? fmtDate(dates[0])
+				: `${fmtDate(dates[0])} – ${fmtDate(dates[dates.length - 1])}`;
+
+	const sortButton = (field: "date" | "amount", label: string) => (
+		<button
+			type="button"
+			onClick={() => sortBy(field)}
+			aria-label={`Sort by ${label.toLowerCase()}`}
+			className={cn(
+				"inline-flex items-center gap-1 rounded px-1 transition-colors hover:text-foreground",
+				sortField === field && "text-foreground",
+			)}
+		>
+			{label}
+			<span aria-hidden className="text-muted-foreground/70">
+				{sortField === field ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
+			</span>
+		</button>
+	);
+
+	const renderRow = (txn: RecentTransaction) => {
+		const selected = selectedIds.has(txn.id);
+		return (
+			<li
+				key={txn.id}
+				className={cn(
+					"group/row grid grid-cols-[minmax(0,1fr)_auto_2.25rem] items-center gap-x-3 py-2.5 md:grid-cols-[1.25rem_minmax(0,1fr)_minmax(0,18rem)_8.5rem_2.25rem] md:gap-x-4",
+					selected && "bg-primary/[0.06]",
+				)}
+			>
+				<span className="hidden md:flex">
+					<Checkbox
+						checked={selected}
+						onCheckedChange={() => toggleSelect(txn.id)}
+						aria-label={`Select ${txn.description ?? "transaction"}`}
+					/>
+				</span>
+				<button
+					type="button"
+					onClick={() => setEditTarget(txn)}
+					className="min-w-0 rounded text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+				>
+					<span className="block truncate text-sm font-medium">
+						{txn.description ?? "No description"}
+					</span>
+					<span className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-muted-foreground md:hidden">
+						{!byDay && <span className="shrink-0">{fmtDate(txn.date)}</span>}
+						<TransactionFlow
+							className="text-xs"
+							fromId={txn.fromAccountId}
+							fromName={txn.fromAccount}
+							toId={txn.toAccountId}
+							toName={txn.toAccount}
+							activeId={accountFilterId}
+						/>
+					</span>
+					{!byDay && (
+						<span className="mt-0.5 hidden text-xs text-muted-foreground md:block">
+							{fmtDate(txn.date)}
+						</span>
+					)}
+				</button>
+				<span className="hidden min-w-0 md:block">
+					<TransactionFlow
+						fromId={txn.fromAccountId}
+						fromName={txn.fromAccount}
+						toId={txn.toAccountId}
+						toName={txn.toAccount}
+						activeId={accountFilterId}
+						onSelect={filterByAccount}
+					/>
+					{txn.tags.length > 0 && (
+						<span className="mt-1 flex flex-wrap gap-1">
+							{txn.tags.map((tag) => (
+								<button
+									key={tag.id}
+									type="button"
+									title={`Show only tag ${tag.name}`}
+									onClick={() => filterByTag(tag.id)}
+									className="rounded-full border border-rule px-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+								>
+									{tag.name}
+								</button>
+							))}
+						</span>
+					)}
+				</span>
+				{renderAmount(txn)}
+				{renderActions(txn)}
+			</li>
+		);
+	};
+
 	return (
 		<section>
-			<div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-				<div className="flex flex-wrap items-center gap-2">
+			<div className="mb-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+				<div className="min-w-0">
 					<h2 className="text-lg font-semibold">Transactions</h2>
-					{accountFilterId && accountFilterName && (
-						<span className="flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium">
-							{accountFilterName}
-							<button
-								type="button"
-								className="ml-1 text-muted-foreground hover:text-foreground"
-								onClick={clearAccountFilter}
-							>
-								<HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
-							</button>
+					<p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+						<span>
+							{total} {total === 1 ? "transaction" : "transactions"}
+							{span && ` · ${span}`}
 						</span>
-					)}
-					{tagFilterId && tagFilterName && (
-						<span className="flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium">
-							<HugeiconsIcon icon={Tag01Icon} className="h-3 w-3" />
-							{tagFilterName}
-							<button
-								type="button"
-								className="ml-1 text-muted-foreground hover:text-foreground"
-								onClick={clearTagFilter}
-							>
-								<HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
-							</button>
-						</span>
-					)}
+						{accountFilterId && accountFilterName && (
+							<span className="inline-flex items-center gap-1 rounded-full bg-surface px-2 py-0.5 text-foreground">
+								{accountFilterName}
+								<button
+									type="button"
+									aria-label={`Remove filter ${accountFilterName}`}
+									className="text-muted-foreground hover:text-foreground"
+									onClick={clearAccountFilter}
+								>
+									<HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
+								</button>
+							</span>
+						)}
+						{tagFilterId && tagFilterName && (
+							<span className="inline-flex items-center gap-1 rounded-full bg-surface px-2 py-0.5 text-foreground">
+								<HugeiconsIcon icon={Tag01Icon} className="h-3 w-3" />
+								{tagFilterName}
+								<button
+									type="button"
+									aria-label={`Remove filter ${tagFilterName}`}
+									className="text-muted-foreground hover:text-foreground"
+									onClick={clearTagFilter}
+								>
+									<HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
+								</button>
+							</span>
+						)}
+					</p>
 				</div>
-				<div className="flex items-center gap-2 sm:ml-auto">
+				<div className="flex items-center gap-2">
 					{selectedIds.size > 0 && (
-						<Button
-							variant="destructive"
-							size="sm"
-							className="h-8"
-							onClick={() => setBulkDeleteOpen(true)}
-						>
-							Delete {selectedIds.size} selected
+						<Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
+							Delete {selectedIds.size}
 						</Button>
 					)}
-					<Input
-						placeholder="Search transactions…"
-						className="h-8 flex-1 text-sm sm:w-52 sm:flex-none"
-						value={localQuery}
-						onChange={(e) => setLocalQuery(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter") submitSearch(localQuery);
+					<form
+						role="search"
+						className="relative flex-1 md:w-64 md:flex-none"
+						onSubmit={(e) => {
+							e.preventDefault();
+							submitSearch(localQuery);
 						}}
-					/>
+					>
+						<HugeiconsIcon
+							icon={Search01Icon}
+							className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+						/>
+						<Input
+							type="search"
+							aria-label="Search transactions"
+							placeholder="Search, then Enter"
+							className="pl-9"
+							value={localQuery}
+							onChange={(e) => {
+								setLocalQuery(e.target.value);
+								// Clearing the box clears the search.
+								if (e.target.value === "" && searchQuery) submitSearch("");
+							}}
+						/>
+					</form>
 					<Button
 						variant="outline"
 						size="icon"
-						className="h-8 w-8 shrink-0"
 						onClick={handleExport}
 						disabled={isExporting}
+						aria-label="Export CSV"
 						title="Export CSV"
 					>
 						{isExporting ? (
@@ -385,142 +530,50 @@ export function TransactionTable({
 					</Button>
 				</div>
 			</div>
-			{/* Phones: a stacked list; tap a row to edit. The table needs ~700px to stay readable. */}
-			<ul className="divide-y rounded-lg border md:hidden">
-				{transactions.length === 0 ? (
-					<li>{emptyState}</li>
-				) : (
-					transactions.map((txn) => (
-						<li key={txn.id} className="flex items-center gap-1 pr-1">
-							<button
-								type="button"
-								onClick={() => setEditTarget(txn)}
-								className="flex min-w-0 flex-1 items-center gap-3 px-3 py-3 text-left"
-							>
-								<div className="min-w-0 flex-1">
-									<p className="truncate text-sm font-medium">{txn.description ?? "—"}</p>
-									<p className="mt-0.5 truncate text-xs text-muted-foreground">
-										{fmtDate(txn.date)} · {txn.fromAccount} → {txn.toAccount}
-									</p>
-								</div>
-								<div className="shrink-0 text-sm">{renderAmount(txn)}</div>
-							</button>
-							{renderActions(txn)}
-						</li>
-					))
-				)}
-			</ul>
 
-			<div className="hidden rounded-lg border md:block">
-				<Table>
-					<TableHeader>
-						<TableRow>
-							<TableHead className="w-10">
-								<Checkbox
-									checked={transactions.length > 0 && selectedIds.size === transactions.length}
-									onCheckedChange={toggleSelectAll}
-									aria-label="Select all"
-								/>
-							</TableHead>
-							<TableHead>
-								<button
-									type="button"
-									className="flex items-center gap-1 hover:text-foreground"
-									onClick={() => sortBy("date")}
-								>
-									Date
-									<span className="text-muted-foreground/60">
-										{sortField === "date" ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
-									</span>
-								</button>
-							</TableHead>
-							<TableHead className="w-full">Description</TableHead>
-							<TableHead>From</TableHead>
-							<TableHead>To</TableHead>
-							<TableHead className="text-right">
-								<button
-									type="button"
-									className="flex items-center gap-1 hover:text-foreground ml-auto"
-									onClick={() => sortBy("amount")}
-								>
-									Amount
-									<span className="text-muted-foreground/60">
-										{sortField === "amount" ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
-									</span>
-								</button>
-							</TableHead>
-							<TableHead className="w-10" />
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{transactions.length === 0 ? (
-							<TableRow>
-								<TableCell colSpan={7} className="p-0 whitespace-normal">
-									{emptyState}
-								</TableCell>
-							</TableRow>
-						) : (
-							transactions.map((txn) => (
-								<TableRow key={txn.id} className={selectedIds.has(txn.id) ? "bg-muted/40" : ""}>
-									<TableCell>
-										<Checkbox
-											checked={selectedIds.has(txn.id)}
-											onCheckedChange={() => toggleSelect(txn.id)}
-											aria-label="Select row"
-										/>
-									</TableCell>
-									<TableCell className="text-muted-foreground">{fmtDate(txn.date)}</TableCell>
-									<TableCell className="max-w-0 w-full font-medium">
-										<div className="truncate">{txn.description ?? "—"}</div>
-										{txn.tags.length > 0 && (
-											<div className="mt-1 flex flex-wrap gap-1">
-												{txn.tags.map((tag) => (
-													<button
-														key={tag.id}
-														type="button"
-														title={`Filter by tag: ${tag.name}`}
-														onClick={() => filterByTag(tag.id)}
-														className="rounded-full border px-1.5 py-px text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-														style={
-															tag.color ? { borderColor: tag.color, color: tag.color } : undefined
-														}
-													>
-														{tag.name}
-													</button>
-												))}
-											</div>
-										)}
-									</TableCell>
-									<TableCell>
-										<button
-											type="button"
-											title="Filter by this account"
-											className={`group flex items-center gap-1 text-sm hover:underline underline-offset-2 ${accountFilterId === txn.fromAccountId ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground"}`}
-											onClick={() => filterByAccount(txn.fromAccountId)}
-										>
-											{txn.fromAccount}
-										</button>
-									</TableCell>
-									<TableCell>
-										<button
-											type="button"
-											title="Filter by this account"
-											className={`group flex items-center gap-1 text-sm hover:underline underline-offset-2 ${accountFilterId === txn.toAccountId ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground"}`}
-											onClick={() => filterByAccount(txn.toAccountId)}
-										>
-											{txn.toAccount}
-										</button>
-									</TableCell>
-									<TableCell className="text-right">{renderAmount(txn)}</TableCell>
-									<TableCell>{renderActions(txn)}</TableCell>
-								</TableRow>
-							))
-						)}
-					</TableBody>
-				</Table>
+			{/* Column header: select-all and sorting. Desktop only; phones sort by date. */}
+			<div className="hidden grid-cols-[1.25rem_minmax(0,1fr)_minmax(0,18rem)_8.5rem_2.25rem] items-center gap-x-4 border-b border-rule py-2 text-xs text-muted-foreground md:grid">
+				<Checkbox
+					checked={transactions.length > 0 && selectedIds.size === transactions.length}
+					onCheckedChange={toggleSelectAll}
+					aria-label="Select all on this page"
+				/>
+				<span>{sortButton("date", "Date")}</span>
+				<span>From → To</span>
+				<span className="text-right">{sortButton("amount", "Amount")}</span>
+				<span />
 			</div>
+
+			{transactions.length === 0 ? (
+				emptyState
+			) : (
+				<div>
+					{groups.map((g) => {
+						const dayNet = g.rows.reduce(
+							(sum, t) => sum + flowOf(t) * Math.abs(Number(t.baseAmount)),
+							0,
+						);
+						return (
+							<section key={g.key} aria-label={g.label || undefined}>
+								{byDay && (
+									<header className="flex items-baseline justify-between border-b border-rule pt-4 pb-1.5 text-xs text-muted-foreground">
+										<span className="font-medium text-foreground/80">{g.label}</span>
+										{dayNet !== 0 && (
+											<span className={cn("font-figures", dayNet > 0 && "text-positive")}>
+												{dayNet > 0 ? "+" : ""}
+												{formatCurrency(dayNet, currency)}
+											</span>
+										)}
+									</header>
+								)}
+								<ul className="divide-y divide-rule">{g.rows.map(renderRow)}</ul>
+							</section>
+						);
+					})}
+				</div>
+			)}
 			{(page > 0 || hasMore) && (
-				<div className="mt-4 flex items-center justify-between">
+				<div className="mt-4 flex items-center justify-between border-t border-rule pt-4">
 					<Button
 						variant="outline"
 						size="sm"
@@ -531,8 +584,7 @@ export function TransactionTable({
 					</Button>
 					<span className="text-sm text-muted-foreground">
 						Page {page + 1}
-						{totalPages > 1 ? ` of ${totalPages}` : ""} · {total} transaction
-						{total !== 1 ? "s" : ""}
+						{totalPages > 1 ? ` of ${totalPages}` : ""}
 					</span>
 					<Button
 						variant="outline"
