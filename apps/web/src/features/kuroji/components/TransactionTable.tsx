@@ -102,6 +102,13 @@ export function TransactionTable({
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
+	// A new page, search or filter is a new list: never carry a selection you can't see.
+	const [selectionFor, setSelectionFor] = useState(transactions);
+	if (selectionFor !== transactions) {
+		setSelectionFor(transactions);
+		setSelectedIds(new Set());
+	}
+
 	function navigate(newPage: number) {
 		const params = new URLSearchParams(searchParams.toString());
 		if (newPage === 0) params.delete("page");
