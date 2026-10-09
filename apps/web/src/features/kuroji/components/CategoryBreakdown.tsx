@@ -35,7 +35,7 @@ export function CategoryBreakdown({ balances, currency, periodQuery }: Props) {
 	}
 
 	const renderRow = (r: (typeof rows)[number]) => (
-		<li key={r.id}>
+		<li key={r.id} className="pb-1">
 			<Link
 				href={`/kuroji/accounts/${r.id}${periodQuery}`}
 				prefetch
@@ -55,6 +55,16 @@ export function CategoryBreakdown({ balances, currency, periodQuery }: Props) {
 					/>
 				</span>
 			</Link>
+			{/* Money nobody has filed yet is a to-do, not a category: offer to sort it. */}
+			{r.name.startsWith("Uncategorized") && (
+				<Link
+					href={`/kuroji?tab=transactions&account=${r.id}${periodQuery.replace("?", "&")}`}
+					prefetch
+					className="mb-1.5 inline-block text-xs text-primary underline-offset-2 hover:underline"
+				>
+					Categorize these transactions →
+				</Link>
+			)}
 		</li>
 	);
 
