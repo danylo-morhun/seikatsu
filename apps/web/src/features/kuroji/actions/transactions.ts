@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
+import type { Leg } from "@/features/kuroji/lib/transaction-edit";
 import { getOwnedWorkspace } from "@/lib/session";
 import {
 	accounts,
@@ -39,6 +40,8 @@ export type RecentTransaction = {
 	fromCurrency: string;
 	baseAmount: string;
 	splitCount: number;
+	/** Every stored entry, so the edit form can load splits whole. */
+	legs: Leg[];
 	tags: { id: string; name: string; color: string | null }[];
 };
 
@@ -519,6 +522,13 @@ export async function getRecentTransactions(
 				fromCurrency: fromEntry?.currency ?? "",
 				baseAmount: totalBaseAmount.toFixed(4),
 				splitCount: toEntries.length,
+				legs: txn.entries.map((e) => ({
+					accountId: e.accountId,
+					accountType: e.account?.type ?? "",
+					amount: e.amount,
+					currency: e.currency,
+					baseAmount: e.baseAmount,
+				})),
 				tags: txn.transactionTags.map((tt) => ({
 					id: tt.tag.id,
 					name: tt.tag.name,
