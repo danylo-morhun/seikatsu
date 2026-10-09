@@ -15,6 +15,7 @@ import { TransactionFlow } from "@/features/kuroji/components/TransactionFlow";
 import { buildPeriodLabel, parseLocal } from "@/features/kuroji/lib/dates";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { formatCurrency } from "@/features/kuroji/lib/format";
+import type { TransactionFilters } from "@/features/kuroji/lib/transaction-filters";
 import {
 	Alert01Icon,
 	Cancel01Icon,
@@ -79,6 +80,8 @@ interface Props {
 	page: number;
 	hasMore: boolean;
 	total: number;
+	/** The filters the list was queried with; the export uses the same. */
+	filters: TransactionFilters;
 	accountFilterId?: string;
 	accountFilterName?: string;
 	tagFilterId?: string;
@@ -97,6 +100,7 @@ export function TransactionTable({
 	page,
 	hasMore,
 	total,
+	filters,
 	accountFilterId,
 	accountFilterName,
 	tagFilterId,
@@ -189,13 +193,7 @@ export function TransactionTable({
 
 	async function handleExport() {
 		setIsExporting(true);
-		const result = await exportTransactionsCsv(
-			workspaceId,
-			dateFrom,
-			dateTo,
-			accountFilterId,
-			searchQuery,
-		);
+		const result = await exportTransactionsCsv(workspaceId, filters);
 		if ("error" in result) {
 			toast.error(result.error);
 			setIsExporting(false);

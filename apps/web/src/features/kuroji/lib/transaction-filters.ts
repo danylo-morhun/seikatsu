@@ -12,7 +12,7 @@ export const transactionFiltersSchema = z.object({
 	/** One account, or an account plus its rolled-up sub-accounts. */
 	accountIds: z.array(z.uuid()).max(500).optional(),
 	tagId: z.uuid().optional(),
-	q: z.string().max(200).optional(),
+	q: z.string().optional(),
 	sortField: z.enum(["date", "amount"]).optional(),
 	sortDir: z.enum(["asc", "desc"]).optional(),
 });
