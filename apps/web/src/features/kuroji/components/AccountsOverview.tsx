@@ -10,6 +10,7 @@ import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import type { AccountBalance } from "@/features/kuroji/actions/balances";
 import { AddAccountModal } from "@/features/kuroji/components/AddAccountModal";
 import { EditAccountModal } from "@/features/kuroji/components/EditAccountModal";
+import { displayBalance } from "@/features/kuroji/lib/balance";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import {
 	Alert01Icon,
@@ -39,6 +40,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 	Progress,
+	cn,
 } from "@seikatsu/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -130,20 +132,22 @@ function BalanceDisplay({
 }: { row: AccountRow; acct: Account | undefined; currency: string }) {
 	const acctCurrency = acct?.currency ?? currency;
 	const isMulti = acctCurrency !== currency;
-	const baseAmt = Math.abs(Number(row.balance));
-	const nativeAmt = Math.abs(Number(row.nativeBalance));
-	// Income and liabilities are credit-normal (stored negative); flag only the abnormal sign.
-	const creditNormal = row.type === "INCOME" || row.type === "LIABILITY";
-	const isNeg = creditNormal ? Number(row.balance) > 0 : Number(row.balance) < 0;
+	const baseAmt = displayBalance(row.type, Number(row.balance));
+	const nativeAmt = displayBalance(row.type, Number(row.nativeBalance));
+	// Sign carries the meaning; red is only a second cue for an abnormal balance.
+	const isNeg = baseAmt < 0;
 
 	return (
 		<span
-			className={`text-sm whitespace-nowrap text-right tabular-nums ${isNeg ? "text-red-500" : "text-muted-foreground"}`}
+			className={cn(
+				"text-sm whitespace-nowrap text-right tabular-nums",
+				isNeg ? "text-red-500" : "text-muted-foreground",
+			)}
 		>
 			{isMulti ? (
 				<>
 					{formatCurrency(nativeAmt, acctCurrency)}
-					<span className="block text-xs text-muted-foreground/50">
+					<span className="block text-xs text-muted-foreground">
 						≈ {formatCurrency(baseAmt, currency)}
 					</span>
 				</>
@@ -247,12 +251,12 @@ export function AccountsOverview({
 		const isExpanded = expanded.has(row.accountId);
 
 		const budget = acct.budget != null ? Number(acct.budget) : null;
-		const balance = Number(row.balance);
-		const absBalance = Math.abs(balance);
+		// Spent (expense) or earned (income) so far; a net refund counts as nothing used.
+		const used = Math.max(displayBalance(row.type, Number(row.balance)), 0);
 		const showBudget =
 			(row.type === "EXPENSE" || row.type === "INCOME") && budget != null && budget > 0;
-		const pct = showBudget ? Math.min((absBalance / budget!) * 100, 100) : null;
-		const overBudget = showBudget && absBalance > budget!;
+		const pct = showBudget ? Math.min((used / budget!) * 100, 100) : null;
+		const overBudget = showBudget && used > budget!;
 		const isIncome = row.type === "INCOME";
 
 		return (
@@ -316,8 +320,8 @@ export function AccountsOverview({
 											: undefined
 								}
 							/>
-							<p className="text-xs text-muted-foreground/70">
-								{formatCurrency(absBalance, currency)} / {formatCurrency(budget!, currency)}
+							<p className="text-xs text-muted-foreground">
+								{formatCurrency(used, currency)} / {formatCurrency(budget!, currency)}
 								{isIncome && overBudget && " · target reached"}
 							</p>
 						</div>
@@ -348,7 +352,10 @@ export function AccountsOverview({
 				const hiddenParents = parents.filter(
 					(r) => r.hidden && (type === "ASSET" || r.name !== "Opening Balance"),
 				);
-				const typeTotal = visibleParents.reduce((acc, b) => acc + Number(b.balance), 0);
+				const typeTotal = displayBalance(
+					type,
+					visibleParents.reduce((acc, b) => acc + Number(b.balance), 0),
+				);
 
 				return (
 					<div key={type}>
@@ -357,8 +364,13 @@ export function AccountsOverview({
 								{TYPE_LABELS[type]}
 							</p>
 							{!listMode && visibleParents.length > 0 && (
-								<p className="text-sm font-semibold tabular-nums">
-									{formatCurrency(Math.abs(typeTotal), currency)}
+								<p
+									className={cn(
+										"text-sm font-semibold tabular-nums",
+										typeTotal < 0 && "text-red-500",
+									)}
+								>
+									{formatCurrency(typeTotal, currency)}
 								</p>
 							)}
 						</div>
