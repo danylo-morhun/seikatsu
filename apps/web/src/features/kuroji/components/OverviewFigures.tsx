@@ -71,7 +71,7 @@ export function OverviewFigures({
 					value={netWorth}
 					currency={currency}
 					tone={netWorth < 0 ? "negative" : undefined}
-					note={`${formatCurrency(assets, currency)} owned · ${formatCurrency(liabilities, currency)} owed`}
+					note={`${formatCurrency(assets, currency)} assets · ${formatCurrency(liabilities, currency)} debts`}
 				/>
 			</div>
 			<Figure
