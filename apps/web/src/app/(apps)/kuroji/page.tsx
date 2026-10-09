@@ -13,7 +13,7 @@ import { MonthlyFlow } from "@/features/kuroji/components/MonthlyFlow";
 import { OnboardingCard } from "@/features/kuroji/components/OnboardingCard";
 import { OverviewFigures } from "@/features/kuroji/components/OverviewFigures";
 import { TransactionTable } from "@/features/kuroji/components/TransactionTable";
-import { displayBalance } from "@/features/kuroji/lib/balance";
+import { displayBalance, rollupRoots } from "@/features/kuroji/lib/balance";
 import { parseLocal } from "@/features/kuroji/lib/dates";
 import { asOfLabel, periodQuery, resolvePeriod } from "@/features/kuroji/lib/period";
 import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
@@ -96,12 +96,14 @@ export default async function KurojiPage({
 			hasAnyTransactions(workspace.id),
 		]);
 
+		// Each entry counted once: rollup roots only (a child under a same-type parent is
+		// already in the parent's balance; one under another type's parent is not).
+		const roots = rollupRoots(balances);
 		const topLevel = (type: string, excludeOpeningBalance = false) =>
-			balances
+			roots
 				.filter(
 					(b) =>
 						b.type === type &&
-						!b.parentId &&
 						!b.hidden &&
 						(!excludeOpeningBalance || b.name !== "Opening Balance"),
 				)
