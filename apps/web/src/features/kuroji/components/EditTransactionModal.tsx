@@ -42,10 +42,13 @@ function inferTxType(txn: RecentTransaction): TxType {
 }
 
 function buildDefaults(type: TxType, txn: RecentTransaction): TransactionFormValues {
+	// Amount comes from the wallet leg (income: destination; otherwise: source), so the
+	// wallet keeps its exact native amount on save.
+	const fromLeg = type !== "income";
 	const base = {
 		description: txn.description ?? undefined,
-		amount: Math.abs(Number(txn.amount)),
-		currency: toCurrency(txn.currency),
+		amount: Math.abs(Number(fromLeg ? txn.fromAmount : txn.amount)),
+		currency: toCurrency(fromLeg ? txn.fromCurrency : txn.currency),
 		date: txn.date,
 	};
 	if (type === "expense")
@@ -57,6 +60,7 @@ function buildDefaults(type: TxType, txn: RecentTransaction): TransactionFormVal
 		txType: "transfer",
 		fromWalletId: txn.fromAccountId,
 		toWalletId: txn.toAccountId,
+		received: txn.currency !== txn.fromCurrency ? Math.abs(Number(txn.amount)) : undefined,
 	};
 }
 
@@ -83,11 +87,18 @@ export function EditTransactionModal({ transaction, workspaceId, open, onOpenCha
 		handleSubmit,
 		control,
 		reset,
+		watch,
 		formState: { errors, isSubmitting },
 	} = useForm<TransactionFormValues>({
 		resolver: zodResolver(transactionFormSchema),
 		defaultValues: buildDefaults(txType, transaction) as unknown as TransactionFormValues,
 	});
+
+	const watchToId = watch("toWalletId" as never) as unknown as string | undefined;
+	const watchCurrency = watch("currency");
+	const toCurrencyCode = accounts.find((a) => a.id === watchToId)?.currency;
+	const showReceived =
+		txType === "transfer" && !!toCurrencyCode && toCurrencyCode !== watchCurrency;
 
 	React.useEffect(() => {
 		if (open) setSelectedTagIds(transaction.tags.map((t) => t.id));
@@ -119,6 +130,7 @@ export function EditTransactionModal({ transaction, workspaceId, open, onOpenCha
 			toAccountId,
 			amount: values.amount,
 			currency: values.currency,
+			received: values.txType === "transfer" && showReceived ? values.received : undefined,
 			description: values.description,
 			date: values.date,
 			tagIds: selectedTagIds,
@@ -270,6 +282,24 @@ export function EditTransactionModal({ transaction, workspaceId, open, onOpenCha
 						</div>
 						{errs.amount && <p className="text-destructive text-[0.8rem]">{errs.amount.message}</p>}
 					</div>
+
+					{showReceived && (
+						<div className="space-y-2">
+							<Label htmlFor="edit-received">Received ({toCurrencyCode})</Label>
+							<Input
+								id="edit-received"
+								type="number"
+								step="0.01"
+								placeholder="Blank = convert at the day's rate"
+								{...register("received" as never, {
+									setValueAs: (v: string) => (v === "" ? undefined : Number(v)),
+								})}
+							/>
+							{errs.received && (
+								<p className="text-destructive text-[0.8rem]">{errs.received.message}</p>
+							)}
+						</div>
+					)}
 
 					<div className="space-y-2">
 						<Label htmlFor="edit-date">Date</Label>

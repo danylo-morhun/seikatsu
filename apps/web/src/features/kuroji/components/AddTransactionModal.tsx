@@ -68,6 +68,7 @@ export function AddTransactionModal({
 		control,
 		reset,
 		watch,
+		setValue,
 		formState: { errors, isSubmitting },
 	} = useForm<AddTransactionFormValues>({
 		resolver: zodResolver(addTransactionFormSchema),
@@ -98,6 +99,19 @@ export function AddTransactionModal({
 	const splitTotal = watchSplits?.reduce((s, r) => s + (Number(r?.amount) || 0), 0) ?? 0;
 
 	const { accounts, tags: workspaceTags } = useFormOptions(workspaceId, open);
+
+	// Default the amount's currency to the paying account's, so entries land in its currency.
+	const watchWalletId = watch("walletId" as never) as unknown as string | undefined;
+	const watchFromId = watch("fromWalletId" as never) as unknown as string | undefined;
+	const watchToId = watch("toWalletId" as never) as unknown as string | undefined;
+	const currencyOf = (id: string | undefined) => accounts.find((a) => a.id === id)?.currency;
+	const sourceCurrency = currencyOf(txType === "transfer" ? watchFromId : watchWalletId);
+	React.useEffect(() => {
+		if (sourceCurrency) setValue("currency", toCurrency(sourceCurrency));
+	}, [sourceCurrency, setValue]);
+	const toCurrencyCode = currencyOf(watchToId);
+	const showReceived =
+		txType === "transfer" && !!toCurrencyCode && toCurrencyCode !== watchCurrency;
 
 	React.useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
@@ -186,6 +200,7 @@ export function AddTransactionModal({
 				toAccountId: values.toWalletId,
 				amount: values.amount,
 				currency: values.currency,
+				received: showReceived ? values.received : undefined,
 				description: values.description,
 				date: values.date,
 				tagIds: selectedTagIds,
@@ -418,6 +433,25 @@ export function AddTransactionModal({
 									</p>
 								)}
 							</div>
+							{showReceived && (
+								<div className="space-y-2">
+									<Label htmlFor="add-received">Received ({toCurrencyCode})</Label>
+									<Input
+										id="add-received"
+										type="number"
+										step="0.01"
+										placeholder="Blank = convert at the day's rate"
+										{...(register as (name: string, opts?: object) => object)("received", {
+											setValueAs: (v: string) => (v === "" ? undefined : Number(v)),
+										})}
+									/>
+									{(errs.received as { message?: string })?.message && (
+										<p className="text-destructive text-[0.8rem]">
+											{(errs.received as { message?: string }).message}
+										</p>
+									)}
+								</div>
+							)}
 						</TabsContent>
 					</Tabs>
 

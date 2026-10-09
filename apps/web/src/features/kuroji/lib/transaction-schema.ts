@@ -28,6 +28,8 @@ export const transferSchema = z.object({
 	txType: z.literal("transfer"),
 	fromWalletId: z.string().min(1, "Select from wallet"),
 	toWalletId: z.string().min(1, "Select to wallet"),
+	// Destination amount for cross-currency transfers; blank → converted at the day's rate.
+	received: z.number().positive("Amount must be positive").optional(),
 });
 
 export const transactionFormSchema = z.discriminatedUnion("txType", [
