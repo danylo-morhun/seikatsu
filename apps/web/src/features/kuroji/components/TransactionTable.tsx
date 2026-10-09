@@ -374,7 +374,33 @@ export function TransactionTable({
 					</Button>
 				</div>
 			</div>
-			<div className="rounded-lg border">
+			{/* Phones: a stacked list; tap a row to edit. The table needs ~700px to stay readable. */}
+			<ul className="divide-y rounded-lg border md:hidden">
+				{transactions.length === 0 ? (
+					<li>{emptyState}</li>
+				) : (
+					transactions.map((txn) => (
+						<li key={txn.id} className="flex items-center gap-1 pr-1">
+							<button
+								type="button"
+								onClick={() => setEditTarget(txn)}
+								className="flex min-w-0 flex-1 items-center gap-3 px-3 py-3 text-left"
+							>
+								<div className="min-w-0 flex-1">
+									<p className="truncate text-sm font-medium">{txn.description ?? "—"}</p>
+									<p className="mt-0.5 truncate text-xs text-muted-foreground">
+										{fmtDate(txn.date)} · {txn.fromAccount} → {txn.toAccount}
+									</p>
+								</div>
+								<div className="shrink-0 text-sm">{renderAmount(txn)}</div>
+							</button>
+							{renderActions(txn)}
+						</li>
+					))
+				)}
+			</ul>
+
+			<div className="hidden rounded-lg border md:block">
 				<Table>
 					<TableHeader>
 						<TableRow>
