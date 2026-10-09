@@ -2,7 +2,17 @@
 
 import { auth } from "@/auth";
 import { getOwnedWorkspace } from "@/lib/session";
-import { accounts, and, db, eq, gte, sql, transactionEntries, transactions } from "@seikatsu/db";
+import {
+	accounts,
+	and,
+	db,
+	eq,
+	gte,
+	inArray,
+	sql,
+	transactionEntries,
+	transactions,
+} from "@seikatsu/db";
 
 export type AccountDetail = {
 	id: string;
@@ -43,22 +53,16 @@ export async function getAccountDetail(accountId: string): Promise<AccountDetail
 	};
 }
 
+/** Monthly in/out over the last months for an account scope (an account and its rolled-up subs). */
 export async function getAccountActivity(
-	accountId: string,
+	workspaceId: string,
+	accountIds: string[],
 	months = 6,
 ): Promise<AccountActivity[]> {
 	const session = await auth();
 	if (!session?.user?.id) throw new Error("Unauthorized");
 
-	const [account] = await db
-		.select({ workspaceId: accounts.workspaceId })
-		.from(accounts)
-		.where(eq(accounts.id, accountId))
-		.limit(1);
-
-	if (!account) return [];
-
-	const ws = await getOwnedWorkspace(account.workspaceId);
+	const ws = await getOwnedWorkspace(workspaceId);
 
 	if (!ws) throw new Error("Forbidden");
 
@@ -75,7 +79,13 @@ export async function getAccountActivity(
 		})
 		.from(transactionEntries)
 		.innerJoin(transactions, eq(transactions.id, transactionEntries.transactionId))
-		.where(and(eq(transactionEntries.accountId, accountId), gte(transactions.date, cutoffDate)))
+		.where(
+			and(
+				eq(transactions.workspaceId, workspaceId),
+				inArray(transactionEntries.accountId, accountIds),
+				gte(transactions.date, cutoffDate),
+			),
+		)
 		.groupBy(sql`to_char(${transactions.date}, 'YYYY-MM')`)
 		.orderBy(sql`to_char(${transactions.date}, 'YYYY-MM')`);
 

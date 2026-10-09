@@ -48,8 +48,7 @@ export default async function AccountDetailPage({
 
 	// Same balances (period, sub-account rollup, FX revaluation) as the Accounts tab.
 	const period = resolvePeriod({ from: rawFrom, to: rawTo, all: rawAll }, today);
-	const [activity, balances, allAccounts] = await Promise.all([
-		getAccountActivity(id),
+	const [balances, allAccounts] = await Promise.all([
 		getBalances(workspace.id, period.from, period.to),
 		getAccounts(workspace.id),
 	]);
@@ -69,7 +68,10 @@ export default async function AccountDetailPage({
 		accountIds: scope,
 		q,
 	};
-	const txResult = await getRecentTransactions(workspace.id, filters, page);
+	const [txResult, activity] = await Promise.all([
+		getRecentTransactions(workspace.id, filters, page),
+		getAccountActivity(workspace.id, scope),
+	]);
 
 	const budget = account.budget != null ? Number(account.budget) : null;
 	const showBudget = !isStock && budget != null && budget > 0;
