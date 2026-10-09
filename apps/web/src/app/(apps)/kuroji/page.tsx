@@ -12,7 +12,7 @@ import { OnboardingCard } from "@/features/kuroji/components/OnboardingCard";
 import { TransactionTable } from "@/features/kuroji/components/TransactionTable";
 import { displayBalance } from "@/features/kuroji/lib/balance";
 import { formatCurrency } from "@/features/kuroji/lib/format";
-import { resolvePeriod } from "@/features/kuroji/lib/period";
+import { asOfLabel, resolvePeriod } from "@/features/kuroji/lib/period";
 import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
 import { getUserToday } from "@/lib/timezone";
 import dynamic from "next/dynamic";
@@ -174,7 +174,7 @@ export default async function KurojiPage({
 	// ── Accounts ────────────────────────────────────────────────────────────────
 	if (tab === "accounts") {
 		const [balances, accounts] = await Promise.all([
-			getBalances(workspace.id, undefined, undefined),
+			getBalances(workspace.id, from, to),
 			getAccounts(workspace.id),
 		]);
 
@@ -186,7 +186,8 @@ export default async function KurojiPage({
 						accounts={accounts}
 						currency={workspace.baseCurrency}
 						workspaceId={workspace.id}
-						periodLabel="All time"
+						periodLabel={period.label}
+						asOfLabel={asOfLabel(to, today)}
 					/>
 				</div>
 			</main>
