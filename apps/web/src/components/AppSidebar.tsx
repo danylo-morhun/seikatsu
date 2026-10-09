@@ -73,7 +73,7 @@ export function AppSidebar({ workspaceName, user }: Props) {
 	}, [pathname]);
 
 	return (
-		<Sidebar collapsible="icon">
+		<Sidebar collapsible="icon" variant="inset">
 			<SidebarHeader>
 				<SidebarMenu>
 					<SidebarMenuItem>
@@ -98,7 +98,13 @@ export function AppSidebar({ workspaceName, user }: Props) {
 								const icon = APP_ICONS[href];
 								return (
 									<SidebarMenuItem key={href}>
-										<SidebarMenuButton asChild isActive={pathname.startsWith(href)} tooltip={name}>
+										<SidebarMenuButton
+											asChild
+											isActive={pathname.startsWith(href)}
+											tooltip={name}
+											// The active app is lit from inside with its own pigment.
+											className="data-active:bg-primary/15 data-active:text-primary data-active:hover:bg-primary/20 data-active:hover:text-primary"
+										>
 											<Link href={entryHrefs[href] ?? href} prefetch>
 												{icon && <HugeiconsIcon icon={icon} className="h-4 w-4 shrink-0" />}
 												<span>{name}</span>
