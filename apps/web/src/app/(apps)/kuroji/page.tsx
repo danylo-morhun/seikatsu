@@ -6,26 +6,19 @@ import { getRecentTransactions } from "@/features/kuroji/actions/transactions";
 import { getMonthlyTrends } from "@/features/kuroji/actions/trends";
 import { initializeWorkspace } from "@/features/kuroji/actions/workspace";
 import { AccountsOverview } from "@/features/kuroji/components/AccountsOverview";
+import { CategoryBreakdown } from "@/features/kuroji/components/CategoryBreakdown";
 import { ExpensesEmptyState } from "@/features/kuroji/components/ExpensesEmptyState";
 import type { KurojiTab } from "@/features/kuroji/components/KurojiNavTabs";
+import { MonthlyFlow } from "@/features/kuroji/components/MonthlyFlow";
 import { OnboardingCard } from "@/features/kuroji/components/OnboardingCard";
+import { OverviewFigures } from "@/features/kuroji/components/OverviewFigures";
 import { TransactionTable } from "@/features/kuroji/components/TransactionTable";
 import { displayBalance } from "@/features/kuroji/lib/balance";
-import { formatCurrency } from "@/features/kuroji/lib/format";
-import { asOfLabel, resolvePeriod } from "@/features/kuroji/lib/period";
+import { asOfLabel, periodQuery, resolvePeriod } from "@/features/kuroji/lib/period";
 import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
 import { getUserToday } from "@/lib/timezone";
-import dynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-
-// Charts (recharts) only render on the overview tab — split them out of the route bundle.
-const ExpenseBreakdown = dynamic(() =>
-	import("@/features/kuroji/components/ExpenseBreakdown").then((m) => m.ExpenseBreakdown),
-);
-const TrendChart = dynamic(() =>
-	import("@/features/kuroji/components/TrendChart").then((m) => m.TrendChart),
-);
 
 const VALID_TABS: KurojiTab[] = ["expense", "accounts", "transactions"];
 
@@ -112,8 +105,17 @@ export default async function KurojiPage({
 				.reduce((acc, b) => acc + Number(b.balance), 0);
 		const income = displayBalance("INCOME", topLevel("INCOME"));
 		const expenses = displayBalance("EXPENSE", topLevel("EXPENSE"));
-		// Ledger signs already net out: liabilities are stored negative, an overpaid one positive.
-		const netWorth = topLevel("ASSET") + topLevel("LIABILITY", true);
+		const assets = topLevel("ASSET");
+		// Liabilities are stored negative; shown as what is owed (an overpaid one goes negative).
+		const liabilities = displayBalance("LIABILITY", topLevel("LIABILITY", true));
+		const query = periodQuery(
+			new URLSearchParams(
+				Object.entries({ from: rawFrom, to: rawTo, all: rawAll }).filter(
+					(e): e is [string, string] => !!e[1],
+				),
+			),
+		);
+
 		return (
 			<main className="flex flex-col pb-28 md:pb-0">
 				{balances.length === 0 ? (
@@ -125,48 +127,44 @@ export default async function KurojiPage({
 						/>
 					</div>
 				) : (
-					<div className="space-y-6 px-4 py-6 sm:px-6">
-						<div className="flex flex-wrap items-center gap-4 sm:gap-6">
-							<div>
-								<p className="text-xs text-muted-foreground">Net Worth</p>
-								<p className={`text-2xl font-bold ${netWorth < 0 ? "text-destructive" : ""}`}>
-									{formatCurrency(netWorth, workspace.baseCurrency)}
-								</p>
-							</div>
-							<div className="h-8 w-px bg-border" />
-							<div>
-								<p className="text-xs text-muted-foreground">Income</p>
-								<p className="text-2xl font-bold text-green-500">
-									{formatCurrency(income, workspace.baseCurrency)}
-								</p>
-							</div>
-							<div className="h-8 w-px bg-border" />
-							<div>
-								<p className="text-xs text-muted-foreground">Expenses</p>
-								<p className="text-2xl font-bold">
-									{formatCurrency(expenses, workspace.baseCurrency)}
-								</p>
-							</div>
-						</div>
-
-						{income === 0 && expenses === 0 ? (
-							<ExpensesEmptyState
-								workspaceId={workspace.id}
-								baseCurrency={workspace.baseCurrency}
-								from={from}
-								to={to}
-							/>
-						) : (
-							<>
-								<ExpenseBreakdown balances={balances} currency={workspace.baseCurrency} />
-							</>
-						)}
-						<TrendChart
-							data={trendData}
+					<div className="space-y-10 px-4 py-6 sm:px-8 md:py-8">
+						<OverviewFigures
 							currency={workspace.baseCurrency}
-							trendParam={trendParam}
-							hasDateFilter={hasDateFilter}
+							periodLabel={period.label}
+							assets={assets}
+							liabilities={liabilities}
+							income={income}
+							expenses={expenses}
 						/>
+
+						<div className="grid gap-10 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-12">
+							<section aria-labelledby="spending-title">
+								<h2 id="spending-title" className="mb-3 text-sm font-medium">
+									Where it went
+								</h2>
+								{income === 0 && expenses === 0 ? (
+									<ExpensesEmptyState
+										workspaceId={workspace.id}
+										baseCurrency={workspace.baseCurrency}
+										from={from}
+										to={to}
+									/>
+								) : (
+									<CategoryBreakdown
+										balances={balances}
+										currency={workspace.baseCurrency}
+										periodQuery={query}
+									/>
+								)}
+							</section>
+							<MonthlyFlow
+								data={trendData}
+								currency={workspace.baseCurrency}
+								trendParam={trendParam}
+								hasDateFilter={hasDateFilter}
+								searchParams={{ from: rawFrom, to: rawTo, all: rawAll }}
+							/>
+						</div>
 					</div>
 				)}
 			</main>
