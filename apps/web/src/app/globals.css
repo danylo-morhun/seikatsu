@@ -57,86 +57,92 @@
 	--font-figures: var(--figures-font);
 }
 
+/* ── World: Urushi ──────────────────────────────────────────────────────────
+   Black lacquer outside, pigment inside. Warm blacks in three tonal layers carry
+   depth instead of shadows; each app's pigment lives only on what is active;
+   money flows are drawn in maki-e gold.
+   ─────────────────────────────────────────────────────────────────────────── */
 :root {
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.145 0 0);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: oklch(0.565 0.225 20);
-	--primary-foreground: oklch(0.985 0.005 20);
-	--secondary: oklch(0.967 0.001 286.375);
-	--secondary-foreground: oklch(0.21 0.006 285.885);
-	--muted: oklch(0.97 0 0);
-	--muted-foreground: oklch(0.556 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
-	--destructive: oklch(0.62 0.22 42);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: oklch(0.565 0.225 20);
-	--chart-1: oklch(0.87 0.07 20);
-	--chart-2: oklch(0.75 0.14 20);
-	--chart-3: oklch(0.63 0.2 20);
-	--chart-4: oklch(0.565 0.225 20);
-	--chart-5: oklch(0.44 0.18 20);
-	--radius: 0.625rem;
-	--sidebar: oklch(0.985 0 0);
-	--sidebar-foreground: oklch(0.145 0 0);
-	--sidebar-primary: oklch(0.63 0.2 20);
-	--sidebar-primary-foreground: oklch(0.985 0.005 20);
-	--sidebar-accent: oklch(0.97 0 0);
-	--sidebar-accent-foreground: oklch(0.205 0 0);
-	--sidebar-border: oklch(0.922 0 0);
-	--sidebar-ring: oklch(0.565 0.225 20);
-	--surface: oklch(0.975 0 0);
-	--surface-2: oklch(0.95 0 0);
-	--rule: oklch(0.9 0 0);
-	--positive: oklch(0.55 0.15 150);
-	--negative: oklch(0.55 0.2 27);
-	--flow: oklch(0.6 0 0);
+	--radius: 0.5rem;
+	--background: oklch(0.975 0.006 75);
+	--foreground: oklch(0.2 0.015 40);
+	--card: oklch(0.99 0.004 75);
+	--card-foreground: oklch(0.2 0.015 40);
+	--popover: oklch(0.99 0.004 75);
+	--popover-foreground: oklch(0.2 0.015 40);
+	--primary: oklch(0.48 0.17 32);
+	--primary-foreground: oklch(0.98 0.01 75);
+	--secondary: oklch(0.94 0.01 70);
+	--secondary-foreground: oklch(0.25 0.015 40);
+	--muted: oklch(0.94 0.01 70);
+	--muted-foreground: oklch(0.47 0.015 50);
+	--accent: oklch(0.94 0.01 70);
+	--accent-foreground: oklch(0.2 0.015 40);
+	--destructive: oklch(0.52 0.19 30);
+	--border: oklch(0.2 0.015 40 / 12%);
+	--input: oklch(0.2 0.015 40 / 18%);
+	--ring: oklch(0.48 0.17 32);
+	--chart-1: oklch(0.55 0.1 85);
+	--chart-2: oklch(0.48 0.17 32);
+	--chart-3: oklch(0.5 0.08 160);
+	--chart-4: oklch(0.45 0.1 255);
+	--chart-5: oklch(0.45 0.1 320);
+	--sidebar: oklch(0.95 0.01 70);
+	--sidebar-foreground: oklch(0.2 0.015 40);
+	--sidebar-primary: oklch(0.48 0.17 32);
+	--sidebar-primary-foreground: oklch(0.98 0.01 75);
+	--sidebar-accent: oklch(0.91 0.012 70);
+	--sidebar-accent-foreground: oklch(0.2 0.015 40);
+	--sidebar-border: oklch(0.2 0.015 40 / 10%);
+	--sidebar-ring: oklch(0.48 0.17 32);
+	--surface: oklch(0.955 0.008 72);
+	--surface-2: oklch(0.925 0.01 70);
+	--rule: oklch(0.2 0.015 40 / 10%);
+	--positive: oklch(0.5 0.1 160);
+	--negative: oklch(0.52 0.19 30);
+	--flow: oklch(0.6 0.11 80);
 	--figures-font: var(--font-sans);
 }
 
 .dark {
-	--background: oklch(0.145 0 0);
-	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.205 0 0);
-	--card-foreground: oklch(0.985 0 0);
-	--popover: oklch(0.205 0 0);
-	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(0.65 0.22 20);
-	--primary-foreground: oklch(0.985 0.005 20);
-	--secondary: oklch(0.274 0.006 286.033);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.269 0 0);
-	--muted-foreground: oklch(0.708 0 0);
-	--accent: oklch(0.269 0 0);
-	--accent-foreground: oklch(0.985 0 0);
-	--destructive: oklch(0.75 0.2 42);
-	--border: oklch(1 0 0 / 10%);
-	--input: oklch(1 0 0 / 15%);
-	--ring: oklch(0.65 0.22 20);
-	--chart-1: oklch(0.87 0.07 20);
-	--chart-2: oklch(0.75 0.14 20);
-	--chart-3: oklch(0.63 0.2 20);
-	--chart-4: oklch(0.565 0.225 20);
-	--chart-5: oklch(0.44 0.18 20);
-	--sidebar: oklch(0.205 0 0);
-	--sidebar-foreground: oklch(0.985 0 0);
-	--sidebar-primary: oklch(0.72 0.18 20);
-	--sidebar-primary-foreground: oklch(0.985 0.005 20);
-	--sidebar-accent: oklch(0.269 0 0);
-	--sidebar-accent-foreground: oklch(0.985 0 0);
-	--sidebar-border: oklch(1 0 0 / 10%);
-	--sidebar-ring: oklch(0.65 0.22 20);
-	--surface: oklch(0.18 0 0);
-	--surface-2: oklch(0.22 0 0);
-	--rule: oklch(1 0 0 / 9%);
-	--positive: oklch(0.74 0.15 150);
-	--negative: oklch(0.7 0.18 27);
-	--flow: oklch(0.6 0 0);
+	--background: oklch(0.135 0.008 40);
+	--foreground: oklch(0.94 0.014 80);
+	--card: oklch(0.17 0.01 40);
+	--card-foreground: oklch(0.94 0.014 80);
+	--popover: oklch(0.175 0.011 40);
+	--popover-foreground: oklch(0.94 0.014 80);
+	--primary: oklch(0.68 0.16 34);
+	--primary-foreground: oklch(0.14 0.02 40);
+	--secondary: oklch(0.21 0.012 40);
+	--secondary-foreground: oklch(0.94 0.014 80);
+	--muted: oklch(0.21 0.012 40);
+	--muted-foreground: oklch(0.7 0.016 70);
+	--accent: oklch(0.21 0.012 40);
+	--accent-foreground: oklch(0.94 0.014 80);
+	--destructive: oklch(0.66 0.17 32);
+	--border: oklch(0.94 0.03 75 / 9%);
+	--input: oklch(0.94 0.03 75 / 15%);
+	--ring: oklch(0.68 0.16 34);
+	--chart-1: oklch(0.8 0.11 85);
+	--chart-2: oklch(0.68 0.16 34);
+	--chart-3: oklch(0.72 0.09 165);
+	--chart-4: oklch(0.66 0.11 255);
+	--chart-5: oklch(0.66 0.11 320);
+	--sidebar: oklch(0.105 0.007 40);
+	--sidebar-foreground: oklch(0.9 0.014 80);
+	--sidebar-primary: oklch(0.68 0.16 34);
+	--sidebar-primary-foreground: oklch(0.14 0.02 40);
+	--sidebar-accent: oklch(0.17 0.01 40);
+	--sidebar-accent-foreground: oklch(0.94 0.014 80);
+	--sidebar-border: oklch(0.94 0.03 75 / 7%);
+	--sidebar-ring: oklch(0.68 0.16 34);
+	--surface: oklch(0.17 0.01 40);
+	--surface-2: oklch(0.215 0.012 40);
+	--rule: oklch(0.94 0.03 75 / 8%);
+	--positive: oklch(0.78 0.1 165);
+	--negative: oklch(0.7 0.16 32);
+	--flow: oklch(0.8 0.11 85);
+	--figures-font: var(--font-sans);
 }
 
 @layer base {
@@ -153,192 +159,123 @@
 	}
 }
 
-/* ── App themes ──────────────────────────────────────────────────────────────
-   Each app overrides --primary, --accent, --ring, and chart colors.
-   Background/foreground/border stay neutral so the UI feels cohesive.
+/* ── App pigments ────────────────────────────────────────────────────────────
+   Traditional lacquer pigments, one per app. Only --primary/--ring/charts change:
+   the black shell stays shared so the super-app reads as one set of boxes.
    ─────────────────────────────────────────────────────────────────────────── */
 
-/* Kuroji — Gold (light) */
+/* Kuroji — kin (maki-e gold) */
 .theme-kuroji {
-	--primary: oklch(0.72 0.2 78);
-	--primary-foreground: oklch(0.12 0.04 78);
-	--accent: oklch(0.94 0.05 80);
-	--accent-foreground: oklch(0.18 0.05 78);
-	--ring: oklch(0.72 0.2 78);
-
-	--chart-1: oklch(0.87 0.17 88);
-	--chart-2: oklch(0.78 0.18 83);
-	--chart-3: oklch(0.68 0.15 76);
-	--chart-4: oklch(0.58 0.12 70);
-	--chart-5: oklch(0.48 0.09 64);
+	--primary: oklch(0.6 0.12 80);
+	--primary-foreground: oklch(0.98 0.01 80);
+	--ring: oklch(0.6 0.12 80);
 }
-
-/* Kuroji — Gold (dark) */
 .dark .theme-kuroji {
-	--primary: oklch(0.78 0.18 83);
-	--primary-foreground: oklch(0.1 0.03 83);
-	--accent: oklch(0.22 0.05 83);
-	--accent-foreground: oklch(0.95 0.04 83);
-	--ring: oklch(0.78 0.18 83);
-
-	--chart-1: oklch(0.87 0.17 88);
-	--chart-2: oklch(0.78 0.18 83);
-	--chart-3: oklch(0.68 0.15 76);
-	--chart-4: oklch(0.58 0.12 70);
-	--chart-5: oklch(0.48 0.09 64);
+	--primary: oklch(0.82 0.12 85);
+	--primary-foreground: oklch(0.16 0.02 60);
+	--ring: oklch(0.82 0.12 85);
 }
 
-/* Seiryu — Blue (light) */
+/* Seiryu — ruri (lapis) */
 .theme-seiryu {
-	--primary: oklch(0.4 0.2 264);
-	--primary-foreground: oklch(0.97 0.01 264);
-	--accent: oklch(0.93 0.04 264);
-	--accent-foreground: oklch(0.18 0.06 264);
-	--ring: oklch(0.4 0.2 264);
-
-	--chart-1: oklch(0.82 0.09 264);
-	--chart-2: oklch(0.68 0.15 264);
-	--chart-3: oklch(0.55 0.18 264);
-	--chart-4: oklch(0.4 0.2 264);
-	--chart-5: oklch(0.28 0.14 264);
+	--primary: oklch(0.45 0.14 258);
+	--primary-foreground: oklch(0.98 0.01 258);
+	--ring: oklch(0.45 0.14 258);
 }
-
-/* Seiryu — Blue (dark) */
 .dark .theme-seiryu {
-	--primary: oklch(0.56 0.2 264);
-	--primary-foreground: oklch(0.97 0.01 264);
-	--accent: oklch(0.22 0.06 264);
-	--accent-foreground: oklch(0.95 0.03 264);
-	--ring: oklch(0.56 0.2 264);
-
-	--chart-1: oklch(0.82 0.09 264);
-	--chart-2: oklch(0.68 0.15 264);
-	--chart-3: oklch(0.55 0.18 264);
-	--chart-4: oklch(0.4 0.2 264);
-	--chart-5: oklch(0.28 0.14 264);
+	--primary: oklch(0.7 0.12 255);
+	--primary-foreground: oklch(0.14 0.02 258);
+	--ring: oklch(0.7 0.12 255);
 }
 
-/* Tsundoku — Teal (light) */
+/* Tsundoku — seiji (celadon) */
 .theme-tsundoku {
-	--primary: oklch(0.55 0.12 180);
-	--primary-foreground: oklch(0.98 0.01 180);
-	--accent: oklch(0.93 0.04 180);
-	--accent-foreground: oklch(0.2 0.05 180);
-	--ring: oklch(0.55 0.12 180);
-
-	--chart-1: oklch(0.82 0.09 180);
-	--chart-2: oklch(0.7 0.12 175);
-	--chart-3: oklch(0.6 0.13 185);
-	--chart-4: oklch(0.5 0.12 190);
-	--chart-5: oklch(0.4 0.1 195);
+	--primary: oklch(0.48 0.07 175);
+	--primary-foreground: oklch(0.98 0.01 175);
+	--ring: oklch(0.48 0.07 175);
 }
-
-/* Tsundoku — Teal (dark) */
 .dark .theme-tsundoku {
-	--primary: oklch(0.72 0.13 180);
-	--primary-foreground: oklch(0.12 0.03 180);
-	--accent: oklch(0.22 0.05 180);
-	--accent-foreground: oklch(0.95 0.03 180);
-	--ring: oklch(0.72 0.13 180);
-
-	--chart-1: oklch(0.82 0.11 180);
-	--chart-2: oklch(0.72 0.13 175);
-	--chart-3: oklch(0.62 0.13 185);
-	--chart-4: oklch(0.52 0.12 190);
-	--chart-5: oklch(0.42 0.1 195);
+	--primary: oklch(0.78 0.08 170);
+	--primary-foreground: oklch(0.15 0.02 175);
+	--ring: oklch(0.78 0.08 170);
 }
 
-/* Keizoku — Emerald (light) */
+/* Keizoku — midori (pine) */
 .theme-keizoku {
-	--primary: oklch(0.6 0.15 150);
+	--primary: oklch(0.5 0.11 150);
 	--primary-foreground: oklch(0.98 0.01 150);
-	--accent: oklch(0.93 0.05 150);
-	--accent-foreground: oklch(0.2 0.06 150);
-	--ring: oklch(0.6 0.15 150);
-
-	--chart-1: oklch(0.82 0.12 150);
-	--chart-2: oklch(0.7 0.15 145);
-	--chart-3: oklch(0.6 0.16 155);
-	--chart-4: oklch(0.5 0.14 160);
-	--chart-5: oklch(0.4 0.11 165);
+	--ring: oklch(0.5 0.11 150);
 }
-
-/* Keizoku — Emerald (dark) */
 .dark .theme-keizoku {
-	--primary: oklch(0.75 0.16 150);
-	--primary-foreground: oklch(0.12 0.03 150);
-	--accent: oklch(0.22 0.06 150);
-	--accent-foreground: oklch(0.95 0.04 150);
-	--ring: oklch(0.75 0.16 150);
-
-	--chart-1: oklch(0.82 0.12 150);
-	--chart-2: oklch(0.72 0.15 145);
-	--chart-3: oklch(0.62 0.16 155);
-	--chart-4: oklch(0.52 0.14 160);
-	--chart-5: oklch(0.42 0.11 165);
+	--primary: oklch(0.76 0.13 150);
+	--primary-foreground: oklch(0.15 0.02 150);
+	--ring: oklch(0.76 0.13 150);
 }
 
-/* Kyuu — Coral (light) */
+/* Kyuu — shu (vermilion) */
 .theme-kyuu {
-	--primary: oklch(0.62 0.19 35);
+	--primary: oklch(0.52 0.17 35);
 	--primary-foreground: oklch(0.98 0.01 35);
-	--accent: oklch(0.93 0.05 35);
-	--accent-foreground: oklch(0.2 0.06 35);
-	--ring: oklch(0.62 0.19 35);
-
-	--chart-1: oklch(0.82 0.13 45);
-	--chart-2: oklch(0.72 0.17 38);
-	--chart-3: oklch(0.62 0.19 32);
-	--chart-4: oklch(0.52 0.16 26);
-	--chart-5: oklch(0.42 0.13 20);
+	--ring: oklch(0.52 0.17 35);
 }
-
-/* Kyuu — Coral (dark) */
 .dark .theme-kyuu {
-	--primary: oklch(0.72 0.18 35);
-	--primary-foreground: oklch(0.12 0.03 35);
-	--accent: oklch(0.22 0.06 35);
-	--accent-foreground: oklch(0.95 0.04 35);
-	--ring: oklch(0.72 0.18 35);
-
-	--chart-1: oklch(0.82 0.13 45);
-	--chart-2: oklch(0.74 0.17 38);
-	--chart-3: oklch(0.64 0.19 32);
-	--chart-4: oklch(0.54 0.16 26);
-	--chart-5: oklch(0.44 0.13 20);
+	--primary: oklch(0.7 0.16 38);
+	--primary-foreground: oklch(0.14 0.02 35);
+	--ring: oklch(0.7 0.16 38);
 }
 
-/* Aisha — Violet (light) */
+/* Aisha — murasaki (purple) */
 .theme-aisha {
-	--primary: oklch(0.56 0.18 300);
-	--primary-foreground: oklch(0.98 0.01 300);
-	--accent: oklch(0.93 0.05 300);
-	--accent-foreground: oklch(0.2 0.06 300);
-	--ring: oklch(0.56 0.18 300);
-
-	--chart-1: oklch(0.82 0.1 300);
-	--chart-2: oklch(0.7 0.15 300);
-	--chart-3: oklch(0.6 0.18 300);
-	--chart-4: oklch(0.5 0.17 300);
-	--chart-5: oklch(0.4 0.14 300);
+	--primary: oklch(0.48 0.13 320);
+	--primary-foreground: oklch(0.98 0.01 320);
+	--ring: oklch(0.48 0.13 320);
+}
+.dark .theme-aisha {
+	--primary: oklch(0.72 0.12 318);
+	--primary-foreground: oklch(0.15 0.02 320);
+	--ring: oklch(0.72 0.12 318);
 }
 
-/* Aisha — Violet (dark) */
-.dark .theme-aisha {
-	--primary: oklch(0.72 0.16 300);
-	--primary-foreground: oklch(0.12 0.03 300);
-	--accent: oklch(0.22 0.06 300);
-	--accent-foreground: oklch(0.95 0.04 300);
-	--ring: oklch(0.72 0.16 300);
+/* ── Urushi signatures ─────────────────────────────────────────────────────── */
 
-	--chart-1: oklch(0.82 0.1 300);
-	--chart-2: oklch(0.72 0.15 300);
-	--chart-3: oklch(0.62 0.18 300);
-	--chart-4: oklch(0.52 0.17 300);
-	--chart-5: oklch(0.42 0.14 300);
+/* The lit interior: the surface you are working on glows faintly with the app's pigment,
+   like the red inside a black lacquer bowl. */
+[role="dialog"],
+[data-slot="popover-content"] {
+	background-image: linear-gradient(
+		to bottom,
+		color-mix(in oklch, var(--primary) 7%, transparent),
+		transparent 9rem
+	);
+	box-shadow: inset 0 1px 0 color-mix(in oklch, var(--primary) 22%, transparent), 0 24px 48px -16px
+		oklch(0 0 0 / 55%);
+}
+
+/* The tray: the working area sits inside the black lacquer shell like a lacquered tray,
+   its rim catching a thin line of light along the top. */
+@media (min-width: 768px) {
+	[data-slot="sidebar-inset"] {
+		border: 1px solid var(--rule);
+		box-shadow: inset 0 1px 0 color-mix(in oklch, var(--foreground) 7%, transparent), 0 1px 2px
+			oklch(0 0 0 / 30%);
+	}
+}
+
+/* Maki-e: the period's lead total carries a short gold hairline, like a signature stroke. */
+[data-total="lead"]::after {
+	content: "";
+	display: block;
+	width: 2.5rem;
+	height: 1px;
+	margin-top: 0.75rem;
+	background: linear-gradient(90deg, var(--flow), transparent);
 }
 
 /* Signature: the flow line between a transaction's two accounts ends in a small head. */
+.flow-line {
+	background: linear-gradient(90deg, color-mix(in oklch, var(--flow) 25%, transparent), var(--flow));
+}
+
 .flow-line::after {
 	content: "";
 	position: absolute;
