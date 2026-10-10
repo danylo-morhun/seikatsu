@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { previousRange } from "./dates";
+import { formatShortDate, previousRange } from "./dates";
 
 describe("previousRange", () => {
 	it("steps back one whole month", () => {
@@ -21,5 +21,15 @@ describe("previousRange", () => {
 			from: "2026-09-28",
 			to: "2026-10-04",
 		});
+	});
+});
+
+describe("formatShortDate", () => {
+	it("drops the year inside today's year", () => {
+		expect(formatShortDate("2026-09-11", "2026-10-10")).toBe("Sep 11");
+	});
+
+	it("keeps the year outside it", () => {
+		expect(formatShortDate("2025-12-30", "2026-01-02")).toBe("Dec 30, 2025");
 	});
 });

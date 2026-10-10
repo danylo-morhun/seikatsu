@@ -49,3 +49,9 @@ export function previousRange(from: string, to: string): { from: string; to: str
 	const days = differenceInCalendarDays(t, f) + 1;
 	return { from: ymd(addDays(f, -days)), to: ymd(addDays(t, -days)) };
 }
+
+/** "Sep 11", or "Sep 11, 2025" outside today's year — the transaction list's date style. */
+export function formatShortDate(iso: string, today: string): string {
+	const d = parseLocal(iso);
+	return iso.slice(0, 4) === today.slice(0, 4) ? format(d, "MMM d") : format(d, "MMM d, yyyy");
+}
