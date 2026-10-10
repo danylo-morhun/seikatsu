@@ -61,10 +61,7 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 
 	return (
 		<>
-			<nav
-				className="fixed inset-x-0 bottom-0 z-40 md:hidden"
-				style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-			>
+			<nav className="fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] md:hidden">
 				<div className="mx-3 mb-3">
 					<div className="flex items-center justify-between rounded-2xl border border-rule bg-sidebar px-2 py-1.5">
 						{/* Left: Expenses, Accounts */}
