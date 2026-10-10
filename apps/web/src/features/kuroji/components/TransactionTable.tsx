@@ -11,7 +11,13 @@ import {
 import type { RecentTransaction } from "@/features/kuroji/actions/transactions";
 import { EditTransactionModal } from "@/features/kuroji/components/EditTransactionModal";
 import { PeriodEmptyActions } from "@/features/kuroji/components/PeriodEmptyActions";
-import { TransactionFlow } from "@/features/kuroji/components/TransactionFlow";
+import {
+	ROW_COLS,
+	type RowEvent,
+	TransactionRow,
+	flowOf,
+	fmtDate,
+} from "@/features/kuroji/components/TransactionRow";
 import { buildPeriodLabel, parseLocal } from "@/features/kuroji/lib/dates";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { formatCurrency } from "@/features/kuroji/lib/format";
@@ -24,9 +30,6 @@ import {
 	Cancel01Icon,
 	Delete01Icon,
 	Download01Icon,
-	Folder01Icon,
-	MoreHorizontalIcon,
-	PencilEdit01Icon,
 	Search01Icon,
 	Tag01Icon,
 } from "@hugeicons/core-free-icons";
@@ -46,34 +49,20 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuSub,
-	DropdownMenuSubContent,
-	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 	Input,
 	cn,
 } from "@seikatsu/ui";
 import { format } from "date-fns";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 const thisYear = new Date().getFullYear();
 
-function fmtDate(iso: string): string {
-	const d = parseLocal(iso);
-	return d.getFullYear() === thisYear ? format(d, "MMM d") : format(d, "MMM d, yyyy");
-}
-
 function fmtDay(iso: string): string {
 	const d = parseLocal(iso);
 	return d.getFullYear() === thisYear ? format(d, "EEE, MMM d") : format(d, "EEE, MMM d, yyyy");
-}
-
-/** +1 money in, -1 money out, 0 a transfer between own accounts. */
-function flowOf(txn: RecentTransaction) {
-	return txn.fromAccountType === "INCOME" ? 1 : txn.toAccountType === "EXPENSE" ? -1 : 0;
 }
 
 interface Props {
@@ -272,50 +261,18 @@ export function TransactionTable({
 					? `No transactions in ${accountFilterName ?? "this account"} yet`
 					: "No transactions match these filters";
 
-	// Money in reads "+", money out "−"; transfers between own accounts carry no sign.
-	function renderAmount(txn: RecentTransaction) {
-		const flow = flowOf(txn);
-		const signed = (value: string, cur: string) => {
-			const n = Math.abs(Number(value));
-			const text = formatCurrency(flow < 0 ? -n : n, cur);
-			return flow > 0 ? `+${text}` : text;
-		};
-		const isForeign = txn.currency && txn.currency !== currency;
-		return (
-			<span className="block text-right">
-				<span
-					className={cn(
-						"block font-figures text-sm font-medium",
-						flow > 0 && "text-positive",
-						flow === 0 && "text-muted-foreground",
-					)}
-				>
-					{isForeign ? signed(txn.amount, txn.currency) : signed(txn.baseAmount, currency)}
-				</span>
-				{isForeign && (
-					<span className="block text-xs text-muted-foreground">
-						≈ {signed(txn.baseAmount, currency)}
-					</span>
-				)}
-			</span>
-		);
-	}
-
 	// Categories a transaction can be moved to: postable income/expense accounts.
 	const { accounts: formAccounts } = useFormOptions(workspaceId, selectedIds.size > 0);
-	const parentIds = new Set(formAccounts.map((a) => a.parentId).filter(Boolean));
+	const { expenseCategories, incomeCategories } = useMemo(() => {
+		const parentIds = new Set(formAccounts.map((a) => a.parentId).filter(Boolean));
+		const leaves = (type: "EXPENSE" | "INCOME") =>
+			formAccounts
+				.filter((a) => a.type === type && !parentIds.has(a.id))
+				.sort((a, b) => a.name.localeCompare(b.name));
+		return { expenseCategories: leaves("EXPENSE"), incomeCategories: leaves("INCOME") };
+	}, [formAccounts]);
 	const categoriesOf = (type: "EXPENSE" | "INCOME") =>
-		formAccounts
-			.filter((a) => a.type === type && !parentIds.has(a.id))
-			.sort((a, b) => a.name.localeCompare(b.name));
-	const categoryKind = (txn: RecentTransaction) =>
-		txn.splitCount > 1
-			? null
-			: txn.toAccountType === "EXPENSE"
-				? "EXPENSE"
-				: txn.fromAccountType === "INCOME"
-					? "INCOME"
-					: null;
+		type === "EXPENSE" ? expenseCategories : incomeCategories;
 
 	function moveTo(ids: string[], categoryId: string) {
 		startTransition(async () => {
@@ -332,58 +289,6 @@ export function TransactionTable({
 			}
 			setSelectedIds(new Set());
 		});
-	}
-
-	function renderActions(txn: RecentTransaction) {
-		const kind = categoryKind(txn);
-		const current = kind === "EXPENSE" ? txn.toAccountId : txn.fromAccountId;
-		return (
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button
-						variant="ghost"
-						size="icon"
-						className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
-					>
-						<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
-						<span className="sr-only">Actions for {txn.description ?? "transaction"}</span>
-					</Button>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end">
-					<DropdownMenuItem onSelect={() => setEditTarget(txn)}>
-						<HugeiconsIcon icon={PencilEdit01Icon} className="mr-2 h-4 w-4" />
-						Edit
-					</DropdownMenuItem>
-					{kind && (
-						<DropdownMenuSub>
-							<DropdownMenuSubTrigger>
-								<HugeiconsIcon icon={Folder01Icon} className="mr-2 h-4 w-4" />
-								Move to
-							</DropdownMenuSubTrigger>
-							<DropdownMenuSubContent className="max-h-80 overflow-y-auto">
-								{categoriesOf(kind).map((c) => (
-									<DropdownMenuItem
-										key={c.id}
-										disabled={c.id === current}
-										onSelect={() => moveTo([txn.id], c.id)}
-									>
-										{c.name}
-									</DropdownMenuItem>
-								))}
-							</DropdownMenuSubContent>
-						</DropdownMenuSub>
-					)}
-					<DropdownMenuSeparator />
-					<DropdownMenuItem
-						className="text-destructive focus:text-destructive"
-						onSelect={() => setPendingId(txn.id)}
-					>
-						<HugeiconsIcon icon={Delete01Icon} className="mr-2 h-4 w-4" />
-						Delete
-					</DropdownMenuItem>
-				</DropdownMenuContent>
-			</DropdownMenu>
-		);
 	}
 
 	const emptyState = (
@@ -436,78 +341,24 @@ export function TransactionTable({
 		</button>
 	);
 
-	const renderRow = (txn: RecentTransaction) => {
-		const selected = selectedIds.has(txn.id);
-		return (
-			<li
-				key={txn.id}
-				className={cn(
-					"group/row grid grid-cols-[minmax(0,1fr)_auto_2.25rem] items-center gap-x-3 py-2.5 md:grid-cols-[1.25rem_minmax(0,1fr)_minmax(0,18rem)_8.5rem_2.25rem] md:gap-x-4",
-					selected && "bg-primary/[0.06]",
-				)}
-			>
-				<span className="hidden md:flex">
-					<Checkbox
-						checked={selected}
-						onCheckedChange={() => toggleSelect(txn.id)}
-						aria-label={`Select ${txn.description ?? "transaction"}`}
-					/>
-				</span>
-				<button
-					type="button"
-					onClick={() => setEditTarget(txn)}
-					className="min-w-0 rounded text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
-				>
-					<span className="block truncate text-sm font-medium">
-						{txn.description ?? "No description"}
-					</span>
-					<span className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-muted-foreground md:hidden">
-						{!byDay && <span className="shrink-0">{fmtDate(txn.date)}</span>}
-						<TransactionFlow
-							className="text-xs"
-							fromId={txn.fromAccountId}
-							fromName={txn.fromAccount}
-							toId={txn.toAccountId}
-							toName={txn.toAccount}
-							activeId={accountFilterId}
-						/>
-					</span>
-					{!byDay && (
-						<span className="mt-0.5 hidden text-xs text-muted-foreground md:block">
-							{fmtDate(txn.date)}
-						</span>
-					)}
-				</button>
-				<span className="hidden min-w-0 md:block">
-					<TransactionFlow
-						fromId={txn.fromAccountId}
-						fromName={txn.fromAccount}
-						toId={txn.toAccountId}
-						toName={txn.toAccount}
-						activeId={accountFilterId}
-						onSelect={filterByAccount}
-					/>
-					{txn.tags.length > 0 && (
-						<span className="mt-1 flex flex-wrap gap-1">
-							{txn.tags.map((tag) => (
-								<button
-									key={tag.id}
-									type="button"
-									title={`Show only tag ${tag.name}`}
-									onClick={() => filterByTag(tag.id)}
-									className="rounded-full border border-rule px-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
-								>
-									{tag.name}
-								</button>
-							))}
-						</span>
-					)}
-				</span>
-				{renderAmount(txn)}
-				{renderActions(txn)}
-			</li>
-		);
+	// Rows get one stable handler; it always acts on the newest copy of the row.
+	const handleRowEvent = (row: RecentTransaction, event: RowEvent) => {
+		const txn = transactions.find((t) => t.id === row.id) ?? row;
+		if (event.type === "edit") setEditTarget(txn);
+		else if (event.type === "delete") setPendingId(txn.id);
+		else if (event.type === "toggle") toggleSelect(txn.id);
+		else if (event.type === "account") filterByAccount(event.id);
+		else if (event.type === "tag") filterByTag(event.id);
+		else if (event.type === "move") moveTo([txn.id], event.categoryId);
 	};
+	const latestRowEvent = useRef(handleRowEvent);
+	useLayoutEffect(() => {
+		latestRowEvent.current = handleRowEvent;
+	});
+	const onRowEvent = useCallback(
+		(row: RecentTransaction, event: RowEvent) => latestRowEvent.current(row, event),
+		[],
+	);
 
 	return (
 		<section>
@@ -653,7 +504,12 @@ export function TransactionTable({
 							<section key={g.key} aria-label={g.label || undefined}>
 								{byDay && (
 									// Same columns as the rows, so the day's net sits in the amount column.
-									<header className="grid grid-cols-[minmax(0,1fr)_auto_2.25rem] items-baseline gap-x-3 border-b border-rule pt-4 pb-1.5 text-xs text-muted-foreground md:grid-cols-[1.25rem_minmax(0,1fr)_minmax(0,18rem)_8.5rem_2.25rem] md:gap-x-4">
+									<header
+										className={cn(
+											"grid items-baseline border-b border-rule pt-4 pb-1.5 text-xs text-muted-foreground",
+											ROW_COLS,
+										)}
+									>
 										<span className="font-medium text-foreground/80 md:col-span-3">{g.label}</span>
 										<span className={cn("text-right font-figures", dayNet > 0 && "text-positive")}>
 											{dayNet !== 0 && (
@@ -665,7 +521,21 @@ export function TransactionTable({
 										</span>
 									</header>
 								)}
-								<ul className="divide-y divide-rule">{g.rows.map(renderRow)}</ul>
+								<ul className="divide-y divide-rule">
+									{g.rows.map((txn) => (
+										<TransactionRow
+											key={txn.id}
+											txn={txn}
+											currency={currency}
+											selected={selectedIds.has(txn.id)}
+											byDay={byDay}
+											accountFilterId={accountFilterId}
+											expenseCategories={expenseCategories}
+											incomeCategories={incomeCategories}
+											onEvent={onRowEvent}
+										/>
+									))}
+								</ul>
 							</section>
 						);
 					})}
