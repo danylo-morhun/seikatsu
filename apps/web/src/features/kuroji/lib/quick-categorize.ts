@@ -82,3 +82,18 @@ export function pickableCategories<C extends Category>(
 		)
 		.sort((a, b) => rank(a.id) - rank(b.id) || a.name.localeCompare(b.name));
 }
+
+/** The transaction as it reads once filed under `category` (for the optimistic row). */
+export function withCategory<T extends Txn & { fromAccount: string; toAccount: string }>(
+	txn: T,
+	category: { id: string; name: string },
+): T {
+	const end = categoryEnd(txn);
+	if (!end) return txn;
+	const legs = txn.legs.map((l) =>
+		l.accountId === end.categoryId ? { ...l, accountId: category.id } : l,
+	);
+	return end.kind === "EXPENSE"
+		? { ...txn, legs, toAccountId: category.id, toAccount: category.name }
+		: { ...txn, legs, fromAccountId: category.id, fromAccount: category.name };
+}
