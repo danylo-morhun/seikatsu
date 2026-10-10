@@ -53,9 +53,10 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 
 			<Link
 				href={app?.href ?? "/"}
-				className="ml-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+				className="ml-2 flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
 			>
-				{app?.name ?? "seikatsu"}
+				{app && <span className="text-primary">{app.kanji}</span>}
+				{app ? `${app.name} · ${app.label}` : "seikatsu"}
 			</Link>
 
 			{isKurojiHome && (
