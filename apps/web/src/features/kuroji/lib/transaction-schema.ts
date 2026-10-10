@@ -33,6 +33,12 @@ export const amountSchema = z
 	})
 	.positive("Amount must be more than zero");
 
+/** An optional amount (budget, received): blank is fine, unreadable text is not. */
+export const optionalAmountSchema = z
+	.number({ error: "Enter a valid amount" })
+	.positive("Amount must be more than zero")
+	.optional();
+
 const baseFields = {
 	description: z.string().optional(),
 	amount: amountSchema,
@@ -46,10 +52,7 @@ export const transferSchema = z.object({
 	fromWalletId: z.string().min(1, "Select from wallet"),
 	toWalletId: z.string().min(1, "Select to wallet"),
 	// Destination amount for cross-currency transfers; blank → converted at the day's rate.
-	received: z
-		.number({ error: "Enter a valid amount" })
-		.positive("Amount must be more than zero")
-		.optional(),
+	received: optionalAmountSchema,
 });
 
 export type TxType = "expense" | "income" | "transfer";
