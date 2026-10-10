@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { UnderlineTab, UnderlineTabs } from "@/components/UnderlineTabs";
 import { getAccounts } from "@/features/kuroji/actions/accounts";
 import { getBalances } from "@/features/kuroji/actions/balances";
 import { getBankConnections, getBankRules } from "@/features/kuroji/actions/bank";
@@ -13,8 +14,6 @@ import { BankRulesManager } from "@/features/kuroji/components/BankRulesManager"
 import { Privat24ImportSection } from "@/features/kuroji/components/Privat24ImportSection";
 import { RecurringTransactionsList } from "@/features/kuroji/components/RecurringTransactionsList";
 import { WorkspaceSettingsForm } from "@/features/kuroji/components/WorkspaceSettingsForm";
-import { cn } from "@seikatsu/ui";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 const SECTIONS = [
@@ -154,26 +153,19 @@ export default async function KurojiSettingsPage({
 	return (
 		<div className="max-w-3xl px-4 pt-6 pb-28 sm:px-8 md:pt-8 md:pb-8">
 			<h1 className="text-xl font-semibold">黒 Kuroji</h1>
-			<nav
-				aria-label="Kuroji settings"
-				className="mt-4 mb-8 flex gap-1 overflow-x-auto border-b border-rule"
-			>
-				{SECTIONS.map((s) => (
-					<Link
-						key={s.id}
-						href={s.id === "general" ? "/settings/kuroji" : `/settings/kuroji?section=${s.id}`}
-						prefetch
-						aria-current={section === s.id ? "page" : undefined}
-						className={cn(
-							"relative shrink-0 px-3 py-2.5 text-sm whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground",
-							section === s.id &&
-								"text-foreground after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary",
-						)}
-					>
-						{s.label}
-					</Link>
-				))}
-			</nav>
+			<div className="mt-4 mb-8">
+				<UnderlineTabs label="Kuroji settings">
+					{SECTIONS.map((s) => (
+						<UnderlineTab
+							key={s.id}
+							href={s.id === "general" ? "/settings/kuroji" : `/settings/kuroji?section=${s.id}`}
+							current={section === s.id}
+						>
+							{s.label}
+						</UnderlineTab>
+					))}
+				</UnderlineTabs>
+			</div>
 			{body}
 		</div>
 	);
