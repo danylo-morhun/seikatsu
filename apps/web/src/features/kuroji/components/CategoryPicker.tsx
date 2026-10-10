@@ -63,6 +63,7 @@ export function CategoryPicker({
 				align="start"
 				collisionPadding={8}
 				className="w-[min(18rem,calc(100vw-1rem))] p-0"
+				aria-label="Change category"
 				onCloseAutoFocus={(e) => {
 					e.preventDefault();
 					if (anchor?.isConnected) anchor.focus();
@@ -91,7 +92,12 @@ export function CategoryPicker({
 						onKeyDown={onKeyDown}
 					/>
 				</div>
-				<div id={listId} role="listbox" className="max-h-72 overflow-y-auto p-1">
+				<div
+					id={listId}
+					role="listbox"
+					aria-label="Categories"
+					className="max-h-72 overflow-y-auto p-1"
+				>
 					{options.length === 0 && (
 						<p className="px-3 py-6 text-center text-sm text-muted-foreground">
 							{query ? `No category matches "${query}"` : "No other category in this currency"}
