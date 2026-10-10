@@ -379,6 +379,17 @@ export function AccountsOverview({
 							displayBalance(type, Number(b.balance)) - displayBalance(type, Number(a.balance)),
 					);
 				}
+				// A flow category with nothing in the period is noise: fold it away (budgets stay).
+				const isFlow = type === "INCOME" || type === "EXPENSE";
+				const quietParents =
+					!listMode && isFlow
+						? visibleParents.filter(
+								(r) =>
+									Math.abs(Number(r.balance)) < 0.005 &&
+									!(Number(accountMap.get(r.accountId)?.budget) > 0),
+							)
+						: [];
+				const activeParents = visibleParents.filter((r) => !quietParents.includes(r));
 				const typeTotal = displayBalance(
 					type,
 					visibleParents.reduce((acc, b) => acc + Number(b.balance), 0),
@@ -451,7 +462,23 @@ export function AccountsOverview({
 								<p className="px-3 py-3 text-xs text-muted-foreground">No accounts</p>
 							) : (
 								<>
-									{visibleParents.map((row) => renderAccountRow(row, false))}
+									{activeParents.map((row) => renderAccountRow(row, false))}
+									{quietParents.length > 0 && (
+										<details className="group/quiet">
+											<summary className="cursor-pointer list-none py-2.5 pl-1 text-xs text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
+												<span className="group-open/quiet:hidden">
+													{quietParents.length}{" "}
+													{quietParents.length === 1 ? "category" : "categories"} with no activity
+												</span>
+												<span className="hidden group-open/quiet:inline">
+													Hide categories with no activity
+												</span>
+											</summary>
+											<div className="divide-y divide-rule border-t border-rule">
+												{quietParents.map((row) => renderAccountRow(row, false))}
+											</div>
+										</details>
+									)}
 									{showHidden &&
 										hiddenParents.map((row) => (
 											<div key={row.accountId} className="opacity-40">
