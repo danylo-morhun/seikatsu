@@ -154,8 +154,6 @@ export default async function KurojiPage({
 								</h2>
 								{income === 0 && expenses === 0 ? (
 									<ExpensesEmptyState
-										workspaceId={workspace.id}
-										baseCurrency={workspace.baseCurrency}
 										from={from}
 										to={to}
 										syncGap={bankProblem && periodAfterSync(bankProblem, from) ? bankProblem : null}
