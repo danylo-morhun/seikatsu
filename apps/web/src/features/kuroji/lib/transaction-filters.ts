@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const TRANSACTIONS_PAGE_SIZE = 10;
+export const TRANSACTIONS_PAGE_SIZE = 50;
 
 /**
  * What the transaction list shows. The CSV export takes the same object, so the
