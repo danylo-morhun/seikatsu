@@ -25,7 +25,7 @@ export default async function AccountSettingsPage() {
 	const providers = accounts.map((a) => a.provider);
 
 	return (
-		<main className="px-4 py-6 sm:px-6 max-w-3xl">
+		<div className="px-4 py-6 sm:px-6 max-w-3xl">
 			<h1 className="mb-8 text-2xl font-semibold">Account</h1>
 
 			<section className="mb-10">
@@ -75,6 +75,6 @@ export default async function AccountSettingsPage() {
 				</p>
 				<DangerZone />
 			</section>
-		</main>
+		</div>
 	);
 }
