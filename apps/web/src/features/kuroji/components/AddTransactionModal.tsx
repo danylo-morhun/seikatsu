@@ -4,6 +4,7 @@ import { Spinner } from "@/components/Spinner";
 import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import { createTransaction, updateTransaction } from "@/features/kuroji/actions/transactions";
 import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
+import { CategorySelect } from "@/features/kuroji/components/CategoryCombobox";
 import { CategoryTiles } from "@/features/kuroji/components/CategoryTiles";
 import { TagSelect } from "@/features/kuroji/components/TagSelect";
 import { readCaptureMemory, rememberCapture } from "@/features/kuroji/lib/capture-memory";
@@ -419,12 +420,13 @@ export function AddTransactionModal({
 				typedSplitFields.map((field, index) => (
 					<div key={field.id} className="flex items-start gap-2">
 						<div className="flex-1 min-w-0">
-							<AccountSelect
+							<CategorySelect
 								control={control as never}
 								name={`splits.${index}.categoryId`}
 								id={`add-category-${index}`}
 								aria-label={`Category ${index + 1}`}
-								accounts={categories}
+								categories={categories}
+								recentIds={memory.recent?.[txType] ?? []}
 								placeholder="Select category"
 								error={splitErrs[index]?.categoryId?.message}
 							/>
