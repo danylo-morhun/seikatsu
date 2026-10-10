@@ -1,7 +1,12 @@
 "use client";
 
 import { startNavigationProgress } from "@/components/NavigationProgress";
-import { buildPeriodLabel, parseLocal } from "@/features/kuroji/lib/dates";
+import {
+	buildPeriodLabel,
+	formatShortDate,
+	localToday,
+	parseLocal,
+} from "@/features/kuroji/lib/dates";
 import { Calendar01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -206,7 +211,7 @@ export function DateRangePicker() {
 								)}
 								onClick={() => setPicking("from")}
 							>
-								{localFrom ? format(parseLocal(localFrom), "MMM d, yyyy") : "Start date"}
+								{localFrom ? formatShortDate(localFrom, localToday()) : "Start date"}
 							</button>
 							<span className="shrink-0 text-xs text-muted-foreground">–</span>
 							<button
@@ -222,7 +227,7 @@ export function DateRangePicker() {
 								)}
 								onClick={() => setPicking("to")}
 							>
-								{localTo ? format(parseLocal(localTo), "MMM d, yyyy") : "End date"}
+								{localTo ? formatShortDate(localTo, localToday()) : "End date"}
 							</button>
 						</div>
 						<Calendar
