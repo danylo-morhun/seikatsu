@@ -493,11 +493,11 @@ export function TransactionTable({
 					{selectedIds.size > 0 && (
 						<div className="hidden items-center gap-2 md:flex">
 							{bulkMoveMenu(
-								<Button variant="outline" size="sm" disabled={isPending}>
+								<Button variant="outline" disabled={isPending}>
 									Move {selectedIds.size} to…
 								</Button>,
 							)}
-							<Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
+							<Button variant="destructive" onClick={() => setBulkDeleteOpen(true)}>
 								Delete {selectedIds.size}
 							</Button>
 						</div>
@@ -656,24 +656,14 @@ export function TransactionTable({
 			)}
 			{(page > 0 || hasMore) && (
 				<div className="mt-4 flex items-center justify-between border-t border-rule pt-4">
-					<Button
-						variant="outline"
-						size="sm"
-						disabled={page === 0}
-						onClick={() => navigate(page - 1)}
-					>
+					<Button variant="outline" disabled={page === 0} onClick={() => navigate(page - 1)}>
 						Previous
 					</Button>
 					<span className="text-sm text-muted-foreground">
 						Page {page + 1}
 						{totalPages > 1 ? ` of ${totalPages}` : ""}
 					</span>
-					<Button
-						variant="outline"
-						size="sm"
-						disabled={!hasMore}
-						onClick={() => navigate(page + 1)}
-					>
+					<Button variant="outline" disabled={!hasMore} onClick={() => navigate(page + 1)}>
 						Next
 					</Button>
 				</div>
