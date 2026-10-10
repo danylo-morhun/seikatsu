@@ -5,7 +5,7 @@ import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import type { getBankRules } from "@/features/kuroji/actions/bank";
 import { createBankRule, deleteBankRule } from "@/features/kuroji/actions/bank";
 import { AccountPicker } from "@/features/kuroji/components/AccountSelect";
-import { Delete02Icon } from "@hugeicons/core-free-icons";
+import { ArrowRight02Icon, Delete02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Input } from "@seikatsu/ui";
 import { useState, useTransition } from "react";
@@ -91,11 +91,14 @@ export function BankRulesManager({
 					{rules.map((r) => (
 						<div key={r.id} className="flex items-center justify-between gap-3 py-2.5">
 							<div className="flex min-w-0 items-center gap-2 text-sm">
-								<span className="rounded bg-muted px-2 py-0.5 font-mono text-xs">
-									{r.matchText}
-								</span>
-								<span className="text-muted-foreground">→</span>
-								<span className="truncate">{accountName(r.accountId)}</span>
+								<span className="truncate font-medium">{r.matchText}</span>
+								<HugeiconsIcon
+									icon={ArrowRight02Icon}
+									aria-hidden
+									className="size-3.5 shrink-0 text-muted-foreground"
+								/>
+								<span className="sr-only">files under</span>
+								<span className="truncate text-muted-foreground">{accountName(r.accountId)}</span>
 							</div>
 							<Button
 								size="icon"
