@@ -2,6 +2,7 @@
 
 import { deleteRecurringTransaction, toggleRecurring } from "@/features/kuroji/actions/recurring";
 import type { RecurringTransaction } from "@/features/kuroji/actions/recurring";
+import { TransactionFlow } from "@/features/kuroji/components/TransactionFlow";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { Alert01Icon, Delete01Icon, PauseIcon, PlayCircleIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -85,10 +86,14 @@ export function RecurringTransactionsList({
 						className={`flex items-start justify-between gap-3 py-2.5 ${!rt.isActive ? "opacity-50" : ""}`}
 					>
 						<div className="min-w-0 flex-1">
-							<div className="flex items-center gap-2 text-sm font-medium">
-								<span className="truncate">
-									{rt.fromAccountName} → {rt.toAccountName}
-								</span>
+							<div className="flex items-center gap-2">
+								<TransactionFlow
+									fromId={rt.fromAccountId}
+									fromName={rt.fromAccountName}
+									toId={rt.toAccountId}
+									toName={rt.toAccountName}
+									activeId={rt.toAccountId}
+								/>
 								<span
 									className={`shrink-0 rounded-full px-1.5 py-px text-[11px] font-medium border ${rt.isActive ? "border-positive/40 text-positive" : "border-rule text-muted-foreground"}`}
 								>
