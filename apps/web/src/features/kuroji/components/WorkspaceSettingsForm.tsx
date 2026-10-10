@@ -42,11 +42,11 @@ export function WorkspaceSettingsForm({ workspaceId, initialName, baseCurrency }
 				/>
 			</div>
 			<div className="space-y-2">
-				<Label>Base currency</Label>
-				<div className="flex items-center gap-2">
-					<span className="rounded-md border px-3 py-2 text-sm font-mono">{baseCurrency}</span>
-					<span className="text-xs text-muted-foreground">Currency change not yet supported</span>
-				</div>
+				<p className="text-sm font-medium leading-none">Base currency</p>
+				<p className="text-sm">
+					{baseCurrency}
+					<span className="ml-2 text-xs text-muted-foreground">Can&apos;t be changed yet</span>
+				</p>
 			</div>
 			{/* Quiet until there is something to save, so the idle state never reads as broken. */}
 			<Button
