@@ -3,17 +3,7 @@
 import { signOutAction } from "@/features/auth/actions/auth";
 import { readAppEntry } from "@/lib/app-entry";
 import { APPS_CONFIG } from "@/lib/app-themes";
-import {
-	ArrowUpDownIcon,
-	Book01Icon,
-	Briefcase01Icon,
-	Car01Icon,
-	KanbanIcon,
-	Logout01Icon,
-	TaskDaily02Icon,
-	UserCircleIcon,
-	YenSquareIcon,
-} from "@hugeicons/core-free-icons";
+import { ArrowUpDownIcon, Logout01Icon, UserCircleIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Avatar,
@@ -32,19 +22,11 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
+	cn,
 } from "@seikatsu/ui";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-
-const APP_ICONS: Record<string, typeof YenSquareIcon> = {
-	"/kuroji": YenSquareIcon,
-	"/seiryu": KanbanIcon,
-	"/tsundoku": Book01Icon,
-	"/keizoku": TaskDaily02Icon,
-	"/kyuu": Briefcase01Icon,
-	"/aisha": Car01Icon,
-};
 
 interface User {
 	id: string;
@@ -94,20 +76,35 @@ export function AppSidebar({ workspaceName, user }: Props) {
 				<SidebarGroup>
 					<SidebarGroupContent>
 						<SidebarMenu>
-							{Object.entries(APPS_CONFIG).map(([href, { name }]) => {
-								const icon = APP_ICONS[href];
+							{Object.entries(APPS_CONFIG).map(([href, { name, label, kanji, theme }]) => {
+								const isActive = pathname.startsWith(href);
 								return (
 									<SidebarMenuItem key={href}>
 										<SidebarMenuButton
 											asChild
-											isActive={pathname.startsWith(href)}
-											tooltip={name}
+											isActive={isActive}
+											tooltip={`${name} · ${label}`}
 											// The active app is lit from inside with its own pigment.
-											className="data-active:bg-primary/15 data-active:text-primary data-active:hover:bg-primary/20 data-active:hover:text-primary"
+											className="h-11 gap-2.5 p-1.5 group-data-[collapsible=icon]:p-1! data-active:bg-primary/15 data-active:hover:bg-primary/20"
 										>
 											<Link href={entryHrefs[href] ?? href} prefetch>
-												{icon && <HugeiconsIcon icon={icon} className="h-4 w-4 shrink-0" />}
-												<span>{name}</span>
+												{/* The kanji is the app's mark, tinted with its own pigment. */}
+												<span
+													aria-hidden
+													className={cn(
+														theme,
+														"flex size-8 shrink-0 items-center justify-center rounded-md text-[15px] font-semibold leading-none transition-colors group-data-[collapsible=icon]:size-6 group-data-[collapsible=icon]:text-[13px]",
+														isActive
+															? "bg-primary text-primary-foreground"
+															: "bg-primary/10 text-primary",
+													)}
+												>
+													{kanji}
+												</span>
+												<span className="flex min-w-0 flex-col leading-tight">
+													<span className="truncate text-sm font-medium">{name}</span>
+													<span className="truncate text-xs text-muted-foreground">{label}</span>
+												</span>
 											</Link>
 										</SidebarMenuButton>
 									</SidebarMenuItem>
