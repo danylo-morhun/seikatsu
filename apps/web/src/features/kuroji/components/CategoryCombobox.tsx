@@ -5,18 +5,21 @@ import { categoryGroups } from "@/features/kuroji/lib/category-groups";
 import { ChevronDownIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Popover, PopoverContent, PopoverTrigger, cn } from "@seikatsu/ui";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Controller } from "react-hook-form";
 import type { Control } from "react-hook-form";
 
 type Category = { id: string; name: string; parentId: string | null };
 
-interface PickerProps {
+type ListProps = {
 	value: string;
 	onValueChange: (id: string) => void;
 	categories: Category[];
 	/** Recently used category ids, most recent first. */
 	recentIds: string[];
+};
+
+interface PickerProps extends ListProps {
 	placeholder: string;
 	invalid?: boolean;
 	id?: string;
@@ -24,39 +27,26 @@ interface PickerProps {
 }
 
 /**
- * A select-sized field that opens a searchable list: recent categories first, then every
- * category under its parent. Built for long category trees where a plain select drags.
+ * The searchable category list in a popover, opened by `children` (the trigger): recent
+ * categories first, then every category under its parent.
  */
-export function CategoryCombobox({
+export function CategoryPopover({
 	value,
 	onValueChange,
 	categories,
 	recentIds,
-	placeholder,
-	invalid,
-	id,
-	"aria-label": ariaLabel,
-}: PickerProps) {
-	const [open, setOpen] = useState(false);
-	const current = categories.find((c) => c.id === value);
-
+	open,
+	onOpenChange,
+	children,
+}: ListProps & {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	children: ReactNode;
+}) {
 	return (
 		// Modal: the list scrolls and holds focus even inside the capture dialog.
-		<Popover modal open={open} onOpenChange={setOpen}>
-			<PopoverTrigger asChild>
-				<button
-					type="button"
-					id={id}
-					aria-label={ariaLabel}
-					aria-invalid={invalid || undefined}
-					className="flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive"
-				>
-					<span className={cn("flex-1 truncate text-left", !current && "text-muted-foreground")}>
-						{current?.name ?? placeholder}
-					</span>
-					<HugeiconsIcon icon={ChevronDownIcon} className="size-4 shrink-0 opacity-50" />
-				</button>
-			</PopoverTrigger>
+		<Popover modal open={open} onOpenChange={onOpenChange}>
+			<PopoverTrigger asChild>{children}</PopoverTrigger>
 			<PopoverContent
 				data-slot="popover-content"
 				align="start"
@@ -69,7 +59,7 @@ export function CategoryCombobox({
 					currentId={value}
 					onPick={(o) => {
 						onValueChange(o.id);
-						setOpen(false);
+						onOpenChange(false);
 					}}
 					searchLabel="Find a category"
 					emptyText={() => "No category matches"}
@@ -77,6 +67,38 @@ export function CategoryCombobox({
 				/>
 			</PopoverContent>
 		</Popover>
+	);
+}
+
+/**
+ * A select-sized field that opens the category popover. Built for long category trees where
+ * a plain select drags.
+ */
+export function CategoryCombobox({
+	placeholder,
+	invalid,
+	id,
+	"aria-label": ariaLabel,
+	...list
+}: PickerProps) {
+	const [open, setOpen] = useState(false);
+	const current = list.categories.find((c) => c.id === list.value);
+
+	return (
+		<CategoryPopover {...list} open={open} onOpenChange={setOpen}>
+			<button
+				type="button"
+				id={id}
+				aria-label={ariaLabel}
+				aria-invalid={invalid || undefined}
+				className="flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive"
+			>
+				<span className={cn("flex-1 truncate text-left", !current && "text-muted-foreground")}>
+					{current?.name ?? placeholder}
+				</span>
+				<HugeiconsIcon icon={ChevronDownIcon} className="size-4 shrink-0 opacity-50" />
+			</button>
+		</CategoryPopover>
 	);
 }
 
