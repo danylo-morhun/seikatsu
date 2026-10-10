@@ -372,6 +372,15 @@ export async function createBankRule(
 		.limit(1);
 	if (!acct) return { error: "Account not found" };
 
+	// Matching ignores case, so a second rule with the same text could never win.
+	const existing = await db
+		.select({ matchText: bankRules.matchText })
+		.from(bankRules)
+		.where(eq(bankRules.workspaceId, workspaceId));
+	if (existing.some((r) => r.matchText.toLowerCase() === text.toLowerCase())) {
+		return { error: `A rule for "${text}" already exists` };
+	}
+
 	await db.insert(bankRules).values({ workspaceId, matchText: text, accountId, priority });
 	revalidatePath("/settings/kuroji");
 	return { success: true };
