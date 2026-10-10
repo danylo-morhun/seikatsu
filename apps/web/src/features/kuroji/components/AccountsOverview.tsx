@@ -57,6 +57,9 @@ const TYPE_LABELS: Record<string, string> = {
 	EXPENSE: "Expenses",
 };
 
+/** Settings list indent per nesting level; deeper levels share the last step. */
+const DEPTH_INDENT = ["pl-1", "pl-6", "pl-11", "pl-16"] as const;
+
 type Account = Awaited<ReturnType<typeof getAccounts>>[number];
 
 interface AccountRow extends AccountBalance {
@@ -412,8 +415,10 @@ export function AccountsOverview({
 									return (
 										<div
 											key={acct.id}
-											className="flex items-center justify-between gap-3 py-2.5 pl-1"
-											style={{ paddingLeft: `${0.25 + acct.depth * 1.25}rem` }}
+											className={cn(
+												"flex items-center justify-between gap-3 py-2.5",
+												DEPTH_INDENT[Math.min(acct.depth, DEPTH_INDENT.length - 1)],
+											)}
 										>
 											<span
 												className={cn(
