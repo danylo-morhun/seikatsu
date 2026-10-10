@@ -209,7 +209,7 @@ export const TransactionRow = memo(
 							ref={menuTrigger}
 							variant="ghost"
 							size="icon"
-							className="relative z-10 h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
+							className="relative z-10 size-8 shrink-0 text-muted-foreground hover:text-foreground"
 						>
 							<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
 							<span className="sr-only">Actions for {txn.description ?? "transaction"}</span>

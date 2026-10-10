@@ -117,7 +117,7 @@ export function RecurringTransactionsList({
 							<Button
 								variant="ghost"
 								size="icon"
-								className="h-9 w-9"
+								className="size-8"
 								onClick={() => handleToggle(rt.id)}
 								aria-label={`${rt.isActive ? "Pause" : "Resume"} ${rt.fromAccountName} to ${rt.toAccountName}`}
 							>
@@ -129,7 +129,7 @@ export function RecurringTransactionsList({
 							<Button
 								variant="ghost"
 								size="icon"
-								className="h-9 w-9 text-destructive hover:text-destructive"
+								className="size-8 text-destructive hover:text-destructive"
 								onClick={() => setDeleteTarget({ id: rt.id })}
 								aria-label={`Delete ${rt.fromAccountName} to ${rt.toAccountName}`}
 							>
