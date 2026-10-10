@@ -165,7 +165,6 @@ function ConnectionCard({
 				</div>
 				<div className="flex shrink-0 flex-wrap gap-2">
 					<Button
-						size="sm"
 						variant="outline"
 						onClick={handleSync}
 						disabled={isPending || connection.status === "CREATED"}
@@ -175,7 +174,6 @@ function ConnectionCard({
 						{isPending && action === "sync" ? "Syncing…" : "Sync now"}
 					</Button>
 					<Button
-						size="sm"
 						variant="outline"
 						onClick={handleReset}
 						disabled={isPending || connection.status === "CREATED"}
@@ -184,7 +182,6 @@ function ConnectionCard({
 						{isPending && action === "reset" ? "Resetting…" : "Reset & re-import"}
 					</Button>
 					<Button
-						size="sm"
 						variant="ghost"
 						onClick={handleDelete}
 						disabled={isPending}
@@ -278,7 +275,7 @@ function ConnectBankDialog({ workspaceId }: { workspaceId: string }) {
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogTrigger asChild>
-				<Button size="sm">Connect a bank</Button>
+				<Button>Connect a bank</Button>
 			</DialogTrigger>
 			<DialogContent className="max-h-[80vh] overflow-hidden">
 				<DialogHeader>
