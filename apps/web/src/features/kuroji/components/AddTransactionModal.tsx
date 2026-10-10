@@ -138,7 +138,7 @@ export function AddTransactionModal({
 	const watchCurrency = (watch("currency") as string | undefined) ?? defaultCurrency;
 	const splitTotal = watchSplits?.reduce((s, r) => s + (Number(r?.amount) || 0), 0) ?? 0;
 
-	const { accounts, tags: workspaceTags } = useFormOptions(workspaceId, open);
+	const { accounts, tags: workspaceTags, categoryUsage } = useFormOptions(workspaceId, open);
 
 	// Default the amount's currency to the paying account's, so entries land in its currency.
 	const watchWalletId = watch("walletId" as never) as unknown as string | undefined;
@@ -403,6 +403,7 @@ export function AddTransactionModal({
 							<CategoryTiles
 								aria-labelledby="add-category-label"
 								categories={categories}
+								usage={categoryUsage}
 								recentIds={memory.recent?.[txType] ?? []}
 								value={field.value ?? ""}
 								onChange={field.onChange}
