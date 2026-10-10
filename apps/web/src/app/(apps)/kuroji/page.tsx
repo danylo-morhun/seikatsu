@@ -127,13 +127,14 @@ export default async function KurojiPage({
 		);
 
 		return (
-			<main className="flex flex-col pb-28 md:pb-0">
+			<div className="flex flex-col pb-28 md:pb-0">
 				{!started ? (
 					<div className="px-4 py-6 sm:px-8">
 						<OnboardingCard workspaceId={workspace.id} baseCurrency={workspace.baseCurrency} />
 					</div>
 				) : (
 					<div className="space-y-10 px-4 py-6 sm:px-8 md:py-8">
+						<h1 className="sr-only">Kuroji — Overview</h1>
 						<div className="space-y-4">
 							{bankProblem && <BankSyncNotice problem={bankProblem} />}
 							<OverviewFigures
@@ -184,7 +185,7 @@ export default async function KurojiPage({
 						</div>
 					</div>
 				)}
-			</main>
+			</div>
 		);
 	}
 
@@ -196,8 +197,9 @@ export default async function KurojiPage({
 		]);
 
 		return (
-			<main className="flex flex-col pb-28 md:pb-0">
+			<div className="flex flex-col pb-28 md:pb-0">
 				<div className="px-4 py-6 sm:px-6">
+					<h1 className="sr-only">Kuroji — Accounts</h1>
 					<AccountsOverview
 						balances={balances}
 						accounts={accounts}
@@ -207,7 +209,7 @@ export default async function KurojiPage({
 						asOfLabel={asOfLabel(to, today)}
 					/>
 				</div>
-			</main>
+			</div>
 		);
 	}
 
@@ -229,8 +231,9 @@ export default async function KurojiPage({
 	]);
 
 	return (
-		<main className="flex flex-col pb-28 md:pb-0">
+		<div className="flex flex-col pb-28 md:pb-0">
 			<div className="px-4 py-6 sm:px-6">
+				<h1 className="sr-only">Kuroji — Transactions</h1>
 				{bankProblem && <BankSyncNotice problem={bankProblem} className="mb-4" />}
 				<TransactionTable
 					transactions={recentTransactions.rows}
@@ -251,6 +254,6 @@ export default async function KurojiPage({
 					sortDir={sortDir}
 				/>
 			</div>
-		</main>
+		</div>
 	);
 }

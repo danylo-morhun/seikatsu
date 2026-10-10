@@ -91,7 +91,7 @@ export default async function AccountDetailPage({
 		periodParams ? `${href}${href.includes("?") ? "&" : "?"}${periodParams}` : href;
 
 	return (
-		<main className="px-4 pt-6 pb-28 sm:px-8 md:pt-8 md:pb-8">
+		<div className="px-4 pt-6 pb-28 sm:px-8 md:pt-8 md:pb-8">
 			<div className="mb-6">
 				<Link
 					href={withPeriod("/kuroji?tab=accounts")}
@@ -197,6 +197,6 @@ export default async function AccountDetailPage({
 					dateTo={period.to}
 				/>
 			</div>
-		</main>
+		</div>
 	);
 }
