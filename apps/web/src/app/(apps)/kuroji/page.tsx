@@ -16,6 +16,7 @@ import { OnboardingCard } from "@/features/kuroji/components/OnboardingCard";
 import { OverviewFigures } from "@/features/kuroji/components/OverviewFigures";
 import { TransactionTable } from "@/features/kuroji/components/TransactionTable";
 import { displayBalance, rollupRoots } from "@/features/kuroji/lib/balance";
+import { periodAfterSync } from "@/features/kuroji/lib/bank-health";
 import { parseLocal } from "@/features/kuroji/lib/dates";
 import { asOfLabel, periodQuery, resolvePeriod } from "@/features/kuroji/lib/period";
 import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
@@ -156,6 +157,7 @@ export default async function KurojiPage({
 										baseCurrency={workspace.baseCurrency}
 										from={from}
 										to={to}
+										syncGap={bankProblem && periodAfterSync(bankProblem, from) ? bankProblem : null}
 									/>
 								) : (
 									<CategoryBreakdown
