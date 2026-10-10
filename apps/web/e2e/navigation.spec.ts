@@ -22,12 +22,12 @@ test("sidebar opens every app", async ({ page }) => {
 	const sidebar = page.locator('[data-sidebar="sidebar"]');
 
 	for (const [name, path] of [
-		["清 Seiryu", "/seiryu"],
-		["積 Tsundoku", "/tsundoku"],
-		["継 Keizoku", "/keizoku"],
-		["求 Kyuu", "/kyuu"],
-		["愛 Aisha", "/aisha"],
-		["黒 Kuroji", "/kuroji"],
+		["Seiryu", "/seiryu"],
+		["Tsundoku", "/tsundoku"],
+		["Keizoku", "/keizoku"],
+		["Kyuu", "/kyuu"],
+		["Aisha", "/aisha"],
+		["Kuroji", "/kuroji"],
 	]) {
 		await sidebar.getByRole("link", { name }).click();
 		await expect(page).toHaveURL(new RegExp(path));
