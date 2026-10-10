@@ -122,8 +122,9 @@ export function AddRecurringModal({
 					className="space-y-4"
 				>
 					<div className="space-y-2">
-						<Label>From Account</Label>
+						<Label htmlFor="rec-from">From Account</Label>
 						<AccountSelect
+							id="rec-from"
 							control={control as never}
 							name="fromAccountId"
 							accounts={[...wallets, ...categories]}
@@ -132,8 +133,9 @@ export function AddRecurringModal({
 						/>
 					</div>
 					<div className="space-y-2">
-						<Label>To Account</Label>
+						<Label htmlFor="rec-to">To Account</Label>
 						<AccountSelect
+							id="rec-to"
 							control={control as never}
 							name="toAccountId"
 							accounts={[...wallets, ...categories]}
@@ -142,9 +144,10 @@ export function AddRecurringModal({
 						/>
 					</div>
 					<div className="space-y-2">
-						<Label>Amount</Label>
+						<Label htmlFor="rec-amount">Amount</Label>
 						<div className="flex gap-2">
 							<Input
+								id="rec-amount"
 								type="text"
 								inputMode="decimal"
 								autoComplete="off"
@@ -157,7 +160,7 @@ export function AddRecurringModal({
 								name="currency"
 								render={({ field }) => (
 									<Select onValueChange={field.onChange} value={field.value}>
-										<SelectTrigger className="w-[90px]">
+										<SelectTrigger className="w-[90px]" aria-label="Currency">
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
@@ -174,18 +177,22 @@ export function AddRecurringModal({
 						{errs.amount && <p className="text-destructive text-[0.8rem]">{errs.amount.message}</p>}
 					</div>
 					<div className="space-y-2">
-						<Label>Description (optional)</Label>
-						<Input placeholder="e.g. Monthly rent" {...register("description")} />
+						<Label htmlFor="rec-description">Description (optional)</Label>
+						<Input
+							id="rec-description"
+							placeholder="e.g. Monthly rent"
+							{...register("description")}
+						/>
 					</div>
 					<div className="grid grid-cols-2 gap-3">
 						<div className="space-y-2">
-							<Label>Frequency</Label>
+							<Label htmlFor="rec-frequency">Frequency</Label>
 							<Controller
 								control={control}
 								name="frequency"
 								render={({ field }) => (
 									<Select onValueChange={field.onChange} value={field.value}>
-										<SelectTrigger>
+										<SelectTrigger id="rec-frequency">
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
@@ -200,16 +207,16 @@ export function AddRecurringModal({
 							/>
 						</div>
 						<div className="space-y-2">
-							<Label>Start Date</Label>
-							<Input type="date" {...register("startDate")} />
+							<Label htmlFor="rec-start">Start Date</Label>
+							<Input id="rec-start" type="date" {...register("startDate")} />
 							{errs.startDate && (
 								<p className="text-destructive text-[0.8rem]">{errs.startDate.message}</p>
 							)}
 						</div>
 					</div>
 					<div className="space-y-2">
-						<Label>End Date (optional)</Label>
-						<Input type="date" {...register("endDate")} />
+						<Label htmlFor="rec-end">End Date (optional)</Label>
+						<Input id="rec-end" type="date" {...register("endDate")} />
 					</div>
 					<div className="flex justify-end gap-2 pt-2">
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

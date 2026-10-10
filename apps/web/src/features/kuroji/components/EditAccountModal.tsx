@@ -122,13 +122,13 @@ export function EditAccountModal({ account, workspaceId, open, onOpenChange }: P
 					</div>
 
 					<div className="space-y-2">
-						<Label>Type</Label>
+						<Label htmlFor="edit-acc-type">Type</Label>
 						<Controller
 							control={control}
 							name="type"
 							render={({ field }) => (
 								<Select onValueChange={field.onChange} value={field.value}>
-									<SelectTrigger>
+									<SelectTrigger id="edit-acc-type">
 										<SelectValue placeholder="Select type" />
 									</SelectTrigger>
 									<SelectContent>
@@ -145,13 +145,13 @@ export function EditAccountModal({ account, workspaceId, open, onOpenChange }: P
 					</div>
 
 					<div className="space-y-2">
-						<Label>Currency</Label>
+						<Label htmlFor="edit-acc-currency">Currency</Label>
 						<Controller
 							control={control}
 							name="currency"
 							render={({ field }) => (
 								<Select onValueChange={field.onChange} value={field.value}>
-									<SelectTrigger>
+									<SelectTrigger id="edit-acc-currency">
 										<SelectValue placeholder="Select currency" />
 									</SelectTrigger>
 									<SelectContent>
@@ -188,13 +188,13 @@ export function EditAccountModal({ account, workspaceId, open, onOpenChange }: P
 					)}
 
 					<div className="space-y-2">
-						<Label>Parent Account (optional)</Label>
+						<Label htmlFor="edit-acc-parent">Parent Account (optional)</Label>
 						<Controller
 							control={control}
 							name="parentId"
 							render={({ field }) => (
 								<Select onValueChange={field.onChange} value={field.value ?? ""}>
-									<SelectTrigger>
+									<SelectTrigger id="edit-acc-parent">
 										<SelectValue placeholder="None" />
 									</SelectTrigger>
 									<SelectContent>
