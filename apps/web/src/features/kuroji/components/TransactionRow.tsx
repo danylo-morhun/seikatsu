@@ -149,7 +149,7 @@ export const TransactionRow = memo(
 				className={cn(
 					"group/row relative grid items-center py-2.5",
 					rowCols(selectMode),
-					selected && "bg-primary/[0.06]",
+					selected && "bg-surface",
 				)}
 			>
 				<span className={cn("relative z-10 md:flex", selectMode ? "flex" : "hidden")}>
