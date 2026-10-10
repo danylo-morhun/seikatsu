@@ -1,4 +1,4 @@
-import { buildPeriodLabel, parseLocal } from "@/features/kuroji/lib/dates";
+import { buildPeriodLabel, formatShortDate, parseLocal } from "@/features/kuroji/lib/dates";
 import { endOfMonth, format, startOfMonth } from "date-fns";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -41,7 +41,7 @@ export function resolvePeriod(
 /** When asset/liability balances are measured: the period end, or "Now" once it reaches today. */
 export function asOfLabel(to: string | undefined, today: string) {
 	if (!to || to >= today) return "Now";
-	return `As of ${format(parseLocal(to), "d MMM yyyy")}`;
+	return `As of ${formatShortDate(to, today)}`;
 }
 
 /** Query string carrying the picked period to another Kuroji page, e.g. `?from=…&to=…`. */
