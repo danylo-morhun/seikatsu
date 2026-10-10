@@ -28,6 +28,8 @@ export type RecentTransaction = {
 	id: string;
 	date: string;
 	description: string | null;
+	/** Came from a bank sync or statement import. */
+	imported: boolean;
 	fromAccount: string;
 	fromAccountId: string;
 	fromAccountType: string;
@@ -472,6 +474,7 @@ export async function getRecentTransactions(
 				id: txn.id,
 				date: txn.date,
 				description: txn.description,
+				imported: txn.externalId !== null,
 				fromAccount: fromIsSplit
 					? `Split (${fromEntries.length})`
 					: (fromEntry?.account?.name ?? "—"),
