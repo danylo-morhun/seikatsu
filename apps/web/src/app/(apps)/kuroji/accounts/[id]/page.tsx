@@ -107,8 +107,7 @@ export default async function AccountDetailPage({
 
 			<div className="mb-10 flex items-start justify-between gap-4">
 				<div className="min-w-0">
-					<p className="text-xs text-muted-foreground">{TYPE_LABEL[account.type]}</p>
-					<h1 className="mt-0.5 truncate text-xl font-semibold">{account.name}</h1>
+					<h1 className="truncate text-xl font-semibold">{account.name}</h1>
 					<p
 						data-total="lead"
 						className={cn(
@@ -121,6 +120,7 @@ export default async function AccountDetailPage({
 							: formatCurrency(balance, workspace.baseCurrency)}
 					</p>
 					<p className="mt-1.5 text-sm text-muted-foreground">
+						{TYPE_LABEL[account.type]} ·{" "}
 						{isForeign && `≈ ${formatCurrency(balance, workspace.baseCurrency)} · `}
 						{isStock ? asOfLabel(period.to, today) : period.label}
 						{rolledUp > 0 && ` · incl. ${rolledUp} sub-account${rolledUp === 1 ? "" : "s"}`}
