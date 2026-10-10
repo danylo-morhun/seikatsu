@@ -37,9 +37,15 @@ export function flowOf(txn: RecentTransaction) {
 	return txn.fromAccountType === "INCOME" ? 1 : txn.toAccountType === "EXPENSE" ? -1 : 0;
 }
 
-/** Same columns for rows, day headers and the column header. */
-export const ROW_COLS =
-	"grid-cols-[minmax(0,1fr)_auto_2.25rem] gap-x-3 md:grid-cols-[1.25rem_minmax(0,1fr)_minmax(0,18rem)_8.5rem_2.25rem] md:gap-x-4";
+/** Same columns for rows and day headers; phones add the checkbox column in select mode. */
+export function rowCols(selectMode: boolean) {
+	return cn(
+		"gap-x-3 md:grid-cols-[1.25rem_minmax(0,1fr)_minmax(0,18rem)_8.5rem_2.25rem] md:gap-x-4",
+		selectMode
+			? "grid-cols-[1.25rem_minmax(0,1fr)_auto_2.25rem]"
+			: "grid-cols-[minmax(0,1fr)_auto_2.25rem]",
+	);
+}
 
 export type RowEvent =
 	| { type: "edit" | "delete" | "toggle" }
@@ -50,6 +56,8 @@ interface Props {
 	txn: RecentTransaction;
 	currency: string;
 	selected: boolean;
+	/** Phones show checkboxes, and a tap selects instead of opening the row. */
+	selectMode: boolean;
 	/** Date order groups rows under day headers, so rows leave the date out. */
 	byDay: boolean;
 	accountFilterId?: string;
@@ -111,7 +119,15 @@ function sameTxn(a: RecentTransaction, b: RecentTransaction) {
 }
 
 export const TransactionRow = memo(
-	function TransactionRow({ txn, currency, selected, byDay, accountFilterId, onEvent }: Props) {
+	function TransactionRow({
+		txn,
+		currency,
+		selected,
+		selectMode,
+		byDay,
+		accountFilterId,
+		onEvent,
+	}: Props) {
 		const category = categoryEnd(txn);
 		const menuTrigger = useRef<HTMLButtonElement>(null);
 		// "Change category" waits for the menu to close, then opens the picker by the menu button.
@@ -132,11 +148,11 @@ export const TransactionRow = memo(
 			<li
 				className={cn(
 					"group/row relative grid items-center py-2.5",
-					ROW_COLS,
+					rowCols(selectMode),
 					selected && "bg-primary/[0.06]",
 				)}
 			>
-				<span className="relative z-10 hidden md:flex">
+				<span className={cn("relative z-10 md:flex", selectMode ? "flex" : "hidden")}>
 					<Checkbox
 						checked={selected}
 						onCheckedChange={() => onEvent(txn, { type: "toggle" })}
@@ -146,7 +162,7 @@ export const TransactionRow = memo(
 				<div className="min-w-0">
 					<button
 						type="button"
-						onClick={() => onEvent(txn, { type: "edit" })}
+						onClick={() => onEvent(txn, { type: selectMode ? "toggle" : "edit" })}
 						className="block w-full min-w-0 rounded text-left outline-none after:absolute after:inset-0 focus-visible:ring-2 focus-visible:ring-ring"
 					>
 						<span className="block truncate text-sm font-medium">
@@ -237,6 +253,7 @@ export const TransactionRow = memo(
 		sameTxn(prev.txn, next.txn) &&
 		prev.currency === next.currency &&
 		prev.selected === next.selected &&
+		prev.selectMode === next.selectMode &&
 		prev.byDay === next.byDay &&
 		prev.accountFilterId === next.accountFilterId &&
 		prev.onEvent === next.onEvent,
