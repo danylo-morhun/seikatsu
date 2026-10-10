@@ -25,8 +25,8 @@ export default async function AccountSettingsPage() {
 	const providers = accounts.map((a) => a.provider);
 
 	return (
-		<div className="px-4 py-6 sm:px-6 max-w-3xl">
-			<h1 className="mb-8 text-2xl font-semibold">Account</h1>
+		<div className="max-w-3xl px-4 py-6 sm:px-8 md:pt-8">
+			<h1 className="mb-8 text-xl font-semibold">Account</h1>
 
 			<section className="mb-10">
 				<h2 className="mb-1 text-base font-semibold">Profile</h2>
