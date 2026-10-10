@@ -61,7 +61,7 @@ export function BankConnectionsSection({
 					No banks connected. Connect your bank to import transactions automatically.
 				</p>
 			) : (
-				<div className="space-y-3">
+				<div className="divide-y divide-rule border-y border-rule">
 					{connections.map((conn) => (
 						<ConnectionCard
 							key={conn.id}
@@ -139,9 +139,9 @@ function ConnectionCard({
 	}
 
 	return (
-		<div className="rounded-md border p-4">
-			<div className="flex items-start justify-between gap-3">
-				<div>
+		<div className="py-4">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+				<div className="min-w-0">
 					<p className="font-medium">{connection.displayName}</p>
 					<p className={`text-xs ${status.cls}`}>{status.text}</p>
 					{connection.lastSyncedAt && (
@@ -163,7 +163,7 @@ function ConnectionCard({
 						<p className="mt-1 text-xs text-destructive">{connection.lastError}</p>
 					)}
 				</div>
-				<div className="flex shrink-0 gap-2">
+				<div className="flex shrink-0 flex-wrap gap-2">
 					<Button
 						size="sm"
 						variant="outline"
@@ -196,9 +196,12 @@ function ConnectionCard({
 			</div>
 
 			{connection.bankAccounts.length > 0 && (
-				<div className="mt-3 space-y-2 border-t pt-3">
+				<div className="mt-3 divide-y divide-rule border-t border-rule">
 					{connection.bankAccounts.map((ba) => (
-						<div key={ba.id} className="flex items-center justify-between gap-3">
+						<div
+							key={ba.id}
+							className="flex flex-col gap-2 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+						>
 							<div className="min-w-0">
 								<p className="truncate text-sm">{ba.name}</p>
 								{ba.iban && (
@@ -209,7 +212,10 @@ function ConnectionCard({
 								value={ba.accountId ?? NONE}
 								onValueChange={(v) => handleLink(ba.accountUid, v)}
 							>
-								<SelectTrigger className="w-48" aria-label={`Kuroji account for ${ba.name}`}>
+								<SelectTrigger
+									className="w-full sm:w-48"
+									aria-label={`Kuroji account for ${ba.name}`}
+								>
 									<SelectValue placeholder="Not linked" />
 								</SelectTrigger>
 								<SelectContent>
