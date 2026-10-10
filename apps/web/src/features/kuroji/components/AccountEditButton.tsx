@@ -19,7 +19,7 @@ export function AccountEditButton({ account, workspaceId }: Props) {
 
 	return (
 		<>
-			<Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+			<Button variant="outline" onClick={() => setOpen(true)}>
 				<HugeiconsIcon icon={PencilEdit01Icon} className="mr-2 h-4 w-4" />
 				Edit
 			</Button>

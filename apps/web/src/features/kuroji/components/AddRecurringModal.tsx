@@ -110,9 +110,7 @@ export function AddRecurringModal({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogTrigger asChild>
-				<Button variant="outline" size="sm">
-					Add Recurring
-				</Button>
+				<Button variant="outline">Add Recurring</Button>
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>

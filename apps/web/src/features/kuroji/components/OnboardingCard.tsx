@@ -46,7 +46,7 @@ export function OnboardingCard({ workspaceId, baseCurrency }: Props) {
 				<AddTransactionModal
 					workspaceId={workspaceId}
 					baseCurrency={baseCurrency}
-					trigger={<Button size="lg">Record your first transaction</Button>}
+					trigger={<Button>Record your first transaction</Button>}
 				/>
 			</div>
 

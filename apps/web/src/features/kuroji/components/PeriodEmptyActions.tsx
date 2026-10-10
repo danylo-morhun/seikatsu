@@ -39,12 +39,12 @@ export function PeriodEmptyActions({ from, to }: Props) {
 
 	return (
 		<div className="flex flex-wrap items-center justify-center gap-2">
-			<Button asChild variant="outline" size="sm">
+			<Button asChild variant="outline">
 				<Link href={href(prev)} prefetch>
 					Show {buildPeriodLabel(prev.from, prev.to)}
 				</Link>
 			</Button>
-			<Button asChild variant="ghost" size="sm">
+			<Button asChild variant="ghost">
 				<Link href={href("all")} prefetch>
 					Show all time
 				</Link>
