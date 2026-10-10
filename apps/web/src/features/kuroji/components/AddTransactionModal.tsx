@@ -450,7 +450,7 @@ export function AddTransactionModal({
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
+							className="shrink-0 text-muted-foreground hover:text-foreground"
 							aria-label={`Remove category ${index + 1}`}
 							onClick={() => removeSplit(index)}
 						>
