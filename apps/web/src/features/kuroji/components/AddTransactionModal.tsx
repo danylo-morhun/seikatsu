@@ -392,7 +392,9 @@ export function AddTransactionModal({
 
 	const renderSplitRows = (categories: Account[]) => (
 		<div className="space-y-2">
-			<Label>{isSplit ? "Categories" : "Category"}</Label>
+			<Label htmlFor={isSplit ? undefined : "add-category-0"}>
+				{isSplit ? "Categories" : "Category"}
+			</Label>
 			{!isSplit && txType !== "transfer" && (memory.recent?.[txType]?.length ?? 0) > 0 && (
 				<div className="flex flex-wrap gap-1.5">
 					{(memory.recent?.[txType] ?? [])
@@ -423,6 +425,8 @@ export function AddTransactionModal({
 						<AccountSelect
 							control={control as never}
 							name={`splits.${index}.categoryId`}
+							id={`add-category-${index}`}
+							aria-label={isSplit ? `Category ${index + 1}` : undefined}
 							accounts={categories}
 							placeholder="Select category"
 							error={splitErrs[index]?.categoryId?.message}
@@ -518,8 +522,9 @@ export function AddTransactionModal({
 						<div className={cn("grid gap-4", !isSplit && "sm:grid-cols-2")}>
 							{renderSplitRows(expenseCategories)}
 							<div className="space-y-2">
-								<Label>Paid from</Label>
+								<Label htmlFor="add-paid-from">Paid from</Label>
 								<AccountSelect
+									id="add-paid-from"
 									control={control as never}
 									name="walletId"
 									accounts={wallets}
@@ -534,8 +539,9 @@ export function AddTransactionModal({
 						<div className={cn("grid gap-4", !isSplit && "sm:grid-cols-2")}>
 							{renderSplitRows(incomeCategories)}
 							<div className="space-y-2">
-								<Label>Received in</Label>
+								<Label htmlFor="add-received-in">Received in</Label>
 								<AccountSelect
+									id="add-received-in"
 									control={control as never}
 									name="walletId"
 									accounts={wallets}
@@ -549,8 +555,9 @@ export function AddTransactionModal({
 					{txType === "transfer" && (
 						<div className="grid gap-4 sm:grid-cols-2">
 							<div className="space-y-2">
-								<Label>From</Label>
+								<Label htmlFor="add-from">From</Label>
 								<AccountSelect
+									id="add-from"
 									control={control as never}
 									name="fromWalletId"
 									accounts={wallets}
@@ -559,8 +566,9 @@ export function AddTransactionModal({
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label>To</Label>
+								<Label htmlFor="add-to">To</Label>
 								<AccountSelect
+									id="add-to"
 									control={control as never}
 									name="toWalletId"
 									accounts={wallets}
