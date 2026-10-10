@@ -1,3 +1,4 @@
+import { AppToaster } from "@/components/AppToaster";
 import { NavigationProgress } from "@/components/NavigationProgress";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { TimezoneSync } from "@/components/TimezoneSync";
@@ -6,7 +7,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { Suspense } from "react";
-import { Toaster } from "sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -42,7 +42,7 @@ export default function RootLayout({
 						<NavigationProgress />
 					</Suspense>
 					<TooltipProvider delayDuration={0}>{children}</TooltipProvider>
-					<Toaster richColors position="bottom-right" />
+					<AppToaster />
 				</ThemeProvider>
 				<SpeedInsights />
 				<TimezoneSync />
