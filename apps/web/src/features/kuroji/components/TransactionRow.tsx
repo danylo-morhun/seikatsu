@@ -4,6 +4,7 @@ import type { RecentTransaction } from "@/features/kuroji/actions/transactions";
 import { TransactionFlow } from "@/features/kuroji/components/TransactionFlow";
 import { parseLocal } from "@/features/kuroji/lib/dates";
 import { formatCurrency } from "@/features/kuroji/lib/format";
+import { categoryEnd } from "@/features/kuroji/lib/quick-categorize";
 import {
 	Delete01Icon,
 	Folder01Icon,
@@ -18,14 +19,11 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
-	DropdownMenuSub,
-	DropdownMenuSubContent,
-	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 	cn,
 } from "@seikatsu/ui";
 import { format } from "date-fns";
-import { memo } from "react";
+import { memo, useRef } from "react";
 
 const thisYear = new Date().getFullYear();
 
@@ -46,9 +44,7 @@ export const ROW_COLS =
 export type RowEvent =
 	| { type: "edit" | "delete" | "toggle" }
 	| { type: "account" | "tag"; id: string }
-	| { type: "move"; categoryId: string };
-
-type Category = { id: string; name: string };
+	| { type: "categorize"; anchor: HTMLElement };
 
 interface Props {
 	txn: RecentTransaction;
@@ -57,20 +53,9 @@ interface Props {
 	/** Date order groups rows under day headers, so rows leave the date out. */
 	byDay: boolean;
 	accountFilterId?: string;
-	expenseCategories: Category[];
-	incomeCategories: Category[];
 	/** One stable handler for every row, so a row re-renders only when its own data changes. */
 	onEvent: (txn: RecentTransaction, event: RowEvent) => void;
 }
-
-const categoryKind = (txn: RecentTransaction) =>
-	txn.splitCount > 1
-		? null
-		: txn.toAccountType === "EXPENSE"
-			? "EXPENSE"
-			: txn.fromAccountType === "INCOME"
-				? "INCOME"
-				: null;
 
 // Money in reads "+", money out "−"; transfers between own accounts carry no sign.
 function Amount({ txn, currency }: { txn: RecentTransaction; currency: string }) {
@@ -126,66 +111,61 @@ function sameTxn(a: RecentTransaction, b: RecentTransaction) {
 }
 
 export const TransactionRow = memo(
-	function TransactionRow({
-		txn,
-		currency,
-		selected,
-		byDay,
-		accountFilterId,
-		expenseCategories,
-		incomeCategories,
-		onEvent,
-	}: Props) {
-		const kind = categoryKind(txn);
-		const current = kind === "EXPENSE" ? txn.toAccountId : txn.fromAccountId;
-		const moveTargets = kind === "EXPENSE" ? expenseCategories : incomeCategories;
+	function TransactionRow({ txn, currency, selected, byDay, accountFilterId, onEvent }: Props) {
+		const category = categoryEnd(txn);
+		const menuTrigger = useRef<HTMLButtonElement>(null);
+		// "Change category" waits for the menu to close, then opens the picker by the menu button.
+		const pickerRequested = useRef(false);
+		const flowProps = {
+			fromId: txn.fromAccountId,
+			fromName: txn.fromAccount,
+			toId: txn.toAccountId,
+			toName: txn.toAccount,
+			activeId: accountFilterId,
+			categoryEnd: category ? (category.kind === "EXPENSE" ? "to" : "from") : undefined,
+			onCategorize: category
+				? (anchor: HTMLElement) => onEvent(txn, { type: "categorize", anchor })
+				: undefined,
+		} as const;
 		return (
+			// The description button stretches over the row; controls inside sit above it.
 			<li
 				className={cn(
-					"group/row grid items-center py-2.5",
+					"group/row relative grid items-center py-2.5",
 					ROW_COLS,
 					selected && "bg-primary/[0.06]",
 				)}
 			>
-				<span className="hidden md:flex">
+				<span className="relative z-10 hidden md:flex">
 					<Checkbox
 						checked={selected}
 						onCheckedChange={() => onEvent(txn, { type: "toggle" })}
 						aria-label={`Select ${txn.description ?? "transaction"}`}
 					/>
 				</span>
-				<button
-					type="button"
-					onClick={() => onEvent(txn, { type: "edit" })}
-					className="min-w-0 rounded text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
-				>
-					<span className="block truncate text-sm font-medium">
-						{txn.description ?? "No description"}
-					</span>
+				<div className="min-w-0">
+					<button
+						type="button"
+						onClick={() => onEvent(txn, { type: "edit" })}
+						className="block w-full min-w-0 rounded text-left outline-none after:absolute after:inset-0 focus-visible:ring-2 focus-visible:ring-ring"
+					>
+						<span className="block truncate text-sm font-medium">
+							{txn.description ?? "No description"}
+						</span>
+						{!byDay && (
+							<span className="mt-0.5 hidden text-xs text-muted-foreground md:block">
+								{fmtDate(txn.date)}
+							</span>
+						)}
+					</button>
 					<span className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-muted-foreground md:hidden">
 						{!byDay && <span className="shrink-0">{fmtDate(txn.date)}</span>}
-						<TransactionFlow
-							className="text-xs"
-							fromId={txn.fromAccountId}
-							fromName={txn.fromAccount}
-							toId={txn.toAccountId}
-							toName={txn.toAccount}
-							activeId={accountFilterId}
-						/>
+						<TransactionFlow className="text-xs" {...flowProps} />
 					</span>
-					{!byDay && (
-						<span className="mt-0.5 hidden text-xs text-muted-foreground md:block">
-							{fmtDate(txn.date)}
-						</span>
-					)}
-				</button>
+				</div>
 				<span className="hidden min-w-0 md:block">
 					<TransactionFlow
-						fromId={txn.fromAccountId}
-						fromName={txn.fromAccount}
-						toId={txn.toAccountId}
-						toName={txn.toAccount}
-						activeId={accountFilterId}
+						{...flowProps}
 						onSelect={(id) => onEvent(txn, { type: "account", id })}
 					/>
 					{txn.tags.length > 0 && (
@@ -196,7 +176,7 @@ export const TransactionRow = memo(
 									type="button"
 									title={`Show only tag ${tag.name}`}
 									onClick={() => onEvent(txn, { type: "tag", id: tag.id })}
-									className="rounded-full border border-rule px-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+									className="relative z-10 rounded-full border border-rule px-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
 								>
 									{tag.name}
 								</button>
@@ -208,37 +188,37 @@ export const TransactionRow = memo(
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<Button
+							ref={menuTrigger}
 							variant="ghost"
 							size="icon"
-							className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
+							className="relative z-10 h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
 						>
 							<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
 							<span className="sr-only">Actions for {txn.description ?? "transaction"}</span>
 						</Button>
 					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end">
+					<DropdownMenuContent
+						align="end"
+						onCloseAutoFocus={(e) => {
+							if (!pickerRequested.current || !menuTrigger.current) return;
+							pickerRequested.current = false;
+							e.preventDefault();
+							onEvent(txn, { type: "categorize", anchor: menuTrigger.current });
+						}}
+					>
 						<DropdownMenuItem onSelect={() => onEvent(txn, { type: "edit" })}>
 							<HugeiconsIcon icon={PencilEdit01Icon} className="mr-2 h-4 w-4" />
 							Edit
 						</DropdownMenuItem>
-						{kind && (
-							<DropdownMenuSub>
-								<DropdownMenuSubTrigger>
-									<HugeiconsIcon icon={Folder01Icon} className="mr-2 h-4 w-4" />
-									Move to
-								</DropdownMenuSubTrigger>
-								<DropdownMenuSubContent className="max-h-80 overflow-y-auto">
-									{moveTargets.map((c) => (
-										<DropdownMenuItem
-											key={c.id}
-											disabled={c.id === current}
-											onSelect={() => onEvent(txn, { type: "move", categoryId: c.id })}
-										>
-											{c.name}
-										</DropdownMenuItem>
-									))}
-								</DropdownMenuSubContent>
-							</DropdownMenuSub>
+						{category && (
+							<DropdownMenuItem
+								onSelect={() => {
+									pickerRequested.current = true;
+								}}
+							>
+								<HugeiconsIcon icon={Folder01Icon} className="mr-2 h-4 w-4" />
+								Change category
+							</DropdownMenuItem>
 						)}
 						<DropdownMenuSeparator />
 						<DropdownMenuItem
@@ -259,7 +239,5 @@ export const TransactionRow = memo(
 		prev.selected === next.selected &&
 		prev.byDay === next.byDay &&
 		prev.accountFilterId === next.accountFilterId &&
-		prev.expenseCategories === next.expenseCategories &&
-		prev.incomeCategories === next.incomeCategories &&
 		prev.onEvent === next.onEvent,
 );
