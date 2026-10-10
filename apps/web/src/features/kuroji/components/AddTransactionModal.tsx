@@ -107,7 +107,7 @@ export function AddTransactionModal({
 			editing?.values ??
 			({
 				txType: "expense",
-				description: undefined,
+				description: "",
 				currency: defaultCurrency,
 				date: today,
 				walletId: "",
@@ -168,7 +168,8 @@ export function AddTransactionModal({
 			reset(editing.values);
 			return;
 		}
-		const base = { description: undefined, currency: defaultCurrency, date: today };
+		// "" not undefined: reset leaves an input's text alone when its value is undefined.
+		const base = { description: "", currency: defaultCurrency, date: today };
 		if (type === "expense") {
 			reset({
 				...base,
@@ -219,7 +220,7 @@ export function AddTransactionModal({
 	const onSubmit = async (values: AddTransactionFormValues) => {
 		const common = {
 			currency: values.currency,
-			description: values.description,
+			description: values.description || undefined,
 			date: values.date,
 			tagIds: selectedTagIds,
 		};

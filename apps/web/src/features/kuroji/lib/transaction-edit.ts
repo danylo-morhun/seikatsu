@@ -26,7 +26,7 @@ export function editFormValues(txn: {
 	const credits = txn.legs.filter((l) => Number(l.amount) >= 0);
 	if (debits.length === 0 || credits.length === 0) return null;
 	if (debits.length > 1 && credits.length > 1) return null;
-	const base = { description: txn.description ?? undefined, date: txn.date };
+	const base = { description: txn.description ?? "", date: txn.date };
 
 	if (debits.length === 1 && credits.length === 1) {
 		// The amount comes from the wallet leg, so the wallet keeps its exact native amount.
