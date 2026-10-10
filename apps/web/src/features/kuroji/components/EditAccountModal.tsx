@@ -11,6 +11,7 @@ import {
 	Button,
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 	Input,
@@ -109,6 +110,7 @@ export function EditAccountModal({ account, workspaceId, open, onOpenChange }: P
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle>Edit Account</DialogTitle>
+					<DialogDescription className="sr-only">Change this account's details.</DialogDescription>
 				</DialogHeader>
 
 				<form
