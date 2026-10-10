@@ -38,6 +38,10 @@ describe("categoryGroups", () => {
 			"Recent",
 			["Sweets (Food)", "Rent"],
 		]);
+		const named = [cat("gifts", "Gifts"), cat("vita", "Gifts: Vita", "gifts")];
+		expect(categoryGroups(named, { value: "", recentIds: ["vita"], query: "" })[0].options).toEqual(
+			[{ id: "vita", label: "Gifts: Vita", hint: undefined }],
+		);
 		const many = ["sweets", "rent", "gifts", "cafe", "groceries", "sweets", "rent"];
 		expect(groups({ recentIds: many })[0][1]).toHaveLength(5);
 	});
