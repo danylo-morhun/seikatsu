@@ -93,9 +93,7 @@ export function AddAccountModal({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogTrigger asChild>
-				<Button variant="outline" size="sm">
-					Add Account
-				</Button>
+				<Button variant="outline">Add Account</Button>
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
