@@ -474,7 +474,11 @@ export function AddTransactionModal({
 			{!editing && (
 				<DialogTrigger asChild>
 					{trigger ?? (
-						<Button size="icon" className="h-8 w-8 md:w-auto md:px-3 md:gap-2">
+						<Button
+							size="icon"
+							className="h-8 w-8 md:w-auto md:px-3 md:gap-2"
+							aria-label="New transaction"
+						>
 							<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
 							<span className="hidden md:inline">New Transaction</span>
 						</Button>
