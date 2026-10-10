@@ -4,6 +4,7 @@ import { Spinner } from "@/components/Spinner";
 import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import { createTransaction, updateTransaction } from "@/features/kuroji/actions/transactions";
 import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
+import { RecentCategoryChips } from "@/features/kuroji/components/RecentCategoryChips";
 import { TagSelect } from "@/features/kuroji/components/TagSelect";
 import { readCaptureMemory, rememberCapture } from "@/features/kuroji/lib/capture-memory";
 import {
@@ -390,34 +391,29 @@ export function AddTransactionModal({
 		</div>
 	);
 
+	const recentIds = txType === "transfer" ? [] : (memory.recent?.[txType] ?? []);
+	const recentCategories = (categories: Account[]) =>
+		recentIds.map((id) => categories.find((c) => c.id === id)).filter((c): c is Account => !!c);
+
 	const renderSplitRows = (categories: Account[]) => (
 		<div className="space-y-2">
-			<Label htmlFor={isSplit ? undefined : "add-category-0"}>
-				{isSplit ? "Categories" : "Category"}
-			</Label>
-			{!isSplit && txType !== "transfer" && (memory.recent?.[txType]?.length ?? 0) > 0 && (
-				<div className="flex flex-wrap gap-1.5">
-					{(memory.recent?.[txType] ?? [])
-						.map((id) => categories.find((c) => c.id === id))
-						.filter((c): c is Account => !!c)
-						.map((c) => (
-							<button
-								key={c.id}
-								type="button"
-								aria-pressed={watchCategoryId === c.id}
-								onClick={() =>
-									setValue("splits.0.categoryId" as never, c.id as never, { shouldValidate: true })
-								}
-								className={cn(
-									"rounded-full border border-rule px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground",
-									watchCategoryId === c.id && "border-input bg-surface-2 text-foreground",
-								)}
-							>
-								{c.name}
-							</button>
-						))}
-				</div>
-			)}
+			{/* Built like the neighbour's label line (an inline label, no gap below: space-y skips
+			    inline elements) with the chips floating on it, so both selects start level. */}
+			<div className="relative mb-0">
+				<Label htmlFor={isSplit ? undefined : "add-category-0"}>
+					{isSplit ? "Categories" : "Category"}
+				</Label>
+				{!isSplit && recentCategories(categories).length > 0 && (
+					<RecentCategoryChips
+						categories={recentCategories(categories)}
+						selectedId={watchCategoryId}
+						className="absolute -inset-y-2 right-0 max-w-[calc(100%-5rem)] items-center"
+						onPick={(id) =>
+							setValue("splits.0.categoryId" as never, id as never, { shouldValidate: true })
+						}
+					/>
+				)}
+			</div>
 
 			{typedSplitFields.map((field, index) => (
 				<div key={field.id} className="flex items-start gap-2">
@@ -428,6 +424,7 @@ export function AddTransactionModal({
 							id={`add-category-${index}`}
 							aria-label={isSplit ? `Category ${index + 1}` : undefined}
 							accounts={categories}
+							recentIds={recentIds}
 							placeholder="Select category"
 							error={splitErrs[index]?.categoryId?.message}
 						/>
