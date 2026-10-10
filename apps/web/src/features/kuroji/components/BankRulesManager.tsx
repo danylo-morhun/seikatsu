@@ -4,17 +4,10 @@ import { Spinner } from "@/components/Spinner";
 import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import type { getBankRules } from "@/features/kuroji/actions/bank";
 import { createBankRule, deleteBankRule } from "@/features/kuroji/actions/bank";
+import { AccountPicker } from "@/features/kuroji/components/AccountSelect";
 import { Delete02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-	Button,
-	Input,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@seikatsu/ui";
+import { Button, Input } from "@seikatsu/ui";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -78,18 +71,13 @@ export function BankRulesManager({
 					onChange={(e) => setMatchText(e.target.value)}
 					className="sm:flex-1"
 				/>
-				<Select value={accountId} onValueChange={setAccountId}>
-					<SelectTrigger className="sm:w-56">
-						<SelectValue placeholder="Category" />
-					</SelectTrigger>
-					<SelectContent>
-						{categories.map((a) => (
-							<SelectItem key={a.id} value={a.id}>
-								{a.name} ({a.type === "INCOME" ? "Income" : "Expense"})
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+				<AccountPicker
+					value={accountId}
+					onValueChange={setAccountId}
+					accounts={categories}
+					placeholder="Category"
+					className="sm:w-56"
+				/>
 				<Button onClick={handleAdd} disabled={isPending} className="gap-1.5">
 					{isPending && !deletingId && <Spinner />}
 					Add rule
