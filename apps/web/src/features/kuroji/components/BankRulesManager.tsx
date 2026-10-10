@@ -87,9 +87,9 @@ export function BankRulesManager({
 			</div>
 
 			{rules.length > 0 && (
-				<div className="divide-y rounded-md border">
+				<div className="divide-y divide-rule border-y border-rule">
 					{rules.map((r) => (
-						<div key={r.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+						<div key={r.id} className="flex items-center justify-between gap-3 py-2.5">
 							<div className="flex min-w-0 items-center gap-2 text-sm">
 								<span className="rounded bg-muted px-2 py-0.5 font-mono text-xs">
 									{r.matchText}
