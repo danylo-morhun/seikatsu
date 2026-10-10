@@ -640,7 +640,7 @@ export function AddTransactionModal({
 							type="button"
 							variant="outline"
 							className="max-sm:flex-1"
-							onClick={() => setOpen(false)}
+							onClick={() => onOpenChange(false)}
 						>
 							Cancel
 						</Button>
