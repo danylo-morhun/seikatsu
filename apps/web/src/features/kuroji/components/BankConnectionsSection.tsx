@@ -37,8 +37,8 @@ type Institution = { id: string; name: string; logo?: string };
 const NONE = "__none__";
 
 const STATUS_LABEL: Record<string, { text: string; cls: string }> = {
-	CREATED: { text: "Awaiting authorization", cls: "text-primary" },
-	LINKED: { text: "Connected", cls: "text-positive" },
+	CREATED: { text: "Awaiting authorization", cls: "text-muted-foreground" },
+	LINKED: { text: "Connected", cls: "text-muted-foreground" },
 	EXPIRED: { text: "Access expired — reconnect", cls: "text-destructive" },
 	ERROR: { text: "Sync error", cls: "text-destructive" },
 };
