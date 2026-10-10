@@ -3,6 +3,7 @@
 import { deleteRecurringTransaction, toggleRecurring } from "@/features/kuroji/actions/recurring";
 import type { RecurringTransaction } from "@/features/kuroji/actions/recurring";
 import { TransactionFlow } from "@/features/kuroji/components/TransactionFlow";
+import { formatShortDate, localToday } from "@/features/kuroji/lib/dates";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { Alert01Icon, Delete01Icon, PauseIcon, PlayCircleIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -28,16 +29,6 @@ const FREQ_LABELS: Record<string, string> = {
 	yearly: "Yearly",
 };
 
-function fmtDate(iso: string) {
-	const [y, m, d] = iso.split("-").map(Number);
-	// Fixed locale: `undefined` differs between server and browser (hydration mismatch).
-	return new Date(y, m - 1, d).toLocaleDateString("en-US", {
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-	});
-}
-
 export function RecurringTransactionsList({
 	items: saved,
 	currency,
@@ -46,6 +37,7 @@ export function RecurringTransactionsList({
 	currency: string;
 }) {
 	const [isPending, startTransition] = useTransition();
+	const today = localToday();
 	// Pause/resume flips at once; the action's re-render brings the saved state.
 	const [items, toggleItem] = React.useOptimistic(saved, (list, id: string) =>
 		list.map((rt) => (rt.id === id ? { ...rt, isActive: !rt.isActive } : rt)),
@@ -109,8 +101,8 @@ export function RecurringTransactionsList({
 								{rt.description && <span> · {rt.description}</span>}
 							</p>
 							<p className="mt-0.5 text-xs text-muted-foreground">
-								Next: {fmtDate(rt.nextDate)}
-								{rt.endDate && <span> · Until {fmtDate(rt.endDate)}</span>}
+								Next: {formatShortDate(rt.nextDate, today)}
+								{rt.endDate && <span> · Until {formatShortDate(rt.endDate, today)}</span>}
 							</p>
 						</div>
 						<div className="flex shrink-0 items-center gap-1">
