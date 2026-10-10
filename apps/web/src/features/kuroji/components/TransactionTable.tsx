@@ -14,11 +14,11 @@ import { CategoryPicker } from "@/features/kuroji/components/CategoryPicker";
 import { EditTransactionModal } from "@/features/kuroji/components/EditTransactionModal";
 import { PeriodEmptyActions } from "@/features/kuroji/components/PeriodEmptyActions";
 import {
-	ROW_COLS,
 	type RowEvent,
 	TransactionRow,
 	flowOf,
 	fmtDate,
+	rowCols,
 } from "@/features/kuroji/components/TransactionRow";
 import { buildPeriodLabel, parseLocal } from "@/features/kuroji/lib/dates";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
@@ -138,6 +138,8 @@ export function TransactionTable({
 	const [localQuery, setLocalQuery] = useState(searchQuery ?? "");
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+	// Phones have no checkbox column until you ask for it.
+	const [selectMode, setSelectMode] = useState(false);
 
 	// A new page, search or filter is a new list: never carry a selection you can't see.
 	const [selectionFor, setSelectionFor] = useState(transactions);
@@ -319,6 +321,26 @@ export function TransactionTable({
 		});
 	}
 
+	const bulkMoveMenu = (trigger: React.ReactNode) => (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" className="max-h-96 w-56 overflow-y-auto">
+				{(["EXPENSE", "INCOME"] as const).map((type) => (
+					<div key={type}>
+						<DropdownMenuLabel className="text-xs text-muted-foreground">
+							{type === "EXPENSE" ? "Expenses" : "Income"}
+						</DropdownMenuLabel>
+						{categoriesOf(type).map((c) => (
+							<DropdownMenuItem key={c.id} onSelect={() => moveTo([...selectedIds], c.id)}>
+								{c.name}
+							</DropdownMenuItem>
+						))}
+					</div>
+				))}
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+
 	const emptyState = (
 		<div className="px-4 py-12 text-center">
 			<p className="text-sm font-medium">{emptyMessage}</p>
@@ -458,35 +480,16 @@ export function TransactionTable({
 				</div>
 				<div className="flex items-center gap-2">
 					{selectedIds.size > 0 && (
-						<>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button variant="outline" size="sm" disabled={isPending}>
-										Move {selectedIds.size} to…
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end" className="max-h-96 w-56 overflow-y-auto">
-									{(["EXPENSE", "INCOME"] as const).map((type) => (
-										<div key={type}>
-											<DropdownMenuLabel className="text-xs text-muted-foreground">
-												{type === "EXPENSE" ? "Expenses" : "Income"}
-											</DropdownMenuLabel>
-											{categoriesOf(type).map((c) => (
-												<DropdownMenuItem
-													key={c.id}
-													onSelect={() => moveTo([...selectedIds], c.id)}
-												>
-													{c.name}
-												</DropdownMenuItem>
-											))}
-										</div>
-									))}
-								</DropdownMenuContent>
-							</DropdownMenu>
+						<div className="hidden items-center gap-2 md:flex">
+							{bulkMoveMenu(
+								<Button variant="outline" size="sm" disabled={isPending}>
+									Move {selectedIds.size} to…
+								</Button>,
+							)}
 							<Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
 								Delete {selectedIds.size}
 							</Button>
-						</>
+						</div>
 					)}
 					<form
 						role="search"
@@ -513,6 +516,17 @@ export function TransactionTable({
 							}}
 						/>
 					</form>
+					<Button
+						variant="outline"
+						className="md:hidden"
+						aria-pressed={selectMode}
+						onClick={() => {
+							setSelectMode(!selectMode);
+							setSelectedIds(new Set());
+						}}
+					>
+						{selectMode ? "Done" : "Select"}
+					</Button>
 					<Button
 						variant="outline"
 						size="icon"
@@ -564,10 +578,17 @@ export function TransactionTable({
 									<header
 										className={cn(
 											"grid items-baseline border-b border-rule pt-4 pb-1.5 text-xs text-muted-foreground",
-											ROW_COLS,
+											rowCols(selectMode),
 										)}
 									>
-										<span className="font-medium text-foreground/80 md:col-span-3">{g.label}</span>
+										<span
+											className={cn(
+												"font-medium text-foreground/80 md:col-span-3",
+												selectMode && "col-span-2",
+											)}
+										>
+											{g.label}
+										</span>
 										<span className={cn("text-right font-figures", dayNet > 0 && "text-positive")}>
 											{dayNet !== 0 && (
 												<>
@@ -585,6 +606,7 @@ export function TransactionTable({
 											txn={txn}
 											currency={currency}
 											selected={selectedIds.has(txn.id)}
+											selectMode={selectMode}
 											byDay={byDay}
 											accountFilterId={accountFilterId}
 											onEvent={onRowEvent}
@@ -594,6 +616,31 @@ export function TransactionTable({
 							</section>
 						);
 					})}
+				</div>
+			)}
+			{selectMode && (
+				// Rides above the bottom nav while you pick rows.
+				<div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-30 mt-3 flex items-center gap-2 rounded-2xl border border-rule bg-sidebar p-1.5 md:hidden">
+					<Button variant="ghost" onClick={toggleSelectAll} disabled={transactions.length === 0}>
+						{transactions.length > 0 && selectedIds.size === transactions.length ? "None" : "All"}
+					</Button>
+					<span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
+						{selectedIds.size} selected
+					</span>
+					{bulkMoveMenu(
+						<Button variant="outline" disabled={selectedIds.size === 0 || isPending}>
+							Move to…
+						</Button>,
+					)}
+					<Button
+						variant="destructive"
+						size="icon"
+						aria-label={`Delete ${selectedIds.size} selected`}
+						disabled={selectedIds.size === 0}
+						onClick={() => setBulkDeleteOpen(true)}
+					>
+						<HugeiconsIcon icon={Delete01Icon} className="h-4 w-4" />
+					</Button>
 				</div>
 			)}
 			{(page > 0 || hasMore) && (
