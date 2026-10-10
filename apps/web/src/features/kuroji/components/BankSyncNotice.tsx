@@ -15,7 +15,7 @@ export function BankSyncNotice({
 	return (
 		<p
 			className={cn(
-				"flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground md:text-[13px]",
+				"flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground",
 				className,
 			)}
 		>
