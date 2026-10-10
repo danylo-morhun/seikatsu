@@ -132,7 +132,7 @@ export function DateRangePicker() {
 				<PopoverTrigger asChild>
 					<Button
 						variant="outline"
-						className={cn("h-8 min-w-0 gap-2 px-2.5 font-normal", hasFilter && "rounded-r-none")}
+						className={cn("min-w-0 gap-2 px-2.5 font-normal", hasFilter && "rounded-r-none")}
 						aria-label={`Period: ${label}. Change period`}
 					>
 						<HugeiconsIcon icon={Calendar01Icon} className="h-4 w-4 shrink-0 opacity-70" />
@@ -143,7 +143,7 @@ export function DateRangePicker() {
 					<Button
 						variant="outline"
 						size="icon"
-						className="h-8 w-8 shrink-0 rounded-l-none border-l-0 text-muted-foreground hover:text-foreground"
+						className="shrink-0 rounded-l-none border-l-0 text-muted-foreground hover:text-foreground"
 						aria-label="Reset period to this month"
 						onClick={() => push(undefined, undefined)}
 					>
