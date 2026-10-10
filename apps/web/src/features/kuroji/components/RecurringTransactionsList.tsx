@@ -116,7 +116,7 @@ export function RecurringTransactionsList({
 								size="icon"
 								className="h-9 w-9"
 								onClick={() => handleToggle(rt.id)}
-								title={rt.isActive ? "Pause" : "Resume"}
+								aria-label={`${rt.isActive ? "Pause" : "Resume"} ${rt.fromAccountName} to ${rt.toAccountName}`}
 							>
 								<HugeiconsIcon
 									icon={rt.isActive ? PauseIcon : PlayCircleIcon}
@@ -128,6 +128,7 @@ export function RecurringTransactionsList({
 								size="icon"
 								className="h-9 w-9 text-destructive hover:text-destructive"
 								onClick={() => setDeleteTarget({ id: rt.id })}
+								aria-label={`Delete ${rt.fromAccountName} to ${rt.toAccountName}`}
 							>
 								<HugeiconsIcon icon={Delete01Icon} className="h-3.5 w-3.5" />
 							</Button>

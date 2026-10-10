@@ -67,6 +67,7 @@ export function BankRulesManager({
 			<div className="flex flex-col gap-2 sm:flex-row">
 				<Input
 					placeholder="Keyword (e.g. Biedronka)"
+					aria-label="Keyword"
 					value={matchText}
 					onChange={(e) => setMatchText(e.target.value)}
 					className="sm:flex-1"
@@ -76,6 +77,7 @@ export function BankRulesManager({
 					onValueChange={setAccountId}
 					accounts={categories}
 					placeholder="Category"
+					aria-label="Category"
 					className="sm:w-56"
 				/>
 				<Button onClick={handleAdd} disabled={isPending} className="gap-1.5">
@@ -101,6 +103,7 @@ export function BankRulesManager({
 								onClick={() => handleDelete(r.id)}
 								disabled={isPending && deletingId === r.id}
 								className="h-8 w-8 shrink-0"
+								aria-label={`Delete rule ${r.matchText}`}
 							>
 								{isPending && deletingId === r.id ? (
 									<Spinner />

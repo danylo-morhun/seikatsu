@@ -98,6 +98,7 @@ function AccountActions({
 					variant="ghost"
 					size="icon"
 					className="h-9 w-9 text-muted-foreground/50 hover:text-foreground"
+					aria-label={`Actions for ${acct.name}`}
 				>
 					<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
 				</Button>
