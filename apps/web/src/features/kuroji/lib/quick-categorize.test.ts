@@ -4,6 +4,7 @@ import {
 	isUncategorized,
 	pickableCategories,
 	recentCategoryIds,
+	withCategory,
 } from "./quick-categorize";
 
 const txn = (
@@ -122,5 +123,31 @@ describe("pickableCategories", () => {
 		expect(
 			names(pickableCategories(all, { kind: "INCOME", currency: "PLN", recentIds: [] })),
 		).toEqual(["Salary"]);
+	});
+});
+
+describe("withCategory", () => {
+	const named = <T extends object>(t: T) => ({ ...t, fromAccount: "From", toAccount: "To" });
+
+	it("swaps the expense end and its leg", () => {
+		const moved = withCategory(named(txn(["card", "ASSET"], ["unc", "EXPENSE"])), {
+			id: "food",
+			name: "Food",
+		});
+		expect(moved).toMatchObject({ toAccountId: "food", toAccount: "Food", fromAccountId: "card" });
+		expect(moved.legs.map((l) => l.accountId)).toEqual(["card", "food"]);
+	});
+
+	it("swaps the income end", () => {
+		const moved = withCategory(named(txn(["unc", "INCOME"], ["card", "ASSET"])), {
+			id: "salary",
+			name: "Salary",
+		});
+		expect(moved).toMatchObject({ fromAccountId: "salary", fromAccount: "Salary" });
+	});
+
+	it("leaves a transfer as it is", () => {
+		const t = named(txn(["card", "ASSET"], ["cash", "ASSET"]));
+		expect(withCategory(t, { id: "food", name: "Food" })).toBe(t);
 	});
 });
