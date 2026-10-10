@@ -1,5 +1,7 @@
 // Rules for filing a transaction under another category straight from the list.
 
+import { searchKey } from "./category-groups";
+
 export type CategoryKind = "EXPENSE" | "INCOME";
 
 type Leg = { accountId: string; currency: string };
@@ -66,7 +68,7 @@ export function pickableCategories<C extends Category>(
 	opts: { kind: CategoryKind; currency: string; recentIds: string[]; query?: string },
 ): C[] {
 	const parents = new Set(categories.map((c) => c.parentId).filter(Boolean));
-	const q = opts.query?.trim().toLowerCase() ?? "";
+	const q = searchKey(opts.query ?? "");
 	const rank = (id: string) => {
 		const i = opts.recentIds.indexOf(id);
 		return i === -1 ? Number.POSITIVE_INFINITY : i;
@@ -78,7 +80,7 @@ export function pickableCategories<C extends Category>(
 				c.currency === opts.currency &&
 				!parents.has(c.id) &&
 				!isUncategorized(c.name) &&
-				c.name.toLowerCase().includes(q),
+				searchKey(c.name).includes(q),
 		)
 		.sort((a, b) => rank(a.id) - rank(b.id) || a.name.localeCompare(b.name));
 }
