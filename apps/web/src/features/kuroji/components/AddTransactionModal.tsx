@@ -166,6 +166,16 @@ export function AddTransactionModal({
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [open, shortcut]);
 
+	// The remembered paying accounts for a type, if they still exist. Part of the reset values:
+	// set afterwards, the tab switch's reset would wipe them again.
+	const rememberedAccounts = (type: TxType) => {
+		const mem = readCaptureMemory(workspaceId);
+		const known = (id: string | undefined) => (id && accounts.some((a) => a.id === id) ? id : "");
+		return type === "transfer"
+			? { fromWalletId: known(mem.transfer?.from), toWalletId: known(mem.transfer?.to) }
+			: { walletId: known(mem.wallet?.[type]) };
+	};
+
 	const resetToType = (type: TxType) => {
 		// Editing: back on the saved type, the saved values return.
 		if (editing && type === editing.values.txType) {
@@ -178,22 +188,21 @@ export function AddTransactionModal({
 			reset({
 				...base,
 				txType: "expense",
-				walletId: "",
+				...rememberedAccounts("expense"),
 				splits: [{ ...blankSplit }],
 			} as unknown as AddTransactionFormValues);
 		} else if (type === "income") {
 			reset({
 				...base,
 				txType: "income",
-				walletId: "",
+				...rememberedAccounts("income"),
 				splits: [{ ...blankSplit }],
 			} as unknown as AddTransactionFormValues);
 		} else {
 			reset({
 				...base,
 				txType: "transfer",
-				fromWalletId: "",
-				toWalletId: "",
+				...rememberedAccounts("transfer"),
 				amount: undefined as unknown as number,
 			} as unknown as AddTransactionFormValues);
 		}
