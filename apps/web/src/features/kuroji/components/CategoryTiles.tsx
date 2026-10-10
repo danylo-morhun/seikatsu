@@ -1,7 +1,7 @@
 "use client";
 
 import { CategoryPopover } from "@/features/kuroji/components/CategoryCombobox";
-import { categoryTiles } from "@/features/kuroji/lib/category-tiles";
+import { type CategoryUsage, categoryTiles } from "@/features/kuroji/lib/category-tiles";
 import { Tick02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
@@ -15,11 +15,12 @@ const tileClass =
 	"flex h-10 min-w-0 items-center gap-1.5 rounded-md border border-input px-2.5 text-left text-sm leading-4 text-muted-foreground outline-none transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring";
 
 /**
- * The capture form's category choice: the likeliest categories as one-tap tiles (a radio
+ * The capture form's category choice: the most used categories as one-tap tiles (a radio
  * group, arrow keys move), and "More…" for the full searchable list.
  */
 export function CategoryTiles({
 	categories,
+	usage,
 	recentIds,
 	value,
 	onChange,
@@ -27,13 +28,15 @@ export function CategoryTiles({
 	"aria-labelledby": labelledBy,
 }: {
 	categories: Category[];
+	usage: CategoryUsage;
+	/** For the Recent group in "More…", most recent first. */
 	recentIds: string[];
 	value: string;
 	onChange: (id: string) => void;
 	invalid?: boolean;
 	"aria-labelledby": string;
 }) {
-	const tiles = categoryTiles(categories, { recentIds, selectedId: value, count: TILE_COUNT });
+	const tiles = categoryTiles(categories, { usage, selectedId: value, count: TILE_COUNT });
 	const selectedIndex = tiles.findIndex((c) => c.id === value);
 	const tileRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
 	const [moreOpen, setMoreOpen] = React.useState(false);

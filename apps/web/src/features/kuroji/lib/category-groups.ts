@@ -11,6 +11,10 @@ const RECENT_MAX = 5;
 // System account the starter ledger uses for opening balances; never a place to post to.
 const SYSTEM_NAMES = new Set(["Opening Balance"]);
 
+export function isSystemCategory(name: string): boolean {
+	return SYSTEM_NAMES.has(name);
+}
+
 /** Lowercase text without accents, so "cafe" finds "Café". */
 export function searchKey(text: string): string {
 	return text
@@ -29,7 +33,7 @@ export function categoryGroups<C extends Category>(
 	categories: C[],
 	opts: { value: string; recentIds: string[]; query: string },
 ): CategoryGroup[] {
-	const visible = categories.filter((c) => !SYSTEM_NAMES.has(c.name) || c.id === opts.value);
+	const visible = categories.filter((c) => !isSystemCategory(c.name) || c.id === opts.value);
 	const ids = new Set(visible.map((c) => c.id));
 	const childrenOf = new Map<string, C[]>();
 	for (const c of visible) {
