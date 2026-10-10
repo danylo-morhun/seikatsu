@@ -1,11 +1,12 @@
 "use client";
 
+import { Spinner } from "@/components/Spinner";
 import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import { createRecurringTransaction } from "@/features/kuroji/actions/recurring";
 import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
-import { parseAmount } from "@/features/kuroji/lib/transaction-schema";
+import { amountSchema, parseAmount } from "@/features/kuroji/lib/transaction-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
@@ -30,13 +31,13 @@ import { z } from "zod";
 const FREQUENCIES = ["daily", "weekly", "monthly", "yearly"] as const;
 
 const formSchema = z.object({
-	fromAccountId: z.string().min(1, "Required"),
-	toAccountId: z.string().min(1, "Required"),
-	amount: z.number().positive("Must be positive"),
+	fromAccountId: z.string().min(1, "Pick an account"),
+	toAccountId: z.string().min(1, "Pick an account"),
+	amount: amountSchema,
 	currency: z.enum(CURRENCIES),
 	description: z.string().optional(),
 	frequency: z.enum(FREQUENCIES),
-	startDate: z.string().min(1, "Required"),
+	startDate: z.string().min(1, "Pick a start date"),
 	endDate: z.string().optional(),
 });
 
@@ -61,11 +62,17 @@ export function AddRecurringModal({
 		formState: { errors, isSubmitting },
 	} = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
+		// Every field starts defined, so a blank one gets its own message, not a type error.
 		defaultValues: {
+			fromAccountId: "",
+			toAccountId: "",
+			amount: undefined,
 			currency: toCurrency(baseCurrency),
+			description: "",
 			frequency: "monthly",
 			startDate: new Date().toISOString().slice(0, 10),
-		} as Partial<FormValues>,
+			endDate: "",
+		},
 	});
 
 	const onOpenChange = (val: boolean) => {
@@ -90,7 +97,8 @@ export function AddRecurringModal({
 			toast.error(result.error);
 		} else {
 			toast.success("Recurring transaction created.");
-			setOpen(false);
+			// Through onOpenChange so the next one starts from a blank form.
+			onOpenChange(false);
 		}
 	};
 
@@ -204,10 +212,11 @@ export function AddRecurringModal({
 						<Input type="date" {...register("endDate")} />
 					</div>
 					<div className="flex justify-end gap-2 pt-2">
-						<Button type="button" variant="outline" onClick={() => setOpen(false)}>
+						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							Cancel
 						</Button>
-						<Button type="submit" disabled={isSubmitting}>
+						<Button type="submit" disabled={isSubmitting} className="gap-1.5">
+							{isSubmitting && <Spinner />}
 							{isSubmitting ? "Creating…" : "Create"}
 						</Button>
 					</div>
