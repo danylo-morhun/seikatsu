@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { type BankProblem, worstBankProblem } from "@/features/kuroji/lib/bank-health";
 import { syncConnection } from "@/features/kuroji/lib/bank-sync";
 import {
 	createSession,
@@ -9,6 +10,7 @@ import {
 	startAuth,
 } from "@/features/kuroji/lib/enablebanking";
 import { getOwnedWorkspace } from "@/lib/session";
+import { getUserTimeZone } from "@/lib/timezone";
 import {
 	accounts,
 	and,
@@ -24,6 +26,7 @@ import {
 	transactions,
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
+import { cache } from "react";
 
 type Result<T = unknown> = { error: string } | ({ success: true } & T);
 
@@ -159,6 +162,31 @@ export async function getBankConnections(workspaceId: string) {
 		orderBy: [desc(bankConnections.createdAt)],
 		with: { bankAccounts: true },
 	});
+}
+
+// Request-scoped: any part of a page can ask again without another query.
+const loadConnectionStates = cache((workspaceId: string) =>
+	db.query.bankConnections.findMany({
+		where: eq(bankConnections.workspaceId, workspaceId),
+		columns: {
+			displayName: true,
+			status: true,
+			accessExpiresAt: true,
+			lastSyncedAt: true,
+			createdAt: true,
+		},
+	}),
+);
+
+/** The bank connection that stopped feeding the ledger, if any. */
+export async function getBankProblem(workspaceId: string): Promise<BankProblem | null> {
+	const owner = await ownedWorkspace(workspaceId);
+	if (owner) throw new Error(owner.error);
+	const [connections, timeZone] = await Promise.all([
+		loadConnectionStates(workspaceId),
+		getUserTimeZone(),
+	]);
+	return worstBankProblem(connections, new Date(), timeZone);
 }
 
 export async function getBankRules(workspaceId: string) {
