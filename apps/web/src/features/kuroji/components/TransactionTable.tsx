@@ -2,6 +2,7 @@
 
 import { startNavigationProgress } from "@/components/NavigationProgress";
 import { Spinner } from "@/components/Spinner";
+import { createBankRule } from "@/features/kuroji/actions/bank";
 import { exportTransactionsCsv } from "@/features/kuroji/actions/export";
 import {
 	deleteTransaction,
@@ -9,6 +10,7 @@ import {
 	recategorizeTransactions,
 } from "@/features/kuroji/actions/transactions";
 import type { RecentTransaction } from "@/features/kuroji/actions/transactions";
+import { CategoryPicker } from "@/features/kuroji/components/CategoryPicker";
 import { EditTransactionModal } from "@/features/kuroji/components/EditTransactionModal";
 import { PeriodEmptyActions } from "@/features/kuroji/components/PeriodEmptyActions";
 import {
@@ -21,6 +23,13 @@ import {
 import { buildPeriodLabel, parseLocal } from "@/features/kuroji/lib/dates";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { formatCurrency } from "@/features/kuroji/lib/format";
+import {
+	categoryEnd,
+	pickableCategories,
+	recentCategoryIds,
+	withCategory,
+} from "@/features/kuroji/lib/quick-categorize";
+import { ruleKeyword } from "@/features/kuroji/lib/rule-keyword";
 import {
 	TRANSACTIONS_PAGE_SIZE,
 	type TransactionFilters,
@@ -55,7 +64,15 @@ import {
 } from "@seikatsu/ui";
 import { format } from "date-fns";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+	useCallback,
+	useLayoutEffect,
+	useMemo,
+	useOptimistic,
+	useRef,
+	useState,
+	useTransition,
+} from "react";
 import { toast } from "sonner";
 
 const thisYear = new Date().getFullYear();
@@ -107,6 +124,14 @@ export function TransactionTable({
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
 	const [isPending, startTransition] = useTransition();
+	const [, startCategorize] = useTransition();
+	const [picker, setPicker] = useState<{ txnId: string; anchor: HTMLElement } | null>(null);
+	// A categorised row reads as filed at once; the server's answer replaces it.
+	const [shown, fileOptimistic] = useOptimistic(
+		transactions,
+		(rows, filed: { id: string; category: { id: string; name: string } }) =>
+			rows.map((t) => (t.id === filed.id ? withCategory(t, filed.category) : t)),
+	);
 	const [isExporting, setIsExporting] = useState(false);
 	const [pendingId, setPendingId] = useState<string | null>(null);
 	const [editTarget, setEditTarget] = useState<RecentTransaction | null>(null);
@@ -262,7 +287,10 @@ export function TransactionTable({
 					: "No transactions match these filters";
 
 	// Categories a transaction can be moved to: postable income/expense accounts.
-	const { accounts: formAccounts } = useFormOptions(workspaceId, selectedIds.size > 0);
+	const { accounts: formAccounts } = useFormOptions(
+		workspaceId,
+		selectedIds.size > 0 || picker !== null,
+	);
 	const { expenseCategories, incomeCategories } = useMemo(() => {
 		const parentIds = new Set(formAccounts.map((a) => a.parentId).filter(Boolean));
 		const leaves = (type: "EXPENSE" | "INCOME") =>
@@ -309,14 +337,14 @@ export function TransactionTable({
 	// Grouped by day when the list is in date order; the header names each day and its net.
 	const byDay = sortField === "date";
 	const groups: { key: string; label: string; rows: RecentTransaction[] }[] = [];
-	for (const txn of transactions) {
+	for (const txn of shown) {
 		const key = byDay ? txn.date : "all";
 		const last = groups[groups.length - 1];
 		if (last?.key === key) last.rows.push(txn);
 		else groups.push({ key, label: byDay ? fmtDay(txn.date) : "", rows: [txn] });
 	}
 	// Like a dictionary's guide words: the span of dates on this page.
-	const dates = transactions.map((t) => t.date).sort();
+	const dates = shown.map((t) => t.date).sort();
 	const span =
 		dates.length === 0
 			? null
@@ -341,6 +369,35 @@ export function TransactionTable({
 		</button>
 	);
 
+	function categorize(txn: RecentTransaction, category: { id: string; name: string }) {
+		startCategorize(async () => {
+			fileOptimistic({ id: txn.id, category });
+			const result = await recategorizeTransactions(workspaceId, [txn.id], category.id);
+			if ("error" in result) toast.error(result.error);
+			else if (result.data.moved === 0) toast.error("This transaction can't be moved there.");
+			else offerRule(txn, category);
+		});
+	}
+
+	// After filing a bank import, offer to file its merchant there from now on. Never automatic.
+	function offerRule(txn: RecentTransaction, category: { id: string; name: string }) {
+		const keyword = txn.imported ? ruleKeyword(txn.description) : null;
+		if (!keyword) return;
+		toast(`Filed under ${category.name}`, {
+			action: {
+				label: `Always file "${keyword}" here`,
+				onClick: async () => {
+					const result = await createBankRule(workspaceId, keyword, category.id);
+					if ("error" in result) toast.error(result.error);
+					else toast.success(`New imports with "${keyword}" go to ${category.name}.`);
+				},
+			},
+		});
+	}
+
+	const pickerTxn = picker ? shown.find((t) => t.id === picker.txnId) : undefined;
+	const pickerEnd = pickerTxn ? categoryEnd(pickerTxn) : null;
+
 	// Rows get one stable handler; it always acts on the newest copy of the row.
 	const handleRowEvent = (row: RecentTransaction, event: RowEvent) => {
 		const txn = transactions.find((t) => t.id === row.id) ?? row;
@@ -349,7 +406,7 @@ export function TransactionTable({
 		else if (event.type === "toggle") toggleSelect(txn.id);
 		else if (event.type === "account") filterByAccount(event.id);
 		else if (event.type === "tag") filterByTag(event.id);
-		else if (event.type === "move") moveTo([txn.id], event.categoryId);
+		else if (event.type === "categorize") setPicker({ txnId: txn.id, anchor: event.anchor });
 	};
 	const latestRowEvent = useRef(handleRowEvent);
 	useLayoutEffect(() => {
@@ -530,8 +587,6 @@ export function TransactionTable({
 											selected={selectedIds.has(txn.id)}
 											byDay={byDay}
 											accountFilterId={accountFilterId}
-											expenseCategories={expenseCategories}
-											incomeCategories={incomeCategories}
 											onEvent={onRowEvent}
 										/>
 									))}
@@ -616,6 +671,31 @@ export function TransactionTable({
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+
+			{pickerTxn && pickerEnd && (
+				<CategoryPicker
+					anchor={picker?.anchor ?? null}
+					onClose={() => setPicker(null)}
+					categoriesFor={(query) =>
+						pickableCategories(formAccounts, {
+							kind: pickerEnd.kind,
+							currency: pickerEnd.currency,
+							recentIds: recentCategoryIds(shown, pickerEnd.kind),
+							query,
+						})
+					}
+					currentId={pickerEnd.categoryId}
+					currentName={pickerEnd.kind === "EXPENSE" ? pickerTxn.toAccount : pickerTxn.fromAccount}
+					onPick={(category) => {
+						setPicker(null);
+						if (category.id !== pickerEnd.categoryId) categorize(pickerTxn, category);
+					}}
+					onShowOnly={() => {
+						setPicker(null);
+						filterByAccount(pickerEnd.categoryId);
+					}}
+				/>
+			)}
 
 			{editTarget && (
 				<EditTransactionModal
