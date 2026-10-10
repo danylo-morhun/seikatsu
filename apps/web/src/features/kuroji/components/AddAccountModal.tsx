@@ -82,7 +82,8 @@ export function AddAccountModal({
 				values.currency,
 			);
 			toast.success(`"${values.name}" created`);
-			setOpen(false);
+			// Through onOpenChange so the next account starts from a blank form.
+			onOpenChange(false);
 		} catch {
 			toast.error("Failed to create account");
 		}
@@ -199,7 +200,7 @@ export function AddAccountModal({
 					</div>
 
 					<div className="flex justify-end gap-2 pt-2">
-						<Button type="button" variant="outline" onClick={() => setOpen(false)}>
+						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							Cancel
 						</Button>
 						<Button type="submit" disabled={isSubmitting} className="gap-1.5">
