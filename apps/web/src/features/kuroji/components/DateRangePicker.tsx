@@ -201,9 +201,9 @@ export function DateRangePicker() {
 								className={cn(
 									"flex-1 rounded-md border px-2 py-1 text-center text-sm transition-colors",
 									picking === "from"
-										? "border-primary bg-primary/10 text-foreground"
+										? "border-primary text-foreground"
 										: localFrom
-											? "border-transparent bg-muted text-foreground"
+											? "border-transparent bg-surface-2 text-foreground"
 											: "border-transparent text-muted-foreground",
 								)}
 								onClick={() => setPicking("from")}
@@ -217,9 +217,9 @@ export function DateRangePicker() {
 								className={cn(
 									"flex-1 rounded-md border px-2 py-1 text-center text-sm transition-colors",
 									picking === "to"
-										? "border-primary bg-primary/10 text-foreground"
+										? "border-primary text-foreground"
 										: localTo
-											? "border-transparent bg-muted text-foreground"
+											? "border-transparent bg-surface-2 text-foreground"
 											: "border-transparent text-muted-foreground",
 								)}
 								onClick={() => setPicking("to")}
