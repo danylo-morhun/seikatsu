@@ -1,11 +1,13 @@
 import { auth } from "@/auth";
 import { getAccounts } from "@/features/kuroji/actions/accounts";
 import { getBalances } from "@/features/kuroji/actions/balances";
+import { getBankProblem } from "@/features/kuroji/actions/bank";
 import { getTags } from "@/features/kuroji/actions/tags";
 import { getRecentTransactions, hasAnyTransactions } from "@/features/kuroji/actions/transactions";
 import { getMonthlyTrends } from "@/features/kuroji/actions/trends";
 import { initializeWorkspace } from "@/features/kuroji/actions/workspace";
 import { AccountsOverview } from "@/features/kuroji/components/AccountsOverview";
+import { BankSyncNotice } from "@/features/kuroji/components/BankSyncNotice";
 import { CategoryBreakdown } from "@/features/kuroji/components/CategoryBreakdown";
 import { ExpensesEmptyState } from "@/features/kuroji/components/ExpensesEmptyState";
 import type { KurojiTab } from "@/features/kuroji/components/KurojiNavTabs";
@@ -86,7 +88,7 @@ export default async function KurojiPage({
 		const trendParam = rawTrend === "3m" || rawTrend === "1y" ? rawTrend : "6m";
 		const trendMonths = trendParam === "3m" ? 3 : trendParam === "1y" ? 12 : 6;
 
-		const [balances, trendData, started] = await Promise.all([
+		const [balances, trendData, started, bankProblem] = await Promise.all([
 			getBalances(workspace.id, from, to),
 			getMonthlyTrends(
 				workspace.id,
@@ -95,6 +97,7 @@ export default async function KurojiPage({
 				trendMonths,
 			),
 			hasAnyTransactions(workspace.id),
+			getBankProblem(workspace.id),
 		]);
 
 		// Each entry counted once: rollup roots only (a child under a same-type parent is
@@ -130,14 +133,17 @@ export default async function KurojiPage({
 					</div>
 				) : (
 					<div className="space-y-10 px-4 py-6 sm:px-8 md:py-8">
-						<OverviewFigures
-							currency={workspace.baseCurrency}
-							periodLabel={period.label}
-							assets={assets}
-							liabilities={liabilities}
-							income={income}
-							expenses={expenses}
-						/>
+						<div className="space-y-4">
+							{bankProblem && <BankSyncNotice problem={bankProblem} />}
+							<OverviewFigures
+								currency={workspace.baseCurrency}
+								periodLabel={period.label}
+								assets={assets}
+								liabilities={liabilities}
+								income={income}
+								expenses={expenses}
+							/>
+						</div>
 
 						<div className="grid gap-10 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-12">
 							<section aria-labelledby="spending-title">
@@ -213,15 +219,17 @@ export default async function KurojiPage({
 		sortField,
 		sortDir,
 	};
-	const [recentTransactions, accounts, allTags] = await Promise.all([
+	const [recentTransactions, accounts, allTags, bankProblem] = await Promise.all([
 		getRecentTransactions(workspace.id, filters, pageNum),
 		getAccounts(workspace.id),
 		getTags(workspace.id),
+		getBankProblem(workspace.id),
 	]);
 
 	return (
 		<main className="flex flex-col pb-28 md:pb-0">
 			<div className="px-4 py-6 sm:px-6">
+				{bankProblem && <BankSyncNotice problem={bankProblem} className="mb-4" />}
 				<TransactionTable
 					transactions={recentTransactions.rows}
 					currency={workspace.baseCurrency}
