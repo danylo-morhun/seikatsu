@@ -32,7 +32,7 @@ export function ArchivedAccountsList({ accounts }: { accounts: Account[] }) {
 
 	return (
 		<section className="mt-8">
-			<h2 className="mb-1 text-base font-semibold">Archived Accounts</h2>
+			<h2 className="mb-1 text-sm font-medium">Archived accounts</h2>
 			<p className="mb-4 text-sm text-muted-foreground">
 				These accounts are hidden from the dashboard but their history is preserved.
 			</p>
