@@ -36,9 +36,9 @@ export function ArchivedAccountsList({ accounts }: { accounts: Account[] }) {
 			<p className="mb-4 text-sm text-muted-foreground">
 				These accounts are hidden from the dashboard but their history is preserved.
 			</p>
-			<div className="divide-y rounded-md border">
+			<div className="divide-y divide-rule border-y border-rule">
 				{accounts.map((a) => (
-					<div key={a.id} className="flex items-center justify-between px-4 py-3">
+					<div key={a.id} className="flex items-center justify-between gap-3 py-2.5">
 						<div className="flex items-center gap-2 text-sm text-muted-foreground">
 							<HugeiconsIcon icon={Archive01Icon} className="h-4 w-4 shrink-0" />
 							<span>{a.name}</span>
