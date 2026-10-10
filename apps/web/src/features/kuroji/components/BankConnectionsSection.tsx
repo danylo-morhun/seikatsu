@@ -11,6 +11,7 @@ import {
 	resetAndResync,
 	syncBankConnection,
 } from "@/features/kuroji/actions/bank";
+import { formatDateTime } from "@/features/kuroji/lib/dates";
 import {
 	Button,
 	Dialog,
@@ -152,10 +153,7 @@ function ConnectionCard({
 								dateTime={new Date(connection.lastSyncedAt).toISOString()}
 								suppressHydrationWarning
 							>
-								{new Date(connection.lastSyncedAt).toLocaleString("en-GB", {
-									dateStyle: "medium",
-									timeStyle: "short",
-								})}
+								{formatDateTime(new Date(connection.lastSyncedAt))}
 							</time>
 						</p>
 					)}
