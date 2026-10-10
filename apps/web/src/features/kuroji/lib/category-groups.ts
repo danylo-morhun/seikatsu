@@ -83,7 +83,12 @@ export function categoryGroups<C extends Category>(
 	const recent = opts.recentIds
 		.flatMap((id) => {
 			const hit = found.get(id);
-			return hit ? [{ ...hit.o, hint: hit.g.heading ?? undefined }] : [];
+			if (!hit) return [];
+			// "Presents: Vita" needs no "Presents" beside it.
+			const heading = hit.g.heading;
+			return [
+				{ ...hit.o, hint: heading && !hit.o.label.startsWith(heading) ? heading : undefined },
+			];
 		})
 		.slice(0, RECENT_MAX);
 	return recent.length > 0
