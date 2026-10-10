@@ -153,3 +153,4 @@ export {
 	SheetTitle,
 	SheetDescription,
 } from "./components/sheet";
+export { useIsMobile } from "./hooks/use-mobile";
