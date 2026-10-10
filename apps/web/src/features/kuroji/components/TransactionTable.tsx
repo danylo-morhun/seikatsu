@@ -454,7 +454,7 @@ export function TransactionTable({
 		<section>
 			<div className="mb-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
 				<div className="min-w-0">
-					<h2 className="text-lg font-semibold">Transactions</h2>
+					<h2 className="text-sm font-medium">Transactions</h2>
 					<p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
 						<span>
 							{total} {total === 1 ? "transaction" : "transactions"}

@@ -476,7 +476,7 @@ export function AccountsOverview({
 		<section>
 			{!hideHeader && (
 				<div className="mb-4 flex items-center justify-between">
-					<h2 className="text-lg font-semibold">Accounts</h2>
+					<h2 className="text-sm font-medium">Accounts</h2>
 					<AddAccountModal workspaceId={workspaceId} baseCurrency={currency} />
 				</div>
 			)}
