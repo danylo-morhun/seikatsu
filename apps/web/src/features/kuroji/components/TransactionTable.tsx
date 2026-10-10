@@ -36,6 +36,9 @@ import {
 } from "@/features/kuroji/lib/transaction-filters";
 import {
 	Alert01Icon,
+	ArrowDown02Icon,
+	ArrowUp02Icon,
+	ArrowUpDownIcon,
 	Cancel01Icon,
 	Delete01Icon,
 	Download01Icon,
@@ -385,9 +388,17 @@ export function TransactionTable({
 			)}
 		>
 			{label}
-			<span aria-hidden className="text-muted-foreground/70">
-				{sortField === field ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
-			</span>
+			<HugeiconsIcon
+				aria-hidden
+				icon={
+					sortField !== field
+						? ArrowUpDownIcon
+						: sortDir === "asc"
+							? ArrowUp02Icon
+							: ArrowDown02Icon
+				}
+				className="size-3.5 text-muted-foreground/70"
+			/>
 		</button>
 	);
 
