@@ -26,10 +26,20 @@ interface Props {
 	error?: string;
 	/** Associates the visible label with the trigger. */
 	id?: string;
+	/** Names the trigger when no visible label points at it. */
+	"aria-label"?: string;
 }
 
 /** AccountPicker bound to a react-hook-form field, with its error below. */
-export function AccountSelect({ control, name, accounts, placeholder, error, id }: Props) {
+export function AccountSelect({
+	control,
+	name,
+	accounts,
+	placeholder,
+	error,
+	id,
+	"aria-label": ariaLabel,
+}: Props) {
 	return (
 		<Controller
 			control={control as never}
@@ -38,6 +48,7 @@ export function AccountSelect({ control, name, accounts, placeholder, error, id 
 				<>
 					<AccountPicker
 						id={id}
+						aria-label={ariaLabel}
 						value={field.value ?? ""}
 						onValueChange={field.onChange}
 						accounts={accounts}
@@ -64,6 +75,7 @@ export function AccountPicker({
 	invalid,
 	id,
 	className,
+	"aria-label": ariaLabel,
 }: {
 	value: string;
 	onValueChange: (id: string) => void;
@@ -72,6 +84,7 @@ export function AccountPicker({
 	invalid?: boolean;
 	id?: string;
 	className?: string;
+	"aria-label"?: string;
 }) {
 	const visible = accounts.filter((a) => !SYSTEM_NAMES.has(a.name) || a.id === value);
 	const ids = new Set(visible.map((a) => a.id));
@@ -102,7 +115,12 @@ export function AccountPicker({
 
 	return (
 		<Select onValueChange={onValueChange} value={value}>
-			<SelectTrigger id={id} className={className} aria-invalid={invalid || undefined}>
+			<SelectTrigger
+				id={id}
+				className={className}
+				aria-label={ariaLabel}
+				aria-invalid={invalid || undefined}
+			>
 				<SelectValue placeholder={placeholder} />
 			</SelectTrigger>
 			<SelectContent>

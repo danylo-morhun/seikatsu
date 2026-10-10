@@ -209,7 +209,7 @@ function ConnectionCard({
 								value={ba.accountId ?? NONE}
 								onValueChange={(v) => handleLink(ba.accountUid, v)}
 							>
-								<SelectTrigger className="w-48">
+								<SelectTrigger className="w-48" aria-label={`Kuroji account for ${ba.name}`}>
 									<SelectValue placeholder="Not linked" />
 								</SelectTrigger>
 								<SelectContent>
