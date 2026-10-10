@@ -13,14 +13,13 @@ export function ThemeToggle() {
 	useEffect(() => setThemeState(currentTheme()), []);
 
 	if (!theme) {
-		return <div className="h-8 w-8" />;
+		return <div className="size-10" />;
 	}
 
 	return (
 		<Button
 			variant="ghost"
 			size="icon"
-			className="h-8 w-8"
 			onClick={() => {
 				const next = theme === "dark" ? "light" : "dark";
 				setTheme(next);
