@@ -13,6 +13,8 @@ import { formatCurrency } from "@/features/kuroji/lib/format";
 import { asOfLabel, resolvePeriod } from "@/features/kuroji/lib/period";
 import type { TransactionFilters } from "@/features/kuroji/lib/transaction-filters";
 import { getUserToday } from "@/lib/timezone";
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -96,9 +98,10 @@ export default async function AccountDetailPage({
 				<Link
 					href={withPeriod("/kuroji?tab=accounts")}
 					prefetch
-					className="text-sm text-muted-foreground hover:text-foreground"
+					className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
 				>
-					← Accounts
+					<HugeiconsIcon icon={ArrowLeft01Icon} aria-hidden className="size-4" />
+					Accounts
 				</Link>
 			</div>
 
