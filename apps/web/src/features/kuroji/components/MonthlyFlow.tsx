@@ -138,11 +138,12 @@ export function MonthlyFlow({
 													: "text-muted-foreground",
 										)}
 									>
+										<span className="sr-only">Left </span>
 										{net > 0 ? "+" : ""}
 										{formatCurrency(net, currency)}
 									</span>
 									<span className="block text-[11px] text-muted-foreground">
-										<span className="sr-only">Income </span>
+										<span className="sr-only">, income </span>
 										{formatCurrency(m.income, currency)}
 										<span className="sr-only">, spent</span> /{" "}
 										{formatCurrency(m.expenses, currency)}
