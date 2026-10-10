@@ -153,6 +153,7 @@ export function DateRangePicker() {
 			</div>
 			<PopoverContent
 				className="w-[min(420px,calc(100vw-1rem))] p-0"
+				aria-label="Choose period"
 				align="end"
 				collisionPadding={{ top: 8, bottom: 8, left: 8, right: 0 }}
 			>
