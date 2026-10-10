@@ -50,8 +50,28 @@ export function previousRange(from: string, to: string): { from: string; to: str
 	return { from: ymd(addDays(f, -days)), to: ymd(addDays(t, -days)) };
 }
 
-/** "Sep 11", or "Sep 11, 2025" outside today's year — the transaction list's date style. */
+// Kuroji's date style, one family: month name first, the year only outside today's year.
+// date-fns formats in English on server and browser alike, so hydration matches.
+
+/** Today in the browser's local calendar (YYYY-MM-DD); server code uses getUserToday(). */
+export function localToday(): string {
+	return format(new Date(), "yyyy-MM-dd");
+}
+
+/** "Sep 11", or "Sep 11, 2025" outside today's year. */
 export function formatShortDate(iso: string, today: string): string {
 	const d = parseLocal(iso);
 	return iso.slice(0, 4) === today.slice(0, 4) ? format(d, "MMM d") : format(d, "MMM d, yyyy");
+}
+
+/** "Thu, Sep 10", or "Thu, Sep 10, 2025" outside today's year: day headers. */
+export function formatDayDate(iso: string, today: string): string {
+	return `${format(parseLocal(iso), "EEE")}, ${formatShortDate(iso, today)}`;
+}
+
+/** "Sep 11, 08:57", or "Sep 11, 2025, 08:57" outside this year: a moment, in local time. */
+export function formatDateTime(at: Date, now: Date = new Date()): string {
+	return at.getFullYear() === now.getFullYear()
+		? format(at, "MMM d, HH:mm")
+		: format(at, "MMM d, yyyy, HH:mm");
 }

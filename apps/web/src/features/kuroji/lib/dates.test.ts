@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatShortDate, previousRange } from "./dates";
+import { formatDateTime, formatDayDate, formatShortDate, previousRange } from "./dates";
 
 describe("previousRange", () => {
 	it("steps back one whole month", () => {
@@ -31,5 +31,20 @@ describe("formatShortDate", () => {
 
 	it("keeps the year outside it", () => {
 		expect(formatShortDate("2025-12-30", "2026-01-02")).toBe("Dec 30, 2025");
+	});
+});
+
+describe("formatDayDate", () => {
+	it("leads with the weekday", () => {
+		expect(formatDayDate("2026-09-10", "2026-10-10")).toBe("Thu, Sep 10");
+		expect(formatDayDate("2025-09-10", "2026-10-10")).toBe("Wed, Sep 10, 2025");
+	});
+});
+
+describe("formatDateTime", () => {
+	it("adds the time and keeps the year rule", () => {
+		const now = new Date(2026, 9, 10);
+		expect(formatDateTime(new Date(2026, 8, 11, 8, 57), now)).toBe("Sep 11, 08:57");
+		expect(formatDateTime(new Date(2025, 8, 11, 8, 57), now)).toBe("Sep 11, 2025, 08:57");
 	});
 });
