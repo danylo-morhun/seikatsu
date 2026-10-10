@@ -1,6 +1,8 @@
 import type { AccountBalance } from "@/features/kuroji/actions/balances";
 import { displayBalance, rollupRoots } from "@/features/kuroji/lib/balance";
 import { formatCurrency } from "@/features/kuroji/lib/format";
+import { ArrowRight02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 
 interface Props {
@@ -60,9 +62,10 @@ export function CategoryBreakdown({ balances, currency, periodQuery }: Props) {
 				<Link
 					href={`/kuroji?tab=transactions&account=${r.id}${periodQuery.replace("?", "&")}`}
 					prefetch
-					className="mb-1.5 inline-block text-xs text-primary underline-offset-2 hover:underline"
+					className="mb-1.5 inline-flex items-center gap-1 text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-primary hover:underline"
 				>
-					Categorize these transactions →
+					Categorize these transactions
+					<HugeiconsIcon icon={ArrowRight02Icon} aria-hidden className="size-3" />
 				</Link>
 			)}
 		</li>
