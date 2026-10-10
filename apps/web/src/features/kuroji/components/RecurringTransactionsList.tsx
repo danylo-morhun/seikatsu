@@ -94,11 +94,9 @@ export function RecurringTransactionsList({
 									toName={rt.toAccountName}
 									activeId={rt.toAccountId}
 								/>
-								<span
-									className={`shrink-0 rounded-full px-1.5 py-px text-[11px] font-medium border ${rt.isActive ? "border-positive/40 text-positive" : "border-rule text-muted-foreground"}`}
-								>
-									{rt.isActive ? "active" : "paused"}
-								</span>
+								{!rt.isActive && (
+									<span className="shrink-0 text-xs text-muted-foreground">Paused</span>
+								)}
 							</div>
 							<p className="mt-0.5 text-xs text-muted-foreground">
 								{formatCurrency(
