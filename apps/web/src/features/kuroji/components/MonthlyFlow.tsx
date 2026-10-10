@@ -1,5 +1,6 @@
 import type { MonthlyTrend } from "@/features/kuroji/actions/trends";
 import { formatCurrency } from "@/features/kuroji/lib/format";
+import { flowRows } from "@/features/kuroji/lib/monthly-flow";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 
@@ -17,23 +18,8 @@ interface Props {
 	hasDateFilter: boolean;
 	/** Current search params, to keep the rest of the URL when switching range. */
 	searchParams: Record<string, string | undefined>;
-	/** First and last month shown (YYYY-MM); months without movement render as zero rows. */
+	/** First and last month shown (YYYY-MM); runs of empty months fold into one row. */
 	range: { from: string; to: string };
-}
-
-function monthsBetween(from: string, to: string) {
-	const out: string[] = [];
-	let [y, m] = from.split("-").map(Number);
-	const [ty, tm] = to.split("-").map(Number);
-	while (y < ty || (y === ty && m <= tm)) {
-		out.push(`${y}-${String(m).padStart(2, "0")}`);
-		m += 1;
-		if (m > 12) {
-			m = 1;
-			y += 1;
-		}
-	}
-	return out;
 }
 
 function monthLabel(month: string, withYear: boolean) {
@@ -43,6 +29,14 @@ function monthLabel(month: string, withYear: boolean) {
 		...(withYear ? { year: "2-digit" } : {}),
 		timeZone: "UTC",
 	}).format(d);
+}
+
+/** "Mar – Jun 2025", or "Nov 2024 – Feb 2025" across years; full years, never "Jan 15". */
+function gapLabel(from: string, to: string) {
+	const year = (m: string) => m.slice(0, 4);
+	const start = monthLabel(from, false);
+	const end = `${monthLabel(to, false)} ${year(to)}`;
+	return year(from) === year(to) ? `${start} – ${end}` : `${start} ${year(from)} – ${end}`;
 }
 
 /**
@@ -57,12 +51,9 @@ export function MonthlyFlow({
 	searchParams,
 	range,
 }: Props) {
-	const byMonth = new Map(data.map((d) => [d.month.slice(0, 7), d]));
-	const months = monthsBetween(range.from, range.to)
-		.map((month) => byMonth.get(month) ?? { month, income: 0, expenses: 0 })
-		.reverse();
-	const max = Math.max(1, ...months.flatMap((m) => [m.income, m.expenses]));
-	const multiYear = new Set(months.map((m) => m.month.slice(0, 4))).size > 1;
+	const rows = flowRows(data, range.from, range.to);
+	const max = Math.max(1, ...data.flatMap((m) => [m.income, m.expenses]));
+	const multiYear = range.from.slice(0, 4) !== range.to.slice(0, 4);
 
 	function rangeHref(value: string) {
 		const params = new URLSearchParams();
@@ -99,11 +90,18 @@ export function MonthlyFlow({
 				)}
 			</div>
 
-			{months.length === 0 ? (
+			{rows.length === 0 ? (
 				<p className="py-6 text-sm text-muted-foreground">No income or spending in this range.</p>
 			) : (
 				<ol className="divide-y divide-rule">
-					{months.map((m) => {
+					{rows.map((m) => {
+						if (m.kind === "gap") {
+							return (
+								<li key={m.from} className="py-2.5 text-xs text-muted-foreground">
+									{gapLabel(m.from, m.to)} · no activity
+								</li>
+							);
+						}
 						const net = m.income - m.expenses;
 						return (
 							<li
