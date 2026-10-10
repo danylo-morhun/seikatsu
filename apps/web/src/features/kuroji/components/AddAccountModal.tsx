@@ -10,6 +10,7 @@ import {
 	Button,
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
@@ -99,6 +100,9 @@ export function AddAccountModal({
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle>New Account</DialogTitle>
+					<DialogDescription className="sr-only">
+						Add something you own or owe, or a source or category of money.
+					</DialogDescription>
 				</DialogHeader>
 
 				<form

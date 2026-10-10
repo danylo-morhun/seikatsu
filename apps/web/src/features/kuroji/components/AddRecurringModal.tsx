@@ -12,6 +12,7 @@ import {
 	Button,
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
@@ -116,6 +117,9 @@ export function AddRecurringModal({
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle>New Recurring Transaction</DialogTitle>
+					<DialogDescription className="sr-only">
+						Recorded automatically on each due date.
+					</DialogDescription>
 				</DialogHeader>
 				<form
 					onSubmit={handleSubmit(onSubmit, () => toast.error("Check form for errors"))}
