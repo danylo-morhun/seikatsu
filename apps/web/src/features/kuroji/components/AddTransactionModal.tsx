@@ -4,6 +4,7 @@ import { Spinner } from "@/components/Spinner";
 import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import { createTransaction, updateTransaction } from "@/features/kuroji/actions/transactions";
 import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
+import { CategorySelect } from "@/features/kuroji/components/CategoryCombobox";
 import { TagSelect } from "@/features/kuroji/components/TagSelect";
 import { readCaptureMemory, rememberCapture } from "@/features/kuroji/lib/capture-memory";
 import {
@@ -316,7 +317,6 @@ export function AddTransactionModal({
 			setValue("walletId" as never, mem.wallet![txType] as never);
 		}
 	}, [open, txType, accounts, workspaceId, getValues, setValue]);
-	const watchCategoryId = watch("splits.0.categoryId" as never) as unknown as string | undefined;
 	// Back to one category: the amount field takes over whatever the remaining row holds.
 	const wasSplit = React.useRef(isSplit);
 	React.useEffect(() => {
@@ -395,39 +395,16 @@ export function AddTransactionModal({
 			<Label htmlFor={isSplit ? undefined : "add-category-0"}>
 				{isSplit ? "Categories" : "Category"}
 			</Label>
-			{!isSplit && txType !== "transfer" && (memory.recent?.[txType]?.length ?? 0) > 0 && (
-				<div className="flex flex-wrap gap-1.5">
-					{(memory.recent?.[txType] ?? [])
-						.map((id) => categories.find((c) => c.id === id))
-						.filter((c): c is Account => !!c)
-						.map((c) => (
-							<button
-								key={c.id}
-								type="button"
-								aria-pressed={watchCategoryId === c.id}
-								onClick={() =>
-									setValue("splits.0.categoryId" as never, c.id as never, { shouldValidate: true })
-								}
-								className={cn(
-									"rounded-full border border-rule px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground",
-									watchCategoryId === c.id && "border-input bg-surface-2 text-foreground",
-								)}
-							>
-								{c.name}
-							</button>
-						))}
-				</div>
-			)}
-
 			{typedSplitFields.map((field, index) => (
 				<div key={field.id} className="flex items-start gap-2">
 					<div className="flex-1 min-w-0">
-						<AccountSelect
+						<CategorySelect
 							control={control as never}
 							name={`splits.${index}.categoryId`}
 							id={`add-category-${index}`}
 							aria-label={isSplit ? `Category ${index + 1}` : undefined}
-							accounts={categories}
+							categories={categories}
+							recentIds={txType === "transfer" ? [] : (memory.recent?.[txType] ?? [])}
 							placeholder="Select category"
 							error={splitErrs[index]?.categoryId?.message}
 						/>

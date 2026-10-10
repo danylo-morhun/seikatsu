@@ -8,7 +8,8 @@ test("New Transaction adds an expense", async ({ page }) => {
 	const dialog = page.getByRole("dialog", { name: "New Transaction" });
 	await dialog.getByRole("combobox").filter({ hasText: "Select account" }).click();
 	await page.getByRole("option", { name: "Wallet" }).click();
-	await dialog.getByRole("combobox").filter({ hasText: "Select category" }).click();
+	await dialog.getByRole("button", { name: "Category" }).click();
+	await page.getByRole("combobox", { name: "Find a category" }).fill("groc");
 	await page.getByRole("option", { name: "Groceries" }).click();
 	await dialog.getByLabel("Amount").fill("12,34");
 	await dialog.getByLabel("Description").fill(description);
