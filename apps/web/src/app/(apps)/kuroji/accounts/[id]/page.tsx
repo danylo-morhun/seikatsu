@@ -110,8 +110,9 @@ export default async function AccountDetailPage({
 					<p className="text-xs text-muted-foreground">{TYPE_LABEL[account.type]}</p>
 					<h1 className="mt-0.5 truncate text-xl font-semibold">{account.name}</h1>
 					<p
+						data-total="lead"
 						className={cn(
-							"mt-3 font-figures text-4xl font-semibold tracking-tight",
+							"mt-3 font-figures text-3xl font-semibold tracking-tight md:text-4xl",
 							balance < 0 && "text-negative",
 						)}
 					>
