@@ -6,6 +6,11 @@ import { createTransaction, updateTransaction } from "@/features/kuroji/actions/
 import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
 import { TagSelect } from "@/features/kuroji/components/TagSelect";
 import { readCaptureMemory, rememberCapture } from "@/features/kuroji/lib/capture-memory";
+import {
+	OVERLAY_SELECTOR,
+	isEditable,
+	shouldOpenCapture,
+} from "@/features/kuroji/lib/capture-shortcut";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
 import { addTagToFormOptions, useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { formatCurrency } from "@/features/kuroji/lib/format";
@@ -149,14 +154,13 @@ export function AddTransactionModal({
 	React.useEffect(() => {
 		if (!shortcut) return;
 		function onKeyDown(e: KeyboardEvent) {
-			if (open) return;
-			const target = e.target as HTMLElement;
-			if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
-				return;
-			if (e.key === "n" || e.key === "N") {
-				e.preventDefault();
-				setOpen(true);
-			}
+			const context = {
+				editableFocused: isEditable(e.target),
+				overlayOpen: open || !!document.querySelector(OVERLAY_SELECTOR),
+			};
+			if (!shouldOpenCapture(e, context)) return;
+			e.preventDefault();
+			setOpen(true);
 		}
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
