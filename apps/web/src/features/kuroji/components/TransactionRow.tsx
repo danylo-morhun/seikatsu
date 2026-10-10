@@ -2,7 +2,7 @@
 
 import type { RecentTransaction } from "@/features/kuroji/actions/transactions";
 import { TransactionFlow } from "@/features/kuroji/components/TransactionFlow";
-import { parseLocal } from "@/features/kuroji/lib/dates";
+import { formatShortDate, localToday } from "@/features/kuroji/lib/dates";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { categoryEnd } from "@/features/kuroji/lib/quick-categorize";
 import {
@@ -23,14 +23,12 @@ import {
 	DropdownMenuTrigger,
 	cn,
 } from "@seikatsu/ui";
-import { format } from "date-fns";
 import { memo, useRef } from "react";
 
-const thisYear = new Date().getFullYear();
+const today = localToday();
 
 export function fmtDate(iso: string): string {
-	const d = parseLocal(iso);
-	return d.getFullYear() === thisYear ? format(d, "MMM d") : format(d, "MMM d, yyyy");
+	return formatShortDate(iso, today);
 }
 
 /** +1 money in, -1 money out, 0 a transfer between own accounts. */

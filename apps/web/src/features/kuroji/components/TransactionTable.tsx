@@ -20,7 +20,7 @@ import {
 	fmtDate,
 	rowCols,
 } from "@/features/kuroji/components/TransactionRow";
-import { buildPeriodLabel, parseLocal } from "@/features/kuroji/lib/dates";
+import { buildPeriodLabel, formatDayDate, localToday } from "@/features/kuroji/lib/dates";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import {
@@ -65,7 +65,6 @@ import {
 	Input,
 	cn,
 } from "@seikatsu/ui";
-import { format } from "date-fns";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
 	useCallback,
@@ -78,11 +77,10 @@ import {
 } from "react";
 import { toast } from "sonner";
 
-const thisYear = new Date().getFullYear();
+const today = localToday();
 
 function fmtDay(iso: string): string {
-	const d = parseLocal(iso);
-	return d.getFullYear() === thisYear ? format(d, "EEE, MMM d") : format(d, "EEE, MMM d, yyyy");
+	return formatDayDate(iso, today);
 }
 
 interface Props {
