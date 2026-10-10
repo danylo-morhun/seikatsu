@@ -60,8 +60,11 @@ export function AppSidebar({ workspaceName, user }: Props) {
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton size="lg" className="cursor-default">
-							<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-								<span className="text-base font-bold leading-none">生</span>
+							{/* A bare ink mark, so the shell's logo never reads as one of the app tiles. */}
+							<div className="flex size-8 shrink-0 items-center justify-center">
+								<span className="text-[24px] font-bold leading-none text-sidebar-foreground">
+									生
+								</span>
 							</div>
 							<div className="flex min-w-0 flex-col text-left leading-none">
 								<span className="text-sm font-bold">seikatsu</span>
