@@ -14,6 +14,16 @@ const TILE_COUNT = 5;
 const tileClass =
 	"flex h-10 min-w-0 items-center gap-1.5 rounded-md border border-input px-2.5 text-left text-sm leading-4 text-muted-foreground outline-none transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring";
 
+// Lit like the active app in the sidebar: a pigment wash, a pigment edge, label and check in
+// pigment. Light pigments are too pale for text on the wash, so there the label leans to ink.
+const checkedText =
+	"text-[color-mix(in_oklch,var(--primary)_60%,var(--foreground))] dark:text-primary";
+const checkedClass = cn(
+	"border-primary/55 bg-primary/15 hover:bg-primary/20",
+	checkedText,
+	"hover:text-[color-mix(in_oklch,var(--primary)_60%,var(--foreground))] dark:hover:text-primary",
+);
+
 /**
  * The capture form's category choice: the most used categories as one-tap tiles (a radio
  * group, arrow keys move), and "More…" for the full searchable list.
@@ -73,10 +83,7 @@ export function CategoryTiles({
 							title={c.name}
 							onClick={() => onChange(c.id)}
 							onKeyDown={(e) => onKeyDown(e, i)}
-							className={cn(
-								tileClass,
-								checked && "bg-surface-2 text-foreground hover:bg-surface-2",
-							)}
+							className={cn(tileClass, checked && checkedClass)}
 						>
 							<span className="line-clamp-2 flex-1 hyphens-auto break-words">{c.name}</span>
 							{checked && <HugeiconsIcon icon={Tick02Icon} className="h-3.5 w-3.5 shrink-0" />}
