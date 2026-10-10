@@ -4,6 +4,7 @@ import { Spinner } from "@/components/Spinner";
 import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import { createTransaction, updateTransaction } from "@/features/kuroji/actions/transactions";
 import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
+import { CategoryTiles } from "@/features/kuroji/components/CategoryTiles";
 import { TagSelect } from "@/features/kuroji/components/TagSelect";
 import { readCaptureMemory, rememberCapture } from "@/features/kuroji/lib/capture-memory";
 import {
@@ -316,7 +317,6 @@ export function AddTransactionModal({
 			setValue("walletId" as never, mem.wallet![txType] as never);
 		}
 	}, [open, txType, accounts, workspaceId, getValues, setValue]);
-	const watchCategoryId = watch("splits.0.categoryId" as never) as unknown as string | undefined;
 	// Back to one category: the amount field takes over whatever the remaining row holds.
 	const wasSplit = React.useRef(isSplit);
 	React.useEffect(() => {
@@ -392,47 +392,43 @@ export function AddTransactionModal({
 
 	const renderSplitRows = (categories: Account[]) => (
 		<div className="space-y-2">
-			<Label htmlFor={isSplit ? undefined : "add-category-0"}>
-				{isSplit ? "Categories" : "Category"}
-			</Label>
-			{!isSplit && txType !== "transfer" && (memory.recent?.[txType]?.length ?? 0) > 0 && (
-				<div className="flex flex-wrap gap-1.5">
-					{(memory.recent?.[txType] ?? [])
-						.map((id) => categories.find((c) => c.id === id))
-						.filter((c): c is Account => !!c)
-						.map((c) => (
-							<button
-								key={c.id}
-								type="button"
-								aria-pressed={watchCategoryId === c.id}
-								onClick={() =>
-									setValue("splits.0.categoryId" as never, c.id as never, { shouldValidate: true })
-								}
-								className={cn(
-									"rounded-full border border-rule px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground",
-									watchCategoryId === c.id && "border-input bg-surface-2 text-foreground",
-								)}
-							>
-								{c.name}
-							</button>
-						))}
-				</div>
+			<Label id="add-category-label">{isSplit ? "Categories" : "Category"}</Label>
+			{!isSplit && txType !== "transfer" && (
+				<>
+					<Controller
+						control={control as never}
+						name={"splits.0.categoryId" as never}
+						render={({ field }: { field: { onChange: (v: string) => void; value: string } }) => (
+							<CategoryTiles
+								aria-labelledby="add-category-label"
+								categories={categories}
+								recentIds={memory.recent?.[txType] ?? []}
+								value={field.value ?? ""}
+								onChange={field.onChange}
+								invalid={!!splitErrs[0]?.categoryId?.message}
+							/>
+						)}
+					/>
+					{splitErrs[0]?.categoryId?.message && (
+						<p className="text-destructive text-[0.8rem]">{splitErrs[0].categoryId.message}</p>
+					)}
+				</>
 			)}
 
-			{typedSplitFields.map((field, index) => (
-				<div key={field.id} className="flex items-start gap-2">
-					<div className="flex-1 min-w-0">
-						<AccountSelect
-							control={control as never}
-							name={`splits.${index}.categoryId`}
-							id={`add-category-${index}`}
-							aria-label={isSplit ? `Category ${index + 1}` : undefined}
-							accounts={categories}
-							placeholder="Select category"
-							error={splitErrs[index]?.categoryId?.message}
-						/>
-					</div>
-					{isSplit && (
+			{isSplit &&
+				typedSplitFields.map((field, index) => (
+					<div key={field.id} className="flex items-start gap-2">
+						<div className="flex-1 min-w-0">
+							<AccountSelect
+								control={control as never}
+								name={`splits.${index}.categoryId`}
+								id={`add-category-${index}`}
+								aria-label={`Category ${index + 1}`}
+								accounts={categories}
+								placeholder="Select category"
+								error={splitErrs[index]?.categoryId?.message}
+							/>
+						</div>
 						<div className="flex flex-col gap-1">
 							<Input
 								{...amountInputProps}
@@ -444,8 +440,6 @@ export function AddTransactionModal({
 								<p className="text-destructive text-[0.8rem]">{splitErrs[index].amount?.message}</p>
 							)}
 						</div>
-					)}
-					{isSplit && (
 						<Button
 							type="button"
 							variant="ghost"
@@ -456,9 +450,8 @@ export function AddTransactionModal({
 						>
 							<HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
 						</Button>
-					)}
-				</div>
-			))}
+					</div>
+				))}
 
 			<Button
 				type="button"
@@ -470,6 +463,20 @@ export function AddTransactionModal({
 				<HugeiconsIcon icon={Add01Icon} className="h-3.5 w-3.5" />
 				{isSplit ? "Add category" : "Split across categories"}
 			</Button>
+		</div>
+	);
+
+	// Description runs full width; the date pairs with the account (or, on transfers, the description).
+	const pairWithDate = "sm:grid-cols-[minmax(0,1fr)_11rem]";
+	const dateField = (
+		<div className="space-y-2">
+			<Label htmlFor="add-date">Date</Label>
+			<Input id="add-date" type="date" {...register("date")} />
+			{(errs.date as { message?: string })?.message && (
+				<p className="text-destructive text-[0.8rem]">
+					{(errs.date as { message?: string }).message}
+				</p>
+			)}
 		</div>
 	);
 
@@ -518,9 +525,9 @@ export function AddTransactionModal({
 
 					{amountHero}
 
+					{txType === "expense" && renderSplitRows(expenseCategories)}
 					{txType === "expense" && (
-						<div className={cn("grid gap-4", !isSplit && "sm:grid-cols-2")}>
-							{renderSplitRows(expenseCategories)}
+						<div className={cn("grid gap-4", pairWithDate)}>
 							<div className="space-y-2">
 								<Label htmlFor="add-paid-from">Paid from</Label>
 								<AccountSelect
@@ -532,12 +539,13 @@ export function AddTransactionModal({
 									error={(errs.walletId as { message?: string })?.message}
 								/>
 							</div>
+							{dateField}
 						</div>
 					)}
 
+					{txType === "income" && renderSplitRows(incomeCategories)}
 					{txType === "income" && (
-						<div className={cn("grid gap-4", !isSplit && "sm:grid-cols-2")}>
-							{renderSplitRows(incomeCategories)}
+						<div className={cn("grid gap-4", pairWithDate)}>
 							<div className="space-y-2">
 								<Label htmlFor="add-received-in">Received in</Label>
 								<AccountSelect
@@ -549,6 +557,7 @@ export function AddTransactionModal({
 									error={(errs.walletId as { message?: string })?.message}
 								/>
 							</div>
+							{dateField}
 						</div>
 					)}
 
@@ -595,7 +604,7 @@ export function AddTransactionModal({
 						</div>
 					)}
 
-					<div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_11rem]">
+					<div className={cn("grid gap-4", txType === "transfer" && pairWithDate)}>
 						<div className="space-y-2">
 							<Label htmlFor="add-description">Description</Label>
 							<Input
@@ -605,15 +614,7 @@ export function AddTransactionModal({
 							/>
 						</div>
 
-						<div className="space-y-2">
-							<Label htmlFor="add-date">Date</Label>
-							<Input id="add-date" type="date" {...register("date")} />
-							{(errs.date as { message?: string })?.message && (
-								<p className="text-destructive text-[0.8rem]">
-									{(errs.date as { message?: string }).message}
-								</p>
-							)}
-						</div>
+						{txType === "transfer" && dateField}
 					</div>
 
 					{/* Tags are occasional: one quiet line until asked for. */}
