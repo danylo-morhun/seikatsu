@@ -4,6 +4,18 @@ import { isUncategorized } from "@/features/kuroji/lib/quick-categorize";
 
 type Category = { id: string; name: string; parentId: string | null };
 
+/** Transaction entries per category id. */
+export type CategoryUsage = Record<string, number>;
+
+/** Fewer recent entries than this say little about habits; all time decides then. */
+const RECENT_MIN_ENTRIES = 20;
+
+/** Recent usage, unless it is too sparse to rank by; then all-time usage. */
+export function pickUsage(recent: CategoryUsage, allTime: CategoryUsage): CategoryUsage {
+	const entries = Object.values(recent).reduce((n, c) => n + c, 0);
+	return entries >= RECENT_MIN_ENTRIES ? recent : allTime;
+}
+
 /** Categories you can post to (no sub-accounts), matching the search, recent first, then A–Z. */
 export function postableCategories<C extends Category>(
 	categories: C[],
