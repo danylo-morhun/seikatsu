@@ -493,8 +493,12 @@ export function AddTransactionModal({
 				className="sm:max-w-lg max-sm:flex max-sm:flex-col"
 				aria-describedby={undefined}
 				onOpenAutoFocus={(e) => {
+					// Focus must leave the trigger now, before the page behind is hidden; a split
+					// has no amount field, so Radix picks the first control instead.
+					const amount = document.getElementById("add-amount");
+					if (!amount) return;
 					e.preventDefault();
-					setFocus(amountField(txType) as never);
+					amount.focus();
 				}}
 			>
 				<DialogHeader>
