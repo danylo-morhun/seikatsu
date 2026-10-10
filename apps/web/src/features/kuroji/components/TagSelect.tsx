@@ -5,7 +5,7 @@ import { createTag } from "@/features/kuroji/actions/tags";
 import type { Tag } from "@/features/kuroji/actions/tags";
 import { Add01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Button, Input } from "@seikatsu/ui";
+import { Button, Input, cn } from "@seikatsu/ui";
 import * as React from "react";
 
 const TAG_COLORS = [
@@ -55,20 +55,18 @@ export function TagSelect({ workspaceId, tags, selectedIds, onToggle, onTagCreat
 								key={tag.id}
 								type="button"
 								onClick={() => onToggle(tag.id)}
-								className={`rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors ${
+								aria-pressed={isSelected}
+								className={cn(
+									"inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
 									isSelected
-										? "border-transparent text-white"
-										: "border-muted-foreground/30 text-muted-foreground hover:text-foreground hover:border-muted-foreground/60"
-								}`}
-								style={
-									isSelected && tag.color
-										? { backgroundColor: tag.color, borderColor: tag.color }
-										: undefined
-								}
+										? "border-input bg-surface-2 text-foreground"
+										: "border-rule text-muted-foreground hover:border-input hover:text-foreground",
+								)}
 							>
-								{!isSelected && tag.color && (
+								{tag.color && (
 									<span
-										className="mr-1 inline-block h-1.5 w-1.5 rounded-full"
+										aria-hidden
+										className="inline-block size-1.5 rounded-full"
 										style={{ backgroundColor: tag.color }}
 									/>
 								)}
