@@ -1,6 +1,6 @@
 "use client";
 
-// Client cache for the accounts/tags every Kuroji form needs. Preloaded while idle, served
+// Client cache for the accounts/tags (and category usage) every Kuroji form needs. Preloaded while idle, served
 // instantly when a modal opens, and refreshed in the background on each open
 // (stale-while-revalidate) so edits made elsewhere show up without blocking the form.
 
@@ -10,6 +10,7 @@ import { useEffect, useSyncExternalStore } from "react";
 let cache: { workspaceId: string; data: FormOptions } | null = null;
 let inflight: { workspaceId: string; promise: Promise<FormOptions> } | null = null;
 const listeners = new Set<() => void>();
+const NO_USAGE: FormOptions["categoryUsage"] = {};
 
 function emit() {
 	for (const l of listeners) l();
@@ -62,5 +63,10 @@ export function useFormOptions(workspaceId: string, active: boolean) {
 	}, [active, workspaceId]);
 
 	const data = snapshot?.workspaceId === workspaceId ? snapshot.data : null;
-	return { accounts: data?.accounts ?? [], tags: data?.tags ?? [], loading: data === null };
+	return {
+		accounts: data?.accounts ?? [],
+		tags: data?.tags ?? [],
+		categoryUsage: data?.categoryUsage ?? NO_USAGE,
+		loading: data === null,
+	};
 }

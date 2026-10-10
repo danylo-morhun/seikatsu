@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { categoryTiles, postableCategories } from "./category-tiles";
+import { categoryTiles, pickUsage, postableCategories } from "./category-tiles";
 
 const cat = (id: string, name: string, parentId: string | null = null) => ({ id, name, parentId });
 const categories = [
@@ -12,6 +12,18 @@ const categories = [
 	cat("gifts", "Gifts"),
 ];
 const ids = (list: { id: string }[]) => list.map((c) => c.id);
+
+describe("pickUsage", () => {
+	it("ranks by recent usage when there is enough of it", () => {
+		const recent = { rent: 15, fun: 5 };
+		expect(pickUsage(recent, { gifts: 99 })).toBe(recent);
+	});
+
+	it("falls back to all time when recent usage is sparse", () => {
+		const allTime = { gifts: 99 };
+		expect(pickUsage({ rent: 3 }, allTime)).toBe(allTime);
+	});
+});
 
 describe("postableCategories", () => {
 	it("offers leaves only, recent first then A–Z", () => {
