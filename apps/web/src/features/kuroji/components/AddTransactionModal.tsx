@@ -410,7 +410,7 @@ export function AddTransactionModal({
 								}
 								className={cn(
 									"rounded-full border border-rule px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground",
-									watchCategoryId === c.id && "border-primary/60 bg-primary/10 text-foreground",
+									watchCategoryId === c.id && "border-input bg-surface-2 text-foreground",
 								)}
 							>
 								{c.name}
