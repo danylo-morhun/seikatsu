@@ -10,6 +10,7 @@ import {
 	Folder01Icon,
 	MoreHorizontalIcon,
 	PencilEdit01Icon,
+	Tag01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -185,14 +186,15 @@ export const TransactionRow = memo(
 						onSelect={(id) => onEvent(txn, { type: "account", id })}
 					/>
 					{txn.tags.length > 0 && (
-						<span className="mt-1 flex flex-wrap gap-1">
+						<span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+							<HugeiconsIcon icon={Tag01Icon} aria-hidden className="size-3" />
 							{txn.tags.map((tag) => (
 								<button
 									key={tag.id}
 									type="button"
 									title={`Show only tag ${tag.name}`}
 									onClick={() => onEvent(txn, { type: "tag", id: tag.id })}
-									className="relative z-10 rounded-full border border-rule px-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+									className="relative z-10 rounded-sm underline-offset-2 transition-colors hover:text-foreground hover:underline"
 								>
 									{tag.name}
 								</button>
