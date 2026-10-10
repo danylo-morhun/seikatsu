@@ -159,7 +159,6 @@ export function DateRangePicker() {
 			>
 				<div className="flex flex-col sm:flex-row">
 					<div className="flex flex-col gap-1 border-b sm:border-b-0 sm:border-r p-3 min-w-[140px]">
-						<p className="mb-1 px-2 text-xs font-medium text-muted-foreground">Presets</p>
 						{PRESETS.map((p) => {
 							const [pf, pt] = p.range();
 							const active = !isAllTime && committedFrom === pf && committedTo === pt;
@@ -193,7 +192,6 @@ export function DateRangePicker() {
 					</div>
 
 					<div className="flex flex-col p-3">
-						<p className="mb-2 text-xs font-medium text-muted-foreground">Custom range</p>
 						<div className="mb-3 flex w-full items-center gap-2">
 							<button
 								type="button"
