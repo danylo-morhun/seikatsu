@@ -119,6 +119,14 @@ describe("pickableCategories", () => {
 		).toEqual(["Groceries", "Rent"]);
 	});
 
+	it("filters by the search, ignoring accents", () => {
+		expect(
+			names(
+				pickableCategories(all, { kind: "EXPENSE", currency: "PLN", recentIds: [], query: "café" }),
+			),
+		).toEqual(["Cafe"]);
+	});
+
 	it("offers income categories for money in", () => {
 		expect(
 			names(pickableCategories(all, { kind: "INCOME", currency: "PLN", recentIds: [] })),
