@@ -98,7 +98,7 @@ export function HomeGrid({ user }: Props) {
 								className={cn(
 									app.theme,
 									"group relative block overflow-hidden rounded-2xl border border-border/50 bg-card p-6",
-									"transition-[translate,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-primary/40",
+									"transition-[translate,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-primary/40 motion-reduce:hover:translate-y-0",
 								)}
 							>
 								{/* Top accent line */}
