@@ -52,6 +52,7 @@ export const updateColumnSchema = z.object({
 		.regex(/^#[0-9a-fA-F]{6}$/)
 		.nullable()
 		.optional(),
+	isDone: z.boolean().optional(),
 });
 
 export const deleteColumnSchema = z.object({

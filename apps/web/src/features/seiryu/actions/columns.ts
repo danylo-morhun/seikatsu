@@ -66,7 +66,9 @@ export async function updateColumn(input: unknown): Promise<{ error: string } | 
 
 	await db.update(seiryuColumns).set(updates).where(eq(seiryuColumns.id, columnId));
 
-	revalidatePath(`/seiryu/${column.projectId}`);
+	// The finish line decides the open-card counts in the project list.
+	if (updates.isDone !== undefined) revalidatePath("/seiryu", "layout");
+	else revalidatePath(`/seiryu/${column.projectId}`);
 	return { success: true };
 }
 

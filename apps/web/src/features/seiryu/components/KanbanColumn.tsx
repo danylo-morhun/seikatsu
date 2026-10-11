@@ -3,7 +3,7 @@
 import { ConfirmDelete } from "@/features/seiryu/components/ConfirmDelete";
 import { KanbanCard, SORT_TRANSITION } from "@/features/seiryu/components/KanbanCard";
 import { LABEL_COLORS } from "@/features/seiryu/lib/constants";
-import type { CardData, ColumnData } from "@/features/seiryu/lib/types";
+import type { CardData, ColumnData, ColumnUpdates } from "@/features/seiryu/lib/types";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -12,11 +12,13 @@ import {
 	MoreHorizontalIcon,
 	PaintBoardIcon,
 	PencilEdit01Icon,
+	Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
 	DropdownMenu,
+	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuRadioGroup,
@@ -39,12 +41,13 @@ export const LANE = "flex w-[min(18.5rem,82vw)] shrink-0 snap-start flex-col";
 interface Props {
 	column: ColumnData;
 	cards: CardData[];
+	/** Cards in the column before filters; shown beside the filtered count. */
+	total: number;
 	index: number;
 	today: string;
 	onCardOpen: (cardId: string) => void;
 	onAddCard: (columnId: string, title: string) => void;
-	onRename: (columnId: string, name: string) => void;
-	onRecolor: (columnId: string, color: string | null) => void;
+	onUpdate: (columnId: string, updates: ColumnUpdates) => void;
 	onDelete: (columnId: string) => Promise<unknown>;
 }
 
@@ -52,12 +55,12 @@ interface Props {
 export const KanbanColumn = memo(function KanbanColumn({
 	column,
 	cards,
+	total,
 	index,
 	today,
 	onCardOpen,
 	onAddCard,
-	onRename,
-	onRecolor,
+	onUpdate,
 	onDelete,
 }: Props) {
 	const [adding, setAdding] = useState(false);
@@ -97,7 +100,7 @@ export const KanbanColumn = memo(function KanbanColumn({
 	function submitRename() {
 		const trimmed = name.trim();
 		setRenaming(false);
-		if (trimmed && trimmed !== column.name) onRename(column.id, trimmed);
+		if (trimmed && trimmed !== column.name) onUpdate(column.id, { name: trimmed });
 		else setName(column.name);
 	}
 
@@ -144,7 +147,14 @@ export const KanbanColumn = memo(function KanbanColumn({
 							/>
 						)}
 						<h2 className="truncate text-sm font-medium">{column.name}</h2>
-						<span className="text-xs tabular-nums text-muted-foreground">{cards.length}</span>
+						<ColumnCount shown={cards.length} total={total} />
+						{column.isDone && (
+							<HugeiconsIcon
+								icon={Tick02Icon}
+								aria-label="Finish column"
+								className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+							/>
+						)}
 					</div>
 				)}
 
@@ -153,7 +163,7 @@ export const KanbanColumn = memo(function KanbanColumn({
 						<Button
 							variant="ghost"
 							size="icon"
-							className="size-8 shrink-0 text-muted-foreground/50 hover:text-foreground data-[state=open]:text-foreground"
+							className="size-10 shrink-0 text-muted-foreground/50 md:size-8 hover:text-foreground data-[state=open]:text-foreground"
 							aria-label={`Actions for ${column.name}`}
 						>
 							<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
@@ -177,7 +187,7 @@ export const KanbanColumn = memo(function KanbanColumn({
 							<DropdownMenuSubContent>
 								<DropdownMenuRadioGroup
 									value={column.color ?? "none"}
-									onValueChange={(v) => onRecolor(column.id, v === "none" ? null : v)}
+									onValueChange={(v) => onUpdate(column.id, { color: v === "none" ? null : v })}
 								>
 									<DropdownMenuRadioItem value="none">None</DropdownMenuRadioItem>
 									{LABEL_COLORS.map(({ name: colorName, hex }) => (
@@ -193,6 +203,12 @@ export const KanbanColumn = memo(function KanbanColumn({
 								</DropdownMenuRadioGroup>
 							</DropdownMenuSubContent>
 						</DropdownMenuSub>
+						<DropdownMenuCheckboxItem
+							checked={column.isDone}
+							onCheckedChange={(isDone) => onUpdate(column.id, { isDone })}
+						>
+							Finish column
+						</DropdownMenuCheckboxItem>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem
 							className="text-destructive focus:text-destructive"
@@ -257,8 +273,8 @@ export const KanbanColumn = memo(function KanbanColumn({
 				onOpenChange={setConfirmDelete}
 				title={`Delete "${column.name}"?`}
 				description={
-					cards.length > 0
-						? `Its ${cards.length} card${cards.length === 1 ? "" : "s"} go with it, for good. Move them to another column first to keep them.`
+					total > 0
+						? `${total === 1 ? "Its card goes" : `All ${total} of its cards go`} with it, for good. Move them to another column first to keep them.`
 						: "The column is empty; nothing else is lost."
 				}
 				onConfirm={() => onDelete(column.id)}
@@ -272,16 +288,26 @@ function sameColumnProps(a: Props, b: Props) {
 		a.column.id === b.column.id &&
 		a.column.name === b.column.name &&
 		a.column.color === b.column.color &&
+		a.column.isDone === b.column.isDone &&
+		a.total === b.total &&
 		a.column.position === b.column.position &&
 		a.index === b.index &&
 		a.today === b.today &&
 		a.onCardOpen === b.onCardOpen &&
 		a.onAddCard === b.onAddCard &&
-		a.onRename === b.onRename &&
-		a.onRecolor === b.onRecolor &&
+		a.onUpdate === b.onUpdate &&
 		a.onDelete === b.onDelete &&
 		a.cards.length === b.cards.length &&
 		a.cards.every((c, i) => c === b.cards[i])
+	);
+}
+
+/** "2 of 7" while filters hide some cards, so the hidden ones aren't mistaken for gone. */
+function ColumnCount({ shown, total }: { shown: number; total: number }) {
+	return (
+		<span className="shrink-0 font-figures text-xs tabular-nums text-muted-foreground">
+			{shown === total ? total : `${shown} of ${total}`}
+		</span>
 	);
 }
 

@@ -30,6 +30,7 @@ import type {
 	CardData,
 	CardFieldUpdates,
 	ColumnData,
+	ColumnUpdates,
 	LabelData,
 } from "@/features/seiryu/lib/types";
 import { OVERLAY_SELECTOR, isEditable, shouldOpenCapture } from "@/lib/capture-shortcut";
@@ -157,15 +158,12 @@ export function KanbanBoard({
 
 	const filteredCards = useMemo(() => applyFilters(cards, filters, today), [cards, filters, today]);
 
-	const cardsByColumn = useMemo(() => {
-		const map = new Map<string, CardData[]>();
-		for (const card of filteredCards) {
-			const list = map.get(card.columnId);
-			if (list) list.push(card);
-			else map.set(card.columnId, [card]);
-		}
-		return map;
-	}, [filteredCards]);
+	const cardsByColumn = useMemo(() => groupByColumn(filteredCards), [filteredCards]);
+	const totalsByColumn = useMemo(() => {
+		const totals = new Map<string, number>();
+		for (const card of cards) totals.set(card.columnId, (totals.get(card.columnId) ?? 0) + 1);
+		return totals;
+	}, [cards]);
 
 	const sortedColumns = useMemo(() => [...columns].sort(byPosition), [columns]);
 	const columnIds = useMemo(() => sortedColumns.map((c) => c.id), [sortedColumns]);
@@ -252,23 +250,10 @@ export function KanbanBoard({
 		[projectId, setCards, trackCards],
 	);
 
-	const handleRenameColumn = useCallback(
-		(columnId: string, name: string) => {
-			setColumns((prev) => prev.map((c) => (c.id === columnId ? { ...c, name } : c)));
-			trackColumns(updateColumn({ columnId, name })).then((result) => {
-				if ("error" in result) {
-					toast.error(result.error);
-					resetColumns();
-				}
-			});
-		},
-		[setColumns, trackColumns, resetColumns],
-	);
-
-	const handleRecolorColumn = useCallback(
-		(columnId: string, color: string | null) => {
-			setColumns((prev) => prev.map((c) => (c.id === columnId ? { ...c, color } : c)));
-			trackColumns(updateColumn({ columnId, color })).then((result) => {
+	const handleUpdateColumn = useCallback(
+		(columnId: string, updates: ColumnUpdates) => {
+			setColumns((prev) => prev.map((c) => (c.id === columnId ? { ...c, ...updates } : c)));
+			trackColumns(updateColumn({ columnId, ...updates })).then((result) => {
 				if ("error" in result) {
 					toast.error(result.error);
 					resetColumns();
@@ -598,10 +583,10 @@ export function KanbanBoard({
 										index={i}
 										today={today}
 										cards={cardsByColumn.get(col.id) ?? NO_CARDS}
+										total={totalsByColumn.get(col.id) ?? 0}
 										onCardOpen={handleCardOpen}
 										onAddCard={handleAddCard}
-										onRename={handleRenameColumn}
-										onRecolor={handleRecolorColumn}
+										onUpdate={handleUpdateColumn}
 										onDelete={handleDeleteColumn}
 									/>
 								))}
@@ -652,3 +637,13 @@ export function KanbanBoard({
 }
 
 const NO_CARDS: CardData[] = [];
+
+function groupByColumn(cards: CardData[]) {
+	const map = new Map<string, CardData[]>();
+	for (const card of cards) {
+		const list = map.get(card.columnId);
+		if (list) list.push(card);
+		else map.set(card.columnId, [card]);
+	}
+	return map;
+}

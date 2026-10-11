@@ -1,7 +1,7 @@
 "use server";
 
 import { requireWorkspace } from "@/features/seiryu/actions/guard";
-import { DEFAULT_COLUMNS, isDoneColumn } from "@/features/seiryu/lib/constants";
+import { DEFAULT_COLUMNS, DEFAULT_DONE_COLUMN } from "@/features/seiryu/lib/constants";
 import { generateKeyBetween, generateNKeysBetween } from "@/features/seiryu/lib/position";
 import {
 	createProjectSchema,
@@ -38,21 +38,26 @@ export async function getProjects() {
 	return listProjects(workspace.id);
 }
 
-/** Open cards per project: live cards outside a "Done" column. */
+/** Open cards per project: live cards outside the finish column. */
 export async function getOpenCardCounts(): Promise<Record<string, number>> {
 	const workspace = await requireWorkspace();
 
 	const rows = await db
-		.select({ projectId: seiryuColumns.projectId, name: seiryuColumns.name, total: count() })
+		.select({ projectId: seiryuColumns.projectId, total: count() })
 		.from(seiryuCards)
 		.innerJoin(seiryuColumns, eq(seiryuCards.columnId, seiryuColumns.id))
 		.innerJoin(seiryuProjects, eq(seiryuColumns.projectId, seiryuProjects.id))
-		.where(and(eq(seiryuProjects.workspaceId, workspace.id), isNull(seiryuCards.archivedAt)))
-		.groupBy(seiryuColumns.id, seiryuColumns.projectId, seiryuColumns.name);
+		.where(
+			and(
+				eq(seiryuProjects.workspaceId, workspace.id),
+				isNull(seiryuCards.archivedAt),
+				eq(seiryuColumns.isDone, false),
+			),
+		)
+		.groupBy(seiryuColumns.projectId);
 
 	const counts: Record<string, number> = {};
 	for (const row of rows) {
-		if (isDoneColumn(row.name)) continue;
 		counts[row.projectId] = (counts[row.projectId] ?? 0) + row.total;
 	}
 	return counts;
@@ -88,6 +93,7 @@ export async function createProject(
 			DEFAULT_COLUMNS.map((columnName, i) => ({
 				projectId: created.id,
 				name: columnName,
+				isDone: columnName === DEFAULT_DONE_COLUMN,
 				position: columnPositions[i] as string,
 			})),
 		);
