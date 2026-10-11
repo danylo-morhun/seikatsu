@@ -52,70 +52,75 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 		return buildTabHref(tab, searchParams.toString());
 	}
 
-	function tabCls(active: boolean) {
-		return cn(
-			"flex flex-col items-center gap-0.5 rounded-xl px-3 py-1.5 transition-colors duration-150",
-			active ? "text-primary" : "text-muted-foreground",
+	function navItem(
+		href: string,
+		label: string,
+		icon: typeof Chart01Icon,
+		active: boolean,
+		tab?: KurojiTab,
+	) {
+		return (
+			<Link
+				key={label}
+				href={href}
+				prefetch
+				aria-current={active ? "page" : undefined}
+				onClick={tab ? () => setPendingTab(tab) : undefined}
+				className={cn(
+					"group flex min-h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-xl outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring",
+					active ? "text-primary" : "text-muted-foreground active:text-foreground",
+				)}
+			>
+				<span
+					className={cn(
+						"flex h-7 w-12 items-center justify-center rounded-full transition-colors duration-150",
+						active && "bg-primary/15",
+					)}
+				>
+					<HugeiconsIcon icon={icon} className="h-5 w-5" />
+				</span>
+				<span className="max-w-full truncate px-0.5 text-[11px] font-medium leading-none">
+					{label}
+				</span>
+			</Link>
 		);
 	}
 
 	return (
-		<>
-			<nav className="fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] md:hidden">
-				<div className="mx-3 mb-3">
-					<div className="flex items-center justify-between rounded-2xl border border-rule bg-sidebar px-2 py-1.5">
-						{/* Left: Expenses, Accounts */}
-						<div className="flex flex-1 items-center justify-around">
-							{TABS.slice(0, 2).map(({ value, label, icon }) => (
-								<Link
-									key={value}
-									href={tabHref(value)}
-									prefetch
-									onClick={() => setPendingTab(value)}
-									className={tabCls(displayTab === value && !isSettings)}
-								>
-									<HugeiconsIcon icon={icon} className="h-5 w-5" />
-									<span className="text-[11px] font-medium leading-none">{label}</span>
-								</Link>
-							))}
-						</div>
+		<nav
+			aria-label="Kuroji sections"
+			className="fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] md:hidden"
+		>
+			<div className="mx-3 mb-3 grid grid-cols-5 items-center rounded-2xl border border-rule bg-sidebar px-1 py-1.5">
+				{TABS.slice(0, 2).map(({ value, label, icon }) =>
+					navItem(tabHref(value), label, icon, displayTab === value && !isSettings, value),
+				)}
 
-						{/* Center: FAB */}
-						<div className="flex shrink-0 items-center justify-center px-1">
-							<AddTransactionModal
-								workspaceId={workspaceId}
-								baseCurrency={baseCurrency}
-								trigger={
-									<Button
-										size="icon"
-										aria-label="New transaction"
-										className="h-11 w-11 rounded-full transition-transform active:scale-95"
-									>
-										<HugeiconsIcon icon={Add01Icon} className="h-5 w-5" />
-									</Button>
-								}
-							/>
-						</div>
-
-						{/* Right: History, Settings */}
-						<div className="flex flex-1 items-center justify-around">
-							<Link
-								href={tabHref("transactions")}
-								prefetch
-								onClick={() => setPendingTab("transactions")}
-								className={tabCls(displayTab === "transactions" && !isSettings)}
+				<div className="flex items-center justify-center">
+					<AddTransactionModal
+						workspaceId={workspaceId}
+						baseCurrency={baseCurrency}
+						trigger={
+							<Button
+								size="icon"
+								aria-label="New transaction"
+								className="h-11 w-11 rounded-full transition-transform active:scale-95"
 							>
-								<HugeiconsIcon icon={Clock01Icon} className="h-5 w-5" />
-								<span className="text-[11px] font-medium leading-none">Transactions</span>
-							</Link>
-							<Link href="/settings/kuroji" prefetch className={tabCls(isSettings)}>
-								<HugeiconsIcon icon={Settings01Icon} className="h-5 w-5" />
-								<span className="text-[11px] font-medium leading-none">Settings</span>
-							</Link>
-						</div>
-					</div>
+								<HugeiconsIcon icon={Add01Icon} className="h-5 w-5" />
+							</Button>
+						}
+					/>
 				</div>
-			</nav>
-		</>
+
+				{navItem(
+					tabHref("transactions"),
+					"Transactions",
+					Clock01Icon,
+					displayTab === "transactions" && !isSettings,
+					"transactions",
+				)}
+				{navItem("/settings/kuroji", "Settings", Settings01Icon, isSettings)}
+			</div>
+		</nav>
 	);
 }
