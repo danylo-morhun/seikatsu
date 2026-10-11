@@ -11,7 +11,6 @@ import {
 } from "@/features/seiryu/actions/cards";
 import { deleteColumn, reorderColumns, updateColumn } from "@/features/seiryu/actions/columns";
 import { AddColumnButton } from "@/features/seiryu/components/AddColumnButton";
-import { ArchivedCardsSheet } from "@/features/seiryu/components/ArchivedCardsSheet";
 import { CardSheet } from "@/features/seiryu/components/CardSheet";
 import { FilterChips, FilterMenu } from "@/features/seiryu/components/FilterMenu";
 import { KanbanCardOverlay, freshCards } from "@/features/seiryu/components/KanbanCard";
@@ -59,6 +58,10 @@ import {
 	horizontalListSortingStrategy,
 	sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
+import { Archive01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Button } from "@seikatsu/ui";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -358,10 +361,6 @@ export function KanbanBoard({
 		setColumns((prev) => [...prev, column]);
 	}
 
-	function handleCardRestore(card: CardData) {
-		setCards((prev) => [...prev, card]);
-	}
-
 	// Mouse drags after 5 px. Touch needs a 250 ms press first, so swipes over cards scroll
 	// the column and the board (PointerSensor + touch-action: none blocked scrolling on phones).
 	// Space lifts a focused card for the keyboard; arrows move it, Space drops it.
@@ -539,11 +538,12 @@ export function KanbanBoard({
 				<h1 className="min-w-0 max-w-full truncate text-xl font-semibold">{project.name}</h1>
 				<div className="flex items-center gap-1.5">
 					<FilterMenu filters={filters} labels={projectLabels} onChange={setFilters} />
-					<ArchivedCardsSheet
-						projectId={projectId}
-						columns={columns}
-						onCardRestore={handleCardRestore}
-					/>
+					<Button asChild variant="ghost" className="gap-1.5 text-muted-foreground">
+						<Link href="/settings/seiryu?section=archive" prefetch>
+							<HugeiconsIcon icon={Archive01Icon} className="h-4 w-4" />
+							<span className="max-sm:sr-only">Archived</span>
+						</Link>
+					</Button>
 				</div>
 				<FilterChips filters={filters} labels={projectLabels} onChange={setFilters} />
 			</div>

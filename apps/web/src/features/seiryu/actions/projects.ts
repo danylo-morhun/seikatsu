@@ -97,6 +97,7 @@ export async function createProject(
 	if (!project) return { error: "Failed to create project" };
 
 	revalidatePath("/seiryu", "layout");
+	revalidatePath("/settings/seiryu");
 	return { success: true, data: { id: project.id } };
 }
 
@@ -118,6 +119,7 @@ export async function updateProject(
 	if (!updated) return { error: "Project not found" };
 
 	revalidatePath("/seiryu", "layout");
+	revalidatePath("/settings/seiryu");
 	return { success: true };
 }
 
@@ -141,6 +143,7 @@ export async function deleteProject(
 	if (!deleted) return { error: "Project not found" };
 
 	revalidatePath("/seiryu", "layout");
+	revalidatePath("/settings/seiryu");
 	return { success: true };
 }
 
@@ -165,5 +168,6 @@ export async function reorderProject(
 	if (!updated) return { error: "Project not found" };
 
 	revalidatePath("/seiryu", "layout");
+	revalidatePath("/settings/seiryu");
 	return { success: true };
 }
