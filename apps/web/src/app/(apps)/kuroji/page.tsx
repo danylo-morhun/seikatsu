@@ -25,6 +25,7 @@ import { getUserToday } from "@/lib/timezone";
 import { format, subMonths } from "date-fns";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
+import type { CSSProperties } from "react";
 
 const VALID_TABS: KurojiTab[] = ["expense", "accounts", "transactions"];
 
@@ -147,7 +148,10 @@ export default async function KurojiPage({
 							/>
 						</div>
 
-						<div className="grid gap-10 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-12">
+						<div
+							className="grid animate-rise gap-10 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-12"
+							style={{ "--i": 4 } as CSSProperties}
+						>
 							<section aria-labelledby="spending-title">
 								<h2 id="spending-title" className="mb-3 text-sm font-medium">
 									Where it went
@@ -230,7 +234,7 @@ export default async function KurojiPage({
 
 	return (
 		<div className="flex flex-col pb-28 md:pb-0">
-			<div className="px-4 py-6 sm:px-6">
+			<div className="animate-rise px-4 py-6 sm:px-6">
 				<h1 className="sr-only">Kuroji — Transactions</h1>
 				{bankProblem && <BankSyncNotice problem={bankProblem} className="mb-4" />}
 				<TransactionTable

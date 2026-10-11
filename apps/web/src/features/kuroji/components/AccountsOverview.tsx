@@ -337,7 +337,7 @@ export function AccountsOverview({
 
 	const content = (
 		<div className="space-y-8">
-			{TYPE_ORDER.map((type) => {
+			{TYPE_ORDER.map((type, typeIndex) => {
 				const group = grouped[type] ?? [];
 				const parents = group.filter(
 					(r) =>
@@ -396,7 +396,11 @@ export function AccountsOverview({
 				);
 
 				return (
-					<div key={type}>
+					<div
+						key={type}
+						className="animate-rise"
+						style={{ "--i": typeIndex } as React.CSSProperties}
+					>
 						<div className="mb-1 flex items-baseline justify-between gap-3">
 							<h3 className="text-sm">
 								<span className="font-semibold">{TYPE_LABELS[type]}</span>
