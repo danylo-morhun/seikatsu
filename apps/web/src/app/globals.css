@@ -242,16 +242,11 @@
 
 /* ── Urushi signatures ─────────────────────────────────────────────────────── */
 
-/* The lit interior: the surface you are working on glows faintly with the app's pigment,
-   like the red inside a black lacquer bowl. */
+/* Raised surfaces are flat lacquer: no wash, just a pigment hairline on the top edge and a
+   deep shadow beneath. */
 [role="dialog"],
 [data-slot="popover-content"],
 [data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
-	background-image: linear-gradient(
-		to bottom,
-		color-mix(in oklch, var(--primary) 7%, transparent),
-		transparent 9rem
-	);
 	box-shadow: inset 0 1px 0 color-mix(in oklch, var(--primary) 22%, transparent), 0 24px 48px -16px
 		oklch(0 0 0 / 55%);
 }
