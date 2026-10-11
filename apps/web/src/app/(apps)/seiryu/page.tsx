@@ -1,4 +1,5 @@
 import { getProjects } from "@/features/seiryu/actions/projects";
+import { SeiryuWelcome } from "@/features/seiryu/components/SeiryuWelcome";
 import { redirect } from "next/navigation";
 
 export default async function SeiryuPage() {
@@ -7,12 +8,5 @@ export default async function SeiryuPage() {
 
 	if (first) redirect(`/seiryu/${first.id}`);
 
-	return (
-		<div className="flex h-full items-center justify-center">
-			<div className="text-center space-y-2">
-				<p className="text-lg font-medium">No projects yet</p>
-				<p className="text-sm text-muted-foreground">Create your first project in the sidebar.</p>
-			</div>
-		</div>
-	);
+	return <SeiryuWelcome />;
 }
