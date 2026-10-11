@@ -101,11 +101,7 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 						workspaceId={workspaceId}
 						baseCurrency={baseCurrency}
 						trigger={
-							<Button
-								size="icon"
-								aria-label="New transaction"
-								className="h-11 w-11 rounded-full transition-transform active:scale-95"
-							>
+							<Button size="icon" aria-label="New transaction" className="h-11 w-11 rounded-full">
 								<HugeiconsIcon icon={Add01Icon} className="h-5 w-5" />
 							</Button>
 						}

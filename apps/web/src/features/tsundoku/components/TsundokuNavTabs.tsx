@@ -68,7 +68,7 @@ export function TsundokuNavTabs({ workspaceId }: { workspaceId: string }) {
 								trigger={
 									<Button
 										size="icon"
-										className="h-11 w-11 rounded-full shadow-lg shadow-primary/25 transition-transform active:scale-95"
+										className="h-11 w-11 rounded-full shadow-lg shadow-primary/25"
 									>
 										<HugeiconsIcon icon={Add01Icon} className="h-5 w-5" />
 									</Button>
