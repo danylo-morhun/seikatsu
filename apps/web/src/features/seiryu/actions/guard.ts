@@ -13,6 +13,12 @@ import {
 	seiryuProjects,
 } from "@seikatsu/db";
 import { cache } from "react";
+import { z } from "zod";
+
+const uuid = z.string().uuid();
+
+/** Route params come from the URL: anything that isn't a uuid can't name a row. */
+export const isUuid = (value: string) => uuid.safeParse(value).success;
 
 /** The signed-in user's workspace; throws when signed out (actions are never public). */
 export async function requireWorkspace(): Promise<Workspace> {
