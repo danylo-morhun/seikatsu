@@ -1,5 +1,5 @@
-import { BAR_FILL, barClip } from "@/features/kuroji/lib/bar";
 import { formatCurrency } from "@/features/kuroji/lib/format";
+import { BAR_FILL, barClip } from "@/lib/bar";
 import { cn } from "@seikatsu/ui";
 
 interface Props {

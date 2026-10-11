@@ -1,7 +1,7 @@
 import type { AccountActivity } from "@/features/kuroji/actions/account-detail";
 import type { AccountType } from "@/features/kuroji/lib/balance";
-import { BAR_FILL, barClip } from "@/features/kuroji/lib/bar";
 import { formatCurrency } from "@/features/kuroji/lib/format";
+import { BAR_FILL, barClip } from "@/lib/bar";
 
 // What the ledger's two sides mean for each kind of account, normal side first.
 // `credit` holds positive base amounts, `debit` negative ones (as magnitudes).
