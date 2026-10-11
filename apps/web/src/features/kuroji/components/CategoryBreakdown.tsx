@@ -1,9 +1,10 @@
 import type { AccountBalance } from "@/features/kuroji/actions/balances";
 import { displayBalance, rollupRoots } from "@/features/kuroji/lib/balance";
-import { barClip } from "@/features/kuroji/lib/bar";
+import { BAR_FILL, barClip } from "@/features/kuroji/lib/bar";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 
 interface Props {
@@ -37,7 +38,7 @@ export function CategoryBreakdown({ balances, currency, periodQuery }: Props) {
 		return <p className="py-6 text-sm text-muted-foreground">No spending in this period.</p>;
 	}
 
-	const renderRow = (r: (typeof rows)[number]) => (
+	const renderRow = (r: (typeof rows)[number], i: number) => (
 		<li key={r.id} className="pb-1">
 			<Link
 				href={`/kuroji/accounts/${r.id}${periodQuery}`}
@@ -53,8 +54,11 @@ export function CategoryBreakdown({ balances, currency, periodQuery }: Props) {
 				</span>
 				<span aria-hidden className="col-span-2 h-1 overflow-hidden rounded-full bg-surface-2">
 					<span
-						className="block h-full rounded-full bg-primary/80 transition-[clip-path,background-color] duration-250 ease-in-out group-hover:bg-primary motion-reduce:transition-colors"
-						style={barClip(r.value / max)}
+						className={cn(
+							"block h-full rounded-full bg-primary/80 group-hover:bg-primary",
+							BAR_FILL,
+						)}
+						style={barClip(r.value / max, i)}
 					/>
 				</span>
 			</Link>

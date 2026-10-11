@@ -40,7 +40,7 @@ export function AccountActivityChart({ data, currency, type }: Props) {
 				<p className="py-4 text-sm text-muted-foreground">No movement in the last six months.</p>
 			) : (
 				<ol className="divide-y divide-rule border-y border-rule">
-					{months.map((m) => (
+					{months.map((m, i) => (
 						<li
 							key={m.month}
 							className="grid grid-cols-[3.5rem_minmax(0,1fr)_auto] items-center gap-x-3 py-2.5"
@@ -50,14 +50,14 @@ export function AccountActivityChart({ data, currency, type }: Props) {
 								<span className="h-1.5 rounded-full bg-surface-2">
 									<span
 										className={`block h-full rounded-full bg-primary/80 ${BAR_FILL}`}
-										style={barClip(m[normal] / max)}
+										style={barClip(m[normal] / max, i)}
 									/>
 								</span>
 								{m[other] > 0 && (
 									<span className="h-1.5 rounded-full bg-surface-2">
 										<span
 											className={`block h-full rounded-full bg-muted-foreground/50 ${BAR_FILL}`}
-											style={barClip(m[other] / max)}
+											style={barClip(m[other] / max, i)}
 										/>
 									</span>
 								)}

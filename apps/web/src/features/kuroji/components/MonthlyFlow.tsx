@@ -95,7 +95,7 @@ export function MonthlyFlow({
 				<p className="py-6 text-sm text-muted-foreground">No income or spending in this range.</p>
 			) : (
 				<ol className="divide-y divide-rule">
-					{rows.map((m) => {
+					{rows.map((m, i) => {
 						if (m.kind === "gap") {
 							return (
 								<li key={m.from} className="py-2.5 text-xs text-muted-foreground">
@@ -116,13 +116,13 @@ export function MonthlyFlow({
 									<span className="h-1.5 rounded-full bg-surface-2">
 										<span
 											className={cn("block h-full rounded-full bg-positive", BAR_FILL)}
-											style={barClip(m.income / max)}
+											style={barClip(m.income / max, i)}
 										/>
 									</span>
 									<span className="h-1.5 rounded-full bg-surface-2">
 										<span
 											className={cn("block h-full rounded-full bg-foreground/70", BAR_FILL)}
-											style={barClip(m.expenses / max)}
+											style={barClip(m.expenses / max, i)}
 										/>
 									</span>
 								</span>
