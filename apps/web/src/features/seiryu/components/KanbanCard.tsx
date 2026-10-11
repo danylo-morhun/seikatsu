@@ -1,7 +1,9 @@
 "use client";
 
+import { formatShortDate } from "@/features/kuroji/lib/dates";
 import { DueDateChip } from "@/features/seiryu/components/DueDateChip";
 import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
+import { PRIORITY_CONFIG } from "@/features/seiryu/lib/constants";
 import { type CardData, isTempId } from "@/features/seiryu/lib/types";
 import { BAR_FILL, barClip } from "@/lib/bar";
 import { useSortable } from "@dnd-kit/sortable";
@@ -9,7 +11,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { CheckListIcon, Note01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
-import { memo, useState } from "react";
+import { memo, useId, useState } from "react";
 
 export type { CardData, ChecklistItemData, LabelData } from "@/features/seiryu/lib/types";
 
@@ -30,6 +32,7 @@ interface Props {
 // Every sortable re-renders on each drag move (dnd-kit context); the body skips that work.
 export const KanbanCard = memo(function KanbanCard({ card, today, onOpen }: Props) {
 	const isTemp = isTempId(card.id);
+	const id = useId();
 	const [fresh] = useState(() => freshCards.delete(card.clientKey ?? card.id));
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 		id: card.id,
@@ -45,7 +48,10 @@ export const KanbanCard = memo(function KanbanCard({ card, today, onOpen }: Prop
 			style={{ transform: CSS.Translate.toString(transform), transition }}
 			{...attributes}
 			{...listeners}
-			aria-label={card.title}
+			// Named by its title; labels, due date and checklist read as its description,
+			// then dnd-kit's how-to-move hint.
+			aria-labelledby={`${id}-title`}
+			aria-describedby={`${id}-meta ${attributes["aria-describedby"] ?? ""}`.trim()}
 			aria-disabled={isTemp || undefined}
 			onClick={() => !isTemp && onOpen?.(card.id)}
 			onKeyDown={(e) => {
@@ -61,7 +67,7 @@ export const KanbanCard = memo(function KanbanCard({ card, today, onOpen }: Prop
 				isTemp && "cursor-default opacity-70",
 			)}
 		>
-			<CardBody card={card} today={today} />
+			<CardBody card={card} today={today} id={id} />
 		</div>
 	);
 }, sameCardProps);
@@ -75,13 +81,29 @@ export function KanbanCardOverlay({ card, today }: { card: CardData; today: stri
 	);
 }
 
-const CardBody = memo(function CardBody({ card, today }: { card: CardData; today: string }) {
+const CardBody = memo(function CardBody({
+	card,
+	today,
+	id,
+}: { card: CardData; today: string; id?: string }) {
 	const total = card.checklistItems.length;
 	const done = card.checklistItems.filter((i) => i.isCompleted).length;
 	const hasMeta = card.priority || card.dueDate || total > 0 || card.description;
 
 	return (
 		<div className="flex flex-col gap-2">
+			<span id={id && `${id}-meta`} className="sr-only">
+				{[
+					card.labels.length > 0 && `Labels: ${card.labels.map((l) => l.name).join(", ")}.`,
+					card.priority && `${PRIORITY_CONFIG[card.priority].label} priority.`,
+					card.dueDate &&
+						`Due ${formatShortDate(card.dueDate, today)}${card.dueDate < today ? ", overdue" : ""}.`,
+					total > 0 && `${done} of ${total} checklist items done.`,
+					card.description && "Has a description.",
+				]
+					.filter(Boolean)
+					.join(" ")}
+			</span>
 			{card.labels.length > 0 && (
 				<div className="flex flex-wrap gap-1">
 					{card.labels.map((label) => (
@@ -92,11 +114,12 @@ const CardBody = memo(function CardBody({ card, today }: { card: CardData; today
 							style={{ backgroundColor: label.color }}
 						/>
 					))}
-					<span className="sr-only">Labels: {card.labels.map((l) => l.name).join(", ")}</span>
 				</div>
 			)}
 
-			<p className="text-sm leading-snug [overflow-wrap:anywhere]">{card.title}</p>
+			<p id={id && `${id}-title`} className="text-sm leading-snug [overflow-wrap:anywhere]">
+				{card.title}
+			</p>
 
 			{hasMeta && (
 				<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
