@@ -1,11 +1,14 @@
 "use client";
 
+import { TravelUnderline } from "@/components/TravelUnderline";
 import { AddBookModal } from "@/features/tsundoku/components/AddBookModal";
+import { useIndicator } from "@/hooks/useIndicator";
 import { Add01Icon, Book01Icon, Chart01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRef } from "react";
 
 const TABS = [
 	{ href: "/tsundoku", label: "Library", icon: Book01Icon, exact: true },
@@ -14,6 +17,9 @@ const TABS = [
 
 export function TsundokuNavTabs({ workspaceId }: { workspaceId: string }) {
 	const pathname = usePathname();
+	// One underline travels between the desktop tabs.
+	const tabsRef = useRef<HTMLDivElement>(null);
+	const underline = useIndicator(tabsRef, "[data-active]", pathname);
 
 	function isActive(href: string, exact: boolean) {
 		return exact ? pathname === href : pathname.startsWith(href);
@@ -23,23 +29,25 @@ export function TsundokuNavTabs({ workspaceId }: { workspaceId: string }) {
 		<>
 			{/* Desktop tab nav */}
 			<div className="hidden border-b border-border/60 md:block">
-				<div className="flex items-center gap-1 px-4 sm:px-6">
+				<div ref={tabsRef} className="relative flex items-center gap-1 px-4 sm:px-6">
 					{TABS.map(({ href, label, icon, exact }) => (
 						<Link
 							key={href}
 							href={href}
 							prefetch
+							data-active={isActive(href, exact) || undefined}
 							className={cn(
-								"flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-medium transition-colors",
+								"flex items-center gap-2 px-3 py-3 text-sm font-medium transition-colors",
 								isActive(href, exact)
-									? "border-primary text-primary"
-									: "border-transparent text-muted-foreground hover:text-foreground",
+									? "text-primary"
+									: "text-muted-foreground hover:text-foreground",
 							)}
 						>
 							<HugeiconsIcon icon={icon} className="h-4 w-4" />
 							{label}
 						</Link>
 					))}
+					<TravelUnderline indicator={underline} />
 				</div>
 			</div>
 

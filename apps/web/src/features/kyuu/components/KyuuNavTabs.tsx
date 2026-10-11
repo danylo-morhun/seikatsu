@@ -1,10 +1,13 @@
 "use client";
 
+import { TravelUnderline } from "@/components/TravelUnderline";
+import { useIndicator } from "@/hooks/useIndicator";
 import { Briefcase01Icon, ChartLineData01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useRef } from "react";
 
 const TABS = [
 	{ href: "/kyuu", label: "Applications", icon: Briefcase01Icon, exact: true },
@@ -16,6 +19,9 @@ const CARRY_PARAMS = ["status", "source", "stage", "from", "to", "q"];
 
 export function KyuuNavTabs() {
 	const pathname = usePathname();
+	// One underline travels between the desktop tabs.
+	const tabsRef = useRef<HTMLDivElement>(null);
+	const underline = useIndicator(tabsRef, "[data-active]", pathname);
 	const searchParams = useSearchParams();
 
 	function tabHref(href: string) {
@@ -36,23 +42,25 @@ export function KyuuNavTabs() {
 		<>
 			{/* Desktop tab nav */}
 			<div className="hidden border-b border-border/60 md:block">
-				<div className="flex items-center gap-1 px-4 sm:px-6">
+				<div ref={tabsRef} className="relative flex items-center gap-1 px-4 sm:px-6">
 					{TABS.map(({ href, label, icon, exact }) => (
 						<Link
 							key={href}
 							href={tabHref(href)}
 							prefetch
+							data-active={isActive(href, exact) || undefined}
 							className={cn(
-								"flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-medium transition-colors",
+								"flex items-center gap-2 px-3 py-3 text-sm font-medium transition-colors",
 								isActive(href, exact)
-									? "border-primary text-primary"
-									: "border-transparent text-muted-foreground hover:text-foreground",
+									? "text-primary"
+									: "text-muted-foreground hover:text-foreground",
 							)}
 						>
 							<HugeiconsIcon icon={icon} className="h-4 w-4" />
 							{label}
 						</Link>
 					))}
+					<TravelUnderline indicator={underline} />
 				</div>
 			</div>
 
