@@ -16,6 +16,9 @@ const ROUTES = [
 	"/settings",
 	"/settings/account",
 	"/settings/kuroji",
+	"/settings/seiryu",
+	"/settings/seiryu?section=labels",
+	"/settings/seiryu?section=archive",
 ];
 
 // Every page renders on the prod build with no console errors (the fixture fails on any).
