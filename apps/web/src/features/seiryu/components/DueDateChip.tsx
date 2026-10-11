@@ -23,6 +23,7 @@ export function DueDateChip({ dueDate, today = localToday(), className }: Props)
 			)}
 		>
 			<HugeiconsIcon icon={Calendar03Icon} className="h-3.5 w-3.5" />
+			<span className="sr-only">Due </span>
 			{dueToday ? "Today" : formatShortDate(dueDate, today)}
 			{overdue && <span className="sr-only">, overdue</span>}
 		</span>
