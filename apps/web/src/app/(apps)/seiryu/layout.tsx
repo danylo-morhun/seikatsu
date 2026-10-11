@@ -10,7 +10,7 @@ export default async function SeiryuRootLayout({ children }: { children: React.R
 	const [projects, cardCounts] = await Promise.all([getProjects(), getOpenCardCounts()]);
 
 	return (
-		<SeiryuLayout projects={projects} workspaceId={workspace.id} cardCounts={cardCounts}>
+		<SeiryuLayout projects={projects} cardCounts={cardCounts}>
 			{children}
 		</SeiryuLayout>
 	);

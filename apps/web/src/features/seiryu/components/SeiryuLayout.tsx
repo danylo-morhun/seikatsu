@@ -1,32 +1,25 @@
 "use client";
 
-import { ProjectSidebar } from "@/features/seiryu/components/ProjectSidebar";
+import type { ProjectSummary } from "@/features/seiryu/components/ProjectDialog";
+import { ProjectList } from "@/features/seiryu/components/ProjectList";
+import { SeiryuNavTabs } from "@/features/seiryu/components/SeiryuNavTabs";
 import { rememberAppEntry } from "@/lib/app-entry";
-import { Menu01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Button, Sheet, SheetContent, SheetTrigger } from "@seikatsu/ui";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 
-type Project = {
-	id: string;
-	name: string;
-	color: string | null;
-};
+type Project = ProjectSummary & { position: string };
 
 interface Props {
 	projects: Project[];
-	workspaceId: string;
 	cardCounts: Record<string, number>;
 	children: React.ReactNode;
 }
 
-export function SeiryuLayout({ projects, workspaceId, cardCounts, children }: Props) {
-	const [mobileNavOpen, setMobileNavOpen] = useState(false);
+/** Projects on the left from 768px (a quiet list, no box); the board fills the rest. */
+export function SeiryuLayout({ projects, cardCounts, children }: Props) {
 	const pathname = usePathname();
-
-	// /seiryu/<projectId>/... → extract second segment
-	const activeProjectId = pathname.split("/")[2] ?? undefined;
+	// /seiryu/<projectId>/... → second segment
+	const activeProjectId = pathname.split("/")[2] || undefined;
 	const activeProject = projects.find((p) => p.id === activeProjectId);
 
 	useEffect(() => {
@@ -34,48 +27,16 @@ export function SeiryuLayout({ projects, workspaceId, cardCounts, children }: Pr
 	}, [activeProject]);
 
 	return (
-		<div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
-			<aside className="hidden md:flex w-56 shrink-0 flex-col border-r border-border overflow-y-auto">
-				<ProjectSidebar
+		<div className="flex h-[calc(100dvh-3.5rem)] overflow-hidden md:h-[calc(100dvh-4.5rem)]">
+			<aside className="hidden w-60 shrink-0 overflow-y-auto border-r border-rule px-3 pt-6 pb-8 md:block md:pt-8 [scrollbar-width:thin]">
+				<ProjectList
 					projects={projects}
-					workspaceId={workspaceId}
 					activeProjectId={activeProjectId}
 					cardCounts={cardCounts}
 				/>
 			</aside>
-
-			<main className="flex flex-1 min-w-0 flex-col overflow-hidden relative">
-				{/* Mobile project header */}
-				<div className="flex items-center gap-2 border-b border-border px-3 py-2 md:hidden">
-					{activeProject && (
-						<span
-							className="h-2.5 w-2.5 shrink-0 rounded-full"
-							style={{ backgroundColor: activeProject.color ?? "#6366f1" }}
-						/>
-					)}
-					<span className="flex-1 truncate text-sm font-medium">
-						{activeProject?.name ?? "Projects"}
-					</span>
-					<Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-						<SheetTrigger asChild>
-							<Button variant="ghost" size="icon" className="h-8 w-8">
-								<HugeiconsIcon icon={Menu01Icon} className="h-4 w-4" />
-							</Button>
-						</SheetTrigger>
-						<SheetContent side="left" className="w-64 p-0">
-							<ProjectSidebar
-								projects={projects}
-								workspaceId={workspaceId}
-								activeProjectId={activeProjectId}
-								cardCounts={cardCounts}
-								onProjectSelect={() => setMobileNavOpen(false)}
-							/>
-						</SheetContent>
-					</Sheet>
-				</div>
-
-				{children}
-			</main>
+			<div className="flex min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
+			<SeiryuNavTabs projects={projects} cardCounts={cardCounts} />
 		</div>
 	);
 }
