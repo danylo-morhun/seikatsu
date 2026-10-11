@@ -7,6 +7,7 @@ import {
 	toggleChecklistItem,
 	updateChecklistItem,
 } from "@/features/seiryu/actions/checklist";
+import { QuietAdd } from "@/features/seiryu/components/QuietAdd";
 import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import { type ChecklistItemData, isTempId } from "@/features/seiryu/lib/types";
 import { useDraft } from "@/features/seiryu/lib/use-draft";
@@ -30,7 +31,7 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Add01Icon, Cancel01Icon, DragDropVerticalIcon } from "@hugeicons/core-free-icons";
+import { Cancel01Icon, DragDropVerticalIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Checkbox, Input, cn } from "@seikatsu/ui";
 import { memo, useId, useMemo, useRef, useState } from "react";
@@ -55,6 +56,7 @@ export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 	const [items, setItems] = useState(initialItems);
 	const itemsRef = useRef(items);
 	const [newTitle, setNewTitle] = useState("");
+	const [adding, setAdding] = useState(false);
 	const dndId = useId();
 	const inputId = useId();
 
@@ -200,23 +202,37 @@ export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 				</>
 			)}
 
-			<form onSubmit={handleAdd} className="flex gap-1.5">
-				<label htmlFor={inputId} className="sr-only">
-					New checklist item
-				</label>
-				<Input
-					id={inputId}
-					value={newTitle}
-					maxLength={500}
-					autoComplete="off"
-					onChange={(e) => setNewTitle(e.target.value)}
-					placeholder="Add an item…"
-				/>
-				<Button type="submit" variant="outline" className="gap-1.5" disabled={!newTitle.trim()}>
-					<HugeiconsIcon icon={Add01Icon} className="h-4 w-4" />
-					Item
-				</Button>
-			</form>
+			{adding ? (
+				<form onSubmit={handleAdd} className="animate-swap flex gap-1.5">
+					<label htmlFor={inputId} className="sr-only">
+						New checklist item
+					</label>
+					<Input
+						id={inputId}
+						autoFocus
+						value={newTitle}
+						maxLength={500}
+						autoComplete="off"
+						enterKeyHint="enter"
+						onChange={(e) => setNewTitle(e.target.value)}
+						onBlur={() => !newTitle.trim() && setAdding(false)}
+						onKeyDown={(e) => {
+							// Closes the field, not the sheet around it.
+							if (e.key === "Escape") {
+								e.stopPropagation();
+								setNewTitle("");
+								setAdding(false);
+							}
+						}}
+						placeholder="Add an item…"
+					/>
+					<Button type="submit" variant="outline" disabled={!newTitle.trim()}>
+						Add
+					</Button>
+				</form>
+			) : (
+				<QuietAdd onClick={() => setAdding(true)}>Add item</QuietAdd>
+			)}
 		</section>
 	);
 }
