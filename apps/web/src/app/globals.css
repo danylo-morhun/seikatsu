@@ -457,6 +457,11 @@
 	animation: none;
 	mix-blend-mode: normal;
 }
+/* Closed before the first frame, so the new theme can't flash in whole before the circle
+   starts (Safari resolves the transition's `ready` a frame late). */
+::view-transition-new(root) {
+	clip-path: circle(0 at var(--theme-x, 100%) var(--theme-y, 0));
+}
 
 @media (prefers-reduced-motion: reduce) {
 	.animate-rise,

@@ -35,6 +35,8 @@ export function ThemeToggle() {
 		const x = left + width / 2;
 		const y = top + height / 2;
 		const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+		document.documentElement.style.setProperty("--theme-x", `${x}px`);
+		document.documentElement.style.setProperty("--theme-y", `${y}px`);
 		const transition = document.startViewTransition(apply);
 		transition.ready
 			.then(() => {
@@ -43,8 +45,9 @@ export function ThemeToggle() {
 						clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`],
 					},
 					{
-						duration: 650,
-						easing: "cubic-bezier(0.77, 0, 0.175, 1)",
+						duration: 700,
+						easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+						fill: "both",
 						pseudoElement: "::view-transition-new(root)",
 					},
 				);
