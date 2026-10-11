@@ -11,6 +11,7 @@ import {
 	deleteChecklistItemSchema,
 	reorderChecklistItemSchema,
 	toggleChecklistItemSchema,
+	updateChecklistItemSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
 import { db, desc, eq, seiryuChecklistItems } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
@@ -44,6 +45,26 @@ export async function createChecklistItem(
 
 	revalidatePath(`/seiryu/${card.projectId}`);
 	return { success: true, data: { id: item.id, position: item.position } };
+}
+
+export async function updateChecklistItem(
+	input: unknown,
+): Promise<{ error: string } | { success: true }> {
+	const workspace = await requireWorkspace();
+
+	const parsed = updateChecklistItemSchema.safeParse(input);
+	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+	const item = await getOwnedChecklistItem(parsed.data.itemId, workspace.id);
+	if (!item) return { error: "Item not found" };
+
+	await db
+		.update(seiryuChecklistItems)
+		.set({ title: parsed.data.title })
+		.where(eq(seiryuChecklistItems.id, parsed.data.itemId));
+
+	revalidatePath(`/seiryu/${item.projectId}`);
+	return { success: true };
 }
 
 export async function toggleChecklistItem(
