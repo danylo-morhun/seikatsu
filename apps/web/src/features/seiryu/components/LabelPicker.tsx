@@ -2,10 +2,9 @@
 
 import { Spinner } from "@/components/Spinner";
 import { createLabel, setCardLabels } from "@/features/seiryu/actions/labels";
+import { QuietAdd } from "@/features/seiryu/components/QuietAdd";
 import { LABEL_COLORS } from "@/features/seiryu/lib/constants";
 import { type LabelData, isTempId } from "@/features/seiryu/lib/types";
-import { Add01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Input, cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { useId, useRef, useState } from "react";
@@ -32,6 +31,7 @@ export function LabelPicker({
 	const [selected, setSelected] = useState(() => new Set(cardLabels.map((l) => l.id)));
 	const selectedRef = useRef(selected);
 	const [newName, setNewName] = useState("");
+	const [adding, setAdding] = useState(false);
 	// Labels made here that the server hasn't confirmed yet: they show and stay picked at once,
 	// so the next name can be typed while the last one saves.
 	const [pending, setPending] = useState<LabelData[]>([]);
@@ -159,27 +159,37 @@ export function LabelPicker({
 					})}
 				</div>
 			)}
-			<form onSubmit={handleCreate} className="flex gap-1.5">
-				<label htmlFor={inputId} className="sr-only">
-					New label
-				</label>
-				<Input
-					id={inputId}
-					value={newName}
-					maxLength={100}
-					autoComplete="off"
-					onChange={(e) => setNewName(e.target.value)}
-					placeholder="New label…"
-				/>
-				<Button type="submit" variant="outline" className="gap-1.5" disabled={!newName.trim()}>
-					{pending.length > 0 ? (
-						<Spinner />
-					) : (
-						<HugeiconsIcon icon={Add01Icon} className="h-4 w-4" />
-					)}
-					Label
-				</Button>
-			</form>
+			{adding ? (
+				<form onSubmit={handleCreate} className="animate-swap flex gap-1.5">
+					<label htmlFor={inputId} className="sr-only">
+						New label
+					</label>
+					<Input
+						id={inputId}
+						autoFocus
+						value={newName}
+						maxLength={100}
+						autoComplete="off"
+						onChange={(e) => setNewName(e.target.value)}
+						onBlur={() => !newName.trim() && setAdding(false)}
+						onKeyDown={(e) => {
+							// Closes the field, not the sheet around it.
+							if (e.key === "Escape") {
+								e.stopPropagation();
+								setNewName("");
+								setAdding(false);
+							}
+						}}
+						placeholder="New label…"
+					/>
+					<Button type="submit" variant="outline" className="gap-1.5" disabled={!newName.trim()}>
+						{pending.length > 0 && <Spinner />}
+						Add
+					</Button>
+				</form>
+			) : (
+				<QuietAdd onClick={() => setAdding(true)}>New label</QuietAdd>
+			)}
 		</section>
 	);
 }
