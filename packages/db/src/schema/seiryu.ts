@@ -47,6 +47,8 @@ export const seiryuColumns = pgTable(
 			.references(() => seiryuProjects.id, { onDelete: "cascade" }),
 		name: text("name").notNull(),
 		color: text("color"),
+		/** The finish line: its cards are finished work and don't count as open. */
+		isDone: boolean("is_done").notNull().default(false),
 		position: varchar("position", { length: 255 }).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
