@@ -1,4 +1,5 @@
 import type { MonthlyTrend } from "@/features/kuroji/actions/trends";
+import { BAR_FILL, barClip } from "@/features/kuroji/lib/bar";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { flowRows } from "@/features/kuroji/lib/monthly-flow";
 import { cn } from "@seikatsu/ui";
@@ -114,14 +115,14 @@ export function MonthlyFlow({
 								<span className="flex flex-col gap-1" aria-hidden>
 									<span className="h-1.5 rounded-full bg-surface-2">
 										<span
-											className="block h-full rounded-full bg-positive"
-											style={{ width: `${(m.income / max) * 100}%` }}
+											className={cn("block h-full rounded-full bg-positive", BAR_FILL)}
+											style={barClip(m.income / max)}
 										/>
 									</span>
 									<span className="h-1.5 rounded-full bg-surface-2">
 										<span
-											className="block h-full rounded-full bg-foreground/70"
-											style={{ width: `${(m.expenses / max) * 100}%` }}
+											className={cn("block h-full rounded-full bg-foreground/70", BAR_FILL)}
+											style={barClip(m.expenses / max)}
 										/>
 									</span>
 								</span>

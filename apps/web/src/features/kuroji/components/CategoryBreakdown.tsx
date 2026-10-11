@@ -1,5 +1,6 @@
 import type { AccountBalance } from "@/features/kuroji/actions/balances";
 import { displayBalance, rollupRoots } from "@/features/kuroji/lib/balance";
+import { barClip } from "@/features/kuroji/lib/bar";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -52,8 +53,8 @@ export function CategoryBreakdown({ balances, currency, periodQuery }: Props) {
 				</span>
 				<span aria-hidden className="col-span-2 h-1 overflow-hidden rounded-full bg-surface-2">
 					<span
-						className="block h-full rounded-full bg-primary/80 transition-colors group-hover:bg-primary"
-						style={{ width: `${(r.value / max) * 100}%` }}
+						className="block h-full rounded-full bg-primary/80 transition-[clip-path,background-color] duration-250 ease-in-out group-hover:bg-primary motion-reduce:transition-colors"
+						style={barClip(r.value / max)}
 					/>
 				</span>
 			</Link>

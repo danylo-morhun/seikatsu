@@ -1,5 +1,6 @@
 import type { AccountActivity } from "@/features/kuroji/actions/account-detail";
 import type { AccountType } from "@/features/kuroji/lib/balance";
+import { BAR_FILL, barClip } from "@/features/kuroji/lib/bar";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 
 // What the ledger's two sides mean for each kind of account, normal side first.
@@ -48,15 +49,15 @@ export function AccountActivityChart({ data, currency, type }: Props) {
 							<span aria-hidden className="flex flex-col gap-1">
 								<span className="h-1.5 rounded-full bg-surface-2">
 									<span
-										className="block h-full rounded-full bg-primary/80"
-										style={{ width: `${(m[normal] / max) * 100}%` }}
+										className={`block h-full rounded-full bg-primary/80 ${BAR_FILL}`}
+										style={barClip(m[normal] / max)}
 									/>
 								</span>
 								{m[other] > 0 && (
 									<span className="h-1.5 rounded-full bg-surface-2">
 										<span
-											className="block h-full rounded-full bg-muted-foreground/50"
-											style={{ width: `${(m[other] / max) * 100}%` }}
+											className={`block h-full rounded-full bg-muted-foreground/50 ${BAR_FILL}`}
+											style={barClip(m[other] / max)}
 										/>
 									</span>
 								)}
