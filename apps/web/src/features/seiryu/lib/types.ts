@@ -5,6 +5,8 @@ export type ChecklistItemData = {
 	title: string;
 	isCompleted: boolean;
 	position: string;
+	/** Client-only: the temp id it was added under; a stable key, and it drops in once. */
+	clientKey?: string;
 };
 
 export type LabelData = {
