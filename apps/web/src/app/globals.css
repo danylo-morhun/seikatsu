@@ -487,6 +487,35 @@
 	}
 }
 
+/* A picked-up card or lane lifts off the board: a touch larger, its shadow growing under it,
+   the flat raise every floating surface carries. */
+.animate-lift {
+	animation: lift 180ms var(--ease-out) both;
+}
+@keyframes lift {
+	from {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 oklch(0 0 0 / 0%);
+	}
+	to {
+		transform: scale(1.03);
+		box-shadow: 0 24px 48px -16px oklch(0 0 0 / 55%);
+	}
+}
+:root:not(.dark) .animate-lift {
+	animation-name: lift-paper;
+}
+@keyframes lift-paper {
+	from {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 oklch(0.2 0.015 40 / 0%);
+	}
+	to {
+		transform: scale(1.03);
+		box-shadow: 0 12px 32px -12px oklch(0.2 0.015 40 / 22%);
+	}
+}
+
 @keyframes check-draw {
 	from {
 		stroke-dashoffset: 1;
@@ -512,6 +541,11 @@
 	.animate-drop,
 	.animate-swap {
 		animation-name: fade-in;
+	}
+	.animate-lift,
+	:root:not(.dark) .animate-lift {
+		animation: none;
+		box-shadow: 0 24px 48px -16px oklch(0 0 0 / 40%);
 	}
 	.bar-fill {
 		transition: background-color 150ms ease;

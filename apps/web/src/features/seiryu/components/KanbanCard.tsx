@@ -2,104 +2,123 @@
 
 import { DueDateChip } from "@/features/seiryu/components/DueDateChip";
 import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
+import { type CardData, isTempId } from "@/features/seiryu/lib/types";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { CheckListIcon, Note01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
-import { memo } from "react";
+import { memo, useState } from "react";
 
 export type { CardData, ChecklistItemData, LabelData } from "@/features/seiryu/lib/types";
-import { type CardData, isTempId } from "@/features/seiryu/lib/types";
 
-export const isTempCard = isTempId;
+/** Cards just created on this board: their first mount drops in, later remounts don't. */
+export const freshCards = new Set<string>();
+
+// Neighbours make room on the strong ease-out, a beat quicker than a page move.
+export const SORT_TRANSITION = { duration: 220, easing: "cubic-bezier(0.23, 1, 0.32, 1)" };
+
+const TILE = "rounded-lg bg-surface px-3 py-2.5 text-left [-webkit-touch-callout:none] select-none";
 
 interface Props {
 	card: CardData;
+	today: string;
 	onOpen?: (cardId: string) => void;
 }
 
 // Every sortable re-renders on each drag move (dnd-kit context); the body skips that work.
-export const KanbanCard = memo(function KanbanCard({ card, onOpen }: Props) {
-	const isTemp = isTempCard(card.id);
+export const KanbanCard = memo(function KanbanCard({ card, today, onOpen }: Props) {
+	const isTemp = isTempId(card.id);
+	const [fresh] = useState(() => freshCards.delete(card.clientKey ?? card.id));
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 		id: card.id,
 		data: { type: "card", columnId: card.columnId },
 		disabled: isTemp,
+		transition: SORT_TRANSITION,
 	});
-
-	const style = {
-		transform: CSS.Transform.toString(transform),
-		transition,
-	};
 
 	return (
 		<div
 			ref={setNodeRef}
-			style={style}
+			data-card-id={card.id}
+			style={{ transform: CSS.Translate.toString(transform), transition }}
 			{...attributes}
 			{...listeners}
+			aria-label={card.title}
+			aria-disabled={isTemp || undefined}
 			onClick={() => !isTemp && onOpen?.(card.id)}
 			onKeyDown={(e) => {
-				if (!isTemp && (e.key === "Enter" || e.key === " ")) onOpen?.(card.id);
+				listeners?.onKeyDown?.(e);
+				if (!isTemp && e.key === "Enter") onOpen?.(card.id);
 			}}
 			className={cn(
-				"rounded-md border border-border bg-card px-3 py-2.5",
-				"cursor-grab text-left transition-colors hover:border-border/80 hover:bg-accent/30",
-				"focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-				"active:cursor-grabbing select-none [-webkit-touch-callout:none]",
-				isDragging && "opacity-40",
-				isTemp && "cursor-default",
+				TILE,
+				"cursor-grab outline-none transition-[background-color,opacity] duration-150 hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
+				fresh && "animate-drop",
+				// The lifted card travels in the overlay; its place stays as an empty slot.
+				isDragging && "bg-transparent ring-1 ring-rule ring-inset [&>*]:opacity-0",
+				isTemp && "cursor-default opacity-70",
 			)}
 		>
-			<CardBody card={card} />
+			<CardBody card={card} today={today} />
 		</div>
 	);
 }, sameCardProps);
 
-export function KanbanCardOverlay({ card }: { card: CardData }) {
+/** The card as it travels under the pointer: lifted off the lane by a soft shadow. */
+export function KanbanCardOverlay({ card, today }: { card: CardData; today: string }) {
 	return (
-		<div className="rounded-md border border-border bg-card px-3 py-2.5 shadow-xl opacity-95 rotate-1">
-			<CardBody card={card} />
+		<div className={cn(TILE, "animate-lift cursor-grabbing bg-surface-2")}>
+			<CardBody card={card} today={today} />
 		</div>
 	);
 }
 
-const CardBody = memo(function CardBody({ card }: { card: CardData }) {
-	const totalItems = card.checklistItems.length;
-	const doneItems = card.checklistItems.filter((i) => i.isCompleted).length;
-	const hasMeta = card.priority || card.dueDate || totalItems > 0;
+const CardBody = memo(function CardBody({ card, today }: { card: CardData; today: string }) {
+	const total = card.checklistItems.length;
+	const done = card.checklistItems.filter((i) => i.isCompleted).length;
+	const hasMeta = card.priority || card.dueDate || total > 0 || card.description;
 
 	return (
-		<div className="flex flex-col gap-1.5">
+		<div className="flex flex-col gap-2">
 			{card.labels.length > 0 && (
 				<div className="flex flex-wrap gap-1">
 					{card.labels.map((label) => (
 						<span
 							key={label.id}
 							title={label.name}
-							className="h-1.5 w-7 rounded-full"
+							className="h-1 w-6 rounded-full"
 							style={{ backgroundColor: label.color }}
 						/>
 					))}
+					<span className="sr-only">Labels: {card.labels.map((l) => l.name).join(", ")}</span>
 				</div>
 			)}
 
-			<p className="text-sm leading-snug text-card-foreground">{card.title}</p>
+			<p className="text-sm leading-snug [overflow-wrap:anywhere]">{card.title}</p>
 
 			{hasMeta && (
-				<div className="flex flex-wrap items-center gap-1.5">
-					{card.priority && <PriorityBadge priority={card.priority} showLabel />}
-					{card.dueDate && <DueDateChip dueDate={card.dueDate} />}
-					{totalItems > 0 && (
+				<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+					{card.priority && <PriorityBadge priority={card.priority} />}
+					{card.dueDate && <DueDateChip dueDate={card.dueDate} today={today} />}
+					{total > 0 && (
 						<span
 							className={cn(
-								"rounded px-1.5 py-0.5 text-[10px] font-medium",
-								doneItems === totalItems
-									? "bg-green-500/20 text-green-400"
-									: "bg-muted text-muted-foreground",
+								"inline-flex items-center gap-1 text-xs tabular-nums",
+								done === total ? "text-foreground" : "text-muted-foreground",
 							)}
 						>
-							{doneItems}/{totalItems}
+							<HugeiconsIcon icon={CheckListIcon} className="h-3.5 w-3.5" />
+							{done}/{total}
+							<span className="sr-only"> checklist items done</span>
 						</span>
+					)}
+					{card.description && (
+						<HugeiconsIcon
+							icon={Note01Icon}
+							aria-label="Has a description"
+							className="h-3.5 w-3.5 text-muted-foreground"
+						/>
 					)}
 				</div>
 			)}
@@ -108,16 +127,21 @@ const CardBody = memo(function CardBody({ card }: { card: CardData }) {
 }, sameCard);
 
 function sameCardProps(a: Props, b: Props) {
-	return a.onOpen === b.onOpen && sameCard({ card: a.card }, { card: b.card });
+	return a.onOpen === b.onOpen && a.today === b.today && sameCard(a, b);
 }
 
 // Field-wise: a server re-render sends new objects for unchanged cards.
-function sameCard({ card: a }: { card: CardData }, { card: b }: { card: CardData }) {
-	if (a === b) return true;
+function sameCard(
+	{ card: a, today: ta }: { card: CardData; today: string },
+	{ card: b, today: tb }: { card: CardData; today: string },
+) {
+	if (a === b && ta === tb) return true;
 	return (
+		ta === tb &&
 		a.id === b.id &&
 		a.columnId === b.columnId &&
 		a.title === b.title &&
+		a.description === b.description &&
 		a.priority === b.priority &&
 		a.dueDate === b.dueDate &&
 		a.position === b.position &&
