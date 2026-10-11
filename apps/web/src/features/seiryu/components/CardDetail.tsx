@@ -3,6 +3,7 @@
 import { ChecklistSection } from "@/features/seiryu/components/ChecklistSection";
 import { LabelPicker } from "@/features/seiryu/components/LabelPicker";
 import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
+import { QuietAdd } from "@/features/seiryu/components/QuietAdd";
 import { PRIORITIES, PRIORITY_CONFIG, type Priority } from "@/features/seiryu/lib/constants";
 import type { CardData, CardFieldUpdates, LabelData } from "@/features/seiryu/lib/types";
 import { useDraft } from "@/features/seiryu/lib/use-draft";
@@ -16,7 +17,7 @@ import {
 	SelectValue,
 	cn,
 } from "@seikatsu/ui";
-import { useId } from "react";
+import { useId, useState } from "react";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -55,6 +56,7 @@ export function CardDetail({
 	readOnly = false,
 }: Props) {
 	const id = useId();
+	const [writingNotes, setWritingNotes] = useState(false);
 
 	const title = useDraft(card.title, (next) => {
 		const trimmed = next.trim();
@@ -150,19 +152,29 @@ export function CardDetail({
 					</div>
 				</div>
 
-				<div className="space-y-2">
-					<Label htmlFor={`${id}-description`}>Description</Label>
-					<textarea
-						id={`${id}-description`}
-						value={description.draft}
-						readOnly={readOnly}
-						maxLength={5000}
-						onChange={(e) => description.change(e.target.value)}
-						onBlur={description.flush}
-						placeholder="Notes, links, what done looks like…"
-						className={cn(FIELD_TEXTAREA, "min-h-24")}
-					/>
-				</div>
+				{!description.draft && !writingNotes ? (
+					!readOnly && <QuietAdd onClick={() => setWritingNotes(true)}>Add notes</QuietAdd>
+				) : (
+					<div className="animate-swap space-y-2">
+						<Label htmlFor={`${id}-description`}>Description</Label>
+						<textarea
+							id={`${id}-description`}
+							value={description.draft}
+							readOnly={readOnly}
+							maxLength={5000}
+							onChange={(e) => description.change(e.target.value)}
+							autoFocus={writingNotes && !card.description}
+							// Emptying it while typing keeps the field; leaving it empty folds it away.
+							onFocus={() => setWritingNotes(true)}
+							onBlur={() => {
+								description.flush();
+								setWritingNotes(false);
+							}}
+							placeholder="Notes, links, what done looks like…"
+							className={cn(FIELD_TEXTAREA, "min-h-24")}
+						/>
+					</div>
+				)}
 			</div>
 
 			{!readOnly && (
