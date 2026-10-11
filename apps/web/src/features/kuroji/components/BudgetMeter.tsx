@@ -1,3 +1,4 @@
+import { BAR_FILL, barClip } from "@/features/kuroji/lib/bar";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { cn } from "@seikatsu/ui";
 
@@ -32,14 +33,15 @@ export function BudgetMeter({ used, limit, kind, currency, className }: Props) {
 			<span aria-hidden className="relative h-1 flex-1 rounded-full bg-surface-2">
 				<span
 					className={cn(
-						"absolute inset-y-0 left-0 rounded-full",
+						"absolute inset-0 rounded-full",
+						BAR_FILL,
 						kind === "budget" && over
 							? "bg-negative"
 							: kind === "target" && ratio >= 1
 								? "bg-positive"
 								: "bg-primary/80",
 					)}
-					style={{ width: `${fill * 100}%` }}
+					style={barClip(fill)}
 				/>
 			</span>
 			<span
