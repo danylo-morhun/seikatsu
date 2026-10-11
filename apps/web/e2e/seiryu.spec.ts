@@ -75,10 +75,12 @@ test("dragging a card to another column moves it for good", async ({ page }) => 
 
 test("N opens capture; the new card shows at once and stays", async ({ page }) => {
 	await page.goto(`/seiryu/${projectId}`);
-	await expect(page.getByRole("heading", { name: "E2E board" })).toBeVisible();
-	await page.keyboard.press("n");
-
 	const dialog = page.getByRole("dialog", { name: "New Card" });
+	// The board is server-rendered: N only works once it has hydrated, so press until it opens.
+	await expect(async () => {
+		await page.keyboard.press("n");
+		await expect(dialog).toBeVisible({ timeout: 500 });
+	}).toPass();
 	await expect(dialog.getByLabel("Title")).toBeFocused();
 	await dialog.getByLabel("Title").fill("Ship it");
 	await dialog.getByRole("button", { name: "Add card" }).click();
