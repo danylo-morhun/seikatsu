@@ -50,7 +50,7 @@ export function AddColumnButton({ projectId, onColumnAdded, className }: Props) 
 	}
 
 	return (
-		<div className={cn(LANE, className)}>
+		<div className={cn(LANE, !adding && "md:w-auto md:min-w-0 md:flex-none", className)}>
 			{adding ? (
 				<form onSubmit={handleSubmit} className="animate-swap space-y-2 pt-1">
 					<Input

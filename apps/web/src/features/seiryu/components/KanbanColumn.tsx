@@ -35,8 +35,12 @@ import { type CSSProperties, memo, useMemo, useRef, useState } from "react";
 
 export type { ColumnData } from "@/features/seiryu/lib/types";
 
-/** A lane is as wide as a comfortable card; on a phone, most of the screen so the next peeks in. */
-export const LANE = "flex w-[min(18.5rem,82vw)] shrink-0 snap-start flex-col";
+/**
+ * A lane is as wide as a comfortable card; on a phone, most of the screen so the next peeks in.
+ * From md lanes give up to 2.5rem each, so three fit beside the project list at 1440px.
+ */
+export const LANE =
+	"flex w-[min(18.5rem,82vw)] shrink-0 snap-start flex-col md:w-auto md:min-w-64 md:flex-[0_1_18.5rem]";
 
 interface Props {
 	column: ColumnData;
