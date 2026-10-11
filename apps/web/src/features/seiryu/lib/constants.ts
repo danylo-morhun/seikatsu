@@ -27,5 +27,5 @@ export const LABEL_COLORS = [
 	{ name: "Sumi", hex: "#9d9790" },
 ] as const;
 
-/** A column named "Done" holds finished cards; they don't count as open work. */
-export const isDoneColumn = (name: string) => name.trim().toLowerCase() === "done";
+/** The default column that starts as the finish line. */
+export const DEFAULT_DONE_COLUMN: (typeof DEFAULT_COLUMNS)[number] = "Done";

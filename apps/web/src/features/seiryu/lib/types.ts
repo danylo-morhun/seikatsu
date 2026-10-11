@@ -20,8 +20,12 @@ export type ColumnData = {
 	projectId: string;
 	name: string;
 	color: string | null;
+	/** The finish line: its cards count as finished, not open. */
+	isDone: boolean;
 	position: string;
 };
+
+export type ColumnUpdates = Partial<Pick<ColumnData, "name" | "color" | "isDone">>;
 
 export type CardData = {
 	id: string;

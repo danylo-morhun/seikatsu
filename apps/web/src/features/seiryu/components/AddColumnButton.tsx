@@ -42,6 +42,7 @@ export function AddColumnButton({ projectId, onColumnAdded, className }: Props) 
 				projectId,
 				name: trimmed,
 				color: null,
+				isDone: false,
 				position: result.data.position,
 			});
 			close();
