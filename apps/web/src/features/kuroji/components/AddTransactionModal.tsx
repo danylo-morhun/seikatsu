@@ -512,7 +512,8 @@ export function AddTransactionModal({
 					const amount = document.getElementById("add-amount");
 					if (!amount) return;
 					e.preventDefault();
-					amount.focus();
+					// No scroll-into-view: mid-entrance it scrolls the page and flashes a scrollbar.
+					amount.focus({ preventScroll: true });
 				}}
 			>
 				<DialogHeader>
