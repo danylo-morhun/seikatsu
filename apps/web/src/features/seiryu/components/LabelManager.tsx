@@ -28,7 +28,7 @@ export function LabelManager({
 	const [projectLabels, setProjectLabels] = useState(initialProjectLabels);
 	const [selectedIds, setSelectedIds] = useState(() => new Set(initialCardLabelIds));
 	const [newName, setNewName] = useState("");
-	const [newColor, setNewColor] = useState<string>(LABEL_COLORS[0]);
+	const [newColor, setNewColor] = useState<string>(LABEL_COLORS[0].hex);
 	const [isCreating, startCreate] = useTransition();
 
 	async function handleToggleLabel(labelId: string) {
@@ -131,7 +131,7 @@ export function LabelManager({
 
 			<div className="flex flex-col gap-2 border-t border-border pt-2">
 				<div className="flex flex-wrap gap-1">
-					{LABEL_COLORS.map((c) => (
+					{LABEL_COLORS.map(({ hex: c }) => (
 						<button
 							key={c}
 							type="button"
