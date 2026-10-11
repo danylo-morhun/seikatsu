@@ -87,6 +87,8 @@ export function AddTransactionModal({
 		setOpenState(val);
 		onOpenChangeProp?.(val);
 	};
+	// Opened from the keyboard, the dialog appears and leaves instantly: a shortcut is for speed.
+	const [openedByKey, setOpenedByKey] = React.useState(false);
 	const initialType: TxType = editing?.values.txType ?? "expense";
 	const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>(editing?.tagIds ?? []);
 	const [txType, setTxType] = React.useState<TxType>(initialType);
@@ -162,6 +164,7 @@ export function AddTransactionModal({
 			};
 			if (!shouldOpenCapture(e, context)) return;
 			e.preventDefault();
+			setOpenedByKey(true);
 			setOpen(true);
 		}
 		window.addEventListener("keydown", onKeyDown);
@@ -211,6 +214,7 @@ export function AddTransactionModal({
 	};
 
 	const onOpenChange = (val: boolean) => {
+		if (val) setOpenedByKey(false);
 		setOpen(val);
 		if (!val) {
 			resetToType(initialType);
@@ -496,7 +500,10 @@ export function AddTransactionModal({
 				</DialogTrigger>
 			)}
 			<DialogContent
-				className="sm:max-w-lg max-sm:flex max-sm:flex-col"
+				className={cn(
+					"sm:max-w-lg max-sm:flex max-sm:flex-col",
+					openedByKey && "data-[state=closed]:animate-none data-[state=open]:animate-none",
+				)}
 				aria-describedby={undefined}
 				onOpenAutoFocus={(e) => {
 					// Focus must leave the trigger now, before the page behind is hidden; a split
