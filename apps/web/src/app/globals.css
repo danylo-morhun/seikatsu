@@ -374,6 +374,56 @@
 	margin-top: 0.875rem;
 	border-radius: 1px;
 	background: linear-gradient(90deg, var(--flow), transparent);
+	/* Drawn on with the brush, once the figure has landed. */
+	animation: stroke-draw 900ms var(--ease-out) 300ms backwards;
+}
+@keyframes stroke-draw {
+	from {
+		clip-path: inset(0 100% 0 0);
+	}
+}
+
+/* Content arrives: a short rise out of a soft blur, staggered by --i. `backwards` only, so
+   no transform lingers afterwards (it would trap fixed-position descendants). */
+.animate-rise {
+	animation: rise 450ms var(--ease-out) backwards;
+	animation-delay: calc(var(--i, 0) * 70ms);
+}
+@keyframes rise {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+		filter: blur(6px);
+	}
+}
+
+/* Bar fills span the track and are clipped to --fill: they pour in from empty when they
+   appear (cascading by --i) and glide when the value changes. */
+.bar-fill {
+	clip-path: inset(0 calc(100% - var(--fill, 0%)) 0 0 round 9999px);
+	transition: clip-path 700ms var(--ease-out) calc(var(--i, 0) * 45ms), background-color 150ms ease;
+}
+@starting-style {
+	.bar-fill {
+		clip-path: inset(0 100% 0 0 round 9999px);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.animate-rise {
+		animation-name: fade-in;
+	}
+	.bar-fill {
+		transition: background-color 150ms ease;
+	}
+	[data-total="lead"]::after {
+		animation: none;
+	}
+}
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
 }
 
 /* Native controls follow the theme: the date picker's glyph and popup stay in the lacquer. */
@@ -416,6 +466,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 		--tw-exit-translate-y: 0 !important;
 		--tw-exit-scale: 1 !important;
 		--tw-exit-opacity: 0 !important;
+		--tw-enter-blur: 0 !important;
+		--tw-exit-blur: 0 !important;
 	}
 }
 
