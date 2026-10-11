@@ -365,13 +365,62 @@ export function KanbanBoard({
 		setColumns((prev) => [...prev, column]);
 	}
 
+	// What a screen reader hears while moving: names and places, not ids.
+	const columnsRef = useRef(columns);
+	columnsRef.current = columns;
+	const accessibility = useMemo(() => {
+		const card = (id: UniqueIdentifier) => cardsRef.current.find((c) => c.id === id);
+		const column = (id: UniqueIdentifier) => columnsRef.current.find((c) => c.id === id);
+		const nameOf = (id: UniqueIdentifier) => {
+			const c = card(id);
+			if (c) return `card "${c.title}"`;
+			const col = column(id);
+			return col ? `column "${col.name}"` : "item";
+		};
+		// A card over a card: that card's column and slot; over a column: that column.
+		const placeOf = (activeId: UniqueIdentifier, overId: UniqueIdentifier) => {
+			const over = card(overId);
+			const columnId = over?.columnId ?? (column(overId) ? (overId as string) : null);
+			const col = columnId ? column(columnId) : null;
+			if (!col) return "";
+			if (!card(activeId)) return `position ${byPositionIndex(columnsRef.current, col.id) + 1}`;
+			const lane = cardsRef.current.filter((c) => c.columnId === col.id).sort(byPosition);
+			const index = lane.findIndex((c) => c.id === (over ? overId : activeId));
+			const slot = index === -1 ? lane.length : index + 1;
+			return `"${col.name}", position ${slot} of ${Math.max(lane.length, slot)}`;
+		};
+		return {
+			screenReaderInstructions: {
+				draggable:
+					"Press Enter to open a card. Press Space to pick it up, the arrow keys to move it, Space again to drop it, or Escape to cancel.",
+			},
+			announcements: {
+				onDragStart: ({ active }: DragStartEvent) => `Picked up ${nameOf(active.id)}.`,
+				onDragOver: ({ active, over }: DragOverEvent) =>
+					over
+						? `${nameOf(active.id)} is over ${placeOf(active.id, over.id)}.`
+						: `${nameOf(active.id)} is no longer over a place to drop.`,
+				onDragEnd: ({ active, over }: DragEndEvent) =>
+					over
+						? `Dropped ${nameOf(active.id)} at ${placeOf(active.id, over.id)}.`
+						: `Dropped ${nameOf(active.id)} where it was.`,
+				onDragCancel: ({ active }: { active: { id: UniqueIdentifier } }) =>
+					`Cancelled. ${nameOf(active.id)} is back where it was.`,
+			},
+		};
+	}, []);
+
 	// Mouse drags after 5 px. Touch needs a 250 ms press first, so swipes over cards scroll
 	// the column and the board (PointerSensor + touch-action: none blocked scrolling on phones).
 	// Space lifts a focused card for the keyboard; arrows move it, Space drops it.
 	const sensors = useSensors(
 		useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
 		useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
-		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+		// Enter opens a focused card, so only Space picks it up.
+		useSensor(KeyboardSensor, {
+			coordinateGetter: sortableKeyboardCoordinates,
+			keyboardCodes: { start: ["Space"], cancel: ["Escape"], end: ["Space"] },
+		}),
 	);
 
 	const activeColumn = activeType === "column" ? columns.find((c) => c.id === activeId) : null;
@@ -603,6 +652,7 @@ export function KanbanBoard({
 			) : (
 				<DndContext
 					id={dndId}
+					accessibility={accessibility}
 					sensors={sensors}
 					collisionDetection={collisionDetection}
 					onDragStart={handleDragStart}
@@ -698,6 +748,10 @@ export function KanbanBoard({
 }
 
 const NO_CARDS: CardData[] = [];
+
+function byPositionIndex(columns: ColumnData[], id: string) {
+	return [...columns].sort(byPosition).findIndex((c) => c.id === id);
+}
 
 const EDGE_FADE: Record<string, string> = {
 	"": "",
