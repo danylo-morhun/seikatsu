@@ -1,5 +1,6 @@
 "use client";
 
+import { AutoHeight } from "@/components/AutoHeight";
 import { Spinner } from "@/components/Spinner";
 import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import { createTransaction, updateTransaction } from "@/features/kuroji/actions/transactions";
@@ -533,86 +534,89 @@ export function AddTransactionModal({
 						</TabsList>
 					</Tabs>
 
-					{amountHero}
+					{/* The fields between the tabs and the description differ per type: glide, don't jump. */}
+					<AutoHeight className="flex flex-col gap-4">
+						{amountHero}
 
-					{txType === "expense" && renderSplitRows(expenseCategories)}
-					{txType === "expense" && (
-						<div className={cn("animate-swap grid gap-4", pairWithDate)}>
-							<div className="space-y-2">
-								<Label htmlFor="add-paid-from">Paid from</Label>
-								<AccountSelect
-									id="add-paid-from"
-									control={control as never}
-									name="walletId"
-									accounts={wallets}
-									placeholder="Select account"
-									error={(errs.walletId as { message?: string })?.message}
-								/>
-							</div>
-							{dateField}
-						</div>
-					)}
-
-					{txType === "income" && renderSplitRows(incomeCategories)}
-					{txType === "income" && (
-						<div className={cn("animate-swap grid gap-4", pairWithDate)}>
-							<div className="space-y-2">
-								<Label htmlFor="add-received-in">Received in</Label>
-								<AccountSelect
-									id="add-received-in"
-									control={control as never}
-									name="walletId"
-									accounts={wallets}
-									placeholder="Select account"
-									error={(errs.walletId as { message?: string })?.message}
-								/>
-							</div>
-							{dateField}
-						</div>
-					)}
-
-					{txType === "transfer" && (
-						<div className="animate-swap grid gap-4 sm:grid-cols-2">
-							<div className="space-y-2">
-								<Label htmlFor="add-from">From</Label>
-								<AccountSelect
-									id="add-from"
-									control={control as never}
-									name="fromWalletId"
-									accounts={wallets}
-									placeholder="Select source account"
-									error={(errs.fromWalletId as { message?: string })?.message}
-								/>
-							</div>
-							<div className="space-y-2">
-								<Label htmlFor="add-to">To</Label>
-								<AccountSelect
-									id="add-to"
-									control={control as never}
-									name="toWalletId"
-									accounts={wallets}
-									placeholder="Select destination account"
-									error={(errs.toWalletId as { message?: string })?.message}
-								/>
-							</div>
-							{showReceived && (
-								<div className="space-y-2 sm:col-span-2">
-									<Label htmlFor="add-received">Received ({toCurrencyCode})</Label>
-									<Input
-										id="add-received"
-										{...amountInputProps}
-										placeholder="Blank = convert at the day's rate"
-										{...registerAny("received", { setValueAs: parseAmount })}
+						{txType === "expense" && renderSplitRows(expenseCategories)}
+						{txType === "expense" && (
+							<div className={cn("animate-swap grid gap-4", pairWithDate)}>
+								<div className="space-y-2">
+									<Label htmlFor="add-paid-from">Paid from</Label>
+									<AccountSelect
+										id="add-paid-from"
+										control={control as never}
+										name="walletId"
+										accounts={wallets}
+										placeholder="Select account"
+										error={(errs.walletId as { message?: string })?.message}
 									/>
-									{(errs.received as { message?: string })?.message && (
-										<p className="text-destructive text-[0.8rem]">
-											{(errs.received as { message?: string }).message}
-										</p>
-									)}
 								</div>
-							)}
-						</div>
-					)}
+								{dateField}
+							</div>
+						)}
+
+						{txType === "income" && renderSplitRows(incomeCategories)}
+						{txType === "income" && (
+							<div className={cn("animate-swap grid gap-4", pairWithDate)}>
+								<div className="space-y-2">
+									<Label htmlFor="add-received-in">Received in</Label>
+									<AccountSelect
+										id="add-received-in"
+										control={control as never}
+										name="walletId"
+										accounts={wallets}
+										placeholder="Select account"
+										error={(errs.walletId as { message?: string })?.message}
+									/>
+								</div>
+								{dateField}
+							</div>
+						)}
+
+						{txType === "transfer" && (
+							<div className="animate-swap grid gap-4 sm:grid-cols-2">
+								<div className="space-y-2">
+									<Label htmlFor="add-from">From</Label>
+									<AccountSelect
+										id="add-from"
+										control={control as never}
+										name="fromWalletId"
+										accounts={wallets}
+										placeholder="Select source account"
+										error={(errs.fromWalletId as { message?: string })?.message}
+									/>
+								</div>
+								<div className="space-y-2">
+									<Label htmlFor="add-to">To</Label>
+									<AccountSelect
+										id="add-to"
+										control={control as never}
+										name="toWalletId"
+										accounts={wallets}
+										placeholder="Select destination account"
+										error={(errs.toWalletId as { message?: string })?.message}
+									/>
+								</div>
+								{showReceived && (
+									<div className="space-y-2 sm:col-span-2">
+										<Label htmlFor="add-received">Received ({toCurrencyCode})</Label>
+										<Input
+											id="add-received"
+											{...amountInputProps}
+											placeholder="Blank = convert at the day's rate"
+											{...registerAny("received", { setValueAs: parseAmount })}
+										/>
+										{(errs.received as { message?: string })?.message && (
+											<p className="text-destructive text-[0.8rem]">
+												{(errs.received as { message?: string }).message}
+											</p>
+										)}
+									</div>
+								)}
+							</div>
+						)}
+					</AutoHeight>
 
 					<div className={cn("grid gap-4", txType === "transfer" && pairWithDate)}>
 						<div className="space-y-2">
