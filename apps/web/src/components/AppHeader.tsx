@@ -1,13 +1,15 @@
 "use client";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { TravelUnderline } from "@/components/TravelUnderline";
 import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
+import { useIndicator } from "@/hooks/useIndicator";
 import { getAppForPath } from "@/lib/app-themes";
 import { SidebarTrigger, cn } from "@seikatsu/ui";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Kuroji-only controls load on demand so the other apps' shells don't ship the
 // form/date-picker code (zod, react-hook-form, react-day-picker).
@@ -50,23 +52,11 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 
 	// One underline that travels between tabs, so the eye follows where you went.
 	const navRef = useRef<HTMLElement>(null);
-	const [underline, setUnderline] = useState<{ x: number; w: number; moved: boolean } | null>(null);
-	useLayoutEffect(() => {
-		const nav = navRef.current;
-		if (!nav) return;
-		function place() {
-			const label = nav?.querySelector<HTMLElement>(`[data-tab="${displayTab}"] > span`);
-			if (!label) return;
-			const link = label.parentElement as HTMLElement;
-			const x = link.offsetLeft + label.offsetLeft + 10;
-			const w = label.offsetWidth - 20;
-			// The first placement lands without travelling; only later moves animate.
-			setUnderline((prev) => ({ x, w, moved: prev !== null }));
-		}
-		place();
-		window.addEventListener("resize", place);
-		return () => window.removeEventListener("resize", place);
-	}, [displayTab]);
+	const underline = useIndicator(
+		navRef,
+		`[data-tab="${displayTab}"] > span`,
+		`${pathname}:${displayTab}`,
+	);
 
 	function tabHref(tab: KurojiTab) {
 		return buildTabHref(tab, searchParams.toString());
@@ -100,17 +90,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 					aria-label="Kuroji sections"
 					className="relative ml-3 hidden h-full shrink-0 items-stretch md:flex lg:ml-5"
 				>
-					{underline && (
-						<span
-							aria-hidden
-							className={cn(
-								"pointer-events-none absolute bottom-0 left-0 h-0.5 w-px origin-left rounded-full bg-primary",
-								underline.moved &&
-									"transition-transform duration-300 ease-in-out motion-reduce:transition-none",
-							)}
-							style={{ transform: `translateX(${underline.x}px) scaleX(${underline.w})` }}
-						/>
-					)}
+					<TravelUnderline indicator={underline} />
 					{KUROJI_TABS.map(({ value, label }) => {
 						const active = displayTab === value;
 						return (
