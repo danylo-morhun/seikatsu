@@ -717,6 +717,7 @@ export function KanbanBoard({
 				onArchive={handleCardArchive}
 				onDelete={handleCardDelete}
 				onProjectLabelsChange={setProjectLabels}
+				today={today}
 			/>
 
 			<Sheet open={archiveOpen} onOpenChange={setArchiveOpen}>
