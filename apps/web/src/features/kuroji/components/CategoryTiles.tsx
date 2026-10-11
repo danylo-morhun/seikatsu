@@ -83,7 +83,7 @@ export function CategoryTiles({
 							onKeyDown={(e) => onKeyDown(e, i)}
 							className={cn(tileClass, checked && checkedClass)}
 						>
-							<span className="line-clamp-2 flex-1 hyphens-auto break-words">{c.name}</span>
+							<span className="min-w-0 flex-1 truncate">{c.name}</span>
 							{/* Out of the flow, in space every tile keeps free, so the label never reflows. */}
 							{checked && (
 								<svg
