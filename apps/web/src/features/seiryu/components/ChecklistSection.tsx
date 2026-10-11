@@ -99,6 +99,7 @@ export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 			...itemsRef.current,
 			{
 				id: tempId,
+				clientKey: tempId,
 				title,
 				isCompleted: false,
 				position: generateKeyBetween(last?.position ?? null, null),
@@ -186,7 +187,7 @@ export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 							<ul className="-mx-2">
 								{sorted.map((item) => (
 									<ChecklistRow
-										key={item.id}
+										key={item.clientKey ?? item.id}
 										item={item}
 										onToggle={handleToggle}
 										onRename={handleRename}
@@ -250,6 +251,7 @@ const ChecklistRow = memo(function ChecklistRow({
 			style={{ transform: CSS.Translate.toString(transform), transition }}
 			className={cn(
 				"group flex items-center gap-1 rounded-md px-0.5 transition-colors duration-150 hover:bg-surface",
+				item.clientKey && "animate-drop",
 				isDragging && "relative z-10 bg-surface shadow-[0_24px_48px_-16px_oklch(0_0_0/55%)]",
 			)}
 		>

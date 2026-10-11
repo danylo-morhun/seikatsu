@@ -3,6 +3,7 @@
 import { DueDateChip } from "@/features/seiryu/components/DueDateChip";
 import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
 import { type CardData, isTempId } from "@/features/seiryu/lib/types";
+import { BAR_FILL, barClip } from "@/lib/bar";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { CheckListIcon, Note01Icon } from "@hugeicons/core-free-icons";
@@ -111,6 +112,15 @@ const CardBody = memo(function CardBody({ card, today }: { card: CardData; today
 							<HugeiconsIcon icon={CheckListIcon} className="h-3.5 w-3.5" />
 							{done}/{total}
 							<span className="sr-only"> checklist items done</span>
+							<span
+								aria-hidden
+								className="relative ml-0.5 h-1 w-8 overflow-hidden rounded-full bg-surface-2"
+							>
+								<span
+									className={cn(BAR_FILL, "absolute inset-0 rounded-full bg-primary/80")}
+									style={barClip(done / total)}
+								/>
+							</span>
 						</span>
 					)}
 					{card.description && (
