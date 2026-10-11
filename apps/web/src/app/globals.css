@@ -405,10 +405,10 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
 @keyframes progress-grow {
 	from {
-		width: 0;
+		scale: 0 1;
 	}
 	to {
-		width: 85%;
+		scale: 0.85 1;
 	}
 }
 
