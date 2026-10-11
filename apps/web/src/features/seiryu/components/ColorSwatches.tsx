@@ -18,7 +18,6 @@ export function ColorSwatches({ value, onChange, label }: Props) {
 			{LABEL_COLORS.map(({ name, hex }) => {
 				const on = value?.toLowerCase() === hex;
 				return (
-					// biome-ignore lint/a11y/useSemanticElements: a styled swatch, not a native radio
 					<button
 						key={hex}
 						type="button"
