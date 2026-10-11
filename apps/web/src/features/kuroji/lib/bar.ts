@@ -1,11 +1,13 @@
 import type { CSSProperties } from "react";
 
-/** A bar fill spans the full track and is clipped to its value, so a new value glides instead of jumping. */
-export const BAR_FILL =
-	"transition-[clip-path] duration-250 ease-in-out motion-reduce:transition-none";
+/**
+ * A bar fill spans the full track and is clipped to its value (see `.bar-fill` in globals.css):
+ * it pours in from empty when it appears and glides when the value changes.
+ */
+export const BAR_FILL = "bar-fill";
 
-/** Clips a full-width fill down to `ratio` (0–1), keeping the rounded end. */
-export function barClip(ratio: number): CSSProperties {
+/** The fill's value as a 0–1 `ratio`; `index` cascades the pour across a list of bars. */
+export function barClip(ratio: number, index = 0): CSSProperties {
 	const shown = Number.isFinite(ratio) ? Math.min(Math.max(ratio, 0), 1) : 0;
-	return { clipPath: `inset(0 ${100 - shown * 100}% 0 0 round 9999px)` };
+	return { "--fill": `${shown * 100}%`, "--i": index } as CSSProperties;
 }
