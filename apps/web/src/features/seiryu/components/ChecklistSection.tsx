@@ -1,18 +1,23 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
 import {
 	createChecklistItem,
 	deleteChecklistItem,
 	reorderChecklistItems,
 	toggleChecklistItem,
+	updateChecklistItem,
 } from "@/features/seiryu/actions/checklist";
-import type { ChecklistItemData } from "@/features/seiryu/components/KanbanCard";
 import { generateKeyBetween } from "@/features/seiryu/lib/position";
+import { type ChecklistItemData, isTempId } from "@/features/seiryu/lib/types";
+import { useDraft } from "@/features/seiryu/lib/use-draft";
+import { BAR_FILL, barClip } from "@/lib/bar";
 import {
 	DndContext,
 	type DragEndEvent,
-	PointerSensor,
+	KeyboardSensor,
+	type Modifier,
+	MouseSensor,
+	TouchSensor,
 	closestCenter,
 	useSensor,
 	useSensors,
@@ -20,235 +25,281 @@ import {
 import {
 	SortableContext,
 	arrayMove,
+	sortableKeyboardCoordinates,
 	useSortable,
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { cn } from "@seikatsu/ui";
-import { useId, useState, useTransition } from "react";
+import { Add01Icon, Cancel01Icon, DragDropVerticalIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Button, Checkbox, Input, cn } from "@seikatsu/ui";
+import { memo, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+
+const byPosition = (a: ChecklistItemData, b: ChecklistItemData) =>
+	a.position < b.position ? -1 : a.position > b.position ? 1 : 0;
+
+const restrictToVerticalAxis: Modifier = ({ transform }) => ({ ...transform, x: 0 });
+
+// Same rhythm as the board: settle on the strong ease-out, quicker than a page move.
+const SORT_TRANSITION = { duration: 200, easing: "cubic-bezier(0.23, 1, 0.32, 1)" };
 
 interface Props {
 	cardId: string;
 	initialItems: ChecklistItemData[];
+	/** Mirrors every change to the board, so the card's N/M updates live. */
 	onChange?: (items: ChecklistItemData[]) => void;
-}
-
-function SortableChecklistItem({
-	item,
-	onToggle,
-	onDelete,
-}: {
-	item: ChecklistItemData;
-	onToggle: (id: string) => void;
-	onDelete: (id: string) => void;
-}) {
-	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-		id: item.id,
-		disabled: item.id.startsWith("temp-"),
-	});
-	const style = { transform: CSS.Transform.toString(transform), transition };
-
-	return (
-		<div
-			ref={setNodeRef}
-			style={style}
-			className={cn("group flex items-center gap-2", isDragging && "opacity-40")}
-		>
-			<button
-				type="button"
-				{...attributes}
-				{...listeners}
-				className="cursor-grab text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing"
-				aria-label="Drag to reorder"
-			>
-				⠿
-			</button>
-			<input
-				type="checkbox"
-				checked={item.isCompleted}
-				onChange={() => onToggle(item.id)}
-				className="h-3.5 w-3.5 shrink-0 cursor-pointer rounded-sm accent-primary"
-			/>
-			<span
-				className={cn("flex-1 text-xs", item.isCompleted && "text-muted-foreground line-through")}
-			>
-				{item.title}
-			</span>
-			<button
-				type="button"
-				onClick={() => onDelete(item.id)}
-				className="invisible text-xs text-muted-foreground transition-colors hover:text-destructive group-hover:visible"
-			>
-				✕
-			</button>
-		</div>
-	);
 }
 
 export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 	const [items, setItems] = useState(initialItems);
+	const itemsRef = useRef(items);
 	const [newTitle, setNewTitle] = useState("");
-	const [isAdding, startAdd] = useTransition();
-	const [, startReorder] = useTransition();
-
 	const dndId = useId();
-	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+	const inputId = useId();
 
-	const sortedItems = [...items].sort((a, b) => {
-		if (!a.position) return 1;
-		if (!b.position) return -1;
-		return a.position < b.position ? -1 : 1;
-	});
+	// Mouse drags after 5px; touch after a 250ms press so swipes still scroll the sheet.
+	const sensors = useSensors(
+		useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+		useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+	);
+
+	const sorted = useMemo(() => [...items].sort(byPosition), [items]);
+	const done = items.filter((i) => i.isCompleted).length;
+	const total = items.length;
 
 	function update(next: ChecklistItemData[]) {
+		itemsRef.current = next;
 		setItems(next);
 		onChange?.(next);
 	}
 
-	function handleDragEnd(event: DragEndEvent) {
-		const { active, over } = event;
-		if (!over || active.id === over.id) return;
-
-		const oldIdx = sortedItems.findIndex((i) => i.id === active.id);
-		const newIdx = sortedItems.findIndex((i) => i.id === over.id);
-		if (oldIdx === -1 || newIdx === -1) return;
-
-		const reordered = arrayMove(sortedItems, oldIdx, newIdx);
-		const newPosition = generateKeyBetween(
-			reordered[newIdx - 1]?.position ?? null,
-			reordered[newIdx + 1]?.position ?? null,
-		);
-
-		update(items.map((i) => (i.id === active.id ? { ...i, position: newPosition } : i)));
-
-		startReorder(async () => {
-			const result = await reorderChecklistItems({ itemId: active.id as string, newPosition });
-			if ("error" in result) {
-				toast.error(result.error);
-				update(items);
-			}
-		});
+	function patch(itemId: string, changes: Partial<ChecklistItemData>) {
+		update(itemsRef.current.map((i) => (i.id === itemId ? { ...i, ...changes } : i)));
 	}
 
-	function handleAdd() {
+	async function run(mutation: Promise<{ error: string } | { success: true }>, undo: () => void) {
+		const result = await mutation;
+		if ("error" in result) {
+			toast.error(result.error);
+			undo();
+		}
+	}
+
+	function handleAdd(e: React.FormEvent) {
+		e.preventDefault();
 		const title = newTitle.trim();
 		if (!title) return;
 		setNewTitle("");
 
-		const tempId = `temp-${Math.random()}`;
-		const optimistic: ChecklistItemData = { id: tempId, title, isCompleted: false, position: "" };
-		update([...items, optimistic]);
+		const last = [...itemsRef.current].sort(byPosition).at(-1);
+		const tempId = `temp-${crypto.randomUUID()}`;
+		update([
+			...itemsRef.current,
+			{
+				id: tempId,
+				title,
+				isCompleted: false,
+				position: generateKeyBetween(last?.position ?? null, null),
+			},
+		]);
 
-		startAdd(async () => {
-			const result = await createChecklistItem({ cardId, title });
+		createChecklistItem({ cardId, title }).then((result) => {
 			if ("error" in result) {
 				toast.error(result.error);
-				setItems((prev) => {
-					const next = prev.filter((i) => i.id !== tempId);
-					onChange?.(next);
-					return next;
-				});
+				update(itemsRef.current.filter((i) => i.id !== tempId));
 				return;
 			}
-			setItems((prev) => {
-				const next = prev
-					.filter((i) => i.id !== tempId)
-					.concat({
-						id: result.data.id,
-						title,
-						isCompleted: false,
-						position: result.data.position,
-					});
-				onChange?.(next);
-				return next;
-			});
+			patch(tempId, { id: result.data.id, position: result.data.position });
 		});
 	}
 
-	async function handleToggle(itemId: string) {
-		const prev = items;
-		update(prev.map((i) => (i.id === itemId ? { ...i, isCompleted: !i.isCompleted } : i)));
-
-		const result = await toggleChecklistItem({ itemId });
-		if ("error" in result) {
-			toast.error(result.error);
-			update(prev);
-		}
+	function handleToggle(itemId: string) {
+		const item = itemsRef.current.find((i) => i.id === itemId);
+		if (!item) return;
+		patch(itemId, { isCompleted: !item.isCompleted });
+		run(toggleChecklistItem({ itemId }), () => patch(itemId, { isCompleted: item.isCompleted }));
 	}
 
-	async function handleDelete(itemId: string) {
-		const prev = items;
-		update(prev.filter((i) => i.id !== itemId));
-
-		const result = await deleteChecklistItem({ itemId });
-		if ("error" in result) {
-			toast.error(result.error);
-			update(prev);
-		}
+	function handleRename(itemId: string, title: string) {
+		const item = itemsRef.current.find((i) => i.id === itemId);
+		if (!item || title === item.title) return;
+		patch(itemId, { title });
+		run(updateChecklistItem({ itemId, title }), () => patch(itemId, { title: item.title }));
 	}
 
-	const done = items.filter((i) => i.isCompleted).length;
-	const total = items.length;
+	function handleDelete(itemId: string) {
+		const before = itemsRef.current;
+		update(before.filter((i) => i.id !== itemId));
+		run(deleteChecklistItem({ itemId }), () => update(before));
+	}
+
+	function handleDragEnd({ active, over }: DragEndEvent) {
+		if (!over || active.id === over.id) return;
+		const oldIdx = sorted.findIndex((i) => i.id === active.id);
+		const newIdx = sorted.findIndex((i) => i.id === over.id);
+		if (oldIdx === -1 || newIdx === -1) return;
+
+		const reordered = arrayMove(sorted, oldIdx, newIdx);
+		const newPosition = generateKeyBetween(
+			reordered[newIdx - 1]?.position ?? null,
+			reordered[newIdx + 1]?.position ?? null,
+		);
+		const itemId = active.id as string;
+		const oldPosition = sorted[oldIdx]?.position ?? newPosition;
+		patch(itemId, { position: newPosition });
+		run(reorderChecklistItems({ itemId, newPosition }), () =>
+			patch(itemId, { position: oldPosition }),
+		);
+	}
 
 	return (
-		<div className="flex flex-col gap-2">
-			<div className="flex items-center justify-between">
-				<span className="text-xs font-medium text-muted-foreground">Checklist</span>
+		<section aria-labelledby={`${inputId}-title`} className="space-y-3">
+			<div className="flex items-baseline justify-between gap-3">
+				<h3 id={`${inputId}-title`} className="text-sm font-medium">
+					Checklist
+				</h3>
 				{total > 0 && (
-					<span className="text-xs text-muted-foreground">
+					<span className="text-xs tabular-nums text-muted-foreground">
 						{done}/{total}
 					</span>
 				)}
 			</div>
 
 			{total > 0 && (
-				<DndContext
-					id={dndId}
-					sensors={sensors}
-					collisionDetection={closestCenter}
-					onDragEnd={handleDragEnd}
-				>
-					<SortableContext
-						items={sortedItems.map((i) => i.id)}
-						strategy={verticalListSortingStrategy}
+				<>
+					<div className="relative h-1 overflow-hidden rounded-full bg-surface-2">
+						<div
+							className={cn(BAR_FILL, "absolute inset-0 rounded-full bg-primary/80")}
+							style={barClip(done / total)}
+						/>
+					</div>
+					<DndContext
+						id={dndId}
+						sensors={sensors}
+						collisionDetection={closestCenter}
+						modifiers={[restrictToVerticalAxis]}
+						onDragEnd={handleDragEnd}
 					>
-						<div className="flex flex-col gap-1">
-							{sortedItems.map((item) => (
-								<SortableChecklistItem
-									key={item.id}
-									item={item}
-									onToggle={handleToggle}
-									onDelete={handleDelete}
-								/>
-							))}
-						</div>
-					</SortableContext>
-				</DndContext>
+						<SortableContext items={sorted.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+							<ul className="-mx-2">
+								{sorted.map((item) => (
+									<ChecklistRow
+										key={item.id}
+										item={item}
+										onToggle={handleToggle}
+										onRename={handleRename}
+										onDelete={handleDelete}
+									/>
+								))}
+							</ul>
+						</SortableContext>
+					</DndContext>
+				</>
 			)}
 
-			<div className="flex items-center gap-2">
-				<input
+			<form onSubmit={handleAdd} className="flex gap-1.5">
+				<label htmlFor={inputId} className="sr-only">
+					New checklist item
+				</label>
+				<Input
+					id={inputId}
 					value={newTitle}
+					maxLength={500}
+					autoComplete="off"
 					onChange={(e) => setNewTitle(e.target.value)}
-					onKeyDown={(e) => {
-						if (e.key === "Enter") {
-							e.preventDefault();
-							if (!isAdding) handleAdd();
-						}
-					}}
-					placeholder="Add item…"
-					className="flex-1 rounded border border-input bg-transparent px-2 py-1 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+					placeholder="Add an item…"
 				/>
-				<button
-					type="button"
-					disabled={isAdding || !newTitle.trim()}
-					onClick={handleAdd}
-					className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
-				>
-					{isAdding ? <Spinner className="h-3 w-3" /> : "Add"}
-				</button>
-			</div>
-		</div>
+				<Button type="submit" variant="outline" className="gap-1.5" disabled={!newTitle.trim()}>
+					<HugeiconsIcon icon={Add01Icon} className="h-4 w-4" />
+					Item
+				</Button>
+			</form>
+		</section>
 	);
 }
+
+const ChecklistRow = memo(function ChecklistRow({
+	item,
+	onToggle,
+	onRename,
+	onDelete,
+}: {
+	item: ChecklistItemData;
+	onToggle: (id: string) => void;
+	onRename: (id: string, title: string) => void;
+	onDelete: (id: string) => void;
+}) {
+	const isTemp = isTempId(item.id);
+	const checkboxId = useId();
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+		id: item.id,
+		disabled: isTemp,
+		transition: SORT_TRANSITION,
+	});
+	const { draft, change, flush, revert } = useDraft(item.title, (title) => {
+		const trimmed = title.trim();
+		if (trimmed) onRename(item.id, trimmed);
+		else revert();
+	});
+
+	return (
+		<li
+			ref={setNodeRef}
+			style={{ transform: CSS.Translate.toString(transform), transition }}
+			className={cn(
+				"group flex items-center gap-1 rounded-md px-0.5 transition-colors duration-150 hover:bg-surface",
+				isDragging && "relative z-10 bg-surface shadow-[0_24px_48px_-16px_oklch(0_0_0/55%)]",
+			)}
+		>
+			<button
+				type="button"
+				{...attributes}
+				{...listeners}
+				disabled={isTemp}
+				aria-label={`Reorder ${item.title}`}
+				className="flex h-8 w-6 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground/50 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing disabled:cursor-default disabled:opacity-0"
+			>
+				<HugeiconsIcon icon={DragDropVerticalIcon} className="h-4 w-4" />
+			</button>
+			<Checkbox
+				id={checkboxId}
+				checked={item.isCompleted}
+				disabled={isTemp}
+				onCheckedChange={() => onToggle(item.id)}
+				aria-label={item.title}
+			/>
+			<input
+				value={draft}
+				disabled={isTemp}
+				maxLength={500}
+				aria-label={`Rename ${item.title}`}
+				onChange={(e) => change(e.target.value)}
+				onBlur={flush}
+				onKeyDown={(e) => {
+					if (e.key === "Enter") e.currentTarget.blur();
+					if (e.key === "Escape") {
+						// Esc undoes the edit; it shouldn't also close the sheet.
+						e.stopPropagation();
+						revert();
+						e.currentTarget.blur();
+					}
+				}}
+				className={cn(
+					"h-9 min-w-0 flex-1 rounded bg-transparent px-2 text-sm outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring",
+					item.isCompleted && "text-muted-foreground line-through decoration-muted-foreground/60",
+				)}
+			/>
+			<button
+				type="button"
+				onClick={() => onDelete(item.id)}
+				disabled={isTemp}
+				aria-label={`Delete ${item.title}`}
+				className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 outline-none transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-0"
+			>
+				<HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
+			</button>
+		</li>
+	);
+});
