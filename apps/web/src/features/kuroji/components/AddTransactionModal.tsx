@@ -396,7 +396,7 @@ export function AddTransactionModal({
 	);
 
 	const renderSplitRows = (categories: Account[]) => (
-		<div className="space-y-2">
+		<div className="animate-swap space-y-2">
 			<Label id="add-category-label">{isSplit ? "Categories" : "Category"}</Label>
 			{!isSplit && txType !== "transfer" && (
 				<>
@@ -537,7 +537,7 @@ export function AddTransactionModal({
 
 					{txType === "expense" && renderSplitRows(expenseCategories)}
 					{txType === "expense" && (
-						<div className={cn("grid gap-4", pairWithDate)}>
+						<div className={cn("animate-swap grid gap-4", pairWithDate)}>
 							<div className="space-y-2">
 								<Label htmlFor="add-paid-from">Paid from</Label>
 								<AccountSelect
@@ -555,7 +555,7 @@ export function AddTransactionModal({
 
 					{txType === "income" && renderSplitRows(incomeCategories)}
 					{txType === "income" && (
-						<div className={cn("grid gap-4", pairWithDate)}>
+						<div className={cn("animate-swap grid gap-4", pairWithDate)}>
 							<div className="space-y-2">
 								<Label htmlFor="add-received-in">Received in</Label>
 								<AccountSelect
@@ -572,7 +572,7 @@ export function AddTransactionModal({
 					)}
 
 					{txType === "transfer" && (
-						<div className="grid gap-4 sm:grid-cols-2">
+						<div className="animate-swap grid gap-4 sm:grid-cols-2">
 							<div className="space-y-2">
 								<Label htmlFor="add-from">From</Label>
 								<AccountSelect

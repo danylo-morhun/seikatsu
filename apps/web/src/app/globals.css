@@ -420,6 +420,18 @@
 	}
 }
 
+/* Fields that change with a form's mode (expense / income / transfer) settle in as they swap. */
+.animate-swap {
+	animation: swap 240ms var(--ease-out) backwards;
+}
+@keyframes swap {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+		filter: blur(3px);
+	}
+}
+
 /* Revealed rows (expand, "show more") drop into place from the row above, cascading by --i. */
 .animate-drop {
 	animation: drop 260ms var(--ease-out) backwards;
@@ -449,7 +461,8 @@
 @media (prefers-reduced-motion: reduce) {
 	.animate-rise,
 	.animate-page,
-	.animate-drop {
+	.animate-drop,
+	.animate-swap {
 		animation-name: fade-in;
 	}
 	.bar-fill {
