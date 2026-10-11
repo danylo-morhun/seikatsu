@@ -83,8 +83,8 @@ export function NavigationProgress() {
 			<div
 				className={
 					state === "running"
-						? "h-full w-[85%] bg-primary [animation:progress-grow_5s_cubic-bezier(0.1,0.7,0.2,1)]"
-						: "h-full w-full bg-primary opacity-0 transition-[width,opacity] duration-300 ease-in"
+						? "h-full w-full origin-left scale-x-[0.85] bg-primary [animation:progress-grow_5s_cubic-bezier(0.1,0.7,0.2,1)]"
+						: "h-full w-full origin-left bg-primary opacity-0 transition-[scale,opacity] duration-200 ease-out"
 				}
 			/>
 		</div>
