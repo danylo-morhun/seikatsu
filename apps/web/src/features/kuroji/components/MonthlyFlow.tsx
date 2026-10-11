@@ -1,7 +1,7 @@
 import type { MonthlyTrend } from "@/features/kuroji/actions/trends";
-import { BAR_FILL, barClip } from "@/features/kuroji/lib/bar";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { flowRows } from "@/features/kuroji/lib/monthly-flow";
+import { BAR_FILL, barClip } from "@/lib/bar";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 
