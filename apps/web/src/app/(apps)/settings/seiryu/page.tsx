@@ -5,6 +5,7 @@ import { getOpenCardCounts, getProjects } from "@/features/seiryu/actions/projec
 import { SettingsArchive } from "@/features/seiryu/components/SettingsArchive";
 import { SettingsLabels } from "@/features/seiryu/components/SettingsLabels";
 import { NewProjectButton, SettingsProjects } from "@/features/seiryu/components/SettingsProjects";
+import { toArchivedRows } from "@/features/seiryu/lib/archive";
 import { getCurrentWorkspace } from "@/lib/session";
 import { getUserTimeZone, getUserToday } from "@/lib/timezone";
 import { redirect } from "next/navigation";
@@ -87,25 +88,13 @@ export default async function SeiryuSettingsPage({
 			getUserTimeZone(),
 			getUserToday(),
 		]);
-		const day = new Intl.DateTimeFormat("en-CA", {
-			timeZone,
-			year: "numeric",
-			month: "2-digit",
-			day: "2-digit",
-		});
 		body = (
 			<section>
 				<SectionHeader
 					title="Archive"
 					description="Cards cleared off their boards. Restore one to put it back at the end of its column."
 				/>
-				<SettingsArchive
-					today={today}
-					cards={cards.map(({ archivedAt, ...card }) => ({
-						...card,
-						archivedOn: archivedAt ? day.format(archivedAt) : null,
-					}))}
-				/>
+				<SettingsArchive today={today} cards={toArchivedRows(cards, timeZone)} />
 			</section>
 		);
 	}

@@ -16,6 +16,8 @@ import { FilterChips, FilterMenu } from "@/features/seiryu/components/FilterMenu
 import { KanbanCardOverlay, freshCards } from "@/features/seiryu/components/KanbanCard";
 import { KanbanColumn, KanbanColumnOverlay } from "@/features/seiryu/components/KanbanColumn";
 import { NewCardDialog } from "@/features/seiryu/components/NewCardDialog";
+import { SettingsArchive } from "@/features/seiryu/components/SettingsArchive";
+import type { ArchivedCardRow } from "@/features/seiryu/lib/archive";
 import { NEW_CARD_EVENT } from "@/features/seiryu/lib/events";
 import {
 	type Filters,
@@ -61,8 +63,15 @@ import {
 } from "@dnd-kit/sortable";
 import { Archive01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Button, cn } from "@seikatsu/ui";
-import Link from "next/link";
+import {
+	Button,
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+	cn,
+} from "@seikatsu/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -74,6 +83,7 @@ interface Props {
 	projectLabels: LabelData[];
 	/** The user's calendar day (tz cookie), so "overdue" matches on server and client. */
 	today: string;
+	archived: ArchivedCardRow[];
 }
 
 const byPosition = (a: { position: string }, b: { position: string }) =>
@@ -97,6 +107,7 @@ export function KanbanBoard({
 	cards: serverCards,
 	projectLabels: serverLabels,
 	today,
+	archived,
 }: Props) {
 	const projectId = project.id;
 	// Local copies change optimistically; fresh props from each action's re-render replace
@@ -120,6 +131,7 @@ export function KanbanBoard({
 	const [activeType, setActiveType] = useState<"column" | "card" | null>(null);
 	const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 	const [sheetOpen, setSheetOpen] = useState(false);
+	const [archiveOpen, setArchiveOpen] = useState(false);
 	const [capture, setCapture] = useState<{ open: boolean; instant: boolean }>({
 		open: false,
 		instant: false,
@@ -550,11 +562,16 @@ export function KanbanBoard({
 				<h1 className="min-w-0 max-w-full truncate text-xl font-semibold">{project.name}</h1>
 				<div className="flex items-center gap-1.5">
 					<FilterMenu filters={filters} labels={projectLabels} onChange={setFilters} />
-					<Button asChild variant="ghost" className="gap-1.5 text-muted-foreground">
-						<Link href="/settings/seiryu?section=archive" prefetch>
-							<HugeiconsIcon icon={Archive01Icon} className="h-4 w-4" />
-							<span className="max-sm:sr-only">Archived</span>
-						</Link>
+					<Button
+						variant="ghost"
+						className="gap-1.5 text-muted-foreground"
+						onClick={() => setArchiveOpen(true)}
+					>
+						<HugeiconsIcon icon={Archive01Icon} className="h-4 w-4" />
+						Archived
+						{archived.length > 0 && (
+							<span className="font-figures text-xs tabular-nums">{archived.length}</span>
+						)}
 					</Button>
 				</div>
 				<FilterChips filters={filters} labels={projectLabels} onChange={setFilters} />
@@ -651,6 +668,23 @@ export function KanbanBoard({
 				onDelete={handleCardDelete}
 				onProjectLabelsChange={setProjectLabels}
 			/>
+
+			<Sheet open={archiveOpen} onOpenChange={setArchiveOpen}>
+				<SheetContent
+					side="right"
+					className="w-full gap-0 data-[side=right]:w-full sm:max-w-lg data-[side=right]:sm:max-w-lg"
+				>
+					<SheetHeader className="px-4 pt-5 sm:px-6">
+						<SheetTitle>Archived</SheetTitle>
+						<SheetDescription>
+							Cards cleared off {project.name}. Restore one to put it back at the end of its column.
+						</SheetDescription>
+					</SheetHeader>
+					<div className="flex-1 overflow-y-auto px-4 pt-2 pb-10 [scrollbar-width:thin] sm:px-6">
+						<SettingsArchive cards={archived} today={today} grouped={false} />
+					</div>
+				</SheetContent>
+			</Sheet>
 
 			<NewCardDialog
 				open={capture.open}
