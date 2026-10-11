@@ -17,7 +17,6 @@ import { FilterChips, FilterMenu } from "@/features/seiryu/components/FilterMenu
 import { KanbanCardOverlay, freshCards } from "@/features/seiryu/components/KanbanCard";
 import { KanbanColumn, KanbanColumnOverlay } from "@/features/seiryu/components/KanbanColumn";
 import { NewCardDialog } from "@/features/seiryu/components/NewCardDialog";
-import { SeiryuMobileAddFab } from "@/features/seiryu/components/SeiryuMobileAddFab";
 import { NEW_CARD_EVENT } from "@/features/seiryu/lib/events";
 import {
 	type Filters,
@@ -187,6 +186,17 @@ export function KanbanBoard({
 			window.removeEventListener(NEW_CARD_EVENT, onRequest);
 		};
 	}, []);
+
+	// Arriving from the bottom nav's add button on another page: open capture, drop the flag.
+	const wantsNew = searchParams.get("new") === "1";
+	useEffect(() => {
+		if (!wantsNew) return;
+		setCapture({ open: true, instant: false });
+		const rest = new URLSearchParams(searchParams.toString());
+		rest.delete("new");
+		const query = rest.toString();
+		router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+	}, [wantsNew, searchParams, pathname, router]);
 
 	const handleCardOpen = useCallback((cardId: string) => {
 		setSelectedCardId(cardId);
@@ -630,8 +640,6 @@ export function KanbanBoard({
 				columns={sortedColumns}
 				onAdd={handleAddCard}
 			/>
-
-			<SeiryuMobileAddFab columns={sortedColumns} onAddCard={handleAddCard} />
 		</div>
 	);
 }
