@@ -128,7 +128,8 @@ export async function createCard(
 
 	if (!card) return { error: "Failed to create card" };
 
-	revalidatePath(`/seiryu/${projectId}`);
+	// Open-card counts in the project list change too.
+	revalidatePath("/seiryu", "layout");
 	return { success: true, data: { id: card.id, position: card.position } };
 }
 
@@ -163,7 +164,9 @@ export async function archiveCard(input: unknown): Promise<{ error: string } | {
 		.set({ archivedAt: new Date() })
 		.where(eq(seiryuCards.id, parsed.data.cardId));
 
-	revalidatePath(`/seiryu/${card.projectId}`);
+	// Open-card counts in the project list change too.
+	revalidatePath("/seiryu", "layout");
+	revalidatePath("/settings/seiryu");
 	return { success: true };
 }
 
@@ -190,7 +193,8 @@ export async function moveCard(
 		.set({ columnId: newColumnId, position })
 		.where(eq(seiryuCards.id, cardId));
 
-	revalidatePath(`/seiryu/${card.projectId}`);
+	// Open-card counts in the project list change too.
+	revalidatePath("/seiryu", "layout");
 	return { success: true, data: { position } };
 }
 
@@ -230,7 +234,8 @@ export async function restoreCard(
 		.set({ archivedAt: null, position })
 		.where(eq(seiryuCards.id, cardId));
 
-	revalidatePath(`/seiryu/${card.projectId}`);
+	// Open-card counts in the project list change too.
+	revalidatePath("/seiryu", "layout");
 	revalidatePath("/settings/seiryu");
 	return { success: true, data: { columnId: card.columnId, position } };
 }
@@ -246,7 +251,8 @@ export async function deleteCard(input: unknown): Promise<{ error: string } | { 
 
 	await db.delete(seiryuCards).where(eq(seiryuCards.id, parsed.data.cardId));
 
-	revalidatePath(`/seiryu/${card.projectId}`);
+	// Open-card counts in the project list change too.
+	revalidatePath("/seiryu", "layout");
 	revalidatePath("/settings/seiryu");
 	return { success: true };
 }
