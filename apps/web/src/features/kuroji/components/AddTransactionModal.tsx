@@ -9,11 +9,6 @@ import { CategorySelect } from "@/features/kuroji/components/CategoryCombobox";
 import { CategoryTiles } from "@/features/kuroji/components/CategoryTiles";
 import { TagSelect } from "@/features/kuroji/components/TagSelect";
 import { readCaptureMemory, rememberCapture } from "@/features/kuroji/lib/capture-memory";
-import {
-	OVERLAY_SELECTOR,
-	isEditable,
-	shouldOpenCapture,
-} from "@/features/kuroji/lib/capture-shortcut";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
 import { addTagToFormOptions, useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { formatCurrency } from "@/features/kuroji/lib/format";
@@ -25,6 +20,7 @@ import {
 	addTransactionFormSchema,
 	parseAmount,
 } from "@/features/kuroji/lib/transaction-schema";
+import { OVERLAY_SELECTOR, isEditable, shouldOpenCapture } from "@/lib/capture-shortcut";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Add01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
