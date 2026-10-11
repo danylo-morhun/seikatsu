@@ -129,7 +129,10 @@ export function SeiryuNavTabs({ projects, cardCounts }: Props) {
 			</nav>
 
 			<Sheet open={projectsOpen} onOpenChange={setProjectsOpen}>
-				<SheetContent side="left" className="w-[85vw] p-4 pt-14 text-sm sm:max-w-sm">
+				<SheetContent
+					side="left"
+					className="p-4 pt-14 text-sm data-[side=left]:w-[85vw] data-[side=left]:sm:max-w-sm"
+				>
 					<SheetTitle className="sr-only">Projects</SheetTitle>
 					<SheetDescription className="sr-only">Pick a project to open its board.</SheetDescription>
 					<ProjectList
