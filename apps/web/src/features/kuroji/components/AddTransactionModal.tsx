@@ -488,9 +488,9 @@ export function AddTransactionModal({
 			{!editing && (
 				<DialogTrigger asChild>
 					{trigger ?? (
-						<Button size="icon" className="md:w-auto md:gap-2 md:px-3" aria-label="New transaction">
+						<Button size="icon" className="lg:w-auto lg:gap-2 lg:px-3" aria-label="New transaction">
 							<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
-							<span className="hidden md:inline">New Transaction</span>
+							<span className="hidden lg:inline">New Transaction</span>
 						</Button>
 					)}
 				</DialogTrigger>

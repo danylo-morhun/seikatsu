@@ -137,7 +137,7 @@ export function DateRangePicker() {
 				<PopoverTrigger asChild>
 					<Button
 						variant="outline"
-						className={cn("min-w-0 gap-2 px-2.5 font-normal", hasFilter && "rounded-r-none")}
+						className={cn("min-w-0 shrink gap-2 px-2.5 font-normal", hasFilter && "rounded-r-none")}
 						aria-label={`Period: ${label}. Change period`}
 					>
 						<HugeiconsIcon icon={Calendar01Icon} className="h-4 w-4 shrink-0 opacity-70" />
