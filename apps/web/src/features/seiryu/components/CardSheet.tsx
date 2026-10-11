@@ -65,7 +65,7 @@ export function CardSheet({
 				<SheetContent
 					side="right"
 					aria-labelledby={titleId}
-					className="w-full gap-0 text-sm sm:max-w-lg"
+					className="w-full gap-0 text-sm data-[side=right]:w-full sm:max-w-lg data-[side=right]:sm:max-w-lg"
 					// Focus the sheet itself, not the title: on a phone that would pop the keyboard.
 					onOpenAutoFocus={(e) => {
 						e.preventDefault();
