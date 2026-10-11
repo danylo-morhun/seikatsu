@@ -46,10 +46,11 @@ export const createColumnSchema = z.object({
 
 export const updateColumnSchema = z.object({
 	columnId: z.string().uuid(),
-	name: z.string().min(1).max(100).optional(),
+	name: z.string().trim().min(1).max(100).optional(),
 	color: z
 		.string()
 		.regex(/^#[0-9a-fA-F]{6}$/)
+		.nullable()
 		.optional(),
 });
 
@@ -106,6 +107,11 @@ export const createChecklistItemSchema = z.object({
 	title: z.string().min(1, "Title is required").max(500),
 });
 
+export const updateChecklistItemSchema = z.object({
+	itemId: z.string().uuid(),
+	title: z.string().trim().min(1, "Title is required").max(500),
+});
+
 export const toggleChecklistItemSchema = z.object({
 	itemId: z.string().uuid(),
 });
@@ -125,6 +131,15 @@ export const createLabelSchema = z.object({
 	projectId: z.string().uuid(),
 	name: z.string().min(1, "Name is required").max(100),
 	color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Invalid hex color"),
+});
+
+export const updateLabelSchema = z.object({
+	labelId: z.string().uuid(),
+	name: z.string().trim().min(1, "Name is required").max(100).optional(),
+	color: z
+		.string()
+		.regex(/^#[0-9a-fA-F]{6}$/, "Invalid hex color")
+		.optional(),
 });
 
 export const deleteLabelSchema = z.object({
