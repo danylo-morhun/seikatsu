@@ -3,9 +3,12 @@
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TravelUnderline } from "@/components/TravelUnderline";
 import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
+import { requestNewCard } from "@/features/seiryu/lib/events";
 import { useIndicator } from "@/hooks/useIndicator";
 import { getAppForPath } from "@/lib/app-themes";
-import { SidebarTrigger, cn } from "@seikatsu/ui";
+import { Add01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Button, SidebarTrigger, cn } from "@seikatsu/ui";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -41,6 +44,8 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 
 	const isKurojiHome = pathname === "/kuroji";
 	const isKuroji = pathname.startsWith("/kuroji");
+	// A Seiryu board (not a card page): its capture action sits where Kuroji's does.
+	const isSeiryuBoard = /^\/seiryu\/[^/]+$/.test(pathname);
 	const activeTab = (searchParams.get("tab") as KurojiTab) || "expense";
 	// Highlight the clicked tab immediately; the URL catches up when navigation commits.
 	const [pendingTab, setPendingTab] = useState<KurojiTab | null>(null);
@@ -128,6 +133,19 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 								/>
 							</span>
 						</>
+					)}
+					{isSeiryuBoard && (
+						<span className="hidden md:contents">
+							<Button
+								size="icon"
+								className="lg:w-auto lg:gap-2 lg:px-3"
+								aria-label="New card"
+								onClick={requestNewCard}
+							>
+								<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
+								<span className="hidden lg:inline">New Card</span>
+							</Button>
+						</span>
 					)}
 					<ThemeToggle />
 				</div>
