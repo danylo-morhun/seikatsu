@@ -3,6 +3,7 @@
 import { formatShortDate } from "@/features/kuroji/lib/dates";
 import { deleteCard, restoreCard } from "@/features/seiryu/actions/cards";
 import { ConfirmDelete } from "@/features/seiryu/components/ConfirmDelete";
+import type { ArchivedCardRow } from "@/features/seiryu/lib/archive";
 import { Archive01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@seikatsu/ui";
@@ -10,18 +11,17 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
-type Row = {
-	id: string;
-	title: string;
-	/** YYYY-MM-DD in the user's time zone. */
-	archivedOn: string | null;
-	projectId: string;
-	projectName: string;
-	columnName: string;
-};
+type Row = ArchivedCardRow;
+
+interface Props {
+	cards: Row[];
+	today: string;
+	/** Off on a board, where every card is from the same project. */
+	grouped?: boolean;
+}
 
 /** Archived cards by project, as Kuroji lists archived accounts: restore in one tap. */
-export function SettingsArchive({ cards, today }: { cards: Row[]; today: string }) {
+export function SettingsArchive({ cards, today, grouped = true }: Props) {
 	const [isPending, startTransition] = useTransition();
 	const [busyId, setBusyId] = useState<string | null>(null);
 	const [deleting, setDeleting] = useState<Row | null>(null);
@@ -29,7 +29,8 @@ export function SettingsArchive({ cards, today }: { cards: Row[]; today: string 
 	if (cards.length === 0) {
 		return (
 			<p className="py-8 text-sm text-muted-foreground">
-				Nothing archived. Archive a card from its menu to clear it off the board without losing it.
+				Nothing archived{grouped ? "" : " in this project"}. Archive a card from its menu to clear
+				it off the board without losing it.
 			</p>
 		);
 	}
@@ -59,7 +60,7 @@ export function SettingsArchive({ cards, today }: { cards: Row[]; today: string 
 					className="animate-rise"
 					style={{ "--i": gi } as React.CSSProperties}
 				>
-					<h3 className="mb-2 text-sm font-semibold">{group.name}</h3>
+					{grouped && <h3 className="mb-2 text-sm font-semibold">{group.name}</h3>}
 					<ul className="divide-y divide-rule border-y border-rule">
 						{group.rows.map((card) => (
 							<li key={card.id} className="flex items-center gap-3 py-2.5">

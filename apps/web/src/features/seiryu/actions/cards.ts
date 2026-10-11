@@ -90,7 +90,8 @@ export async function getCards(projectId: string) {
 }
 
 /** Every archived card in the workspace, newest first, with where it lived (settings). */
-export async function getWorkspaceArchivedCards() {
+/** Archived cards across the workspace, or in one of its projects. */
+export async function getWorkspaceArchivedCards(projectId?: string) {
 	const workspace = await requireWorkspace();
 	return db
 		.select({
@@ -104,7 +105,13 @@ export async function getWorkspaceArchivedCards() {
 		.from(seiryuCards)
 		.innerJoin(seiryuProjects, eq(seiryuProjects.id, seiryuCards.projectId))
 		.innerJoin(seiryuColumns, eq(seiryuColumns.id, seiryuCards.columnId))
-		.where(and(eq(seiryuProjects.workspaceId, workspace.id), isNotNull(seiryuCards.archivedAt)))
+		.where(
+			and(
+				eq(seiryuProjects.workspaceId, workspace.id),
+				isNotNull(seiryuCards.archivedAt),
+				projectId ? eq(seiryuCards.projectId, projectId) : undefined,
+			),
+		)
 		.orderBy(asc(seiryuProjects.position), desc(seiryuCards.archivedAt));
 }
 

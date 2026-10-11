@@ -1,9 +1,10 @@
-import { getCards } from "@/features/seiryu/actions/cards";
+import { getCards, getWorkspaceArchivedCards } from "@/features/seiryu/actions/cards";
 import { getColumns } from "@/features/seiryu/actions/columns";
 import { getLabels } from "@/features/seiryu/actions/labels";
 import { getProjects } from "@/features/seiryu/actions/projects";
 import { KanbanBoard } from "@/features/seiryu/components/KanbanBoard";
-import { getUserToday } from "@/lib/timezone";
+import { toArchivedRows } from "@/features/seiryu/lib/archive";
+import { getUserTimeZone, getUserToday } from "@/lib/timezone";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
@@ -19,11 +20,13 @@ export default async function SeiryuProjectPage({
 	// Stale links (a deleted project) land on the Seiryu index instead of a 404.
 	if (!project) redirect("/seiryu");
 
-	const [columns, cards, projectLabels, today] = await Promise.all([
+	const [columns, cards, projectLabels, archived, today, timeZone] = await Promise.all([
 		getColumns(projectId),
 		getCards(projectId),
 		getLabels(projectId),
+		getWorkspaceArchivedCards(projectId),
 		getUserToday(),
+		getUserTimeZone(),
 	]);
 
 	return (
@@ -34,6 +37,7 @@ export default async function SeiryuProjectPage({
 				columns={columns}
 				cards={cards}
 				projectLabels={projectLabels}
+				archived={toArchivedRows(archived, timeZone)}
 			/>
 		</Suspense>
 	);
