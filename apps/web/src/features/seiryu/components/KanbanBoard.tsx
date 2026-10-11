@@ -139,11 +139,18 @@ export function KanbanBoard({
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
-	const [, startFilter] = useTransition();
-	const filters = useMemo(() => readFilters(searchParams), [searchParams]);
+	const [isFiltering, startFilter] = useTransition();
+	const urlFilters = useMemo(() => readFilters(searchParams), [searchParams]);
+	// The menu stays open for several quick picks; each builds on the last one, not on a URL
+	// that hasn't caught up yet. The URL takes over again once no replace is pending.
+	const [filters, setLocalFilters] = useState(urlFilters);
+	useEffect(() => {
+		if (!isFiltering) setLocalFilters(urlFilters);
+	}, [urlFilters, isFiltering]);
 	const isFiltered = filterCount(filters) > 0;
 
 	function setFilters(next: Filters) {
+		setLocalFilters(next);
 		const query = writeFilters(searchParams, next).toString();
 		startFilter(() => router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false }));
 	}
