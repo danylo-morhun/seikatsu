@@ -127,6 +127,13 @@
 			"when": 1791134201360,
 			"tag": "0017_wide_wallflower",
 			"breakpoints": true
+		},
+		{
+			"idx": 18,
+			"version": "7",
+			"when": 1791748848750,
+			"tag": "0018_seiryu_done_column",
+			"breakpoints": true
 		}
 	]
 }
