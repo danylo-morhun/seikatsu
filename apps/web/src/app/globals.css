@@ -242,11 +242,23 @@
 
 /* ── Urushi signatures ─────────────────────────────────────────────────────── */
 
-/* Raised surfaces are flat lacquer: no wash, no pigment edge, only a deep shadow beneath. */
+/* Raised surfaces are flat lacquer that glows: a deep shadow beneath and a soft halo of the
+   app's pigment around the edge, like lacquer catching lamplight. No wash, no rim inside. */
 [role="dialog"],
-[data-slot="popover-content"],
+[data-radix-popper-content-wrapper] > :not([data-slot="tooltip-content"]),
 [data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
-	box-shadow: 0 24px 48px -16px oklch(0 0 0 / 55%);
+	--glow: color-mix(in oklch, var(--primary) 26%, transparent);
+	box-shadow: 0 24px 48px -16px oklch(0 0 0 / 55%), 0 0 72px -12px var(--glow);
+}
+/* Small surfaces get a tighter halo, so a popover doesn't outshine its trigger. */
+[data-radix-popper-content-wrapper] > :not([data-slot="tooltip-content"]),
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
+	box-shadow: 0 16px 32px -12px oklch(0 0 0 / 50%), 0 0 56px -10px var(--glow);
+}
+/* On paper a glow reads as a stain: fainter there. */
+:root:not(.dark)
+	:is([role="dialog"], [data-radix-popper-content-wrapper] > :not([data-slot="tooltip-content"])) {
+	--glow: color-mix(in oklch, var(--primary) 16%, transparent);
 }
 
 /* Toasts: a small lacquer slip, lit from inside like a dialog (above). Status is told by the
@@ -266,7 +278,8 @@
 }
 /* On paper the lacquer's deep shadow reads as a smudge; a stack of slips needs a lighter one. */
 :root:not(.dark) [data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
-	box-shadow: 0 12px 32px -12px oklch(0.2 0.015 40 / 22%);
+	--glow: color-mix(in oklch, var(--primary) 16%, transparent);
+	box-shadow: 0 12px 32px -12px oklch(0.2 0.015 40 / 22%), 0 0 40px -10px var(--glow);
 }
 [data-sonner-toaster] [data-sonner-toast][data-styled="true"] > * {
 	transition-duration: 200ms;
