@@ -12,7 +12,17 @@ import {
 	setCardLabelsSchema,
 	updateLabelSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
-import { and, asc, db, eq, inArray, seiryuCardLabels, seiryuLabels } from "@seikatsu/db";
+import {
+	and,
+	asc,
+	count,
+	db,
+	eq,
+	inArray,
+	seiryuCardLabels,
+	seiryuLabels,
+	seiryuProjects,
+} from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 export async function getLabels(projectId: string) {
@@ -24,6 +34,26 @@ export async function getLabels(projectId: string) {
 		.from(seiryuLabels)
 		.where(eq(seiryuLabels.projectId, projectId))
 		.orderBy(asc(seiryuLabels.name));
+}
+
+/** Every label in the workspace with its project and how many cards wear it (settings). */
+export async function getWorkspaceLabels() {
+	const workspace = await requireWorkspace();
+	return db
+		.select({
+			id: seiryuLabels.id,
+			name: seiryuLabels.name,
+			color: seiryuLabels.color,
+			projectId: seiryuLabels.projectId,
+			projectName: seiryuProjects.name,
+			cardCount: count(seiryuCardLabels.cardId),
+		})
+		.from(seiryuLabels)
+		.innerJoin(seiryuProjects, eq(seiryuProjects.id, seiryuLabels.projectId))
+		.leftJoin(seiryuCardLabels, eq(seiryuCardLabels.labelId, seiryuLabels.id))
+		.where(eq(seiryuProjects.workspaceId, workspace.id))
+		.groupBy(seiryuLabels.id, seiryuProjects.id)
+		.orderBy(asc(seiryuProjects.position), asc(seiryuLabels.name));
 }
 
 export async function createLabel(
@@ -72,6 +102,7 @@ export async function updateLabel(input: unknown): Promise<{ error: string } | {
 	await db.update(seiryuLabels).set(updates).where(eq(seiryuLabels.id, labelId));
 
 	revalidatePath(`/seiryu/${label.projectId}`);
+	revalidatePath("/settings/seiryu");
 	return { success: true };
 }
 
@@ -87,6 +118,7 @@ export async function deleteLabel(input: unknown): Promise<{ error: string } | {
 	await db.delete(seiryuLabels).where(eq(seiryuLabels.id, parsed.data.labelId));
 
 	revalidatePath(`/seiryu/${label.projectId}`);
+	revalidatePath("/settings/seiryu");
 	return { success: true };
 }
 

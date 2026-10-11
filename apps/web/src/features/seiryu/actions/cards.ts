@@ -27,6 +27,8 @@ import {
 	isNull,
 	seiryuCards,
 	seiryuChecklistItems,
+	seiryuColumns,
+	seiryuProjects,
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
@@ -87,16 +89,23 @@ export async function getCards(projectId: string) {
 	return rows.map(toCardData);
 }
 
-export async function getArchivedCards(projectId: string) {
+/** Every archived card in the workspace, newest first, with where it lived (settings). */
+export async function getWorkspaceArchivedCards() {
 	const workspace = await requireWorkspace();
-	if (!(await isOwnedProject(projectId, workspace.id))) throw new Error("Forbidden");
-
-	const rows = await db.query.seiryuCards.findMany({
-		where: and(eq(seiryuCards.projectId, projectId), isNotNull(seiryuCards.archivedAt)),
-		orderBy: desc(seiryuCards.archivedAt),
-		with: cardWith,
-	});
-	return rows.map(toCardData);
+	return db
+		.select({
+			id: seiryuCards.id,
+			title: seiryuCards.title,
+			archivedAt: seiryuCards.archivedAt,
+			projectId: seiryuProjects.id,
+			projectName: seiryuProjects.name,
+			columnName: seiryuColumns.name,
+		})
+		.from(seiryuCards)
+		.innerJoin(seiryuProjects, eq(seiryuProjects.id, seiryuCards.projectId))
+		.innerJoin(seiryuColumns, eq(seiryuColumns.id, seiryuCards.columnId))
+		.where(and(eq(seiryuProjects.workspaceId, workspace.id), isNotNull(seiryuCards.archivedAt)))
+		.orderBy(asc(seiryuProjects.position), desc(seiryuCards.archivedAt));
 }
 
 export async function createCard(
@@ -222,6 +231,7 @@ export async function restoreCard(
 		.where(eq(seiryuCards.id, cardId));
 
 	revalidatePath(`/seiryu/${card.projectId}`);
+	revalidatePath("/settings/seiryu");
 	return { success: true, data: { columnId: card.columnId, position } };
 }
 
@@ -237,5 +247,6 @@ export async function deleteCard(input: unknown): Promise<{ error: string } | { 
 	await db.delete(seiryuCards).where(eq(seiryuCards.id, parsed.data.cardId));
 
 	revalidatePath(`/seiryu/${card.projectId}`);
+	revalidatePath("/settings/seiryu");
 	return { success: true };
 }
