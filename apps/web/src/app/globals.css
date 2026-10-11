@@ -7,6 +7,10 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+	/* Motion: strong curves replace Tailwind's weak defaults, so `ease-out` etc. mean these. */
+	--ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+	--ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+	--ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 	--font-heading: var(--font-sans);
 	--font-sans: var(--font-sans);
 	--radius-sm: calc(var(--radius) * 0.6);
@@ -265,7 +269,7 @@
 	color: var(--popover-foreground);
 	font-size: 0.875rem;
 	transition-duration: 200ms;
-	transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+	transition-timing-function: var(--ease-out);
 }
 /* On paper the lacquer's deep shadow reads as a smudge; a stack of slips needs a lighter one. */
 :root:not(.dark) [data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
