@@ -43,7 +43,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface Props {
@@ -127,6 +127,8 @@ export function KanbanBoard({
 	const cardsRef = useRef(cards);
 	cardsRef.current = cards;
 
+	// A stable id keeps dnd-kit's aria ids equal on server and client (no hydration mismatch).
+	const dndId = useId();
 	const searchParams = useSearchParams();
 	const priorityParam = searchParams.get("priority") ?? "";
 	const labelParam = searchParams.get("label") ?? "";
@@ -447,6 +449,7 @@ export function KanbanBoard({
 			) : (
 				<>
 					<DndContext
+						id={dndId}
 						sensors={sensors}
 						collisionDetection={collisionDetection}
 						onDragStart={handleDragStart}

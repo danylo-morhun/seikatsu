@@ -25,7 +25,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@seikatsu/ui";
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 interface Props {
@@ -92,6 +92,7 @@ export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 	const [isAdding, startAdd] = useTransition();
 	const [, startReorder] = useTransition();
 
+	const dndId = useId();
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
 	const sortedItems = [...items].sort((a, b) => {
@@ -202,7 +203,12 @@ export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 			</div>
 
 			{total > 0 && (
-				<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+				<DndContext
+					id={dndId}
+					sensors={sensors}
+					collisionDetection={closestCenter}
+					onDragEnd={handleDragEnd}
+				>
 					<SortableContext
 						items={sortedItems.map((i) => i.id)}
 						strategy={verticalListSortingStrategy}
