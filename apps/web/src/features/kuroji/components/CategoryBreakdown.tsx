@@ -85,7 +85,7 @@ export function CategoryBreakdown({ balances, currency, periodQuery }: Props) {
 						<span className="group-open/more:hidden">Show {rows.length - VISIBLE} more</span>
 						<span className="hidden group-open/more:inline">Show less</span>
 					</summary>
-					<ol className="divide-y divide-rule border-t border-rule">
+					<ol className="animate-drop divide-y divide-rule border-t border-rule">
 						{rows.slice(VISIBLE).map(renderRow)}
 					</ol>
 				</details>
