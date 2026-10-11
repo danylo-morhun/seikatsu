@@ -4,6 +4,7 @@ import {
 	getOwnedCard,
 	getOwnedColumn,
 	isOwnedProject,
+	isUuid,
 	requireWorkspace,
 } from "@/features/seiryu/actions/guard";
 import { generateKeyBetween } from "@/features/seiryu/lib/position";
@@ -65,7 +66,7 @@ async function endOfColumn(columnId: string) {
 
 export async function getCard(cardId: string) {
 	const workspace = await requireWorkspace();
-	if (!(await getOwnedCard(cardId, workspace.id))) return null;
+	if (!isUuid(cardId) || !(await getOwnedCard(cardId, workspace.id))) return null;
 
 	const row = await db.query.seiryuCards.findFirst({
 		where: eq(seiryuCards.id, cardId),
