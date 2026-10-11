@@ -1,5 +1,7 @@
+import { AnimatedAmount } from "@/features/kuroji/components/AnimatedAmount";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { cn } from "@seikatsu/ui";
+import type { CSSProperties } from "react";
 
 interface Props {
 	currency: string;
@@ -17,6 +19,7 @@ function Figure({
 	note,
 	tone,
 	lead = false,
+	index,
 }: {
 	label: string;
 	value: number;
@@ -24,9 +27,11 @@ function Figure({
 	note?: string;
 	tone?: "positive" | "negative";
 	lead?: boolean;
+	/** Position in the row: figures arrive one after another. */
+	index: number;
 }) {
 	return (
-		<div className="min-w-0 py-1">
+		<div className="min-w-0 animate-rise py-1" style={{ "--i": index } as CSSProperties}>
 			<p className="text-xs text-muted-foreground">{label}</p>
 			<p
 				data-total={lead ? "lead" : undefined}
@@ -37,7 +42,7 @@ function Figure({
 					tone === "negative" && "text-negative",
 				)}
 			>
-				{formatCurrency(value, currency)}
+				<AnimatedAmount value={value} currency={currency} />
 			</p>
 			{note && <p className="mt-1 truncate text-xs text-muted-foreground">{note}</p>}
 		</div>
@@ -67,6 +72,7 @@ export function OverviewFigures({
 			<div className="col-span-2 md:col-span-1">
 				<Figure
 					lead
+					index={0}
 					label="Net worth"
 					value={netWorth}
 					currency={currency}
@@ -80,14 +86,16 @@ export function OverviewFigures({
 				/>
 			</div>
 			<Figure
+				index={1}
 				label={`Income · ${periodLabel}`}
 				value={income}
 				currency={currency}
 				tone="positive"
 			/>
-			<Figure label={`Expenses · ${periodLabel}`} value={expenses} currency={currency} />
+			<Figure index={2} label={`Expenses · ${periodLabel}`} value={expenses} currency={currency} />
 			<div className="col-span-2 md:col-span-1">
 				<Figure
+					index={3}
 					label="Net flow"
 					value={net}
 					currency={currency}
