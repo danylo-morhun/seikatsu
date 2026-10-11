@@ -2,31 +2,32 @@
 
 import { Spinner } from "@/components/Spinner";
 import { createColumn } from "@/features/seiryu/actions/columns";
-import type { ColumnData } from "@/features/seiryu/components/KanbanColumn";
+import { LANE } from "@/features/seiryu/components/KanbanColumn";
+import type { ColumnData } from "@/features/seiryu/lib/types";
+import { Add01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Button, Input, cn } from "@seikatsu/ui";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 interface Props {
 	projectId: string;
 	onColumnAdded: (column: ColumnData) => void;
+	className?: string;
 }
 
-export function AddColumnButton({ projectId, onColumnAdded }: Props) {
+/** The last lane: a quiet "Add column" that opens into a name field. */
+export function AddColumnButton({ projectId, onColumnAdded, className }: Props) {
 	const [adding, setAdding] = useState(false);
 	const [name, setName] = useState("");
 	const [isCreating, startCreate] = useTransition();
 
-	function open() {
-		setAdding(true);
-		setName("");
-	}
-
-	function cancel() {
+	function close() {
 		setAdding(false);
 		setName("");
 	}
 
-	async function handleSubmit(e: React.FormEvent) {
+	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		const trimmed = name.trim();
 		if (!trimmed) return;
@@ -43,57 +44,50 @@ export function AddColumnButton({ projectId, onColumnAdded }: Props) {
 				color: null,
 				position: result.data.position,
 			});
-			cancel();
-			toast.success("Column added");
+			close();
 		});
 	}
 
-	if (!adding) {
-		return (
-			<div className="flex w-64 shrink-0 items-start">
+	return (
+		<div className={cn(LANE, className)}>
+			{adding ? (
+				<form onSubmit={handleSubmit} className="animate-swap space-y-2 pt-1">
+					<Input
+						autoFocus
+						value={name}
+						maxLength={100}
+						autoComplete="off"
+						aria-label="New column name"
+						placeholder="Column name…"
+						onChange={(e) => setName(e.target.value)}
+						onBlur={() => !name.trim() && !isCreating && close()}
+						onKeyDown={(e) => e.key === "Escape" && close()}
+					/>
+					<div className="flex gap-1.5">
+						<Button
+							type="submit"
+							size="sm"
+							className="gap-1.5"
+							disabled={isCreating || !name.trim()}
+						>
+							{isCreating && <Spinner />}
+							{isCreating ? "Adding…" : "Add column"}
+						</Button>
+						<Button type="button" size="sm" variant="ghost" onClick={close}>
+							Cancel
+						</Button>
+					</div>
+				</form>
+			) : (
 				<button
 					type="button"
-					onClick={open}
-					className="flex w-full items-center gap-2 rounded-xl border border-dashed border-border px-4 py-3 text-sm text-muted-foreground transition-colors hover:border-border/60 hover:bg-accent hover:text-foreground"
+					onClick={() => setAdding(true)}
+					className="inline-flex h-11 items-center gap-1.5 self-start rounded-md px-1 text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
 				>
-					<span className="text-base leading-none">+</span>
+					<HugeiconsIcon icon={Add01Icon} className="h-3.5 w-3.5" />
 					Add column
 				</button>
-			</div>
-		);
-	}
-
-	return (
-		<div className="flex w-64 shrink-0 flex-col rounded-xl border border-border bg-muted/40 px-3 py-3">
-			<form onSubmit={handleSubmit} className="flex flex-col gap-2">
-				<input
-					autoFocus
-					value={name}
-					onChange={(e) => setName(e.target.value)}
-					onKeyDown={(e) => {
-						if (e.key === "Escape") cancel();
-					}}
-					placeholder="Column name…"
-					className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-				/>
-				<div className="flex items-center gap-1.5">
-					<button
-						type="submit"
-						disabled={isCreating || !name.trim()}
-						className="flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground disabled:opacity-50"
-					>
-						{isCreating && <Spinner className="h-3 w-3" />}
-						{isCreating ? "Adding…" : "Add column"}
-					</button>
-					<button
-						type="button"
-						onClick={cancel}
-						className="rounded-md px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground"
-					>
-						Cancel
-					</button>
-				</div>
-			</form>
+			)}
 		</div>
 	);
 }

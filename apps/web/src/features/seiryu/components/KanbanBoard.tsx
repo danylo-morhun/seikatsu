@@ -13,21 +13,28 @@ import { deleteColumn, reorderColumns, updateColumn } from "@/features/seiryu/ac
 import { AddColumnButton } from "@/features/seiryu/components/AddColumnButton";
 import { ArchivedCardsSheet } from "@/features/seiryu/components/ArchivedCardsSheet";
 import { CardSheet } from "@/features/seiryu/components/CardSheet";
-import { FilterBar } from "@/features/seiryu/components/FilterBar";
-import {
-	type CardData,
-	KanbanCardOverlay,
-	type LabelData,
-} from "@/features/seiryu/components/KanbanCard";
-import {
-	type ColumnData,
-	KanbanColumn,
-	KanbanColumnOverlay,
-} from "@/features/seiryu/components/KanbanColumn";
+import { FilterChips, FilterMenu } from "@/features/seiryu/components/FilterMenu";
+import { KanbanCardOverlay, freshCards } from "@/features/seiryu/components/KanbanCard";
+import { KanbanColumn, KanbanColumnOverlay } from "@/features/seiryu/components/KanbanColumn";
+import { NewCardDialog } from "@/features/seiryu/components/NewCardDialog";
 import { SeiryuMobileAddFab } from "@/features/seiryu/components/SeiryuMobileAddFab";
+import { NEW_CARD_EVENT } from "@/features/seiryu/lib/events";
+import {
+	type Filters,
+	applyFilters,
+	filterCount,
+	readFilters,
+	writeFilters,
+} from "@/features/seiryu/lib/filters";
 import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import { useServerState } from "@/features/seiryu/lib/server-state";
-import type { CardFieldUpdates } from "@/features/seiryu/lib/types";
+import type {
+	CardData,
+	CardFieldUpdates,
+	ColumnData,
+	LabelData,
+} from "@/features/seiryu/lib/types";
+import { OVERLAY_SELECTOR, isEditable, shouldOpenCapture } from "@/lib/capture-shortcut";
 import {
 	type CollisionDetection,
 	DndContext,
@@ -35,69 +42,60 @@ import {
 	type DragOverEvent,
 	DragOverlay,
 	type DragStartEvent,
+	type DropAnimation,
+	KeyboardSensor,
 	MouseSensor,
 	TouchSensor,
 	type UniqueIdentifier,
 	closestCenter,
 	closestCorners,
+	defaultDropAnimationSideEffects,
 	pointerWithin,
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import { SortableContext, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable";
-import { useSearchParams } from "next/navigation";
-import { useCallback, useId, useMemo, useRef, useState } from "react";
+import {
+	SortableContext,
+	arrayMove,
+	horizontalListSortingStrategy,
+	sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 interface Props {
+	project: { id: string; name: string };
 	columns: ColumnData[];
 	cards: CardData[];
-	projectId: string;
 	projectLabels: LabelData[];
+	/** The user's calendar day (tz cookie), so "overdue" matches on server and client. */
+	today: string;
 }
 
 const byPosition = (a: { position: string }, b: { position: string }) =>
 	a.position < b.position ? -1 : 1;
-
-function applyFilters(
-	cards: CardData[],
-	priorities: string[],
-	labelIds: string[],
-	due: string,
-): CardData[] {
-	return cards.filter((card) => {
-		if (priorities.length > 0 && !priorities.includes(card.priority ?? "")) return false;
-		if (labelIds.length > 0 && !card.labels.some((l) => labelIds.includes(l.id))) return false;
-		if (due) {
-			const today = new Date();
-			today.setHours(0, 0, 0, 0);
-			if (due === "none") return card.dueDate === null;
-			if (!card.dueDate) return false;
-			const [y, m, d] = card.dueDate.split("-").map(Number) as [number, number, number];
-			const dueDate = new Date(y, m - 1, d);
-			if (due === "overdue") return dueDate < today;
-			if (due === "today") return dueDate.getTime() === today.getTime();
-			if (due === "week") {
-				const weekEnd = new Date(today);
-				weekEnd.setDate(today.getDate() + 7);
-				return dueDate >= today && dueDate <= weekEnd;
-			}
-		}
-		return true;
-	});
-}
 
 /** Position for a card placed at `index` among `others` (the column without that card). */
 function positionAt(others: CardData[], index: number) {
 	return generateKeyBetween(others[index - 1]?.position ?? null, others[index]?.position ?? null);
 }
 
+// The dropped card settles into its slot on the strong ease-out; the slot holds until it lands.
+const DROP_ANIMATION: DropAnimation = {
+	duration: 220,
+	easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+	sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: "0" } } }),
+};
+
 export function KanbanBoard({
+	project,
 	columns: serverColumns,
 	cards: serverCards,
-	projectId,
 	projectLabels: serverLabels,
+	today,
 }: Props) {
+	const projectId = project.id;
 	// Local copies change optimistically; fresh props from each action's re-render replace
 	// them once nothing is in flight (see useServerState).
 	const {
@@ -119,6 +117,10 @@ export function KanbanBoard({
 	const [activeType, setActiveType] = useState<"column" | "card" | null>(null);
 	const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 	const [sheetOpen, setSheetOpen] = useState(false);
+	const [capture, setCapture] = useState<{ open: boolean; instant: boolean }>({
+		open: false,
+		instant: false,
+	});
 
 	// Card drag state: where it started, and the hold that keeps fresh props out meanwhile.
 	const dragStart = useRef<{
@@ -132,17 +134,19 @@ export function KanbanBoard({
 
 	// A stable id keeps dnd-kit's aria ids equal on server and client (no hydration mismatch).
 	const dndId = useId();
+	const router = useRouter();
+	const pathname = usePathname();
 	const searchParams = useSearchParams();
-	const priorityParam = searchParams.get("priority") ?? "";
-	const labelParam = searchParams.get("label") ?? "";
-	const activeDue = searchParams.get("due") ?? "";
+	const [, startFilter] = useTransition();
+	const filters = useMemo(() => readFilters(searchParams), [searchParams]);
+	const isFiltered = filterCount(filters) > 0;
 
-	const filteredCards = useMemo(() => {
-		const priorities = priorityParam.split(",").filter(Boolean);
-		const labelIds = labelParam.split(",").filter(Boolean);
-		const isFiltered = priorities.length > 0 || labelIds.length > 0 || activeDue !== "";
-		return isFiltered ? applyFilters(cards, priorities, labelIds, activeDue) : cards;
-	}, [cards, priorityParam, labelParam, activeDue]);
+	function setFilters(next: Filters) {
+		const query = writeFilters(searchParams, next).toString();
+		startFilter(() => router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false }));
+	}
+
+	const filteredCards = useMemo(() => applyFilters(cards, filters, today), [cards, filters, today]);
 
 	const cardsByColumn = useMemo(() => {
 		const map = new Map<string, CardData[]>();
@@ -162,6 +166,28 @@ export function KanbanBoard({
 		[cards, selectedCardId],
 	);
 
+	// "N" (and the header's New Card button) open capture; Kuroji's rule decides when N is free.
+	useEffect(() => {
+		function onKeyDown(e: KeyboardEvent) {
+			const context = {
+				editableFocused: isEditable(e.target),
+				overlayOpen: !!document.querySelector(OVERLAY_SELECTOR),
+			};
+			if (!shouldOpenCapture(e, context)) return;
+			e.preventDefault();
+			setCapture({ open: true, instant: true });
+		}
+		function onRequest() {
+			setCapture({ open: true, instant: false });
+		}
+		window.addEventListener("keydown", onKeyDown);
+		window.addEventListener(NEW_CARD_EVENT, onRequest);
+		return () => {
+			window.removeEventListener("keydown", onKeyDown);
+			window.removeEventListener(NEW_CARD_EVENT, onRequest);
+		};
+	}, []);
+
 	const handleCardOpen = useCallback((cardId: string) => {
 		setSelectedCardId(cardId);
 		setSheetOpen(true);
@@ -174,8 +200,10 @@ export function KanbanBoard({
 				.sort(byPosition)
 				.at(-1);
 			const tempId = `temp-${crypto.randomUUID()}`;
+			freshCards.add(tempId);
 			const temp: CardData = {
 				id: tempId,
+				clientKey: tempId,
 				columnId,
 				projectId,
 				title,
@@ -217,19 +245,30 @@ export function KanbanBoard({
 		[setColumns, trackColumns, resetColumns],
 	);
 
-	const handleDeleteColumn = useCallback(
-		(columnId: string) => {
-			setColumns((prev) => prev.filter((c) => c.id !== columnId));
-			setCards((prev) => prev.filter((c) => c.columnId !== columnId));
-			trackColumns(trackCards(deleteColumn({ columnId }))).then((result) => {
+	const handleRecolorColumn = useCallback(
+		(columnId: string, color: string | null) => {
+			setColumns((prev) => prev.map((c) => (c.id === columnId ? { ...c, color } : c)));
+			trackColumns(updateColumn({ columnId, color })).then((result) => {
 				if ("error" in result) {
 					toast.error(result.error);
 					resetColumns();
-					resetCards();
 				}
 			});
 		},
-		[setColumns, setCards, trackColumns, trackCards, resetColumns, resetCards],
+		[setColumns, trackColumns, resetColumns],
+	);
+
+	const handleDeleteColumn = useCallback(
+		async (columnId: string) => {
+			const result = await trackColumns(trackCards(deleteColumn({ columnId })));
+			if ("error" in result) {
+				toast.error(result.error);
+				return;
+			}
+			setColumns((prev) => prev.filter((c) => c.id !== columnId));
+			setCards((prev) => prev.filter((c) => c.columnId !== columnId));
+		},
+		[setColumns, setCards, trackColumns, trackCards],
 	);
 
 	function handleCardSave(cardId: string, updates: CardFieldUpdates) {
@@ -315,9 +354,11 @@ export function KanbanBoard({
 
 	// Mouse drags after 5 px. Touch needs a 250 ms press first, so swipes over cards scroll
 	// the column and the board (PointerSensor + touch-action: none blocked scrolling on phones).
+	// Space lifts a focused card for the keyboard; arrows move it, Space drops it.
 	const sensors = useSensors(
 		useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
 		useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
 	);
 
 	const activeColumn = activeType === "column" ? columns.find((c) => c.id === activeId) : null;
@@ -334,6 +375,8 @@ export function KanbanBoard({
 				droppableContainers: droppableContainers.filter((c) => c.data.current?.type === "column"),
 			});
 		}
+		// The keyboard has no pointer: nearest target wins.
+		if (!args.pointerCoordinates) return closestCorners(args);
 
 		const hits = pointerWithin(args);
 		const typeOf = (id: UniqueIdentifier) =>
@@ -478,80 +521,115 @@ export function KanbanBoard({
 		start.release();
 	}
 
+	const nothingMatches = isFiltered && filteredCards.length === 0 && cards.length > 0;
+
 	return (
-		<div className="flex h-full flex-col overflow-hidden">
-			<div className="flex items-center gap-2 border-b border-border px-4 py-1.5">
-				<div className="flex-1">
-					<FilterBar projectLabels={projectLabels} />
+		<div className="flex h-full flex-col">
+			<div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 pt-6 pb-4 sm:px-8 md:pt-8">
+				<h1 className="min-w-0 max-w-full truncate text-xl font-semibold">{project.name}</h1>
+				<div className="flex items-center gap-1.5">
+					<FilterMenu filters={filters} labels={projectLabels} onChange={setFilters} />
+					<ArchivedCardsSheet
+						projectId={projectId}
+						columns={columns}
+						onCardRestore={handleCardRestore}
+					/>
 				</div>
-				<ArchivedCardsSheet
-					projectId={projectId}
-					columns={columns}
-					onCardRestore={handleCardRestore}
-				/>
+				<FilterChips filters={filters} labels={projectLabels} onChange={setFilters} />
 			</div>
 
+			{nothingMatches && (
+				<p className="animate-swap px-4 pb-2 text-sm text-muted-foreground sm:px-8">
+					No cards match these filters.{" "}
+					<button
+						type="button"
+						onClick={() => setFilters({ priorities: [], labelIds: [], due: "" })}
+						className="text-foreground underline-offset-4 hover:underline"
+					>
+						Clear filters
+					</button>
+				</p>
+			)}
+
 			{sortedColumns.length === 0 ? (
-				<div className="flex flex-1 items-center justify-center gap-4">
-					<p className="text-sm text-muted-foreground">No columns yet.</p>
+				<div className="flex flex-col items-start gap-4 px-4 py-16 sm:px-8">
+					<div>
+						<p className="font-medium">No columns yet</p>
+						<p className="mt-1 text-sm text-muted-foreground">
+							Columns are the stages a card moves through, like Todo, Doing and Done.
+						</p>
+					</div>
 					<AddColumnButton projectId={projectId} onColumnAdded={handleColumnAdded} />
 				</div>
 			) : (
-				<>
-					<DndContext
-						id={dndId}
-						sensors={sensors}
-						collisionDetection={collisionDetection}
-						onDragStart={handleDragStart}
-						onDragOver={handleDragOver}
-						onDragEnd={handleDragEnd}
-						onDragCancel={handleDragCancel}
-					>
-						<SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-							<div className="relative flex-1">
-								<div className="absolute inset-0 flex gap-3 overflow-x-auto p-4 pb-6">
-									{sortedColumns.map((col) => (
-										<KanbanColumn
-											key={col.id}
-											column={col}
-											cards={cardsByColumn.get(col.id) ?? NO_CARDS}
-											onCardOpen={handleCardOpen}
-											onAddCard={handleAddCard}
-											onRename={handleRenameColumn}
-											onDelete={handleDeleteColumn}
-										/>
-									))}
-									<AddColumnButton projectId={projectId} onColumnAdded={handleColumnAdded} />
-								</div>
-							</div>
-						</SortableContext>
-
-						<DragOverlay>
-							{activeColumn && (
-								<KanbanColumnOverlay
-									column={activeColumn}
-									cardCount={cardsByColumn.get(activeColumn.id)?.length ?? 0}
+				<DndContext
+					id={dndId}
+					sensors={sensors}
+					collisionDetection={collisionDetection}
+					onDragStart={handleDragStart}
+					onDragOver={handleDragOver}
+					onDragEnd={handleDragEnd}
+					onDragCancel={handleDragCancel}
+				>
+					<SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
+						<div className="relative min-h-0 flex-1">
+							<div className="absolute inset-0 flex snap-x snap-mandatory scroll-px-4 gap-6 overflow-x-auto px-4 pb-28 sm:scroll-px-8 sm:px-8 md:snap-none md:pb-8 [scrollbar-width:thin]">
+								{sortedColumns.map((col, i) => (
+									<KanbanColumn
+										key={col.id}
+										column={col}
+										index={i}
+										today={today}
+										cards={cardsByColumn.get(col.id) ?? NO_CARDS}
+										onCardOpen={handleCardOpen}
+										onAddCard={handleAddCard}
+										onRename={handleRenameColumn}
+										onRecolor={handleRecolorColumn}
+										onDelete={handleDeleteColumn}
+									/>
+								))}
+								<AddColumnButton
+									projectId={projectId}
+									onColumnAdded={handleColumnAdded}
+									className="animate-rise pr-4 sm:pr-8"
 								/>
-							)}
-							{activeCard && <KanbanCardOverlay card={activeCard} />}
-						</DragOverlay>
-					</DndContext>
+							</div>
+						</div>
+					</SortableContext>
 
-					<CardSheet
-						card={selectedCard}
-						open={sheetOpen}
-						onOpenChange={setSheetOpen}
-						columns={sortedColumns}
-						projectLabels={projectLabels}
-						onSave={handleCardSave}
-						onMove={handleCardMove}
-						onChange={handleCardChange}
-						onArchive={handleCardArchive}
-						onDelete={handleCardDelete}
-						onProjectLabelsChange={setProjectLabels}
-					/>
-				</>
+					<DragOverlay dropAnimation={DROP_ANIMATION}>
+						{activeColumn && (
+							<KanbanColumnOverlay
+								column={activeColumn}
+								cardCount={cardsByColumn.get(activeColumn.id)?.length ?? 0}
+							/>
+						)}
+						{activeCard && <KanbanCardOverlay card={activeCard} today={today} />}
+					</DragOverlay>
+				</DndContext>
 			)}
+
+			<CardSheet
+				card={selectedCard}
+				open={sheetOpen}
+				onOpenChange={setSheetOpen}
+				columns={sortedColumns}
+				projectLabels={projectLabels}
+				onSave={handleCardSave}
+				onMove={handleCardMove}
+				onChange={handleCardChange}
+				onArchive={handleCardArchive}
+				onDelete={handleCardDelete}
+				onProjectLabelsChange={setProjectLabels}
+			/>
+
+			<NewCardDialog
+				open={capture.open}
+				instant={capture.instant}
+				onOpenChange={(open) => setCapture((c) => ({ ...c, open }))}
+				columns={sortedColumns}
+				onAdd={handleAddCard}
+			/>
 
 			<SeiryuMobileAddFab columns={sortedColumns} onAddCard={handleAddCard} />
 		</div>
