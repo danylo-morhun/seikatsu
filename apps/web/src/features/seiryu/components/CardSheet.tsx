@@ -88,7 +88,7 @@ export function CardSheet({
 
 					{shown && (
 						<>
-							<div className="absolute top-4 right-14 flex items-center gap-1">
+							<div className="absolute top-4 right-14 flex items-center gap-1 max-sm:hidden">
 								<Button asChild variant="ghost" size="icon" aria-label="Open as a page">
 									<Link href={`/seiryu/${shown.projectId}/${shown.id}`} prefetch={false}>
 										<HugeiconsIcon icon={SquareArrowUpRightIcon} className="h-4 w-4" />
@@ -117,7 +117,7 @@ export function CardSheet({
 								</DropdownMenu>
 							</div>
 
-							<div className="flex-1 overflow-y-auto px-6 pt-18 pb-10 [scrollbar-width:thin]">
+							<div className="flex-1 overflow-y-auto px-4 pt-14 pb-10 [scrollbar-width:thin] sm:px-6 sm:pt-18">
 								<CardDetail
 									key={shown.id}
 									card={shown}
@@ -129,6 +129,32 @@ export function CardSheet({
 									onChange={(updates) => onChange(shown.id, updates)}
 									onProjectLabelsChange={onProjectLabelsChange}
 								/>
+							</div>
+
+							{/* Phones: the card's actions sit under the thumb, not beside the close button. */}
+							<div className="flex items-center gap-1 border-t border-rule px-2 pt-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] sm:hidden">
+								<Button asChild variant="ghost" className="gap-1.5 text-muted-foreground">
+									<Link href={`/seiryu/${shown.projectId}/${shown.id}`} prefetch={false}>
+										<HugeiconsIcon icon={SquareArrowUpRightIcon} className="h-4 w-4" />
+										Page
+									</Link>
+								</Button>
+								<Button
+									variant="ghost"
+									className="ml-auto gap-1.5 text-muted-foreground"
+									onClick={() => onArchive(shown.id)}
+								>
+									<HugeiconsIcon icon={Archive01Icon} className="h-4 w-4" />
+									Archive
+								</Button>
+								<Button
+									variant="ghost"
+									className="gap-1.5 text-destructive hover:text-destructive"
+									onClick={() => setConfirmDelete(true)}
+								>
+									<HugeiconsIcon icon={Delete01Icon} className="h-4 w-4" />
+									Delete…
+								</Button>
 							</div>
 						</>
 					)}
