@@ -69,7 +69,7 @@ export function SettingsProjects({ projects }: { projects: Row[] }) {
 								<Button
 									variant="ghost"
 									size="icon"
-									className="relative size-8 text-muted-foreground/50 hover:text-foreground"
+									className="relative size-10 text-muted-foreground/50 md:size-8 hover:text-foreground"
 									aria-label={`Actions for ${p.name}`}
 								>
 									<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />

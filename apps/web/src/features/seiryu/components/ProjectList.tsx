@@ -139,14 +139,14 @@ export function ProjectList({
 
 	return (
 		<nav aria-labelledby={`${dndId}-title`} className="flex flex-col gap-2">
-			<div className="flex h-8 items-center justify-between pl-2">
+			<div className="flex h-10 items-center justify-between pl-2 md:h-8">
 				<h2 id={`${dndId}-title`} className="text-sm font-medium">
 					Projects
 				</h2>
 				<Button
 					variant="ghost"
 					size="icon"
-					className="size-8 text-muted-foreground hover:text-foreground"
+					className="size-10 text-muted-foreground hover:text-foreground md:size-8"
 					aria-label="New project"
 					onClick={() => setDialog({ open: true, project: null })}
 				>
@@ -275,7 +275,7 @@ function ProjectRow({
 					onPick();
 				}}
 				className={cn(
-					"flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md pr-10 pl-2 text-sm outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring",
+					"flex h-11 min-w-0 flex-1 items-center gap-2 rounded-md pr-12 pl-2 md:h-9 md:pr-10 text-sm outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring",
 					lit ? "text-primary" : "text-muted-foreground hover:bg-surface hover:text-foreground",
 				)}
 			>
@@ -297,7 +297,7 @@ function ProjectRow({
 					<Button
 						variant="ghost"
 						size="icon"
-						className="absolute right-0.5 size-8 text-muted-foreground/50 hover:text-foreground data-[state=open]:text-foreground"
+						className="absolute right-0.5 size-10 text-muted-foreground/50 md:size-8 hover:text-foreground data-[state=open]:text-foreground"
 						aria-label={`Actions for ${project.name}`}
 					>
 						<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />

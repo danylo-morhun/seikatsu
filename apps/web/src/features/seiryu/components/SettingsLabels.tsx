@@ -80,7 +80,7 @@ export function SettingsLabels({ labels }: { labels: Row[] }) {
 										<Button
 											variant="ghost"
 											size="icon"
-											className="size-8 text-muted-foreground/50 hover:text-foreground"
+											className="size-10 text-muted-foreground/50 md:size-8 hover:text-foreground"
 											aria-label={`Actions for ${label.name}`}
 										>
 											<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
