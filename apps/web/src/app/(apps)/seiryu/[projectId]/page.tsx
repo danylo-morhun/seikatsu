@@ -1,5 +1,3 @@
-import { auth } from "@/auth";
-import { getWorkspace } from "@/features/kuroji/actions/workspace";
 import { getCards } from "@/features/seiryu/actions/cards";
 import { getColumns } from "@/features/seiryu/actions/columns";
 import { getLabels } from "@/features/seiryu/actions/labels";
@@ -13,12 +11,6 @@ export default async function SeiryuProjectPage({
 }: {
 	params: Promise<{ projectId: string }>;
 }) {
-	const session = await auth();
-	if (!session?.user?.id) redirect("/");
-
-	const workspace = await getWorkspace(session.user.id);
-	if (!workspace) redirect("/");
-
 	const { projectId } = await params;
 	const projects = await getProjects();
 	const project = projects.find((p) => p.id === projectId);

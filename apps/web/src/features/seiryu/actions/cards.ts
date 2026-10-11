@@ -1,8 +1,11 @@
 "use server";
 
-import { auth } from "@/auth";
-import { getWorkspace } from "@/features/kuroji/actions/workspace";
-import { isOwnedProject } from "@/features/seiryu/actions/guard";
+import {
+	getOwnedCard,
+	getOwnedColumn,
+	isOwnedProject,
+	requireWorkspace,
+} from "@/features/seiryu/actions/guard";
 import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import {
 	archiveCardSchema,
@@ -17,58 +20,26 @@ import {
 	and,
 	asc,
 	db,
+	desc,
 	eq,
 	isNotNull,
 	isNull,
 	seiryuCards,
 	seiryuChecklistItems,
-	seiryuColumns,
-	seiryuProjects,
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
-async function getAuthedWorkspace() {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Unauthorized");
-	const workspace = await getWorkspace(session.user.id);
-	if (!workspace) throw new Error("Workspace not found");
-	return { workspace };
-}
+type CardRow = typeof seiryuCards.$inferSelect & {
+	checklistItems: (typeof seiryuChecklistItems.$inferSelect)[];
+	cardLabels: { label: { id: string; name: string; color: string } }[];
+};
 
-/** The card's project and column if it belongs to the workspace — one query. */
-async function getOwnedCard(cardId: string, workspaceId: string) {
-	const [card] = await db
-		.select({ projectId: seiryuCards.projectId, columnId: seiryuCards.columnId })
-		.from(seiryuCards)
-		.innerJoin(seiryuProjects, eq(seiryuProjects.id, seiryuCards.projectId))
-		.where(and(eq(seiryuCards.id, cardId), eq(seiryuProjects.workspaceId, workspaceId)))
-		.limit(1);
-	return card ?? null;
-}
+const cardWith = {
+	checklistItems: { orderBy: asc(seiryuChecklistItems.position) },
+	cardLabels: { with: { label: true } },
+} as const;
 
-export async function getCard(cardId: string) {
-	const { workspace } = await getAuthedWorkspace();
-
-	const [owned] = await db
-		.select({ id: seiryuCards.id })
-		.from(seiryuCards)
-		.innerJoin(seiryuProjects, eq(seiryuProjects.id, seiryuCards.projectId))
-		.where(and(eq(seiryuCards.id, cardId), eq(seiryuProjects.workspaceId, workspace.id)))
-		.limit(1);
-
-	if (!owned) return null;
-
-	const row = await db.query.seiryuCards.findFirst({
-		where: eq(seiryuCards.id, cardId),
-		with: {
-			checklistItems: { orderBy: asc(seiryuChecklistItems.position) },
-			cardLabels: { with: { label: true } },
-		},
-	});
-
-	if (!row) return null;
-
-	const { cardLabels, checklistItems, ...rest } = row;
+function toCardData({ cardLabels, checklistItems, ...rest }: CardRow) {
 	return {
 		...rest,
 		checklistItems: checklistItems.map(({ id, title, isCompleted, position }) => ({
@@ -77,80 +48,72 @@ export async function getCard(cardId: string) {
 			isCompleted,
 			position,
 		})),
-		labels: cardLabels.map(({ label }) => ({
-			id: label.id,
-			name: label.name,
-			color: label.color,
-		})),
+		labels: cardLabels.map(({ label }) => ({ id: label.id, name: label.name, color: label.color })),
 	};
 }
 
-export async function getCards(projectId: string) {
-	const { workspace } = await getAuthedWorkspace();
+/** Position after the last live card in a column. */
+async function endOfColumn(columnId: string) {
+	const [last] = await db
+		.select({ position: seiryuCards.position })
+		.from(seiryuCards)
+		.where(and(eq(seiryuCards.columnId, columnId), isNull(seiryuCards.archivedAt)))
+		.orderBy(desc(seiryuCards.position))
+		.limit(1);
+	return generateKeyBetween(last?.position ?? null, null);
+}
 
+export async function getCard(cardId: string) {
+	const workspace = await requireWorkspace();
+	if (!(await getOwnedCard(cardId, workspace.id))) return null;
+
+	const row = await db.query.seiryuCards.findFirst({
+		where: eq(seiryuCards.id, cardId),
+		with: cardWith,
+	});
+	return row ? toCardData(row) : null;
+}
+
+export async function getCards(projectId: string) {
+	const workspace = await requireWorkspace();
 	if (!(await isOwnedProject(projectId, workspace.id))) throw new Error("Forbidden");
 
 	const rows = await db.query.seiryuCards.findMany({
 		where: and(eq(seiryuCards.projectId, projectId), isNull(seiryuCards.archivedAt)),
 		orderBy: asc(seiryuCards.position),
-		with: {
-			checklistItems: { orderBy: asc(seiryuChecklistItems.position) },
-			cardLabels: { with: { label: true } },
-		},
+		with: cardWith,
 	});
+	return rows.map(toCardData);
+}
 
-	return rows.map(({ cardLabels, checklistItems, ...rest }) => ({
-		...rest,
-		checklistItems: checklistItems.map(({ id, title, isCompleted, position }) => ({
-			id,
-			title,
-			isCompleted,
-			position,
-		})),
-		labels: cardLabels.map(({ label }) => ({
-			id: label.id,
-			name: label.name,
-			color: label.color,
-		})),
-	}));
+export async function getArchivedCards(projectId: string) {
+	const workspace = await requireWorkspace();
+	if (!(await isOwnedProject(projectId, workspace.id))) throw new Error("Forbidden");
+
+	const rows = await db.query.seiryuCards.findMany({
+		where: and(eq(seiryuCards.projectId, projectId), isNotNull(seiryuCards.archivedAt)),
+		orderBy: desc(seiryuCards.archivedAt),
+		with: cardWith,
+	});
+	return rows.map(toCardData);
 }
 
 export async function createCard(
 	input: unknown,
 ): Promise<{ error: string } | { success: true; data: { id: string; position: string } }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = createCardSchema.safeParse(input);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
 	const { columnId, projectId, title } = parsed.data;
 
-	const [project] = await db
-		.select({ id: seiryuProjects.id })
-		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspace.id)))
-		.limit(1);
-	if (!project) return { error: "Forbidden" };
-
-	const [col] = await db
-		.select({ id: seiryuColumns.id })
-		.from(seiryuColumns)
-		.where(and(eq(seiryuColumns.id, columnId), eq(seiryuColumns.projectId, projectId)))
-		.limit(1);
-	if (!col) return { error: "Invalid column" };
-
-	const existing = await db
-		.select({ position: seiryuCards.position })
-		.from(seiryuCards)
-		.where(and(eq(seiryuCards.columnId, columnId), isNull(seiryuCards.archivedAt)))
-		.orderBy(asc(seiryuCards.position));
-
-	const lastPos = existing.at(-1)?.position ?? null;
-	const position = generateKeyBetween(lastPos, null);
+	const column = await getOwnedColumn(columnId, workspace.id);
+	if (column?.projectId !== projectId) return { error: "Invalid column" };
 
 	const [card] = await db
 		.insert(seiryuCards)
-		.values({ columnId, projectId, title, position })
+		.values({ columnId, projectId, title, position: await endOfColumn(columnId) })
 		.returning({ id: seiryuCards.id, position: seiryuCards.position });
 
 	if (!card) return { error: "Failed to create card" };
@@ -160,7 +123,7 @@ export async function createCard(
 }
 
 export async function updateCard(input: unknown): Promise<{ error: string } | { success: true }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = updateCardSchema.safeParse(input);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -177,40 +140,37 @@ export async function updateCard(input: unknown): Promise<{ error: string } | { 
 }
 
 export async function archiveCard(input: unknown): Promise<{ error: string } | { success: true }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = archiveCardSchema.safeParse(input);
 	if (!parsed.success) return { error: "Invalid input" };
 
-	const { cardId } = parsed.data;
-
-	const card = await getOwnedCard(cardId, workspace.id);
+	const card = await getOwnedCard(parsed.data.cardId, workspace.id);
 	if (!card) return { error: "Card not found" };
 
-	await db.update(seiryuCards).set({ archivedAt: new Date() }).where(eq(seiryuCards.id, cardId));
+	await db
+		.update(seiryuCards)
+		.set({ archivedAt: new Date() })
+		.where(eq(seiryuCards.id, parsed.data.cardId));
 
 	revalidatePath(`/seiryu/${card.projectId}`);
 	return { success: true };
 }
 
 export async function moveCard(input: unknown): Promise<{ error: string } | { success: true }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = moveCardSchema.safeParse(input);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
 	const { cardId, newColumnId, newPosition } = parsed.data;
 
-	const [card, [col]] = await Promise.all([
+	const [card, column] = await Promise.all([
 		getOwnedCard(cardId, workspace.id),
-		db
-			.select({ projectId: seiryuColumns.projectId })
-			.from(seiryuColumns)
-			.where(eq(seiryuColumns.id, newColumnId))
-			.limit(1),
+		getOwnedColumn(newColumnId, workspace.id),
 	]);
 	if (!card) return { error: "Card not found" };
-	if (col?.projectId !== card.projectId) return { error: "Invalid column" };
+	if (column?.projectId !== card.projectId) return { error: "Invalid column" };
 
 	await db
 		.update(seiryuCards)
@@ -222,7 +182,7 @@ export async function moveCard(input: unknown): Promise<{ error: string } | { su
 }
 
 export async function reorderCards(input: unknown): Promise<{ error: string } | { success: true }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = reorderCardSchema.safeParse(input);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -238,42 +198,10 @@ export async function reorderCards(input: unknown): Promise<{ error: string } | 
 	return { success: true };
 }
 
-export async function getArchivedCards(projectId: string) {
-	const { workspace } = await getAuthedWorkspace();
-
-	const [project] = await db
-		.select({ id: seiryuProjects.id })
-		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspace.id)))
-		.limit(1);
-
-	if (!project) throw new Error("Forbidden");
-
-	const rows = await db.query.seiryuCards.findMany({
-		where: and(eq(seiryuCards.projectId, projectId), isNotNull(seiryuCards.archivedAt)),
-		orderBy: asc(seiryuCards.archivedAt),
-		with: {
-			checklistItems: { orderBy: asc(seiryuChecklistItems.position) },
-			cardLabels: { with: { label: true } },
-		},
-	});
-
-	return rows.map(({ cardLabels, checklistItems, ...rest }) => ({
-		...rest,
-		checklistItems: checklistItems.map(({ id, title, isCompleted, position }) => ({
-			id,
-			title,
-			isCompleted,
-			position,
-		})),
-		labels: cardLabels.map(({ label }) => ({ id: label.id, name: label.name, color: label.color })),
-	}));
-}
-
 export async function restoreCard(
 	input: unknown,
 ): Promise<{ error: string } | { success: true; data: { columnId: string; position: string } }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = restoreCardSchema.safeParse(input);
 	if (!parsed.success) return { error: "Invalid input" };
@@ -283,38 +211,26 @@ export async function restoreCard(
 	const card = await getOwnedCard(cardId, workspace.id);
 	if (!card) return { error: "Card not found" };
 
-	const lastInCol = await db
-		.select({ position: seiryuCards.position })
-		.from(seiryuCards)
-		.where(and(eq(seiryuCards.columnId, card.columnId), isNull(seiryuCards.archivedAt)))
-		.orderBy(asc(seiryuCards.position));
-
-	const newPosition = generateKeyBetween(lastInCol.at(-1)?.position ?? null, null);
-
-	const [updated] = await db
+	const position = await endOfColumn(card.columnId);
+	await db
 		.update(seiryuCards)
-		.set({ archivedAt: null, position: newPosition })
-		.where(eq(seiryuCards.id, cardId))
-		.returning({ id: seiryuCards.id });
-
-	if (!updated) return { error: "Failed to restore card" };
+		.set({ archivedAt: null, position })
+		.where(eq(seiryuCards.id, cardId));
 
 	revalidatePath(`/seiryu/${card.projectId}`);
-	return { success: true, data: { columnId: card.columnId, position: newPosition } };
+	return { success: true, data: { columnId: card.columnId, position } };
 }
 
 export async function deleteCard(input: unknown): Promise<{ error: string } | { success: true }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = deleteCardSchema.safeParse(input);
 	if (!parsed.success) return { error: "Invalid input" };
 
-	const { cardId } = parsed.data;
-
-	const card = await getOwnedCard(cardId, workspace.id);
+	const card = await getOwnedCard(parsed.data.cardId, workspace.id);
 	if (!card) return { error: "Card not found" };
 
-	await db.delete(seiryuCards).where(eq(seiryuCards.id, cardId));
+	await db.delete(seiryuCards).where(eq(seiryuCards.id, parsed.data.cardId));
 
 	revalidatePath(`/seiryu/${card.projectId}`);
 	return { success: true };
