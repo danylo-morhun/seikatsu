@@ -250,8 +250,9 @@
 	box-shadow: 0 24px 48px -16px oklch(0 0 0 / 55%);
 }
 
-/* Inside, one soft blurred orb of the app's pigment sits in the top corner, like a lamp
-   reflected in the lacquer. It lies under the content (isolation keeps it in the surface). */
+/* Inside, a lamp hangs above: a wide, faint ellipse of the app's pigment just under the top
+   edge, like light falling into a lacquer box. It lies under the content (isolation keeps it
+   in the surface). */
 :is(
 		[role="dialog"],
 		[role="alertdialog"],
@@ -259,7 +260,8 @@
 	) {
 	isolation: isolate;
 	--orb: color-mix(in oklch, var(--primary) 30%, transparent);
-	--orb-size: 16rem;
+	--orb-height: 9rem;
+	--orb-blur: 56px;
 }
 [role="alertdialog"] {
 	overflow: clip;
@@ -267,7 +269,8 @@
 [data-radix-popper-content-wrapper] > :not([data-slot="tooltip-content"]) {
 	position: relative;
 	overflow: clip;
-	--orb-size: 9rem;
+	--orb-height: 6rem;
+	--orb-blur: 36px;
 }
 :is(
 		[role="dialog"],
@@ -277,13 +280,14 @@
 	content: "";
 	position: absolute;
 	z-index: -1;
-	top: calc(var(--orb-size) * -0.45);
-	left: calc(var(--orb-size) * -0.3);
-	width: var(--orb-size);
-	height: var(--orb-size);
+	top: calc(var(--orb-height) * -0.67);
+	left: 5%;
+	width: 90%;
+	height: var(--orb-height);
 	border-radius: 9999px;
 	background: var(--orb);
-	filter: blur(calc(var(--orb-size) * 0.3));
+	filter: blur(var(--orb-blur));
+	opacity: 0.8;
 	pointer-events: none;
 }
 /* On paper the orb would read as a stain: fainter there. */
