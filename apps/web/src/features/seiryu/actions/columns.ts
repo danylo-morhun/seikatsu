@@ -1,8 +1,6 @@
 "use server";
 
-import { auth } from "@/auth";
-import { getWorkspace } from "@/features/kuroji/actions/workspace";
-import { isOwnedProject } from "@/features/seiryu/actions/guard";
+import { getOwnedColumn, isOwnedProject, requireWorkspace } from "@/features/seiryu/actions/guard";
 import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import {
 	createColumnSchema,
@@ -10,26 +8,12 @@ import {
 	reorderColumnSchema,
 	updateColumnSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
-import { asc, db, eq, seiryuColumns } from "@seikatsu/db";
+import { asc, db, desc, eq, seiryuColumns } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
-async function getAuthedWorkspace() {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Unauthorized");
-	const workspace = await getWorkspace(session.user.id);
-	if (!workspace) throw new Error("Workspace not found");
-	return { workspace };
-}
-
-async function assertProjectOwnership(projectId: string, workspaceId: string) {
-	return (await isOwnedProject(projectId, workspaceId)) ? { id: projectId } : null;
-}
-
 export async function getColumns(projectId: string) {
-	const { workspace } = await getAuthedWorkspace();
-
-	const project = await assertProjectOwnership(projectId, workspace.id);
-	if (!project) throw new Error("Forbidden");
+	const workspace = await requireWorkspace();
+	if (!(await isOwnedProject(projectId, workspace.id))) throw new Error("Forbidden");
 
 	return db
 		.select()
@@ -41,24 +25,22 @@ export async function getColumns(projectId: string) {
 export async function createColumn(
 	input: unknown,
 ): Promise<{ error: string } | { success: true; data: { id: string; position: string } }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = createColumnSchema.safeParse(input);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
 	const { projectId, name, color } = parsed.data;
 
-	const project = await assertProjectOwnership(projectId, workspace.id);
-	if (!project) return { error: "Forbidden" };
+	if (!(await isOwnedProject(projectId, workspace.id))) return { error: "Project not found" };
 
-	const existing = await db
+	const [last] = await db
 		.select({ position: seiryuColumns.position })
 		.from(seiryuColumns)
 		.where(eq(seiryuColumns.projectId, projectId))
-		.orderBy(asc(seiryuColumns.position));
-
-	const lastPos = existing.at(-1)?.position ?? null;
-	const position = generateKeyBetween(lastPos, null);
+		.orderBy(desc(seiryuColumns.position))
+		.limit(1);
+	const position = generateKeyBetween(last?.position ?? null, null);
 
 	const [column] = await db
 		.insert(seiryuColumns)
@@ -72,81 +54,55 @@ export async function createColumn(
 }
 
 export async function updateColumn(input: unknown): Promise<{ error: string } | { success: true }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = updateColumnSchema.safeParse(input);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
 	const { columnId, ...updates } = parsed.data;
 
-	const [col] = await db
-		.select({ projectId: seiryuColumns.projectId })
-		.from(seiryuColumns)
-		.where(eq(seiryuColumns.id, columnId))
-		.limit(1);
-
-	if (!col) return { error: "Column not found" };
-
-	const project = await assertProjectOwnership(col.projectId, workspace.id);
-	if (!project) return { error: "Forbidden" };
+	const column = await getOwnedColumn(columnId, workspace.id);
+	if (!column) return { error: "Column not found" };
 
 	await db.update(seiryuColumns).set(updates).where(eq(seiryuColumns.id, columnId));
 
-	revalidatePath(`/seiryu/${col.projectId}`);
+	revalidatePath(`/seiryu/${column.projectId}`);
 	return { success: true };
 }
 
 export async function deleteColumn(input: unknown): Promise<{ error: string } | { success: true }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = deleteColumnSchema.safeParse(input);
 	if (!parsed.success) return { error: "Invalid input" };
 
-	const { columnId } = parsed.data;
+	const column = await getOwnedColumn(parsed.data.columnId, workspace.id);
+	if (!column) return { error: "Column not found" };
 
-	const [col] = await db
-		.select({ projectId: seiryuColumns.projectId })
-		.from(seiryuColumns)
-		.where(eq(seiryuColumns.id, columnId))
-		.limit(1);
+	await db.delete(seiryuColumns).where(eq(seiryuColumns.id, parsed.data.columnId));
 
-	if (!col) return { error: "Column not found" };
-
-	const project = await assertProjectOwnership(col.projectId, workspace.id);
-	if (!project) return { error: "Forbidden" };
-
-	await db.delete(seiryuColumns).where(eq(seiryuColumns.id, columnId));
-
-	revalidatePath(`/seiryu/${col.projectId}`);
+	revalidatePath(`/seiryu/${column.projectId}`);
 	return { success: true };
 }
 
 export async function reorderColumns(
 	input: unknown,
 ): Promise<{ error: string } | { success: true }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = reorderColumnSchema.safeParse(input);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
 	const { columnId, newPosition } = parsed.data;
 
-	const [col] = await db
-		.select({ projectId: seiryuColumns.projectId })
-		.from(seiryuColumns)
-		.where(eq(seiryuColumns.id, columnId))
-		.limit(1);
-
-	if (!col) return { error: "Column not found" };
-
-	const project = await assertProjectOwnership(col.projectId, workspace.id);
-	if (!project) return { error: "Forbidden" };
+	const column = await getOwnedColumn(columnId, workspace.id);
+	if (!column) return { error: "Column not found" };
 
 	await db
 		.update(seiryuColumns)
 		.set({ position: newPosition })
 		.where(eq(seiryuColumns.id, columnId));
 
-	revalidatePath(`/seiryu/${col.projectId}`);
+	revalidatePath(`/seiryu/${column.projectId}`);
 	return { success: true };
 }

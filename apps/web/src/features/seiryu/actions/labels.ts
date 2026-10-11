@@ -1,63 +1,47 @@
 "use server";
 
-import { auth } from "@/auth";
-import { getWorkspace } from "@/features/kuroji/actions/workspace";
-import { isOwnedProject } from "@/features/seiryu/actions/guard";
+import {
+	getOwnedCard,
+	getOwnedLabel,
+	isOwnedProject,
+	requireWorkspace,
+} from "@/features/seiryu/actions/guard";
 import {
 	createLabelSchema,
 	deleteLabelSchema,
 	setCardLabelsSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
-import {
-	and,
-	db,
-	eq,
-	inArray,
-	seiryuCardLabels,
-	seiryuCards,
-	seiryuLabels,
-	seiryuProjects,
-} from "@seikatsu/db";
+import { and, asc, db, eq, inArray, seiryuCardLabels, seiryuLabels } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
-async function getAuthedWorkspace() {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Unauthorized");
-	const workspace = await getWorkspace(session.user.id);
-	if (!workspace) throw new Error("Workspace not found");
-	return { workspace };
-}
-
 export async function getLabels(projectId: string) {
-	const { workspace } = await getAuthedWorkspace();
-
+	const workspace = await requireWorkspace();
 	if (!(await isOwnedProject(projectId, workspace.id))) throw new Error("Forbidden");
 
-	return db.select().from(seiryuLabels).where(eq(seiryuLabels.projectId, projectId));
+	return db
+		.select()
+		.from(seiryuLabels)
+		.where(eq(seiryuLabels.projectId, projectId))
+		.orderBy(asc(seiryuLabels.name));
 }
 
 export async function createLabel(
 	input: unknown,
 ): Promise<{ error: string } | { success: true; data: { id: string } }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = createLabelSchema.safeParse(input);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
 	const { projectId, name, color } = parsed.data;
 
-	const [project] = await db
-		.select({ id: seiryuProjects.id })
-		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspace.id)))
-		.limit(1);
-	if (!project) return { error: "Forbidden" };
+	if (!(await isOwnedProject(projectId, workspace.id))) return { error: "Project not found" };
 
 	const [label] = await db
 		.insert(seiryuLabels)
 		.values({ projectId, name, color })
-		.returning({ id: seiryuLabels.id })
-		.onConflictDoNothing();
+		.onConflictDoNothing()
+		.returning({ id: seiryuLabels.id });
 	if (!label) return { error: "Label already exists" };
 
 	revalidatePath(`/seiryu/${projectId}`);
@@ -65,30 +49,15 @@ export async function createLabel(
 }
 
 export async function deleteLabel(input: unknown): Promise<{ error: string } | { success: true }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = deleteLabelSchema.safeParse(input);
 	if (!parsed.success) return { error: "Invalid input" };
 
-	const { labelId } = parsed.data;
+	const label = await getOwnedLabel(parsed.data.labelId, workspace.id);
+	if (!label) return { error: "Label not found" };
 
-	const [label] = await db
-		.select({ projectId: seiryuLabels.projectId })
-		.from(seiryuLabels)
-		.where(eq(seiryuLabels.id, labelId))
-		.limit(1);
-	if (!label) return { error: "Not found" };
-
-	const [project] = await db
-		.select({ id: seiryuProjects.id })
-		.from(seiryuProjects)
-		.where(
-			and(eq(seiryuProjects.id, label.projectId), eq(seiryuProjects.workspaceId, workspace.id)),
-		)
-		.limit(1);
-	if (!project) return { error: "Forbidden" };
-
-	await db.delete(seiryuLabels).where(eq(seiryuLabels.id, labelId));
+	await db.delete(seiryuLabels).where(eq(seiryuLabels.id, parsed.data.labelId));
 
 	revalidatePath(`/seiryu/${label.projectId}`);
 	return { success: true };
@@ -97,27 +66,17 @@ export async function deleteLabel(input: unknown): Promise<{ error: string } | {
 export async function setCardLabels(
 	input: unknown,
 ): Promise<{ error: string } | { success: true }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = setCardLabelsSchema.safeParse(input);
 	if (!parsed.success) return { error: "Invalid input" };
 
 	const { cardId, labelIds } = parsed.data;
 
-	const [card] = await db
-		.select({ projectId: seiryuCards.projectId })
-		.from(seiryuCards)
-		.where(eq(seiryuCards.id, cardId))
-		.limit(1);
+	const card = await getOwnedCard(cardId, workspace.id);
 	if (!card) return { error: "Card not found" };
 
-	const [project] = await db
-		.select({ id: seiryuProjects.id })
-		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.id, card.projectId), eq(seiryuProjects.workspaceId, workspace.id)))
-		.limit(1);
-	if (!project) return { error: "Forbidden" };
-
+	// assertLabelsInProject: every label must belong to the card's project.
 	if (labelIds.length > 0) {
 		const valid = await db
 			.select({ id: seiryuLabels.id })
