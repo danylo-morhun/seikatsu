@@ -3,7 +3,7 @@
 import { Spinner } from "@/components/Spinner";
 import { createLabel, setCardLabels } from "@/features/seiryu/actions/labels";
 import { LABEL_COLORS } from "@/features/seiryu/lib/constants";
-import type { LabelData } from "@/features/seiryu/lib/types";
+import { type LabelData, isTempId } from "@/features/seiryu/lib/types";
 import { Add01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Input, cn } from "@seikatsu/ui";
@@ -63,7 +63,7 @@ export function LabelPicker({
 	async function save(next: Set<string>) {
 		const before = selectedRef.current;
 		apply(next);
-		const labelIds = [...next].filter((id) => !isTemp(id));
+		const labelIds = [...next].filter((id) => !isTempId(id));
 		const result = await setCardLabels({ cardId, labelIds });
 		if ("error" in result) {
 			toast.error(result.error);
@@ -72,7 +72,7 @@ export function LabelPicker({
 	}
 
 	function toggle(labelId: string) {
-		if (isTemp(labelId)) return;
+		if (isTempId(labelId)) return;
 		const next = new Set(selectedRef.current);
 		if (next.has(labelId)) next.delete(labelId);
 		else next.add(labelId);
@@ -140,7 +140,7 @@ export function LabelPicker({
 								type="button"
 								onClick={() => toggle(label.id)}
 								aria-pressed={isOn}
-								aria-busy={isTemp(label.id) || undefined}
+								aria-busy={isTempId(label.id) || undefined}
 								className={cn(
 									"inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-[color,background-color,border-color,transform] duration-150 ease-out active:scale-[0.97]",
 									isOn
@@ -183,5 +183,3 @@ export function LabelPicker({
 		</section>
 	);
 }
-
-const isTemp = (id: string) => id.startsWith("temp-");
