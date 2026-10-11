@@ -3,6 +3,7 @@ import { getColumns } from "@/features/seiryu/actions/columns";
 import { getLabels } from "@/features/seiryu/actions/labels";
 import { getProjects } from "@/features/seiryu/actions/projects";
 import { CardPage } from "@/features/seiryu/components/CardPage";
+import { getUserToday } from "@/lib/timezone";
 import { notFound } from "next/navigation";
 
 export default async function CardDetailPage({
@@ -14,10 +15,11 @@ export default async function CardDetailPage({
 	const card = await getCard(cardId);
 	if (!card || card.projectId !== projectId) notFound();
 
-	const [projects, columns, labels] = await Promise.all([
+	const [projects, columns, labels, today] = await Promise.all([
 		getProjects(),
 		getColumns(projectId),
 		getLabels(projectId),
+		getUserToday(),
 	]);
 	const project = projects.find((p) => p.id === projectId);
 	if (!project) notFound();
@@ -28,6 +30,7 @@ export default async function CardDetailPage({
 			projectName={project.name}
 			columns={columns.map(({ id, name }) => ({ id, name }))}
 			projectLabels={labels}
+			today={today}
 		/>
 	);
 }

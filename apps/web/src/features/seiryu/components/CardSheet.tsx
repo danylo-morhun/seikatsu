@@ -37,6 +37,7 @@ interface Props {
 	onArchive: (cardId: string) => void;
 	onDelete: (cardId: string) => Promise<unknown>;
 	onProjectLabelsChange?: (labels: LabelData[]) => void;
+	today: string;
 }
 
 export function CardSheet({
@@ -51,6 +52,7 @@ export function CardSheet({
 	onArchive,
 	onDelete,
 	onProjectLabelsChange,
+	today,
 }: Props) {
 	const titleId = useId();
 	const [confirmDelete, setConfirmDelete] = useState(false);
@@ -122,6 +124,7 @@ export function CardSheet({
 									key={shown.id}
 									card={shown}
 									titleId={titleId}
+									today={today}
 									columns={columns}
 									projectLabels={projectLabels}
 									onSave={(updates) => onSave(shown.id, updates)}

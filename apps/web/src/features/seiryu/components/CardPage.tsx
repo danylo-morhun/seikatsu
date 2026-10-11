@@ -41,6 +41,7 @@ interface Props {
 	projectName: string;
 	columns: { id: string; name: string }[];
 	projectLabels: LabelData[];
+	today: string;
 }
 
 /** A card on its own page (deep link, new tab): the sheet's body, under a back link. */
@@ -49,6 +50,7 @@ export function CardPage({
 	projectName,
 	columns,
 	projectLabels: initialLabels,
+	today,
 }: Props) {
 	const router = useRouter();
 	const [card, setCard] = useState(initial);
@@ -169,6 +171,7 @@ export function CardPage({
 					columns={columns}
 					projectLabels={projectLabels}
 					readOnly={archived}
+					today={today}
 					onSave={handleSave}
 					onMove={handleMove}
 					onChange={(changes) => setCard((c) => ({ ...c, ...changes }))}

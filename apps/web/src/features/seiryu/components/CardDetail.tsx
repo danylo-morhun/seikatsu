@@ -1,6 +1,7 @@
 "use client";
 
 import { ChecklistSection } from "@/features/seiryu/components/ChecklistSection";
+import { DueDateChip } from "@/features/seiryu/components/DueDateChip";
 import { LabelPicker } from "@/features/seiryu/components/LabelPicker";
 import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
 import { QuietAdd } from "@/features/seiryu/components/QuietAdd";
@@ -37,6 +38,8 @@ interface Props {
 	/** The title is the page's heading on the full page, the sheet's on the board. */
 	titleId?: string;
 	readOnly?: boolean;
+	/** The user's calendar day (tz cookie), as on the board. */
+	today: string;
 }
 
 /**
@@ -54,6 +57,7 @@ export function CardDetail({
 	onProjectLabelsChange,
 	titleId,
 	readOnly = false,
+	today,
 }: Props) {
 	const id = useId();
 	const [writingNotes, setWritingNotes] = useState(false);
@@ -124,7 +128,7 @@ export function CardDetail({
 								<SelectItem value="none">No priority</SelectItem>
 								{PRIORITIES.map((p) => (
 									<SelectItem key={p} value={p}>
-										<PriorityBadge priority={p} />
+										<PriorityBadge priority={p} className="mr-1.5" />
 										{PRIORITY_CONFIG[p].label}
 									</SelectItem>
 								))}
@@ -133,7 +137,11 @@ export function CardDetail({
 					</div>
 
 					<div className="space-y-2">
-						<Label htmlFor={`${id}-due`}>Due date</Label>
+						<div className="flex items-baseline justify-between gap-2">
+							<Label htmlFor={`${id}-due`}>Due date</Label>
+							{/* The tile's wording beside the browser's own date format. */}
+							{card.dueDate && <DueDateChip dueDate={card.dueDate} today={today} />}
+						</div>
 						<Input
 							id={`${id}-due`}
 							type="date"
