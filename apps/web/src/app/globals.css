@@ -409,8 +409,47 @@
 	}
 }
 
+/* A new page settles in: lighter than .animate-rise, which the page's own blocks may add. */
+.animate-page {
+	animation: page-in 350ms var(--ease-out) backwards;
+}
+@keyframes page-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+}
+
+/* Revealed rows (expand, "show more") drop into place from the row above, cascading by --i. */
+.animate-drop {
+	animation: drop 260ms var(--ease-out) backwards;
+	animation-delay: calc(var(--i, 0) * 35ms);
+}
+@keyframes drop {
+	from {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
+}
+
+@keyframes check-draw {
+	from {
+		stroke-dashoffset: 1;
+	}
+}
+
+/* Theme switch: the new theme spreads from the toggle as a circle (see ThemeToggle). The
+   default crossfade is off so only the circle moves. */
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation: none;
+	mix-blend-mode: normal;
+}
+
 @media (prefers-reduced-motion: reduce) {
-	.animate-rise {
+	.animate-rise,
+	.animate-page,
+	.animate-drop {
 		animation-name: fade-in;
 	}
 	.bar-fill {
