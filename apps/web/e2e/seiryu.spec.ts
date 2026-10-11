@@ -33,6 +33,7 @@ test("card edits save themselves, even when the sheet closes mid-typing", async 
 	await page.getByRole("button", { name: "Write tests" }).click();
 
 	const sheet = page.getByRole("dialog");
+	await sheet.getByRole("button", { name: "Add notes" }).click();
 	await sheet.getByLabel("Description").fill("Cover the board");
 	// Escape straight away: the draft must be committed as the sheet unmounts.
 	await page.keyboard.press("Escape");
