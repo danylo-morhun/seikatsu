@@ -18,3 +18,6 @@ export const LABEL_COLORS = [
 	"#ec4899",
 	"#64748b",
 ] as const;
+
+/** A column named "Done" holds finished cards; they don't count as open work. */
+export const isDoneColumn = (name: string) => name.trim().toLowerCase() === "done";
