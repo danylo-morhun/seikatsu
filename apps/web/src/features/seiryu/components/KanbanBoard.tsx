@@ -61,7 +61,7 @@ import {
 } from "@dnd-kit/sortable";
 import { Archive01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Button } from "@seikatsu/ui";
+import { Button, cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
@@ -522,6 +522,26 @@ export function KanbanBoard({
 		start.release();
 	}
 
+	// More lanes past an edge: fade that edge, so the board doesn't look like it ends there.
+	const scrollerRef = useRef<HTMLDivElement>(null);
+	const [edges, setEdges] = useState({ start: false, end: false });
+	const updateEdges = useCallback(() => {
+		const el = scrollerRef.current;
+		if (!el) return;
+		const start = el.scrollLeft > 1;
+		const end = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+		setEdges((prev) => (prev.start === start && prev.end === end ? prev : { start, end }));
+	}, []);
+	useEffect(() => {
+		const el = scrollerRef.current;
+		if (!el) return;
+		updateEdges();
+		const observer = new ResizeObserver(updateEdges);
+		observer.observe(el);
+		for (const child of el.children) observer.observe(child);
+		return () => observer.disconnect();
+	}, [updateEdges, columns.length]);
+
 	const nothingMatches = isFiltered && filteredCards.length === 0 && cards.length > 0;
 
 	return (
@@ -575,7 +595,14 @@ export function KanbanBoard({
 				>
 					<SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
 						<div className="relative min-h-0 flex-1">
-							<div className="absolute inset-0 flex snap-x snap-mandatory scroll-px-4 gap-6 overflow-x-auto px-4 pb-28 sm:scroll-px-8 sm:px-8 md:snap-none md:pb-8 [scrollbar-width:thin]">
+							<div
+								ref={scrollerRef}
+								onScroll={updateEdges}
+								className={cn(
+									"absolute inset-0 flex snap-x snap-mandatory scroll-px-4 gap-6 overflow-x-auto px-4 pb-28 sm:scroll-px-8 sm:px-8 md:snap-none md:pb-8 [scrollbar-width:thin]",
+									EDGE_FADE[`${edges.start ? "s" : ""}${edges.end ? "e" : ""}`],
+								)}
+							>
 								{sortedColumns.map((col, i) => (
 									<KanbanColumn
 										key={col.id}
@@ -637,6 +664,13 @@ export function KanbanBoard({
 }
 
 const NO_CARDS: CardData[] = [];
+
+const EDGE_FADE: Record<string, string> = {
+	"": "",
+	s: "md:[mask-image:linear-gradient(to_right,transparent,#000_3rem)]",
+	e: "md:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)]",
+	se: "md:[mask-image:linear-gradient(to_right,transparent,#000_3rem,#000_calc(100%-3rem),transparent)]",
+};
 
 function groupByColumn(cards: CardData[]) {
 	const map = new Map<string, CardData[]>();
