@@ -16,7 +16,6 @@ import { periodQuery } from "@/features/kuroji/lib/period";
 import {
 	Alert01Icon,
 	Archive01Icon,
-	ArrowDown01Icon,
 	ArrowRight01Icon,
 	Delete01Icon,
 	EyeIcon,
@@ -249,7 +248,7 @@ export function AccountsOverview({
 		});
 	}
 
-	function renderAccountRow(row: AccountRow, isChild = false) {
+	function renderAccountRow(row: AccountRow, isChild = false, childIndex = 0) {
 		const acct = accountMap.get(row.accountId);
 		if (!acct) return null;
 
@@ -268,7 +267,10 @@ export function AccountsOverview({
 
 		return (
 			<React.Fragment key={row.accountId}>
-				<div className="flex flex-col">
+				<div
+					className={cn("flex flex-col", isChild && "animate-drop")}
+					style={isChild ? ({ "--i": childIndex } as React.CSSProperties) : undefined}
+				>
 					<div
 						className={cn(
 							"relative flex items-center gap-2 py-2.5 pr-1 pl-1 transition-colors hover:bg-surface",
@@ -284,8 +286,11 @@ export function AccountsOverview({
 								aria-expanded={isExpanded}
 							>
 								<HugeiconsIcon
-									icon={isExpanded ? ArrowDown01Icon : ArrowRight01Icon}
-									className="h-3.5 w-3.5"
+									icon={ArrowRight01Icon}
+									className={cn(
+										"h-3.5 w-3.5 transition-transform duration-200 ease-out",
+										isExpanded && "rotate-90",
+									)}
 								/>
 							</button>
 						) : (
@@ -330,7 +335,7 @@ export function AccountsOverview({
 					)}
 				</div>
 
-				{isExpanded && children.map((child) => renderAccountRow(child, true))}
+				{isExpanded && children.map((child, i) => renderAccountRow(child, true, i))}
 			</React.Fragment>
 		);
 	}
@@ -478,7 +483,7 @@ export function AccountsOverview({
 													Hide categories with no activity
 												</span>
 											</summary>
-											<div className="divide-y divide-rule border-t border-rule">
+											<div className="animate-drop divide-y divide-rule border-t border-rule">
 												{quietParents.map((row) => renderAccountRow(row, false))}
 											</div>
 										</details>
