@@ -1,12 +1,12 @@
 "use server";
 
-import { auth } from "@/auth";
-import { getWorkspace } from "@/features/kuroji/actions/workspace";
-import { DEFAULT_COLUMNS } from "@/features/seiryu/lib/constants";
-import { generateKeyBetween } from "@/features/seiryu/lib/position";
+import { requireWorkspace } from "@/features/seiryu/actions/guard";
+import { DEFAULT_COLUMNS, isDoneColumn } from "@/features/seiryu/lib/constants";
+import { generateKeyBetween, generateNKeysBetween } from "@/features/seiryu/lib/position";
 import {
 	createProjectSchema,
 	deleteProjectSchema,
+	reorderProjectsSchema,
 	updateProjectSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
 import {
@@ -14,172 +14,156 @@ import {
 	asc,
 	count,
 	db,
+	desc,
 	eq,
 	isNull,
 	seiryuCards,
 	seiryuColumns,
 	seiryuProjects,
-	sql,
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 import { cache } from "react";
-
-async function getAuthedWorkspace() {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Unauthorized");
-	const workspace = await getWorkspace(session.user.id);
-	if (!workspace) throw new Error("Workspace not found");
-	return { session, workspace };
-}
 
 // Layout and page both need the list; cache() makes it one query per request.
 const listProjects = cache((workspaceId: string) =>
 	db
 		.select()
 		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.workspaceId, workspaceId), isNull(seiryuProjects.archivedAt)))
+		.where(eq(seiryuProjects.workspaceId, workspaceId))
 		.orderBy(asc(seiryuProjects.position)),
 );
 
 export async function getProjects() {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 	return listProjects(workspace.id);
 }
 
-export async function getNotDoneCardCounts(): Promise<Record<string, number>> {
-	const { workspace } = await getAuthedWorkspace();
+/** Open cards per project: live cards outside a "Done" column. */
+export async function getOpenCardCounts(): Promise<Record<string, number>> {
+	const workspace = await requireWorkspace();
 
 	const rows = await db
-		.select({ projectId: seiryuCards.projectId, total: count() })
+		.select({ projectId: seiryuColumns.projectId, name: seiryuColumns.name, total: count() })
 		.from(seiryuCards)
 		.innerJoin(seiryuColumns, eq(seiryuCards.columnId, seiryuColumns.id))
-		.innerJoin(seiryuProjects, eq(seiryuCards.projectId, seiryuProjects.id))
-		.where(
-			and(
-				eq(seiryuProjects.workspaceId, workspace.id),
-				isNull(seiryuCards.archivedAt),
-				sql`lower(${seiryuColumns.name}) != 'done'`,
-			),
-		)
-		.groupBy(seiryuCards.projectId);
+		.innerJoin(seiryuProjects, eq(seiryuColumns.projectId, seiryuProjects.id))
+		.where(and(eq(seiryuProjects.workspaceId, workspace.id), isNull(seiryuCards.archivedAt)))
+		.groupBy(seiryuColumns.id, seiryuColumns.projectId, seiryuColumns.name);
 
-	return Object.fromEntries(rows.map((r) => [r.projectId, r.total]));
+	const counts: Record<string, number> = {};
+	for (const row of rows) {
+		if (isDoneColumn(row.name)) continue;
+		counts[row.projectId] = (counts[row.projectId] ?? 0) + row.total;
+	}
+	return counts;
 }
 
 export async function createProject(
 	input: unknown,
 ): Promise<{ error: string } | { success: true; data: { id: string } }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = createProjectSchema.safeParse(input);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
 	const { name, description, color } = parsed.data;
 
-	const existing = await db
+	const [last] = await db
 		.select({ position: seiryuProjects.position })
 		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.workspaceId, workspace.id), isNull(seiryuProjects.archivedAt)))
-		.orderBy(asc(seiryuProjects.position));
+		.where(eq(seiryuProjects.workspaceId, workspace.id))
+		.orderBy(desc(seiryuProjects.position))
+		.limit(1);
+	const position = generateKeyBetween(last?.position ?? null, null);
 
-	const lastPos = existing.at(-1)?.position ?? null;
-	const position = generateKeyBetween(lastPos, null);
+	const project = await db.transaction(async (tx) => {
+		const [created] = await tx
+			.insert(seiryuProjects)
+			.values({ workspaceId: workspace.id, name, description, color, position })
+			.returning({ id: seiryuProjects.id });
+		if (!created) return null;
 
-	const [project] = await db
-		.insert(seiryuProjects)
-		.values({ workspaceId: workspace.id, name, description, color, position })
-		.returning({ id: seiryuProjects.id });
+		const columnPositions = generateNKeysBetween(null, null, DEFAULT_COLUMNS.length);
+		await tx.insert(seiryuColumns).values(
+			DEFAULT_COLUMNS.map((columnName, i) => ({
+				projectId: created.id,
+				name: columnName,
+				position: columnPositions[i] as string,
+			})),
+		);
+		return created;
+	});
 
 	if (!project) return { error: "Failed to create project" };
 
-	const colPositions = [
-		generateKeyBetween(null, null),
-		generateKeyBetween(generateKeyBetween(null, null), null),
-		generateKeyBetween(generateKeyBetween(generateKeyBetween(null, null), null), null),
-	];
-
-	await db.insert(seiryuColumns).values(
-		DEFAULT_COLUMNS.map((colName, i) => ({
-			projectId: project.id,
-			name: colName,
-			position: colPositions[i] as string,
-		})),
-	);
-
-	revalidatePath("/seiryu");
+	revalidatePath("/seiryu", "layout");
 	return { success: true, data: { id: project.id } };
 }
 
 export async function updateProject(
 	input: unknown,
 ): Promise<{ error: string } | { success: true }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = updateProjectSchema.safeParse(input);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
 	const { projectId, ...updates } = parsed.data;
 
-	const [project] = await db
-		.select({ id: seiryuProjects.id })
-		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspace.id)))
-		.limit(1);
-
-	if (!project) return { error: "Forbidden" };
-
-	await db
+	const [updated] = await db
 		.update(seiryuProjects)
-		.set({ ...updates })
-		.where(eq(seiryuProjects.id, projectId));
+		.set(updates)
+		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspace.id)))
+		.returning({ id: seiryuProjects.id });
+	if (!updated) return { error: "Project not found" };
 
-	revalidatePath("/seiryu");
+	revalidatePath("/seiryu", "layout");
 	return { success: true };
 }
 
 export async function deleteProject(
 	input: unknown,
 ): Promise<{ error: string } | { success: true }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
 	const parsed = deleteProjectSchema.safeParse(input);
 	if (!parsed.success) return { error: "Invalid input" };
 
-	const { projectId } = parsed.data;
+	const [deleted] = await db
+		.delete(seiryuProjects)
+		.where(
+			and(
+				eq(seiryuProjects.id, parsed.data.projectId),
+				eq(seiryuProjects.workspaceId, workspace.id),
+			),
+		)
+		.returning({ id: seiryuProjects.id });
+	if (!deleted) return { error: "Project not found" };
 
-	const [project] = await db
-		.select({ workspaceId: seiryuProjects.workspaceId })
-		.from(seiryuProjects)
-		.where(eq(seiryuProjects.id, projectId))
-		.limit(1);
-
-	if (!project || project.workspaceId !== workspace.id) return { error: "Forbidden" };
-
-	await db.delete(seiryuProjects).where(eq(seiryuProjects.id, projectId));
-
-	revalidatePath("/seiryu");
+	revalidatePath("/seiryu", "layout");
 	return { success: true };
 }
 
 export async function reorderProject(
-	projectId: string,
-	newPosition: string,
+	input: unknown,
 ): Promise<{ error: string } | { success: true }> {
-	const { workspace } = await getAuthedWorkspace();
+	const workspace = await requireWorkspace();
 
-	const [project] = await db
-		.select({ id: seiryuProjects.id })
-		.from(seiryuProjects)
-		.where(and(eq(seiryuProjects.id, projectId), eq(seiryuProjects.workspaceId, workspace.id)))
-		.limit(1);
+	const parsed = reorderProjectsSchema.safeParse(input);
+	if (!parsed.success) return { error: "Invalid input" };
 
-	if (!project) return { error: "Forbidden" };
-
-	await db
+	const [updated] = await db
 		.update(seiryuProjects)
-		.set({ position: newPosition })
-		.where(eq(seiryuProjects.id, projectId));
+		.set({ position: parsed.data.newPosition })
+		.where(
+			and(
+				eq(seiryuProjects.id, parsed.data.projectId),
+				eq(seiryuProjects.workspaceId, workspace.id),
+			),
+		)
+		.returning({ id: seiryuProjects.id });
+	if (!updated) return { error: "Project not found" };
 
-	revalidatePath("/seiryu");
+	revalidatePath("/seiryu", "layout");
 	return { success: true };
 }
