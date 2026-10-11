@@ -98,7 +98,7 @@ export function HomeGrid({ user }: Props) {
 								className={cn(
 									app.theme,
 									"group relative block overflow-hidden rounded-2xl border border-border/50 bg-card p-6",
-									"transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40",
+									"transition-[translate,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-primary/40",
 								)}
 							>
 								{/* Top accent line */}
@@ -113,7 +113,7 @@ export function HomeGrid({ user }: Props) {
 								</div>
 
 								{/* Top-right arrow — appears on hover */}
-								<div className="absolute top-4 right-4 flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20 opacity-0 transition-all duration-200 group-hover:opacity-100">
+								<div className="absolute top-4 right-4 flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
 									<HugeiconsIcon icon={ArrowRight01Icon} className="h-3.5 w-3.5" />
 								</div>
 
