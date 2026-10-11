@@ -137,7 +137,7 @@ export function ProjectSidebar({
 						{isEditingThis ? (
 							<div className="flex flex-1 flex-col gap-1.5 px-2 py-1.5">
 								<div className="flex items-center gap-1.5 flex-wrap">
-									{LABEL_COLORS.map((c) => (
+									{LABEL_COLORS.map(({ hex: c }) => (
 										<button
 											key={c}
 											type="button"

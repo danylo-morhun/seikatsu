@@ -1,6 +1,7 @@
 "use client";
 
-import { PRIORITY_CONFIG } from "@/features/seiryu/lib/constants";
+import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
+import { PRIORITIES, PRIORITY_CONFIG } from "@/features/seiryu/lib/constants";
 import { cn } from "@seikatsu/ui";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
@@ -56,7 +57,8 @@ export function FilterBar({ projectLabels }: Props) {
 			<span className="mr-1 text-xs font-medium text-muted-foreground">Filter:</span>
 
 			{/* Priority */}
-			{Object.entries(PRIORITY_CONFIG).map(([key, cfg]) => {
+			{PRIORITIES.map((key) => {
+				const cfg = PRIORITY_CONFIG[key];
 				const active = activePriorities.includes(key);
 				return (
 					<button
@@ -70,7 +72,7 @@ export function FilterBar({ projectLabels }: Props) {
 								: "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground",
 						)}
 					>
-						<span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", cfg.color)} />
+						<PriorityBadge priority={key} />
 						{cfg.label}
 					</button>
 				);
