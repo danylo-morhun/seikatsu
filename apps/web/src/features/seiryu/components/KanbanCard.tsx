@@ -7,36 +7,10 @@ import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@seikatsu/ui";
 import { memo } from "react";
 
-type Priority = "low" | "medium" | "high" | "urgent";
+export type { CardData, ChecklistItemData, LabelData } from "@/features/seiryu/lib/types";
+import { type CardData, isTempId } from "@/features/seiryu/lib/types";
 
-export type ChecklistItemData = {
-	id: string;
-	title: string;
-	isCompleted: boolean;
-	position: string;
-};
-
-export type LabelData = {
-	id: string;
-	name: string;
-	color: string;
-};
-
-export type CardData = {
-	id: string;
-	columnId: string;
-	projectId: string;
-	title: string;
-	description: string | null;
-	priority: Priority | null;
-	dueDate: string | null;
-	position: string;
-	checklistItems: ChecklistItemData[];
-	labels: LabelData[];
-};
-
-/** Not saved yet: shown at once, but can't be opened or dragged until the server answers. */
-export const isTempCard = (id: string) => id.startsWith("temp-");
+export const isTempCard = isTempId;
 
 interface Props {
 	card: CardData;

@@ -89,7 +89,8 @@ export const archiveCardSchema = z.object({
 export const moveCardSchema = z.object({
 	cardId: z.string().uuid(),
 	newColumnId: z.string().uuid(),
-	newPosition: z.string().min(1),
+	/** Omitted: the card goes to the end of the column. */
+	newPosition: z.string().min(1).optional(),
 });
 
 export const reorderCardSchema = z.object({

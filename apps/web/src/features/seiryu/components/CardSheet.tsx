@@ -1,39 +1,41 @@
 "use client";
 
-import { ChecklistSection } from "@/features/seiryu/components/ChecklistSection";
-import type { CardData, LabelData } from "@/features/seiryu/components/KanbanCard";
-import { LabelManager } from "@/features/seiryu/components/LabelManager";
+import { CardDetail } from "@/features/seiryu/components/CardDetail";
+import { ConfirmDelete } from "@/features/seiryu/components/ConfirmDelete";
+import type { CardData, CardFieldUpdates, LabelData } from "@/features/seiryu/lib/types";
 import {
-	Label,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-	Separator,
+	Archive01Icon,
+	Delete01Icon,
+	MoreHorizontalIcon,
+	SquareArrowUpRightIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+	Button,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
 	Sheet,
 	SheetContent,
 	SheetDescription,
-	SheetHeader,
 	SheetTitle,
 } from "@seikatsu/ui";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-
-type Priority = "low" | "medium" | "high" | "urgent";
-
-export type CardUpdates = Pick<CardData, "title" | "description" | "priority" | "dueDate">;
+import { useId, useRef, useState } from "react";
 
 interface Props {
 	card: CardData | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	columns: { id: string; name: string }[];
 	projectLabels: LabelData[];
-	/** Saves the form fields (the board applies them at once and persists). */
-	onSave: (cardId: string, updates: CardUpdates) => void;
-	/** Mirrors checklist/label edits, which persist themselves. */
+	onSave: (cardId: string, updates: CardFieldUpdates) => void;
+	onMove: (cardId: string, columnId: string) => void;
 	onChange: (cardId: string, updates: Partial<CardData>) => void;
 	onArchive: (cardId: string) => void;
+	onDelete: (cardId: string) => Promise<unknown>;
 	onProjectLabelsChange?: (labels: LabelData[]) => void;
 }
 
@@ -41,149 +43,105 @@ export function CardSheet({
 	card,
 	open,
 	onOpenChange,
+	columns,
 	projectLabels,
 	onSave,
+	onMove,
 	onChange,
 	onArchive,
+	onDelete,
 	onProjectLabelsChange,
 }: Props) {
-	const [title, setTitle] = useState(card?.title ?? "");
-	const [description, setDescription] = useState(card?.description ?? "");
-	const [priority, setPriority] = useState<Priority | "">(card?.priority ?? "");
-	const [dueDate, setDueDate] = useState(card?.dueDate ?? "");
-
-	useEffect(() => {
-		if (card) {
-			setTitle(card.title);
-			setDescription(card.description ?? "");
-			setPriority(card.priority ?? "");
-			setDueDate(card.dueDate ?? "");
-		}
-	}, [card?.id]);
-
-	function handleSave() {
-		if (!card) return;
-		onSave(card.id, {
-			title: title.trim() || card.title,
-			description: description || null,
-			priority: (priority || null) as Priority | null,
-			dueDate: dueDate || null,
-		});
-	}
-
-	function handleArchive() {
-		if (card) onArchive(card.id);
-	}
+	const titleId = useId();
+	const [confirmDelete, setConfirmDelete] = useState(false);
+	// The sheet slides out after its card is archived or deleted: keep showing it meanwhile.
+	const lastCard = useRef(card);
+	if (card) lastCard.current = card;
+	const shown = card ?? lastCard.current;
 
 	return (
-		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent side="right" className="flex flex-col gap-0 p-0">
-				<SheetTitle className="sr-only">Card details</SheetTitle>
-				<SheetDescription className="sr-only">Edit card fields</SheetDescription>
-				<SheetHeader className="px-6 pt-6 pb-4">
-					<input
-						value={title}
-						onChange={(e) => setTitle(e.target.value)}
-						className="w-full bg-transparent text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground"
-						placeholder="Card title"
-					/>
-					{card && (
-						<Link
-							href={`/seiryu/${card.projectId}/${card.id}`}
-							target="_blank"
-							className="mt-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-						>
-							Open in new tab →
-						</Link>
+		<>
+			<Sheet open={open} onOpenChange={onOpenChange}>
+				<SheetContent
+					side="right"
+					aria-labelledby={titleId}
+					className="w-full gap-0 text-sm sm:max-w-lg"
+					// Focus the sheet itself, not the title: on a phone that would pop the keyboard.
+					onOpenAutoFocus={(e) => {
+						e.preventDefault();
+						(e.currentTarget as HTMLElement | null)?.focus();
+					}}
+					// Back to the card it came from (it was opened by state, not a trigger).
+					onCloseAutoFocus={(e) => {
+						if (!shown) return;
+						const tile = document.querySelector<HTMLElement>(`[data-card-id="${shown.id}"]`);
+						if (tile) {
+							e.preventDefault();
+							tile.focus({ preventScroll: true });
+						}
+					}}
+				>
+					<SheetTitle className="sr-only">{shown?.title ?? "Card"}</SheetTitle>
+					<SheetDescription className="sr-only">
+						Every field saves as you go. Close to return to the board.
+					</SheetDescription>
+
+					{shown && (
+						<>
+							<div className="absolute top-4 right-14 flex items-center gap-1">
+								<Button asChild variant="ghost" size="icon" aria-label="Open as a page">
+									<Link href={`/seiryu/${shown.projectId}/${shown.id}`} prefetch={false}>
+										<HugeiconsIcon icon={SquareArrowUpRightIcon} className="h-4 w-4" />
+									</Link>
+								</Button>
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button variant="ghost" size="icon" aria-label="Card actions">
+											<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end">
+										<DropdownMenuItem onClick={() => onArchive(shown.id)}>
+											<HugeiconsIcon icon={Archive01Icon} className="mr-2 h-4 w-4" />
+											Archive
+										</DropdownMenuItem>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											className="text-destructive focus:text-destructive"
+											onClick={() => setConfirmDelete(true)}
+										>
+											<HugeiconsIcon icon={Delete01Icon} className="mr-2 h-4 w-4" />
+											Delete…
+										</DropdownMenuItem>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							</div>
+
+							<div className="flex-1 overflow-y-auto px-6 pt-18 pb-10 [scrollbar-width:thin]">
+								<CardDetail
+									key={shown.id}
+									card={shown}
+									titleId={titleId}
+									columns={columns}
+									projectLabels={projectLabels}
+									onSave={(updates) => onSave(shown.id, updates)}
+									onMove={(columnId) => onMove(shown.id, columnId)}
+									onChange={(updates) => onChange(shown.id, updates)}
+									onProjectLabelsChange={onProjectLabelsChange}
+								/>
+							</div>
+						</>
 					)}
-				</SheetHeader>
+				</SheetContent>
+			</Sheet>
 
-				<Separator />
-
-				<div className="flex flex-1 flex-col gap-5 overflow-y-auto px-6 py-5">
-					<div className="flex flex-col gap-2">
-						<Label className="text-xs text-muted-foreground">Priority</Label>
-						<Select
-							value={priority || "none"}
-							onValueChange={(v) => setPriority(v === "none" ? "" : (v as Priority))}
-						>
-							<SelectTrigger className="h-8 text-xs">
-								<SelectValue placeholder="No priority" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="none">No priority</SelectItem>
-								<SelectItem value="low">Low</SelectItem>
-								<SelectItem value="medium">Medium</SelectItem>
-								<SelectItem value="high">High</SelectItem>
-								<SelectItem value="urgent">Urgent</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
-
-					<div className="flex flex-col gap-2">
-						<Label className="text-xs text-muted-foreground">Due date</Label>
-						<input
-							type="date"
-							value={dueDate}
-							onChange={(e) => setDueDate(e.target.value)}
-							className="h-8 w-full rounded-md border border-input bg-transparent px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-						/>
-					</div>
-
-					<div className="flex flex-col gap-2">
-						<Label className="text-xs text-muted-foreground">Description</Label>
-						<textarea
-							value={description}
-							onChange={(e) => setDescription(e.target.value)}
-							placeholder="Add a description…"
-							rows={5}
-							className="w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-						/>
-					</div>
-
-					<Separator />
-
-					<LabelManager
-						key={`labels-${card?.id ?? "none"}`}
-						cardId={card?.id ?? ""}
-						projectId={card?.projectId ?? ""}
-						projectLabels={projectLabels}
-						cardLabelIds={card?.labels.map((l) => l.id) ?? []}
-						onChange={(labels) => card && onChange(card.id, { labels })}
-						onProjectLabelsChange={onProjectLabelsChange}
-					/>
-
-					<Separator />
-
-					<ChecklistSection
-						key={`checklist-${card?.id ?? "none"}`}
-						cardId={card?.id ?? ""}
-						initialItems={card?.checklistItems ?? []}
-						onChange={(checklistItems) => card && onChange(card.id, { checklistItems })}
-					/>
-				</div>
-
-				<Separator />
-
-				<div className="flex items-center justify-between px-6 py-4">
-					<button
-						type="button"
-						onClick={handleArchive}
-						className="text-xs text-muted-foreground transition-colors hover:text-destructive"
-					>
-						Archive card
-					</button>
-
-					<button
-						type="button"
-						disabled={!title.trim()}
-						onClick={handleSave}
-						className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
-					>
-						Save
-					</button>
-				</div>
-			</SheetContent>
-		</Sheet>
+			<ConfirmDelete
+				open={confirmDelete}
+				onOpenChange={setConfirmDelete}
+				title={`Delete "${shown?.title ?? "card"}"?`}
+				description="The card, its checklist and labels go for good. To keep it out of the way instead, archive it."
+				onConfirm={() => (shown ? onDelete(shown.id) : undefined)}
+			/>
+		</>
 	);
 }

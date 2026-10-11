@@ -1,162 +1,188 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { archiveCard, updateCard } from "@/features/seiryu/actions/cards";
 import {
-	Label,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-	Separator,
+	archiveCard,
+	deleteCard,
+	moveCard,
+	restoreCard,
+	updateCard,
+} from "@/features/seiryu/actions/cards";
+import { CardDetail } from "@/features/seiryu/components/CardDetail";
+import { ConfirmDelete } from "@/features/seiryu/components/ConfirmDelete";
+import type {
+	ActionResult,
+	CardData,
+	CardFieldUpdates,
+	LabelData,
+} from "@/features/seiryu/lib/types";
+import {
+	Archive01Icon,
+	ArrowLeft01Icon,
+	Delete01Icon,
+	MoreHorizontalIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+	Button,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
 } from "@seikatsu/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
-type Priority = "low" | "medium" | "high" | "urgent";
-
-interface CardProps {
-	id: string;
-	projectId: string;
-	title: string;
-	description: string | null;
-	priority: Priority | null;
-	dueDate: string | null;
-}
-
 interface Props {
-	card: CardProps;
-	projectId: string;
+	card: CardData & { archivedAt: Date | null };
+	projectName: string;
+	columns: { id: string; name: string }[];
+	projectLabels: LabelData[];
 }
 
-export function CardPage({ card, projectId }: Props) {
+/** A card on its own page (deep link, new tab): the sheet's body, under a back link. */
+export function CardPage({
+	card: initial,
+	projectName,
+	columns,
+	projectLabels: initialLabels,
+}: Props) {
 	const router = useRouter();
-	const [title, setTitle] = useState(card.title);
-	const [description, setDescription] = useState(card.description ?? "");
-	const [priority, setPriority] = useState<Priority | "">(card.priority ?? "");
-	const [dueDate, setDueDate] = useState(card.dueDate ?? "");
-	const [isSaving, startSave] = useTransition();
-	const [isArchiving, startArchive] = useTransition();
+	const [card, setCard] = useState(initial);
+	const [projectLabels, setProjectLabels] = useState(initialLabels);
+	const [confirmDelete, setConfirmDelete] = useState(false);
+	const [isRestoring, startRestore] = useTransition();
+	const boardHref = `/seiryu/${card.projectId}`;
+	const archived = card.archivedAt !== null;
 
-	function handleSave() {
-		const resolvedTitle = title.trim() || card.title;
-		const resolvedPriority = (priority || null) as Priority | null;
-		const resolvedDueDate = dueDate || null;
-		const resolvedDescription = description || null;
+	async function persist(changes: Partial<CardData>, save: Promise<ActionResult>) {
+		const before = card;
+		setCard((c) => ({ ...c, ...changes }));
+		const result = await save;
+		if ("error" in result) {
+			toast.error(result.error);
+			setCard(before);
+		}
+	}
 
-		startSave(async () => {
-			const result = await updateCard({
-				cardId: card.id,
-				title: resolvedTitle,
-				description: resolvedDescription,
-				priority: resolvedPriority,
-				dueDate: resolvedDueDate,
-			});
+	function handleSave(updates: CardFieldUpdates) {
+		persist(updates, updateCard({ cardId: card.id, ...updates }));
+	}
+
+	function handleMove(columnId: string) {
+		persist({ columnId }, moveCard({ cardId: card.id, newColumnId: columnId }));
+	}
+
+	async function handleArchive() {
+		const result = await archiveCard({ cardId: card.id });
+		if ("error" in result) {
+			toast.error(result.error);
+			return;
+		}
+		router.push(boardHref);
+	}
+
+	function handleRestore() {
+		startRestore(async () => {
+			const result = await restoreCard({ cardId: card.id });
 			if ("error" in result) toast.error(result.error);
-			else toast.success("Card updated");
+			else setCard((c) => ({ ...c, archivedAt: null, position: result.data.position }));
 		});
 	}
 
-	function handleArchive() {
-		startArchive(async () => {
-			const result = await archiveCard({ cardId: card.id });
-			if ("error" in result) {
-				toast.error(result.error);
-				return;
-			}
-			toast.success("Card archived");
-			router.push(`/seiryu/${projectId}`);
-		});
+	async function handleDelete() {
+		const result = await deleteCard({ cardId: card.id });
+		if ("error" in result) {
+			toast.error(result.error);
+			return;
+		}
+		router.push(boardHref);
 	}
 
 	return (
-		<div className="mx-auto flex h-full max-w-2xl flex-col px-6 py-8">
-			<Link
-				href={`/seiryu/${projectId}`}
-				className="mb-6 text-xs text-muted-foreground transition-colors hover:text-foreground"
-			>
-				← Back to board
-			</Link>
+		<div className="h-full overflow-y-auto">
+			<div className="max-w-2xl px-4 pt-6 pb-28 sm:px-8 md:pt-8 md:pb-8">
+				<div className="mb-6 flex items-center justify-between gap-4">
+					<Link
+						href={boardHref}
+						prefetch
+						className="inline-flex min-w-0 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+					>
+						<HugeiconsIcon icon={ArrowLeft01Icon} aria-hidden className="size-4 shrink-0" />
+						<span className="truncate">{projectName}</span>
+					</Link>
+					{!archived && (
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="ghost" size="icon" aria-label="Card actions">
+									<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem onClick={handleArchive}>
+									<HugeiconsIcon icon={Archive01Icon} className="mr-2 h-4 w-4" />
+									Archive
+								</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem
+									className="text-destructive focus:text-destructive"
+									onClick={() => setConfirmDelete(true)}
+								>
+									<HugeiconsIcon icon={Delete01Icon} className="mr-2 h-4 w-4" />
+									Delete…
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					)}
+				</div>
 
-			<div className="flex flex-col gap-6">
-				<input
-					value={title}
-					onChange={(e) => setTitle(e.target.value)}
-					className="w-full bg-transparent text-lg font-medium text-foreground outline-none placeholder:text-muted-foreground"
-					placeholder="Card title"
+				<h1 className="sr-only">{card.title}</h1>
+
+				{archived && (
+					<div className="mb-8 flex flex-wrap items-center justify-between gap-3 border-y border-rule py-3">
+						<p className="text-sm text-muted-foreground">
+							Archived — hidden from the board. Restore it to edit.
+						</p>
+						<div className="flex gap-2">
+							<Button variant="ghost" size="sm" onClick={() => setConfirmDelete(true)}>
+								Delete
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								className="gap-1.5"
+								disabled={isRestoring}
+								onClick={handleRestore}
+							>
+								{isRestoring && <Spinner />}
+								{isRestoring ? "Restoring…" : "Restore"}
+							</Button>
+						</div>
+					</div>
+				)}
+
+				<CardDetail
+					card={card}
+					columns={columns}
+					projectLabels={projectLabels}
+					readOnly={archived}
+					onSave={handleSave}
+					onMove={handleMove}
+					onChange={(changes) => setCard((c) => ({ ...c, ...changes }))}
+					onProjectLabelsChange={setProjectLabels}
 				/>
-
-				<Separator />
-
-				<div className="flex flex-col gap-5">
-					<div className="flex flex-col gap-2">
-						<Label className="text-xs text-muted-foreground">Priority</Label>
-						<Select
-							value={priority || "none"}
-							onValueChange={(v) => setPriority(v === "none" ? "" : (v as Priority))}
-						>
-							<SelectTrigger className="h-8 text-xs">
-								<SelectValue placeholder="No priority" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="none">No priority</SelectItem>
-								<SelectItem value="low">Low</SelectItem>
-								<SelectItem value="medium">Medium</SelectItem>
-								<SelectItem value="high">High</SelectItem>
-								<SelectItem value="urgent">Urgent</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
-
-					<div className="flex flex-col gap-2">
-						<Label className="text-xs text-muted-foreground">Due date</Label>
-						<input
-							type="date"
-							value={dueDate}
-							onChange={(e) => setDueDate(e.target.value)}
-							className="h-8 w-full rounded-md border border-input bg-transparent px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-						/>
-					</div>
-
-					<div className="flex flex-col gap-2">
-						<Label className="text-xs text-muted-foreground">Description</Label>
-						<textarea
-							value={description}
-							onChange={(e) => setDescription(e.target.value)}
-							placeholder="Add a description…"
-							rows={8}
-							className="w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-						/>
-					</div>
-				</div>
-
-				<Separator />
-
-				<div className="flex items-center justify-between">
-					<button
-						type="button"
-						disabled={isArchiving}
-						onClick={handleArchive}
-						className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-destructive disabled:opacity-50"
-					>
-						{isArchiving && <Spinner className="h-3 w-3" />}
-						Archive card
-					</button>
-
-					<button
-						type="button"
-						disabled={isSaving || !title.trim()}
-						onClick={handleSave}
-						className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
-					>
-						{isSaving && <Spinner className="h-3 w-3" />}
-						{isSaving ? "Saving…" : "Save"}
-					</button>
-				</div>
 			</div>
+
+			<ConfirmDelete
+				open={confirmDelete}
+				onOpenChange={setConfirmDelete}
+				title={`Delete "${card.title}"?`}
+				description="The card, its checklist and labels go for good."
+				onConfirm={handleDelete}
+			/>
 		</div>
 	);
 }

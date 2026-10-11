@@ -3,14 +3,16 @@
 import {
 	archiveCard,
 	createCard,
+	deleteCard,
 	moveCard,
 	reorderCards,
+	restoreCard,
 	updateCard,
 } from "@/features/seiryu/actions/cards";
 import { deleteColumn, reorderColumns, updateColumn } from "@/features/seiryu/actions/columns";
 import { AddColumnButton } from "@/features/seiryu/components/AddColumnButton";
 import { ArchivedCardsSheet } from "@/features/seiryu/components/ArchivedCardsSheet";
-import { CardSheet, type CardUpdates } from "@/features/seiryu/components/CardSheet";
+import { CardSheet } from "@/features/seiryu/components/CardSheet";
 import { FilterBar } from "@/features/seiryu/components/FilterBar";
 import {
 	type CardData,
@@ -25,6 +27,7 @@ import {
 import { SeiryuMobileAddFab } from "@/features/seiryu/components/SeiryuMobileAddFab";
 import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import { useServerState } from "@/features/seiryu/lib/server-state";
+import type { CardFieldUpdates } from "@/features/seiryu/lib/types";
 import {
 	type CollisionDetection,
 	DndContext,
@@ -229,7 +232,7 @@ export function KanbanBoard({
 		[setColumns, setCards, trackColumns, trackCards, resetColumns, resetCards],
 	);
 
-	function handleCardSave(cardId: string, updates: CardUpdates) {
+	function handleCardSave(cardId: string, updates: CardFieldUpdates) {
 		setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, ...updates } : c)));
 		trackCards(updateCard({ cardId, ...updates })).then((result) => {
 			if ("error" in result) {
@@ -239,19 +242,66 @@ export function KanbanBoard({
 		});
 	}
 
+	// From the sheet's Column picker: to the end of that column.
+	function handleCardMove(cardId: string, columnId: string) {
+		const last = cardsRef.current
+			.filter((c) => c.columnId === columnId && c.id !== cardId)
+			.sort(byPosition)
+			.at(-1);
+		const newPosition = generateKeyBetween(last?.position ?? null, null);
+		setCards((prev) =>
+			prev.map((c) => (c.id === cardId ? { ...c, columnId, position: newPosition } : c)),
+		);
+		trackCards(moveCard({ cardId, newColumnId: columnId, newPosition })).then((result) => {
+			if ("error" in result) {
+				toast.error(result.error);
+				resetCards();
+			}
+		});
+	}
+
+	async function handleCardDelete(cardId: string) {
+		const result = await trackCards(deleteCard({ cardId }));
+		if ("error" in result) {
+			toast.error(result.error);
+			return;
+		}
+		setSheetOpen(false);
+		setCards((prev) => prev.filter((c) => c.id !== cardId));
+	}
+
 	// Checklist and label edits save themselves; this only mirrors them on the board.
 	function handleCardChange(cardId: string, updates: Partial<CardData>) {
 		setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, ...updates } : c)));
 	}
 
 	function handleCardArchive(cardId: string) {
+		const card = cardsRef.current.find((c) => c.id === cardId);
 		setCards((prev) => prev.filter((c) => c.id !== cardId));
 		setSheetOpen(false);
 		trackCards(archiveCard({ cardId })).then((result) => {
 			if ("error" in result) {
 				toast.error(result.error);
 				resetCards();
-			} else toast.success("Card archived");
+				return;
+			}
+			// Archiving is one tap away from a slip of the finger: offer the way back.
+			toast("Card archived", {
+				description: card?.title,
+				action: {
+					label: "Undo",
+					onClick: () => {
+						trackCards(restoreCard({ cardId })).then((restored) => {
+							if ("error" in restored) toast.error(restored.error);
+							else if (card)
+								setCards((prev) => [
+									...prev,
+									{ ...card, columnId: restored.data.columnId, position: restored.data.position },
+								]);
+						});
+					},
+				},
+			});
 		});
 	}
 
@@ -491,10 +541,13 @@ export function KanbanBoard({
 						card={selectedCard}
 						open={sheetOpen}
 						onOpenChange={setSheetOpen}
+						columns={sortedColumns}
 						projectLabels={projectLabels}
 						onSave={handleCardSave}
+						onMove={handleCardMove}
 						onChange={handleCardChange}
 						onArchive={handleCardArchive}
+						onDelete={handleCardDelete}
 						onProjectLabelsChange={setProjectLabels}
 					/>
 				</>

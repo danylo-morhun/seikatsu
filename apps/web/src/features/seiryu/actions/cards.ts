@@ -158,7 +158,9 @@ export async function archiveCard(input: unknown): Promise<{ error: string } | {
 	return { success: true };
 }
 
-export async function moveCard(input: unknown): Promise<{ error: string } | { success: true }> {
+export async function moveCard(
+	input: unknown,
+): Promise<{ error: string } | { success: true; data: { position: string } }> {
 	const workspace = await requireWorkspace();
 
 	const parsed = moveCardSchema.safeParse(input);
@@ -173,13 +175,14 @@ export async function moveCard(input: unknown): Promise<{ error: string } | { su
 	if (!card) return { error: "Card not found" };
 	if (column?.projectId !== card.projectId) return { error: "Invalid column" };
 
+	const position = newPosition ?? (await endOfColumn(newColumnId));
 	await db
 		.update(seiryuCards)
-		.set({ columnId: newColumnId, position: newPosition })
+		.set({ columnId: newColumnId, position })
 		.where(eq(seiryuCards.id, cardId));
 
 	revalidatePath(`/seiryu/${card.projectId}`);
-	return { success: true };
+	return { success: true, data: { position } };
 }
 
 export async function reorderCards(input: unknown): Promise<{ error: string } | { success: true }> {
