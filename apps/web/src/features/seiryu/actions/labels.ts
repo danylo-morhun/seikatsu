@@ -10,6 +10,7 @@ import {
 	createLabelSchema,
 	deleteLabelSchema,
 	setCardLabelsSchema,
+	updateLabelSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
 import { and, asc, db, eq, inArray, seiryuCardLabels, seiryuLabels } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
@@ -46,6 +47,32 @@ export async function createLabel(
 
 	revalidatePath(`/seiryu/${projectId}`);
 	return { success: true, data: { id: label.id } };
+}
+
+export async function updateLabel(input: unknown): Promise<{ error: string } | { success: true }> {
+	const workspace = await requireWorkspace();
+
+	const parsed = updateLabelSchema.safeParse(input);
+	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+	const { labelId, ...updates } = parsed.data;
+
+	const label = await getOwnedLabel(labelId, workspace.id);
+	if (!label) return { error: "Label not found" };
+
+	if (updates.name) {
+		const [clash] = await db
+			.select({ id: seiryuLabels.id })
+			.from(seiryuLabels)
+			.where(and(eq(seiryuLabels.projectId, label.projectId), eq(seiryuLabels.name, updates.name)))
+			.limit(1);
+		if (clash && clash.id !== labelId) return { error: "Label already exists" };
+	}
+
+	await db.update(seiryuLabels).set(updates).where(eq(seiryuLabels.id, labelId));
+
+	revalidatePath(`/seiryu/${label.projectId}`);
+	return { success: true };
 }
 
 export async function deleteLabel(input: unknown): Promise<{ error: string } | { success: true }> {
