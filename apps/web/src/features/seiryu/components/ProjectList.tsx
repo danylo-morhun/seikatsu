@@ -241,6 +241,8 @@ function ProjectRow({
 		id: project.id,
 		transition: SORT_TRANSITION,
 	});
+	// dnd-kit marks the handle role="button"; this one is a link and must stay one.
+	const { role: _role, ...sortable } = attributes;
 	// A drag ends with a click on the link under the pointer: that one must not navigate.
 	const dragged = useRef(false);
 	if (isDragging) dragged.current = true;
@@ -258,7 +260,7 @@ function ProjectRow({
 			<Link
 				href={`/seiryu/${project.id}`}
 				prefetch
-				{...attributes}
+				{...sortable}
 				{...listeners}
 				aria-current={lit ? "page" : undefined}
 				onPointerDownCapture={() => {
