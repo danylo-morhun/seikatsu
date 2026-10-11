@@ -72,7 +72,20 @@ export function MonthlyFlow({
 					Monthly flow
 				</h2>
 				{!hasDateFilter && (
-					<nav aria-label="Range" className="flex rounded-md bg-surface p-0.5">
+					<nav aria-label="Range" className="relative flex rounded-md bg-surface p-0.5">
+						{/* One chip slides under the chosen range; segments share a width so it can. */}
+						<span
+							aria-hidden
+							className="absolute inset-y-0.5 left-0.5 w-9 rounded bg-surface-2 transition-transform duration-250 ease-in-out motion-reduce:transition-none"
+							style={{
+								transform: `translateX(${
+									Math.max(
+										RANGES.findIndex((r) => r.value === trendParam),
+										0,
+									) * 100
+								}%)`,
+							}}
+						/>
 						{RANGES.map((r) => (
 							<Link
 								key={r.value}
@@ -80,8 +93,8 @@ export function MonthlyFlow({
 								prefetch
 								aria-current={trendParam === r.value ? "true" : undefined}
 								className={cn(
-									"rounded px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground",
-									trendParam === r.value && "bg-surface-2 text-foreground",
+									"relative w-9 rounded py-1 text-center text-xs font-medium text-muted-foreground transition-colors hover:text-foreground",
+									trendParam === r.value && "text-foreground",
 								)}
 							>
 								{r.label}
