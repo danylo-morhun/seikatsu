@@ -36,7 +36,7 @@ export const filterCount = (f: Filters) =>
 	f.priorities.length + f.labelIds.length + (f.due ? 1 : 0);
 
 /** YYYY-MM-DD strings compare in calendar order, so dates never need parsing here. */
-function addDays(ymd: string, days: number) {
+export function addDays(ymd: string, days: number) {
 	const [y, m, d] = ymd.split("-").map(Number) as [number, number, number];
 	const date = new Date(Date.UTC(y, m - 1, d + days));
 	return date.toISOString().slice(0, 10);

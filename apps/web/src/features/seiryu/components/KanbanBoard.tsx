@@ -10,14 +10,19 @@ import {
 	updateCard,
 } from "@/features/seiryu/actions/cards";
 import { deleteColumn, reorderColumns, updateColumn } from "@/features/seiryu/actions/columns";
+import { setCardLabels } from "@/features/seiryu/actions/labels";
 import { AddColumnButton } from "@/features/seiryu/components/AddColumnButton";
+import { type CardActions, CardMenuItems } from "@/features/seiryu/components/CardMenu";
 import { CardSheet } from "@/features/seiryu/components/CardSheet";
+import { ConfirmDelete } from "@/features/seiryu/components/ConfirmDelete";
+import { ContextArea, openContextMenu } from "@/features/seiryu/components/ContextArea";
 import { FilterChips, FilterMenu } from "@/features/seiryu/components/FilterMenu";
 import { KanbanCardOverlay, freshCards } from "@/features/seiryu/components/KanbanCard";
 import { KanbanColumn, KanbanColumnOverlay } from "@/features/seiryu/components/KanbanColumn";
 import { NewCardDialog } from "@/features/seiryu/components/NewCardDialog";
 import { SettingsArchive } from "@/features/seiryu/components/SettingsArchive";
 import type { ArchivedCardRow } from "@/features/seiryu/lib/archive";
+import { PRIORITIES } from "@/features/seiryu/lib/constants";
 import { NEW_CARD_EVENT } from "@/features/seiryu/lib/events";
 import {
 	type Filters,
@@ -28,14 +33,15 @@ import {
 } from "@/features/seiryu/lib/filters";
 import { generateKeyBetween, generateNKeysBetween } from "@/features/seiryu/lib/position";
 import { useServerState } from "@/features/seiryu/lib/server-state";
-import type {
-	CardData,
-	CardFieldUpdates,
-	ColumnData,
-	ColumnUpdates,
-	LabelData,
+import {
+	type CardData,
+	type CardFieldUpdates,
+	type ColumnData,
+	type ColumnUpdates,
+	type LabelData,
+	isTempId,
 } from "@/features/seiryu/lib/types";
-import { OVERLAY_SELECTOR, isEditable, plainKey } from "@/lib/capture-shortcut";
+import { pageKey } from "@/lib/capture-shortcut";
 import {
 	type CollisionDetection,
 	DndContext,
@@ -133,6 +139,9 @@ export function KanbanBoard({
 	const [sheetOpen, setSheetOpen] = useState(false);
 	const [archiveOpen, setArchiveOpen] = useState(false);
 	const [filterOpen, setFilterOpen] = useState(false);
+	// The card a right-click (or ".") opened the menu for, and the one awaiting delete.
+	const [menuCardId, setMenuCardId] = useState<string | null>(null);
+	const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
 	const [capture, setCapture] = useState<{ open: boolean; instant: boolean }>({
 		open: false,
 		instant: false,
@@ -186,19 +195,16 @@ export function KanbanBoard({
 		[cards, selectedCardId],
 	);
 
-	// N captures (as does the header's New Card button), F opens the filter, A the archive;
-	// Kuroji's rule decides when a letter is free.
+	// N captures (as does the header's New Card button), F opens the filter, A the archive.
+	// A card in focus, or else under the pointer, takes the card keys (the "?" sheet lists them).
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
-			const context = {
-				editableFocused: isEditable(e.target),
-				overlayOpen: !!document.querySelector(OVERLAY_SELECTOR),
-			};
-			const k = plainKey(e, context);
+			const k = pageKey(e);
+			if (!k) return;
 			if (k === "n") setCapture({ open: true, instant: true });
 			else if (k === "f") setFilterOpen(true);
 			else if (k === "a") setArchiveOpen(true);
-			else return;
+			else if (!cardKeyRef.current(k)) return;
 			e.preventDefault();
 		}
 		function onRequest() {
@@ -400,6 +406,74 @@ export function KanbanBoard({
 	function handleColumnAdded(column: ColumnData) {
 		setColumns((prev) => [...prev, column]);
 	}
+
+	function handleCardLabels(cardId: string, labels: LabelData[]) {
+		setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, labels } : c)));
+		trackCards(setCardLabels({ cardId, labelIds: labels.map((l) => l.id) })).then((result) => {
+			if ("error" in result) {
+				toast.error(result.error);
+				resetCards();
+			}
+		});
+	}
+
+	function handleCopyLink(cardId: string) {
+		navigator.clipboard.writeText(`${window.location.origin}/seiryu/${projectId}/${cardId}`).then(
+			() => toast("Link copied"),
+			() => toast.error("Couldn't copy the link"),
+		);
+	}
+
+	const cardActions: CardActions = {
+		open: handleCardOpen,
+		copyLink: handleCopyLink,
+		move: handleCardMove,
+		setPriority: (cardId, priority) => handleCardSave(cardId, { priority }),
+		setDueDate: (cardId, dueDate) => handleCardSave(cardId, { dueDate }),
+		setLabels: handleCardLabels,
+		archive: handleCardArchive,
+		delete: setDeletingCardId,
+	};
+	const menuCard = menuCardId ? cards.find((c) => c.id === menuCardId) : undefined;
+	const deletingCard = deletingCardId ? cards.find((c) => c.id === deletingCardId) : undefined;
+
+	// The card keys, for the tile in focus or else under the pointer; true when one acted.
+	// Off while a card is lifted: the keyboard is moving it then.
+	const cardKeyRef = useRef<(key: string) => boolean>(() => false);
+	cardKeyRef.current = (key) => {
+		if (activeId) return false;
+		const tile = targetTile();
+		const card = tile ? cards.find((c) => c.id === tile.dataset.cardId) : undefined;
+		if (!tile || !card || isTempId(card.id)) return false;
+		const focused = document.activeElement === tile;
+
+		if (key === "e") {
+			// Focus stays in the lane: on the next card, or the one above.
+			const after = focused
+				? (neighbourTile(tile, "ArrowDown") ?? neighbourTile(tile, "ArrowUp"))
+				: null;
+			handleCardArchive(card.id);
+			after?.focus();
+		} else if (key === "delete") setDeletingCardId(card.id);
+		else if (key === ".") openContextMenu(tile);
+		else if (key === "0") handleCardSave(card.id, { priority: null });
+		else if (/^[1-4]$/.test(key)) {
+			handleCardSave(card.id, { priority: PRIORITIES[Number(key) - 1] ?? null });
+		} else if (key === "[" || key === "]") {
+			const i = sortedColumns.findIndex((c) => c.id === card.columnId);
+			const next = sortedColumns[i + (key === "]" ? 1 : -1)];
+			if (!next) return true;
+			handleCardMove(card.id, next.id);
+			// The tile remounts in its new lane (committed by now: keydown renders synchronously).
+			if (focused)
+				requestAnimationFrame(() => {
+					const moved = document.querySelector<HTMLElement>(`[data-card-id="${card.id}"]`);
+					moved?.focus();
+					moved?.scrollIntoView({ block: "nearest", inline: "nearest" });
+				});
+		} else return false;
+		return true;
+	};
 
 	// What a screen reader hears while moving: names and places, not ids.
 	const columnsRef = useRef(columns);
@@ -705,35 +779,55 @@ export function KanbanBoard({
 				>
 					<SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
 						<div className="relative min-h-0 flex-1">
-							<div
-								ref={scrollerRef}
-								onScroll={updateEdges}
-								className={cn(
-									"absolute inset-0 flex snap-x snap-mandatory scroll-px-4 gap-6 overflow-x-auto px-4 pb-28 sm:scroll-px-8 sm:px-8 md:snap-none md:pb-8 [scrollbar-width:thin]",
-									EDGE_FADE[`${edges.start ? "s" : ""}${edges.end ? "e" : ""}`],
-								)}
+							<ContextArea
+								attr="data-card-id"
+								onTarget={(cardId) => {
+									if (isTempId(cardId)) return false;
+									setMenuCardId(cardId);
+									return true;
+								}}
+								menu={
+									menuCard && (
+										<CardMenuItems
+											card={menuCard}
+											columns={sortedColumns}
+											projectLabels={projectLabels}
+											today={today}
+											actions={cardActions}
+										/>
+									)
+								}
 							>
-								{sortedColumns.map((col, i) => (
-									<KanbanColumn
-										key={col.id}
-										column={col}
-										index={i}
-										columns={sortedColumns}
-										today={today}
-										cards={cardsByColumn.get(col.id) ?? NO_CARDS}
-										total={totalsByColumn.get(col.id) ?? 0}
-										onCardOpen={handleCardOpen}
-										onAddCard={handleAddCard}
-										onUpdate={handleUpdateColumn}
-										onDelete={handleDeleteColumn}
+								<div
+									ref={scrollerRef}
+									onScroll={updateEdges}
+									className={cn(
+										"absolute inset-0 flex snap-x snap-mandatory scroll-px-4 gap-6 overflow-x-auto px-4 pb-28 sm:scroll-px-8 sm:px-8 md:snap-none md:pb-8 [scrollbar-width:thin]",
+										EDGE_FADE[`${edges.start ? "s" : ""}${edges.end ? "e" : ""}`],
+									)}
+								>
+									{sortedColumns.map((col, i) => (
+										<KanbanColumn
+											key={col.id}
+											column={col}
+											index={i}
+											columns={sortedColumns}
+											today={today}
+											cards={cardsByColumn.get(col.id) ?? NO_CARDS}
+											total={totalsByColumn.get(col.id) ?? 0}
+											onCardOpen={handleCardOpen}
+											onAddCard={handleAddCard}
+											onUpdate={handleUpdateColumn}
+											onDelete={handleDeleteColumn}
+										/>
+									))}
+									<AddColumnButton
+										projectId={projectId}
+										onColumnAdded={handleColumnAdded}
+										className="animate-rise pr-4 sm:pr-8"
 									/>
-								))}
-								<AddColumnButton
-									projectId={projectId}
-									onColumnAdded={handleColumnAdded}
-									className="animate-rise pr-4 sm:pr-8"
-								/>
-							</div>
+								</div>
+							</ContextArea>
 						</div>
 					</SortableContext>
 
@@ -781,6 +875,14 @@ export function KanbanBoard({
 				</SheetContent>
 			</Sheet>
 
+			<ConfirmDelete
+				open={!!deletingCard}
+				onOpenChange={(open) => !open && setDeletingCardId(null)}
+				title={`Delete "${deletingCard?.title ?? ""}"?`}
+				description="The card, its checklist and labels go for good. This can't be undone."
+				onConfirm={() => (deletingCard ? handleCardDelete(deletingCard.id) : undefined)}
+			/>
+
 			<NewCardDialog
 				open={capture.open}
 				instant={capture.instant}
@@ -813,6 +915,13 @@ function groupByColumn(cards: CardData[]) {
 		else map.set(card.columnId, [card]);
 	}
 	return map;
+}
+
+/** The tile the card keys act on: the focused one, else the one under the pointer. */
+function targetTile() {
+	const focused = document.activeElement;
+	if (focused instanceof HTMLElement && focused.matches("[data-card-id]")) return focused;
+	return document.querySelector<HTMLElement>("[data-card-id]:hover");
 }
 
 /** The tile an arrow key leads to from `tile`, or null at the board's edge. */
