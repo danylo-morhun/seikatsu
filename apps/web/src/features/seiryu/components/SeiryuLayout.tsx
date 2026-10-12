@@ -28,7 +28,7 @@ export function SeiryuLayout({ projects, cardCounts, children }: Props) {
 
 	return (
 		<div className="flex h-[calc(100dvh-3.5rem)] overflow-hidden md:h-[calc(100dvh-4.5rem)]">
-			<aside className="hidden w-60 shrink-0 overflow-y-auto border-r border-rule px-3 pt-6 pb-8 md:block md:pt-8 [scrollbar-width:thin]">
+			<aside className="hidden w-60 shrink-0 overflow-y-auto border-r border-rule px-3 pt-5 pb-8 md:block [scrollbar-width:thin]">
 				<ProjectList
 					projects={projects}
 					activeProjectId={activeProjectId}

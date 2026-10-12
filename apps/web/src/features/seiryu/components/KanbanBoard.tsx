@@ -607,13 +607,13 @@ export function KanbanBoard({
 
 	return (
 		<div className="flex h-full flex-col">
-			<div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 pt-6 pb-4 sm:px-8 md:pt-8">
+			<div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 pt-5 pb-4 sm:px-8">
 				<h1 className="min-w-0 max-w-full truncate text-xl font-semibold">{project.name}</h1>
 				<div className="flex items-center gap-1.5">
 					<FilterMenu filters={filters} labels={projectLabels} onChange={setFilters} />
 					<Button
 						variant="ghost"
-						className="gap-1.5 text-muted-foreground"
+						className="gap-1.5 text-muted-foreground md:h-8 md:px-3"
 						onClick={() => setArchiveOpen(true)}
 					>
 						<HugeiconsIcon icon={Archive01Icon} className="h-4 w-4" />
