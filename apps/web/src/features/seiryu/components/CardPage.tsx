@@ -106,7 +106,7 @@ export function CardPage({
 
 	return (
 		<div className="h-full overflow-y-auto">
-			<div className="max-w-2xl px-4 pt-6 pb-28 sm:px-8 md:pt-8 md:pb-8">
+			<div className="max-w-2xl px-4 pt-5 pb-28 sm:px-8 md:pb-8">
 				<div className="mb-6 flex items-center justify-between gap-4">
 					<Link
 						href={boardHref}

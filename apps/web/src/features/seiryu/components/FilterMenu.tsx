@@ -44,7 +44,7 @@ export function FilterMenu({ filters, labels, onChange }: Props) {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="outline" className="gap-1.5">
+				<Button variant="outline" className="gap-1.5 md:h-8 md:px-3">
 					<HugeiconsIcon icon={FilterHorizontalIcon} className="h-4 w-4" />
 					Filter
 					{count > 0 && (
