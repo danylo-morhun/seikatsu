@@ -1,5 +1,6 @@
 "use client";
 
+import { ShortcutsButton } from "@/components/KeyboardShortcuts";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TravelUnderline } from "@/components/TravelUnderline";
 import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
@@ -147,6 +148,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 							</Button>
 						</span>
 					)}
+					<ShortcutsButton />
 					<ThemeToggle />
 				</div>
 			)}
