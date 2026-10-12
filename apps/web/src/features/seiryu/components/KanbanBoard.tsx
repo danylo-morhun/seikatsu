@@ -35,7 +35,7 @@ import type {
 	ColumnUpdates,
 	LabelData,
 } from "@/features/seiryu/lib/types";
-import { OVERLAY_SELECTOR, isEditable, shouldOpenCapture } from "@/lib/capture-shortcut";
+import { OVERLAY_SELECTOR, isEditable, plainKey } from "@/lib/capture-shortcut";
 import {
 	type CollisionDetection,
 	DndContext,
@@ -132,6 +132,7 @@ export function KanbanBoard({
 	const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 	const [sheetOpen, setSheetOpen] = useState(false);
 	const [archiveOpen, setArchiveOpen] = useState(false);
+	const [filterOpen, setFilterOpen] = useState(false);
 	const [capture, setCapture] = useState<{ open: boolean; instant: boolean }>({
 		open: false,
 		instant: false,
@@ -185,16 +186,20 @@ export function KanbanBoard({
 		[cards, selectedCardId],
 	);
 
-	// "N" (and the header's New Card button) open capture; Kuroji's rule decides when N is free.
+	// N captures (as does the header's New Card button), F opens the filter, A the archive;
+	// Kuroji's rule decides when a letter is free.
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
 			const context = {
 				editableFocused: isEditable(e.target),
 				overlayOpen: !!document.querySelector(OVERLAY_SELECTOR),
 			};
-			if (!shouldOpenCapture(e, context)) return;
+			const k = plainKey(e, context);
+			if (k === "n") setCapture({ open: true, instant: true });
+			else if (k === "f") setFilterOpen(true);
+			else if (k === "a") setArchiveOpen(true);
+			else return;
 			e.preventDefault();
-			setCapture({ open: true, instant: true });
 		}
 		function onRequest() {
 			setCapture({ open: true, instant: false });
@@ -206,6 +211,23 @@ export function KanbanBoard({
 			window.removeEventListener(NEW_CARD_EVENT, onRequest);
 		};
 	}, []);
+
+	// Arrows walk a focused tile through the board: up and down its lane, left and right to the
+	// nearest tile in the next lane. Off while a card is lifted (the arrows then move it).
+	useEffect(() => {
+		if (activeId) return;
+		function onKeyDown(e: KeyboardEvent) {
+			if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+			if (!(e.target instanceof HTMLElement) || !e.target.matches("[data-card-id]")) return;
+			const next = neighbourTile(e.target, e.key);
+			if (!next) return;
+			e.preventDefault();
+			next.focus();
+			next.scrollIntoView({ block: "nearest", inline: "nearest" });
+		}
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [activeId]);
 
 	// Arriving from the bottom nav's add button on another page: open capture, drop the flag.
 	const wantsNew = searchParams.get("new") === "1";
@@ -624,10 +646,17 @@ export function KanbanBoard({
 			<div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 pt-5 pb-4 sm:px-8">
 				<h1 className="min-w-0 max-w-full truncate text-xl font-semibold">{project.name}</h1>
 				<div className="flex items-center gap-1.5">
-					<FilterMenu filters={filters} labels={projectLabels} onChange={setFilters} />
+					<FilterMenu
+						filters={filters}
+						labels={projectLabels}
+						onChange={setFilters}
+						open={filterOpen}
+						onOpenChange={setFilterOpen}
+					/>
 					<Button
 						variant="ghost"
 						className="gap-1.5 text-muted-foreground md:h-8 md:px-3"
+						aria-keyshortcuts="A"
 						onClick={() => setArchiveOpen(true)}
 					>
 						<HugeiconsIcon icon={Archive01Icon} className="h-4 w-4" />
@@ -784,4 +813,32 @@ function groupByColumn(cards: CardData[]) {
 		else map.set(card.columnId, [card]);
 	}
 	return map;
+}
+
+/** The tile an arrow key leads to from `tile`, or null at the board's edge. */
+function neighbourTile(tile: HTMLElement, key: string): HTMLElement | null {
+	const lane = tile.closest<HTMLElement>("[data-lane]");
+	if (!lane) return null;
+	const tilesOf = (el: Element) => [...el.querySelectorAll<HTMLElement>("[data-card-id]")];
+	const own = tilesOf(lane);
+	const i = own.indexOf(tile);
+	if (key === "ArrowUp") return own[i - 1] ?? null;
+	if (key === "ArrowDown") return own[i + 1] ?? null;
+	if (key !== "ArrowLeft" && key !== "ArrowRight") return null;
+
+	const lanes = [...document.querySelectorAll<HTMLElement>("[data-lane]")];
+	const step = key === "ArrowLeft" ? -1 : 1;
+	const top = tile.getBoundingClientRect().top;
+	// Skip empty lanes; land on the tile nearest in height.
+	for (let j = lanes.indexOf(lane) + step; j >= 0 && j < lanes.length; j += step) {
+		const tiles = tilesOf(lanes[j] as HTMLElement);
+		if (tiles.length === 0) continue;
+		return tiles.reduce((best, t) =>
+			Math.abs(t.getBoundingClientRect().top - top) <
+			Math.abs(best.getBoundingClientRect().top - top)
+				? t
+				: best,
+		);
+	}
+	return null;
 }

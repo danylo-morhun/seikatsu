@@ -27,10 +27,12 @@ interface Props {
 	filters: Filters;
 	labels: LabelData[];
 	onChange: (filters: Filters) => void;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
 }
 
 /** One quiet "Filter" button; choices live in its menu, the applied ones show as chips. */
-export function FilterMenu({ filters, labels, onChange }: Props) {
+export function FilterMenu({ filters, labels, onChange, open, onOpenChange }: Props) {
 	const count = filterCount(filters);
 
 	function toggle<K extends "priorities" | "labelIds">(key: K, value: string) {
@@ -42,9 +44,9 @@ export function FilterMenu({ filters, labels, onChange }: Props) {
 	}
 
 	return (
-		<DropdownMenu>
+		<DropdownMenu open={open} onOpenChange={onOpenChange}>
 			<DropdownMenuTrigger asChild>
-				<Button variant="outline" className="gap-1.5 md:h-8 md:px-3">
+				<Button variant="outline" className="gap-1.5 md:h-8 md:px-3" aria-keyshortcuts="F">
 					<HugeiconsIcon icon={FilterHorizontalIcon} className="h-4 w-4" />
 					Filter
 					{count > 0 && (
@@ -107,7 +109,7 @@ export function FilterMenu({ filters, labels, onChange }: Props) {
 }
 
 /** The applied filters as removable chips, as Kuroji shows its account/tag filters. */
-export function FilterChips({ filters, labels, onChange }: Props) {
+export function FilterChips({ filters, labels, onChange }: Omit<Props, "open" | "onOpenChange">) {
 	const chips: { key: string; label: string; remove: () => void }[] = [
 		...filters.priorities.map((p) => ({
 			key: `p-${p}`,

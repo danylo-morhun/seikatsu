@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldOpenCapture } from "./capture-shortcut";
+import { plainKey, shouldOpenCapture } from "./capture-shortcut";
 
 const key = (
 	k: string,
@@ -32,5 +32,19 @@ describe("shouldOpenCapture", () => {
 	it("stays out of the way while typing or with an overlay open", () => {
 		expect(shouldOpenCapture(key("n"), { ...idle, editableFocused: true })).toBe(false);
 		expect(shouldOpenCapture(key("n"), { ...idle, overlayOpen: true })).toBe(false);
+	});
+});
+
+describe("plainKey", () => {
+	it("gives the lower-cased letter", () => {
+		expect(plainKey(key("F"), idle)).toBe("f");
+		expect(plainKey(key("a"), idle)).toBe("a");
+	});
+
+	it("ignores named keys, combos, typing and overlays", () => {
+		expect(plainKey(key("ArrowUp"), idle)).toBeNull();
+		expect(plainKey(key("f", { metaKey: true }), idle)).toBeNull();
+		expect(plainKey(key("f"), { ...idle, editableFocused: true })).toBeNull();
+		expect(plainKey(key("f"), { ...idle, overlayOpen: true })).toBeNull();
 	});
 });
