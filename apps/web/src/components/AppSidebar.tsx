@@ -3,7 +3,13 @@
 import { signOutAction } from "@/features/auth/actions/auth";
 import { readAppEntry } from "@/lib/app-entry";
 import { APPS_CONFIG } from "@/lib/app-themes";
-import { ArrowUpDownIcon, Logout01Icon, UserCircleIcon } from "@hugeicons/core-free-icons";
+import { SHORTCUTS_EVENT } from "@/lib/shortcuts";
+import {
+	ArrowUpDownIcon,
+	KeyboardIcon,
+	Logout01Icon,
+	UserCircleIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Avatar,
@@ -12,6 +18,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
+	DropdownMenuShortcut,
 	DropdownMenuTrigger,
 	Sidebar,
 	SidebarContent,
@@ -161,6 +168,15 @@ export function AppSidebar({ workspaceName, user }: Props) {
 										<HugeiconsIcon icon={UserCircleIcon} className="h-4 w-4" />
 										Account settings
 									</Link>
+								</DropdownMenuItem>
+								{/* Phones have no keyboard to speak of. */}
+								<DropdownMenuItem
+									className="max-md:hidden"
+									onSelect={() => window.dispatchEvent(new CustomEvent(SHORTCUTS_EVENT))}
+								>
+									<HugeiconsIcon icon={KeyboardIcon} className="h-4 w-4" />
+									Keyboard shortcuts
+									<DropdownMenuShortcut>?</DropdownMenuShortcut>
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem asChild>

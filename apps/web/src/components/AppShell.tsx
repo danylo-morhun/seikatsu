@@ -2,6 +2,7 @@
 
 import { AppHeader } from "@/components/AppHeader";
 import { AppSidebar } from "@/components/AppSidebar";
+import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { APP_THEMES, getThemeForPath } from "@/lib/app-themes";
 import { SidebarInset, SidebarProvider } from "@seikatsu/ui";
 import { usePathname } from "next/navigation";
@@ -52,6 +53,7 @@ export function AppShell({
 				<AppHeader workspaceId={workspaceId} baseCurrency={baseCurrency} />
 				{children}
 			</SidebarInset>
+			<KeyboardShortcuts />
 		</SidebarProvider>
 	);
 }
