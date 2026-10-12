@@ -26,28 +26,14 @@ export const SORT_TRANSITION = { duration: 220, easing: "cubic-bezier(0.23, 1, 0
 
 const TILE = "rounded-lg bg-surface px-3 py-2.5 text-left [-webkit-touch-callout:none] select-none";
 
-/**
- * The tile's lacquer lip: its top edge catches the light, as the tray's rim does, in the
- * lane's own pigment when the lane has one.
- */
-const LIP = "shadow-[inset_0_1px_0_color-mix(in_oklch,var(--foreground)_7%,transparent)]";
-const LIP_TINTED =
-	"shadow-[inset_0_1px_0_color-mix(in_oklch,var(--lip)_45%,transparent)] [--lip:var(--foreground)]";
-
-function lipStyle(accent: string | null | undefined) {
-	return accent ? ({ "--lip": accent } as React.CSSProperties) : undefined;
-}
-
 interface Props {
 	card: CardData;
 	today: string;
-	/** The lane's colour, for the tile's top edge. */
-	accent?: string | null;
 	onOpen?: (cardId: string) => void;
 }
 
 // Every sortable re-renders on each drag move (dnd-kit context); the body skips that work.
-export const KanbanCard = memo(function KanbanCard({ card, today, accent, onOpen }: Props) {
+export const KanbanCard = memo(function KanbanCard({ card, today, onOpen }: Props) {
 	const isTemp = isTempId(card.id);
 	const id = useId();
 	const [fresh] = useState(() => freshCards.delete(card.clientKey ?? card.id));
@@ -62,7 +48,7 @@ export const KanbanCard = memo(function KanbanCard({ card, today, accent, onOpen
 		<div
 			ref={setNodeRef}
 			data-card-id={card.id}
-			style={{ transform: CSS.Translate.toString(transform), transition, ...lipStyle(accent) }}
+			style={{ transform: CSS.Translate.toString(transform), transition }}
 			{...attributes}
 			{...listeners}
 			// Named by its title; labels, due date and checklist read as its description,
@@ -77,7 +63,6 @@ export const KanbanCard = memo(function KanbanCard({ card, today, accent, onOpen
 			}}
 			className={cn(
 				TILE,
-				accent ? LIP_TINTED : LIP,
 				"cursor-grab outline-none transition-[background-color,opacity] duration-150 hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
 				fresh && "animate-drop",
 				// The lifted card travels in the overlay; its place stays as an empty slot.
@@ -91,16 +76,9 @@ export const KanbanCard = memo(function KanbanCard({ card, today, accent, onOpen
 }, sameCardProps);
 
 /** The card as it travels under the pointer: lifted off the lane by a soft shadow. */
-export function KanbanCardOverlay({
-	card,
-	today,
-	accent,
-}: { card: CardData; today: string; accent?: string | null }) {
+export function KanbanCardOverlay({ card, today }: { card: CardData; today: string }) {
 	return (
-		<div
-			style={lipStyle(accent)}
-			className={cn(TILE, accent ? LIP_TINTED : LIP, "animate-lift cursor-grabbing bg-surface-2")}
-		>
+		<div className={cn(TILE, "animate-lift cursor-grabbing bg-surface-2")}>
 			<CardBody card={card} today={today} />
 		</div>
 	);
@@ -194,7 +172,7 @@ const CardBody = memo(function CardBody({
 }, sameCard);
 
 function sameCardProps(a: Props, b: Props) {
-	return a.onOpen === b.onOpen && a.today === b.today && a.accent === b.accent && sameCard(a, b);
+	return a.onOpen === b.onOpen && a.today === b.today && sameCard(a, b);
 }
 
 // Field-wise: a server re-render sends new objects for unchanged cards.
