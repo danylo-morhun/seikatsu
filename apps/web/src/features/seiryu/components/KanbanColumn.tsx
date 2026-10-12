@@ -232,7 +232,6 @@ export const KanbanColumn = memo(function KanbanColumn({
 							key={card.clientKey ?? card.id}
 							card={card}
 							today={today}
-							accent={column.color}
 							onOpen={onCardOpen}
 						/>
 					))}

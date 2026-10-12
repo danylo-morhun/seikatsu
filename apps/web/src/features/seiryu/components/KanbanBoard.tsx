@@ -700,13 +700,7 @@ export function KanbanBoard({
 								cardCount={cardsByColumn.get(activeColumn.id)?.length ?? 0}
 							/>
 						)}
-						{activeCard && (
-							<KanbanCardOverlay
-								card={activeCard}
-								today={today}
-								accent={columns.find((c) => c.id === activeCard.columnId)?.color}
-							/>
-						)}
+						{activeCard && <KanbanCardOverlay card={activeCard} today={today} />}
 					</DragOverlay>
 				</DndContext>
 			)}
