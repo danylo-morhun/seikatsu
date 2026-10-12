@@ -5,6 +5,8 @@ import { createLabel, setCardLabels } from "@/features/seiryu/actions/labels";
 import { QuietAdd } from "@/features/seiryu/components/QuietAdd";
 import { LABEL_COLORS } from "@/features/seiryu/lib/constants";
 import { type LabelData, isTempId } from "@/features/seiryu/lib/types";
+import { Tick02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Input, cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { useId, useRef, useState } from "react";
@@ -130,6 +132,11 @@ export function LabelPicker({
 					</Link>
 				)}
 			</div>
+			{shown.length > 0 && selected.size === 0 && (
+				<p className="-mt-1 text-xs text-muted-foreground">
+					None on this card yet. Pick one to add it.
+				</p>
+			)}
 			{shown.length > 0 && (
 				<div className="flex flex-wrap gap-1.5">
 					{shown.map((label) => {
@@ -141,19 +148,31 @@ export function LabelPicker({
 								onClick={() => toggle(label.id)}
 								aria-pressed={isOn}
 								aria-busy={isTempId(label.id) || undefined}
+								// On: filled, ticked. Off: a dashed outline and a hollow dot, so a label
+								// the project has never reads as one this card wears.
 								className={cn(
 									"inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-[color,background-color,border-color,transform] duration-150 ease-out active:scale-[0.97]",
 									isOn
 										? "border-input bg-surface-2 text-foreground"
-										: "border-rule text-muted-foreground hover:border-input hover:text-foreground",
+										: "border-dashed border-rule text-muted-foreground hover:border-input hover:text-foreground",
 								)}
 							>
 								<span
 									aria-hidden
-									className="size-1.5 rounded-full"
-									style={{ backgroundColor: label.color }}
+									className="size-2 rounded-full transition-[background-color] duration-150"
+									style={{
+										backgroundColor: isOn ? label.color : "transparent",
+										boxShadow: `inset 0 0 0 1.5px ${label.color}`,
+									}}
 								/>
 								{label.name}
+								{isOn && (
+									<HugeiconsIcon
+										icon={Tick02Icon}
+										aria-hidden
+										className="-mr-0.5 size-3.5 animate-swap text-muted-foreground"
+									/>
+								)}
 							</button>
 						);
 					})}
