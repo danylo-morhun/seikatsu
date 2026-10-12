@@ -14,7 +14,7 @@ export function ThemeToggle() {
 	useEffect(() => setThemeState(currentTheme()), []);
 
 	if (!theme) {
-		return <div className="size-10" />;
+		return <div className="size-10 md:size-8" />;
 	}
 
 	function toggle(origin: HTMLElement) {
@@ -59,6 +59,7 @@ export function ThemeToggle() {
 		<Button
 			variant="ghost"
 			size="icon"
+			className="md:size-8"
 			onClick={(e) => toggle(e.currentTarget)}
 			aria-label="Toggle theme"
 		>
