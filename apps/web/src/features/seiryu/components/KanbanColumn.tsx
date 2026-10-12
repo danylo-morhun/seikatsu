@@ -243,7 +243,11 @@ export const KanbanColumn = memo(function KanbanColumn({
 						<DropdownMenuSeparator />
 						<DropdownMenuItem
 							className="text-destructive focus:text-destructive"
-							onClick={() => setConfirmDelete(true)}
+							onClick={() => {
+								// Each ask starts by keeping the cards, in the next column over.
+								setMoveTo(others[0]?.id ?? DELETE_CARDS);
+								setConfirmDelete(true);
+							}}
 						>
 							<HugeiconsIcon icon={Delete01Icon} className="mr-2 h-4 w-4" />
 							Delete…
@@ -301,11 +305,7 @@ export const KanbanColumn = memo(function KanbanColumn({
 
 			<ConfirmDelete
 				open={confirmDelete}
-				onOpenChange={(open) => {
-					// Each ask starts by keeping the cards, in the next column over.
-					if (open) setMoveTo(others[0]?.id ?? DELETE_CARDS);
-					setConfirmDelete(open);
-				}}
+				onOpenChange={setConfirmDelete}
 				title={`Delete "${column.name}"?`}
 				description={
 					total === 0
