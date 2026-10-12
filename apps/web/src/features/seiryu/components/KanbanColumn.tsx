@@ -35,6 +35,11 @@ import { type CSSProperties, memo, useMemo, useRef, useState } from "react";
 
 export type { ColumnData } from "@/features/seiryu/lib/types";
 
+/** A pigment cell in the colour menu; the radio item's own dot is hidden. */
+const SWATCH =
+	"size-7 justify-center rounded-md p-0 text-black/70 focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-popover [&>span:first-child]:hidden";
+const SWATCH_ON = "ring-2 ring-foreground/80 ring-offset-1 ring-offset-popover";
+
 /**
  * A lane is as wide as a comfortable card; on a phone, most of the screen so the next peeks in.
  * From md lanes give up to 2.5rem each, so three fit beside the project list at 1440px.
@@ -188,20 +193,27 @@ export const KanbanColumn = memo(function KanbanColumn({
 								<HugeiconsIcon icon={PaintBoardIcon} className="mr-2 h-4 w-4" />
 								Colour
 							</DropdownMenuSubTrigger>
-							<DropdownMenuSubContent>
+							<DropdownMenuSubContent className="p-2">
 								<DropdownMenuRadioGroup
 									value={column.color ?? "none"}
 									onValueChange={(v) => onUpdate(column.id, { color: v === "none" ? null : v })}
+									className="grid grid-cols-7 gap-1.5"
 								>
-									<DropdownMenuRadioItem value="none">None</DropdownMenuRadioItem>
+									<DropdownMenuRadioItem value="none" className="col-span-7 mb-1">
+										None
+									</DropdownMenuRadioItem>
 									{LABEL_COLORS.map(({ name: colorName, hex }) => (
-										<DropdownMenuRadioItem key={hex} value={hex}>
-											<span
-												aria-hidden
-												className="mr-2 size-2.5 rounded-full"
-												style={{ backgroundColor: hex }}
-											/>
-											{colorName}
+										<DropdownMenuRadioItem
+											key={hex}
+											value={hex}
+											aria-label={colorName}
+											title={colorName}
+											className={cn(SWATCH, column.color?.toLowerCase() === hex && SWATCH_ON)}
+											style={{ backgroundColor: hex }}
+										>
+											{column.color?.toLowerCase() === hex && (
+												<HugeiconsIcon icon={Tick02Icon} className="size-3" strokeWidth={2.5} />
+											)}
 										</DropdownMenuRadioItem>
 									))}
 								</DropdownMenuRadioGroup>
