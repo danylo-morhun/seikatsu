@@ -1,14 +1,14 @@
 "use server";
 
 import { getOwnedColumn, isOwnedProject, requireWorkspace } from "@/features/seiryu/actions/guard";
-import { generateKeyBetween } from "@/features/seiryu/lib/position";
+import { generateKeyBetween, generateNKeysBetween } from "@/features/seiryu/lib/position";
 import {
 	createColumnSchema,
 	deleteColumnSchema,
 	reorderColumnSchema,
 	updateColumnSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
-import { asc, db, desc, eq, seiryuColumns } from "@seikatsu/db";
+import { and, asc, db, desc, eq, isNull, seiryuCards, seiryuColumns } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 export async function getColumns(projectId: string) {
@@ -78,12 +78,44 @@ export async function deleteColumn(input: unknown): Promise<{ error: string } | 
 	const parsed = deleteColumnSchema.safeParse(input);
 	if (!parsed.success) return { error: "Invalid input" };
 
-	const column = await getOwnedColumn(parsed.data.columnId, workspace.id);
+	const { columnId, moveTo } = parsed.data;
+	const column = await getOwnedColumn(columnId, workspace.id);
 	if (!column) return { error: "Column not found" };
 
-	await db.delete(seiryuColumns).where(eq(seiryuColumns.id, parsed.data.columnId));
+	if (moveTo) {
+		if (moveTo === columnId) return { error: "Pick another column" };
+		const target = await getOwnedColumn(moveTo, workspace.id);
+		if (target?.projectId !== column.projectId) return { error: "Column not found" };
+
+		await db.transaction(async (tx) => {
+			const cards = await tx
+				.select({ id: seiryuCards.id })
+				.from(seiryuCards)
+				.where(eq(seiryuCards.columnId, columnId))
+				.orderBy(asc(seiryuCards.position));
+			const [last] = await tx
+				.select({ position: seiryuCards.position })
+				.from(seiryuCards)
+				.where(and(eq(seiryuCards.columnId, moveTo), isNull(seiryuCards.archivedAt)))
+				.orderBy(desc(seiryuCards.position))
+				.limit(1);
+			// Kept in their order, after the target's own cards.
+			const positions = generateNKeysBetween(last?.position ?? null, null, cards.length);
+			for (const [i, card] of cards.entries()) {
+				await tx
+					.update(seiryuCards)
+					.set({ columnId: moveTo, position: positions[i] })
+					.where(eq(seiryuCards.id, card.id));
+			}
+			await tx.delete(seiryuColumns).where(eq(seiryuColumns.id, columnId));
+		});
+	} else {
+		await db.delete(seiryuColumns).where(eq(seiryuColumns.id, columnId));
+	}
 
 	revalidatePath(`/seiryu/${column.projectId}`);
+	// Open counts change when cards leave for, or with, a column.
+	revalidatePath("/seiryu", "layout");
 	return { success: true };
 }
 

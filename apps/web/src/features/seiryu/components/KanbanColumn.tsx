@@ -29,9 +29,15 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 	Input,
+	Label,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	cn,
 } from "@seikatsu/ui";
-import { type CSSProperties, memo, useMemo, useRef, useState } from "react";
+import { type CSSProperties, memo, useId, useMemo, useRef, useState } from "react";
 
 export type { ColumnData } from "@/features/seiryu/lib/types";
 
@@ -53,12 +59,16 @@ interface Props {
 	/** Cards in the column before filters; shown beside the filtered count. */
 	total: number;
 	index: number;
+	/** Every column of the board, in order: where a deleted column's cards can go. */
+	columns: ColumnData[];
 	today: string;
 	onCardOpen: (cardId: string) => void;
 	onAddCard: (columnId: string, title: string) => void;
 	onUpdate: (columnId: string, updates: ColumnUpdates) => void;
-	onDelete: (columnId: string) => Promise<unknown>;
+	onDelete: (columnId: string, moveTo?: string) => Promise<unknown>;
 }
+
+const DELETE_CARDS = "delete";
 
 // Skips re-rendering when the board changes another column (cards compared by reference).
 export const KanbanColumn = memo(function KanbanColumn({
@@ -66,6 +76,7 @@ export const KanbanColumn = memo(function KanbanColumn({
 	cards,
 	total,
 	index,
+	columns,
 	today,
 	onCardOpen,
 	onAddCard,
@@ -77,6 +88,9 @@ export const KanbanColumn = memo(function KanbanColumn({
 	const [renaming, setRenaming] = useState(false);
 	const [name, setName] = useState(column.name);
 	const [confirmDelete, setConfirmDelete] = useState(false);
+	const [moveTo, setMoveTo] = useState(DELETE_CARDS);
+	const others = useMemo(() => columns.filter((c) => c.id !== column.id), [columns, column.id]);
+	const fieldId = useId();
 	const addRef = useRef<HTMLInputElement>(null);
 
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -286,15 +300,45 @@ export const KanbanColumn = memo(function KanbanColumn({
 
 			<ConfirmDelete
 				open={confirmDelete}
-				onOpenChange={setConfirmDelete}
+				onOpenChange={(open) => {
+					// Each ask starts by keeping the cards, in the next column over.
+					if (open) setMoveTo(others[0]?.id ?? DELETE_CARDS);
+					setConfirmDelete(open);
+				}}
 				title={`Delete "${column.name}"?`}
 				description={
-					total > 0
-						? `${total === 1 ? "Its card goes" : `All ${total} of its cards go`} with it, for good. Move them to another column first to keep them.`
-						: "The column is empty; nothing else is lost."
+					total === 0
+						? "The column is empty; nothing else is lost."
+						: moveTo === DELETE_CARDS
+							? `${total === 1 ? "Its card goes" : `All ${total} of its cards go`} with it, for good.`
+							: `${total === 1 ? "Its card moves" : `Its ${total} cards move`} to the column you pick.`
 				}
-				onConfirm={() => onDelete(column.id)}
-			/>
+				onConfirm={() => onDelete(column.id, moveTo === DELETE_CARDS ? undefined : moveTo)}
+			>
+				{total > 0 && (
+					<div className="space-y-2">
+						<Label htmlFor={`${fieldId}-move`}>{total === 1 ? "Its card" : "Its cards"}</Label>
+						<Select value={moveTo} onValueChange={setMoveTo}>
+							<SelectTrigger id={`${fieldId}-move`}>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{others.map((c) => (
+									<SelectItem key={c.id} value={c.id}>
+										Move to {c.name}
+									</SelectItem>
+								))}
+								<SelectItem
+									value={DELETE_CARDS}
+									className="text-destructive focus:text-destructive"
+								>
+									Delete with the column
+								</SelectItem>
+							</SelectContent>
+						</Select>
+					</div>
+				)}
+			</ConfirmDelete>
 		</section>
 	);
 }, sameColumnProps);
@@ -308,6 +352,7 @@ function sameColumnProps(a: Props, b: Props) {
 		a.total === b.total &&
 		a.column.position === b.column.position &&
 		a.index === b.index &&
+		a.columns === b.columns &&
 		a.today === b.today &&
 		a.onCardOpen === b.onCardOpen &&
 		a.onAddCard === b.onAddCard &&

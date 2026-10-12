@@ -57,6 +57,8 @@ export const updateColumnSchema = z.object({
 
 export const deleteColumnSchema = z.object({
 	columnId: z.string().uuid(),
+	/** Another column of the same project that takes the cards; absent: they go too. */
+	moveTo: z.string().uuid().optional(),
 });
 
 export const reorderColumnSchema = z.object({

@@ -26,7 +26,7 @@ import {
 	readFilters,
 	writeFilters,
 } from "@/features/seiryu/lib/filters";
-import { generateKeyBetween } from "@/features/seiryu/lib/position";
+import { generateKeyBetween, generateNKeysBetween } from "@/features/seiryu/lib/position";
 import { useServerState } from "@/features/seiryu/lib/server-state";
 import type {
 	CardData,
@@ -276,14 +276,28 @@ export function KanbanBoard({
 	);
 
 	const handleDeleteColumn = useCallback(
-		async (columnId: string) => {
-			const result = await trackColumns(trackCards(deleteColumn({ columnId })));
+		async (columnId: string, moveTo?: string) => {
+			const result = await trackColumns(trackCards(deleteColumn({ columnId, moveTo })));
 			if ("error" in result) {
 				toast.error(result.error);
 				return;
 			}
 			setColumns((prev) => prev.filter((c) => c.id !== columnId));
-			setCards((prev) => prev.filter((c) => c.columnId !== columnId));
+			setCards((prev) => {
+				if (!moveTo) return prev.filter((c) => c.columnId !== columnId);
+				// Moved cards follow the target's own, in their order, as the server places them.
+				const moving = prev.filter((c) => c.columnId === columnId).sort(byPosition);
+				const last = prev
+					.filter((c) => c.columnId === moveTo)
+					.sort(byPosition)
+					.at(-1);
+				const keys = generateNKeysBetween(last?.position ?? null, null, moving.length);
+				const placed = new Map(moving.map((c, i) => [c.id, keys[i] as string]));
+				return prev.map((c) => {
+					const position = placed.get(c.id);
+					return position ? { ...c, columnId: moveTo, position } : c;
+				});
+			});
 		},
 		[setColumns, setCards, trackColumns, trackCards],
 	);
@@ -675,6 +689,7 @@ export function KanbanBoard({
 										key={col.id}
 										column={col}
 										index={i}
+										columns={sortedColumns}
 										today={today}
 										cards={cardsByColumn.get(col.id) ?? NO_CARDS}
 										total={totalsByColumn.get(col.id) ?? 0}
