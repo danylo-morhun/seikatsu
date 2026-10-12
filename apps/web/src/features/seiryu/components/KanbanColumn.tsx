@@ -130,6 +130,7 @@ export const KanbanColumn = memo(function KanbanColumn({
 	return (
 		<section
 			ref={setNodeRef}
+			data-lane
 			aria-label={column.name}
 			style={
 				{ transform: CSS.Translate.toString(transform), transition, "--i": index } as CSSProperties
