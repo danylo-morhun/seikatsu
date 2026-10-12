@@ -22,10 +22,19 @@ interface Props {
 	description: string;
 	/** Resolves when done; the dialog stays open (and pending) until then. */
 	onConfirm: () => Promise<unknown> | undefined;
+	/** A choice that shapes what goes, between the description and the buttons. */
+	children?: React.ReactNode;
 }
 
 /** Kuroji's delete confirmation: alert icon in the title, destructive action, "Deleting…". */
-export function ConfirmDelete({ open, onOpenChange, title, description, onConfirm }: Props) {
+export function ConfirmDelete({
+	open,
+	onOpenChange,
+	title,
+	description,
+	onConfirm,
+	children,
+}: Props) {
 	const [isPending, startTransition] = useTransition();
 
 	function handleConfirm(e: React.MouseEvent) {
@@ -46,6 +55,7 @@ export function ConfirmDelete({ open, onOpenChange, title, description, onConfir
 					</AlertDialogTitle>
 					<AlertDialogDescription>{description}</AlertDialogDescription>
 				</AlertDialogHeader>
+				{children}
 				<AlertDialogFooter>
 					<AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
 					<AlertDialogAction
