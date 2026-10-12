@@ -3,7 +3,13 @@ import { plainKey, shouldOpenCapture } from "./capture-shortcut";
 
 const key = (
 	k: string,
-	mods: Partial<{ ctrlKey: boolean; metaKey: boolean; altKey: boolean }> = {},
+	mods: Partial<{
+		code: string;
+		ctrlKey: boolean;
+		metaKey: boolean;
+		altKey: boolean;
+		shiftKey: boolean;
+	}> = {},
 ) => ({
 	key: k,
 	ctrlKey: false,
@@ -39,6 +45,27 @@ describe("plainKey", () => {
 	it("gives the lower-cased letter", () => {
 		expect(plainKey(key("F"), idle)).toBe("f");
 		expect(plainKey(key("a"), idle)).toBe("a");
+	});
+
+	it("reads letters, digits and brackets by physical key on other layouts", () => {
+		expect(plainKey(key("т", { code: "KeyN" }), idle)).toBe("n");
+		expect(plainKey(key("Ф", { code: "KeyA", shiftKey: true }), idle)).toBe("a");
+		expect(plainKey(key("х", { code: "BracketLeft" }), idle)).toBe("[");
+		expect(plainKey(key("ї", { code: "BracketRight" }), idle)).toBe("]");
+		expect(plainKey(key("1", { code: "Digit1" }), idle)).toBe("1");
+		expect(plainKey(key("!", { code: "Digit1", shiftKey: true }), idle)).not.toBe("1");
+	});
+
+	it("keeps a Latin layout's own letters", () => {
+		// Dvorak: the key typing "n" sits where QWERTY has L.
+		expect(plainKey(key("n", { code: "KeyL" }), idle)).toBe("n");
+	});
+
+	it("names ? and the delete keys", () => {
+		expect(plainKey(key("?", { code: "Slash", shiftKey: true }), idle)).toBe("?");
+		expect(plainKey(key(",", { code: "Digit6", shiftKey: true }), idle)).toBe(",");
+		expect(plainKey(key("Backspace", { code: "Backspace" }), idle)).toBe("delete");
+		expect(plainKey(key("Delete", { code: "Delete" }), idle)).toBe("delete");
 	});
 
 	it("ignores named keys, combos, typing and overlays", () => {
