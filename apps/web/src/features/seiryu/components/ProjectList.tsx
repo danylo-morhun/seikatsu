@@ -1,7 +1,9 @@
 "use client";
 
+import { startNavigationProgress } from "@/components/NavigationProgress";
 import { deleteProject, reorderProject } from "@/features/seiryu/actions/projects";
 import { ConfirmDelete } from "@/features/seiryu/components/ConfirmDelete";
+import { ContextArea } from "@/features/seiryu/components/ContextArea";
 import { ProjectDialog, type ProjectSummary } from "@/features/seiryu/components/ProjectDialog";
 import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import { useServerState } from "@/features/seiryu/lib/server-state";
@@ -27,12 +29,16 @@ import { CSS } from "@dnd-kit/utilities";
 import {
 	Add01Icon,
 	Delete01Icon,
+	FolderOpenIcon,
+	LinkSquare02Icon,
 	MoreHorizontalIcon,
 	PencilEdit01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
+	ContextMenuItem,
+	ContextMenuSeparator,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -76,6 +82,8 @@ export function ProjectList({
 		project: null,
 	});
 	const [deleting, setDeleting] = useState<ProjectSummary | null>(null);
+	const [menuProjectId, setMenuProjectId] = useState<string | null>(null);
+	const menuProject = menuProjectId ? projects.find((p) => p.id === menuProjectId) : undefined;
 	// The tapped project, lit before its board arrives.
 	const [pendingId, setPendingId] = useState<string | null>(null);
 	const litId = pendingId && pendingId !== activeProjectId ? pendingId : activeProjectId;
@@ -174,33 +182,81 @@ export function ProjectList({
 					onDragEnd={handleDragEnd}
 				>
 					<SortableContext items={sorted.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-						<ul ref={listRef} className="relative">
-							{pill && (
-								<span
-									aria-hidden
-									className={cn(
-										"pointer-events-none absolute inset-x-0 top-0 rounded-md bg-primary/15",
-										pill.moved &&
-											"transition-[transform,height] duration-300 ease-in-out motion-reduce:transition-none",
-									)}
-									style={{ transform: `translateY(${pill.y}px)`, height: pill.h }}
-								/>
-							)}
-							{sorted.map((project) => (
-								<ProjectRow
-									key={project.id}
-									project={project}
-									lit={project.id === litId}
-									count={cardCounts[project.id] ?? 0}
-									onPick={() => {
-										setPendingId(project.id);
-										onNavigate?.();
-									}}
-									onEdit={() => setDialog({ open: true, project })}
-									onDelete={() => setDeleting(project)}
-								/>
-							))}
-						</ul>
+						<ContextArea
+							attr="data-project-id"
+							onTarget={(projectId) => {
+								setMenuProjectId(projectId);
+								return true;
+							}}
+							menu={
+								menuProject && (
+									<>
+										<ContextMenuItem
+											onSelect={() => {
+												setPendingId(menuProject.id);
+												onNavigate?.();
+												startNavigationProgress();
+												router.push(`/seiryu/${menuProject.id}`);
+											}}
+										>
+											<HugeiconsIcon icon={FolderOpenIcon} />
+											Open
+										</ContextMenuItem>
+										{/* The browser's own link menu gives way to this one. */}
+										<ContextMenuItem
+											onSelect={() =>
+												window.open(`/seiryu/${menuProject.id}`, "_blank", "noopener")
+											}
+										>
+											<HugeiconsIcon icon={LinkSquare02Icon} />
+											Open in new tab
+										</ContextMenuItem>
+										<ContextMenuItem
+											onSelect={() => setDialog({ open: true, project: menuProject })}
+										>
+											<HugeiconsIcon icon={PencilEdit01Icon} />
+											Edit
+										</ContextMenuItem>
+										<ContextMenuSeparator />
+										<ContextMenuItem
+											className="text-destructive focus:text-destructive"
+											onSelect={() => setDeleting(menuProject)}
+										>
+											<HugeiconsIcon icon={Delete01Icon} />
+											Delete…
+										</ContextMenuItem>
+									</>
+								)
+							}
+						>
+							<ul ref={listRef} className="relative">
+								{pill && (
+									<span
+										aria-hidden
+										className={cn(
+											"pointer-events-none absolute inset-x-0 top-0 rounded-md bg-primary/15",
+											pill.moved &&
+												"transition-[transform,height] duration-300 ease-in-out motion-reduce:transition-none",
+										)}
+										style={{ transform: `translateY(${pill.y}px)`, height: pill.h }}
+									/>
+								)}
+								{sorted.map((project) => (
+									<ProjectRow
+										key={project.id}
+										project={project}
+										lit={project.id === litId}
+										count={cardCounts[project.id] ?? 0}
+										onPick={() => {
+											setPendingId(project.id);
+											onNavigate?.();
+										}}
+										onEdit={() => setDialog({ open: true, project })}
+										onDelete={() => setDeleting(project)}
+									/>
+								))}
+							</ul>
+						</ContextArea>
 					</SortableContext>
 				</DndContext>
 			)}
