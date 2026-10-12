@@ -141,6 +141,23 @@ export {
 	DropdownMenuSubTrigger,
 	DropdownMenuRadioGroup,
 } from "./components/dropdown-menu";
+export {
+	ContextMenu,
+	ContextMenuTrigger,
+	ContextMenuContent,
+	ContextMenuItem,
+	ContextMenuCheckboxItem,
+	ContextMenuRadioItem,
+	ContextMenuLabel,
+	ContextMenuSeparator,
+	ContextMenuShortcut,
+	ContextMenuGroup,
+	ContextMenuPortal,
+	ContextMenuSub,
+	ContextMenuSubContent,
+	ContextMenuSubTrigger,
+	ContextMenuRadioGroup,
+} from "./components/context-menu";
 export { Checkbox } from "./components/checkbox";
 export { Avatar } from "./components/avatar";
 export {
