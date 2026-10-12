@@ -47,6 +47,8 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 	const isKuroji = pathname.startsWith("/kuroji");
 	// A Seiryu board (not a card page): its capture action sits where Kuroji's does.
 	const isSeiryuBoard = /^\/seiryu\/[^/]+$/.test(pathname);
+	// Seiryu's project list names what's open; "· Projects" beside it says nothing new.
+	const showPurpose = !isKurojiHome && !pathname.startsWith("/seiryu");
 	const activeTab = (searchParams.get("tab") as KurojiTab) || "expense";
 	// Highlight the clicked tab immediately; the URL catches up when navigation commits.
 	const [pendingTab, setPendingTab] = useState<KurojiTab | null>(null);
@@ -81,12 +83,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 				<span className={cn("truncate", isKurojiHome && "md:max-lg:sr-only")}>
 					{app ? app.name : "seikatsu"}
 					{/* The sidebar already names the app's purpose; on a phone or beside tabs the label is noise. */}
-					{app && (
-						<span className={cn("hidden md:inline", isKurojiHome && "md:hidden")}>
-							{" "}
-							· {app.label}
-						</span>
-					)}
+					{app && showPurpose && <span className="hidden md:inline"> · {app.label}</span>}
 				</span>
 			</Link>
 
