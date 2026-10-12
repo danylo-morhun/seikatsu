@@ -120,6 +120,13 @@ export const KanbanColumn = memo(function KanbanColumn({
 		setTitle("");
 	}
 
+	// Done keeps what's typed (a title left in the field is a card meant); Escape drops it.
+	function finishAdd() {
+		const trimmed = title.trim();
+		if (trimmed) onAddCard(column.id, trimmed);
+		closeAdd();
+	}
+
 	function submitRename() {
 		const trimmed = name.trim();
 		setRenaming(false);
@@ -282,10 +289,11 @@ export const KanbanColumn = memo(function KanbanColumn({
 								onKeyDown={(e) => e.key === "Escape" && closeAdd()}
 							/>
 							<div className="flex gap-1.5">
+								{/* Adds and stays open (as Enter does); Done adds what's typed and closes. */}
 								<Button type="submit" size="sm" disabled={!title.trim()}>
-									Add card
+									Add another
 								</Button>
-								<Button type="button" size="sm" variant="ghost" onClick={closeAdd}>
+								<Button type="button" size="sm" variant="ghost" onClick={finishAdd}>
 									Done
 								</Button>
 							</div>
