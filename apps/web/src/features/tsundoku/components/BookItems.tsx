@@ -99,6 +99,7 @@ export const BookRow = memo(function BookRow({
 				<BookCover
 					coverUrl={book.coverUrl}
 					title={book.title}
+					sizes="32px"
 					className="w-8 shrink-0 rounded-sm"
 				/>
 				<span className="min-w-0 flex-1">
@@ -138,7 +139,12 @@ export const ReadingRow = memo(function ReadingRow({
 			className={cn("relative flex items-center gap-4 py-3 md:-mx-2 md:px-2", entrance)}
 			style={stagger(index)}
 		>
-			<BookCover coverUrl={book.coverUrl} title={book.title} className="w-12 shrink-0" />
+			<BookCover
+				coverUrl={book.coverUrl}
+				title={book.title}
+				sizes="48px"
+				className="w-12 shrink-0"
+			/>
 			<div className="min-w-0 flex-1 space-y-2">
 				<div className="min-w-0">
 					<Link
