@@ -224,7 +224,7 @@ export async function updateStatus(bookId: string, status: unknown): Promise<Res
 	return { success: true };
 }
 
-/** The day a finished book was finished, set apart from the reading log. */
+/** The day a finished book was finished, set apart from the reading log, or none. */
 export async function setFinishedAt(bookId: string, input: unknown): Promise<Result> {
 	const workspace = await requireWorkspace();
 	const parsed = finishedAtSchema.safeParse(input);
@@ -232,11 +232,12 @@ export async function setFinishedAt(bookId: string, input: unknown): Promise<Res
 	const book = await getOwnedBook(bookId, workspace.id);
 	if (!book) return { error: "Book not found" };
 	if (book.status !== "read") return { error: "The book isn't finished" };
-	if (parsed.data > (await getUserToday())) return { error: "Can't finish on a future day" };
+	const date = parsed.data;
+	if (date && date > (await getUserToday())) return { error: "Can't finish on a future day" };
 
 	await db
 		.update(tsundokuBooks)
-		.set(finishDatePatch(book, parsed.data))
+		.set(finishDatePatch(book, date))
 		.where(eq(tsundokuBooks.id, bookId));
 	revalidate();
 	return { success: true };

@@ -104,10 +104,13 @@ export function statusPatch(book: ProgressState, next: BookStatus, today: string
 	return patch;
 }
 
-/** The finish day set by hand, apart from the reading log: the start can't come after it. */
-export function finishDatePatch(book: ProgressState, date: string): ProgressPatch {
+/**
+ * The finish day set by hand, apart from the reading log: the start can't come after it.
+ * None when it isn't known (a book read before it was tracked).
+ */
+export function finishDatePatch(book: ProgressState, date: string | null): ProgressPatch {
 	const patch: ProgressPatch = { finishedAt: date };
-	if (book.startedAt && book.startedAt > date) patch.startedAt = date;
+	if (date && book.startedAt && book.startedAt > date) patch.startedAt = date;
 	return patch;
 }
 
