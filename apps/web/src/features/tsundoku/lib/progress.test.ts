@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { genreFromSubjects } from "./genre";
-import { type ProgressState, parseProgressInput, progressPatch, statusPatch } from "./progress";
+import {
+	type ProgressState,
+	pageCountPatch,
+	pagesLeft,
+	parseProgressInput,
+	progressPatch,
+	statusPatch,
+} from "./progress";
 import { computeStreaks } from "./streak";
 
 const TODAY = "2026-10-13";
@@ -37,6 +44,10 @@ describe("progressPatch", () => {
 		});
 	});
 
+	it("leaves a book reopened at its last page open", () => {
+		expect(progressPatch(book({ currentPage: 300 }), 300, TODAY)).toEqual({ currentPage: 300 });
+	});
+
 	it("never goes below zero", () => {
 		expect(progressPatch(book(), -5, TODAY).currentPage).toBe(0);
 	});
@@ -56,6 +67,25 @@ describe("statusPatch", () => {
 		expect(
 			statusPatch(book({ status: "read", finishedAt: "2026-10-10" }), "reading", TODAY),
 		).toEqual({ status: "reading", finishedAt: null });
+	});
+});
+
+describe("pageCountPatch", () => {
+	it("keeps a finished book finished at its new length", () => {
+		expect(pageCountPatch(book({ status: "read", currentPage: 10 }), 80)).toEqual({
+			currentPage: 80,
+		});
+	});
+
+	it("keeps progress inside a shorter book without finishing it", () => {
+		expect(pageCountPatch(book({ currentPage: 250 }), 200)).toEqual({ currentPage: 200 });
+	});
+});
+
+describe("pagesLeft", () => {
+	it("caps a session at the book's end", () => {
+		expect(pagesLeft(book({ pageCount: 50, currentPage: 8 }), 100)).toBe(42);
+		expect(pagesLeft(book({ pageCount: null }), 100)).toBe(100);
 	});
 });
 
@@ -89,5 +119,8 @@ describe("genreFromSubjects", () => {
 		expect(genreFromSubjects(["Fiction", "Science fiction, American"])).toBe("Sci-fi");
 		expect(genreFromSubjects(["Fiction, general"])).toBe("Fiction");
 		expect(genreFromSubjects([])).toBeUndefined();
+		expect(genreFromSubjects(["Historical fiction", "History"])).toBe("Fiction");
+		expect(genreFromSubjects(["Magic realism"])).toBe("Fiction");
+		expect(genreFromSubjects(["Comic novels", "War"])).toBe("Fiction");
 	});
 });

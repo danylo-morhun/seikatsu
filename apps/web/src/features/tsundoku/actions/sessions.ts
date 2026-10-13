@@ -6,7 +6,7 @@ import {
 	isOwnedBook,
 	requireWorkspace,
 } from "@/features/tsundoku/actions/guard";
-import { progressPatch } from "@/features/tsundoku/lib/progress";
+import { pagesLeft, progressPatch } from "@/features/tsundoku/lib/progress";
 import { logSessionSchema } from "@/features/tsundoku/lib/tsundoku-schemas";
 import { getUserToday } from "@/lib/timezone";
 import { db, desc, eq, tsundokuBooks, tsundokuSessions } from "@seikatsu/db";
@@ -34,12 +34,16 @@ export async function logSession(bookId: string, input: unknown): Promise<Result
 	const book = await getOwnedBook(bookId, workspace.id);
 	if (!book) return { error: "Book not found" };
 
-	const { date, pagesRead } = parsed.data;
+	const { date } = parsed.data;
 	const today = await getUserToday();
 	if (date > today) return { error: "Can't log a future day" };
+	// A session never reads past the last page, so deleting it later takes back what it added.
+	const pagesRead = pagesLeft(book, parsed.data.pagesRead);
+	if (pagesRead === 0) return { error: "Already on the last page" };
 	const patch = progressPatch(book, book.currentPage + pagesRead, today);
 	// The day it was read, not the day it was logged.
-	if (patch.startedAt && date < patch.startedAt) patch.startedAt = date;
+	const startedAt = patch.startedAt ?? book.startedAt;
+	if (!startedAt || date < startedAt) patch.startedAt = date;
 	if (patch.finishedAt) patch.finishedAt = date;
 
 	await db.transaction(async (tx) => {

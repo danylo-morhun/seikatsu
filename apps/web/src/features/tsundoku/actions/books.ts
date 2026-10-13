@@ -6,7 +6,7 @@ import {
 	requireWorkspace,
 } from "@/features/tsundoku/actions/guard";
 import { computePace } from "@/features/tsundoku/lib/pace";
-import { progressPatch, statusPatch } from "@/features/tsundoku/lib/progress";
+import { pageCountPatch, progressPatch, statusPatch } from "@/features/tsundoku/lib/progress";
 import {
 	bookStatusSchema,
 	createBookSchema,
@@ -185,9 +185,8 @@ export async function updateBook(bookId: string, input: unknown): Promise<Result
 	const patch: Partial<typeof tsundokuBooks.$inferInsert> = parsed.data;
 	// A shorter book can't be read past its end.
 	const { pageCount } = parsed.data;
-	if (pageCount !== undefined) {
-		const today = await getUserToday();
-		Object.assign(patch, progressPatch({ ...book, pageCount }, book.currentPage, today));
+	if (pageCount !== undefined && pageCount !== book.pageCount) {
+		Object.assign(patch, pageCountPatch(book, pageCount));
 	}
 	if (Object.keys(patch).length === 0) return { success: true };
 
