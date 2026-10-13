@@ -6,6 +6,7 @@ import { fetchWorkDescription } from "@/features/tsundoku/actions/search";
 import { BookSearchPanel } from "@/features/tsundoku/components/BookSearchPanel";
 import type { BookSearchResult } from "@/features/tsundoku/lib/book-search";
 import { BOOK_STATUSES, GENRE_OPTIONS, STATUS_CONFIG } from "@/features/tsundoku/lib/constants";
+import { genreFromSubjects } from "@/features/tsundoku/lib/genre";
 import {
 	Button,
 	Dialog,
@@ -30,10 +31,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export function AddBookModal({
-	workspaceId,
 	trigger,
 }: {
-	workspaceId: string;
 	trigger?: React.ReactNode;
 }) {
 	const [open, setOpen] = useState(false);
@@ -72,16 +71,16 @@ export function AddBookModal({
 		const description =
 			r.description ??
 			(r.source === "openlibrary" ? await fetchWorkDescription(r.externalId) : null);
-		const result = await createBook(workspaceId, {
+		const result = await createBook({
 			title: r.title,
 			authors: r.authors,
-			isbn: r.isbn ?? undefined,
-			coverUrl: r.coverUrl ?? undefined,
+			isbn: r.isbn,
+			coverUrl: r.coverUrl,
 			olKey: r.externalId,
 			pageCount: r.pageCount ?? null,
 			publishedYear: r.publishedYear ?? null,
-			description: description ?? undefined,
-			genre: r.subjects[0] ?? undefined,
+			description,
+			genre: genreFromSubjects(r.subjects) ?? null,
 			source: r.source,
 			status: "want",
 		});
@@ -102,7 +101,7 @@ export function AddBookModal({
 			return;
 		}
 		setSaving(true);
-		const result = await createBook(workspaceId, {
+		const result = await createBook({
 			title: title.trim(),
 			authors: authors
 				.split(",")
@@ -110,7 +109,7 @@ export function AddBookModal({
 				.filter(Boolean),
 			pageCount: pageCount ? Number.parseInt(pageCount, 10) : null,
 			publishedYear: publishedYear ? Number.parseInt(publishedYear, 10) : null,
-			genre: genre || undefined,
+			genre: genre || null,
 			source: "manual",
 			status: status as (typeof BOOK_STATUSES)[number],
 		});

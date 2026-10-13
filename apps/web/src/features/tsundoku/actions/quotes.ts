@@ -1,17 +1,31 @@
 "use server";
 
-import { getOwnedBook, isOwnedBook } from "@/features/tsundoku/actions/guard";
 import {
-	type CreateQuoteValues,
-	createQuoteSchema,
-} from "@/features/tsundoku/lib/tsundoku-schemas";
-import { db, desc, eq, tsundokuQuotes } from "@seikatsu/db";
+	getOwnedBook,
+	getOwnedQuote,
+	isOwnedBook,
+	requireWorkspace,
+} from "@/features/tsundoku/actions/guard";
+import { createQuoteSchema } from "@/features/tsundoku/lib/tsundoku-schemas";
+import { and, db, desc, eq, gte, lte, tsundokuBooks, tsundokuQuotes } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 export type TsundokuQuote = typeof tsundokuQuotes.$inferSelect;
 
+export interface FeedQuote {
+	id: string;
+	text: string;
+	page: number | null;
+	bookId: string;
+	bookTitle: string;
+	bookAuthors: string[] | null;
+}
+
+type Result = { error: string } | { success: true };
+
 export async function getQuotes(bookId: string): Promise<TsundokuQuote[]> {
-	if (!(await isOwnedBook(bookId))) return [];
+	const workspace = await requireWorkspace();
+	if (!(await isOwnedBook(bookId, workspace.id))) return [];
 	return db
 		.select()
 		.from(tsundokuQuotes)
@@ -19,34 +33,47 @@ export async function getQuotes(bookId: string): Promise<TsundokuQuote[]> {
 		.orderBy(desc(tsundokuQuotes.createdAt));
 }
 
-export async function createQuote(
-	bookId: string,
-	values: CreateQuoteValues,
-): Promise<{ error: string } | { success: true }> {
-	const book = await getOwnedBook(bookId);
-	if (!book) return { error: "Book not found" };
+/** Quotes saved during a year, across books (the Year page). */
+export async function getYearQuotes(year: number): Promise<FeedQuote[]> {
+	const workspace = await requireWorkspace();
+	return db
+		.select({
+			id: tsundokuQuotes.id,
+			text: tsundokuQuotes.text,
+			page: tsundokuQuotes.page,
+			bookId: tsundokuBooks.id,
+			bookTitle: tsundokuBooks.title,
+			bookAuthors: tsundokuBooks.authors,
+		})
+		.from(tsundokuQuotes)
+		.innerJoin(tsundokuBooks, eq(tsundokuBooks.id, tsundokuQuotes.bookId))
+		.where(
+			and(
+				eq(tsundokuBooks.workspaceId, workspace.id),
+				gte(tsundokuQuotes.createdAt, new Date(Date.UTC(year, 0, 1))),
+				lte(tsundokuQuotes.createdAt, new Date(Date.UTC(year + 1, 0, 1) - 1)),
+			),
+		)
+		.orderBy(desc(tsundokuQuotes.createdAt))
+		.limit(50);
+}
 
-	const parsed = createQuoteSchema.safeParse(values);
+export async function createQuote(bookId: string, input: unknown): Promise<Result> {
+	const workspace = await requireWorkspace();
+	const parsed = createQuoteSchema.safeParse(input);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+	if (!(await getOwnedBook(bookId, workspace.id))) return { error: "Book not found" };
 
-	await db
-		.insert(tsundokuQuotes)
-		.values({ bookId, text: parsed.data.text.trim(), page: parsed.data.page ?? null });
-	revalidatePath(`/tsundoku/${bookId}`);
+	await db.insert(tsundokuQuotes).values({ bookId, ...parsed.data });
+	revalidatePath("/tsundoku", "layout");
 	return { success: true };
 }
 
-export async function deleteQuote(quoteId: string): Promise<{ error: string } | { success: true }> {
-	const [row] = await db
-		.select({ bookId: tsundokuQuotes.bookId })
-		.from(tsundokuQuotes)
-		.where(eq(tsundokuQuotes.id, quoteId))
-		.limit(1);
-	if (!row) return { error: "Quote not found" };
-	const book = await getOwnedBook(row.bookId);
-	if (!book) return { error: "Forbidden" };
+export async function deleteQuote(quoteId: string): Promise<Result> {
+	const workspace = await requireWorkspace();
+	if (!(await getOwnedQuote(quoteId, workspace.id))) return { error: "Quote not found" };
 
 	await db.delete(tsundokuQuotes).where(eq(tsundokuQuotes.id, quoteId));
-	revalidatePath(`/tsundoku/${row.bookId}`);
+	revalidatePath("/tsundoku", "layout");
 	return { success: true };
 }

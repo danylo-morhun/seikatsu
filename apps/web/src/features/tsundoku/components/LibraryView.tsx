@@ -12,10 +12,9 @@ import { useDeferredValue, useMemo } from "react";
 interface Props {
 	books: LibraryBook[];
 	shelves: TsundokuShelf[];
-	workspaceId: string;
 }
 
-export function LibraryView({ books, shelves, workspaceId }: Props) {
+export function LibraryView({ books, shelves }: Props) {
 	const params = useSearchParams();
 	const view = params.get("view") === "list" ? "list" : "grid";
 	const status = params.get("status");
@@ -71,7 +70,7 @@ export function LibraryView({ books, shelves, workspaceId }: Props) {
 					</p>
 				</div>
 				<div className="hidden md:block">
-					<AddBookModal workspaceId={workspaceId} />
+					<AddBookModal />
 				</div>
 			</div>
 

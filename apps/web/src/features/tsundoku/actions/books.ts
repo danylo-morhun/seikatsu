@@ -3,24 +3,37 @@
 import {
 	assertShelvesInWorkspace,
 	getOwnedBook,
-	getOwnedWorkspace,
+	requireWorkspace,
 } from "@/features/tsundoku/actions/guard";
+import { computePace } from "@/features/tsundoku/lib/pace";
+import { progressPatch, statusPatch } from "@/features/tsundoku/lib/progress";
 import {
-	type CreateBookValues,
-	type UpdateBookValues,
 	bookStatusSchema,
 	createBookSchema,
+	setProgressSchema,
 	updateBookSchema,
 } from "@/features/tsundoku/lib/tsundoku-schemas";
 import { generateKeyBetween } from "@/lib/position";
-import { and, asc, db, desc, eq, inArray, tsundokuBookShelves, tsundokuBooks } from "@seikatsu/db";
+import { getUserToday } from "@/lib/timezone";
+import {
+	and,
+	asc,
+	db,
+	desc,
+	eq,
+	inArray,
+	tsundokuBookShelves,
+	tsundokuBooks,
+	tsundokuSessions,
+} from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
 export type TsundokuBook = typeof tsundokuBooks.$inferSelect & { shelfIds: string[] };
 
-// What the library grid/list, filters and sorts read. The full row (description, review…)
-// is only needed on the book page, and the library list is sent to the client whole.
+// What the library reads. The full row (description, review…) is only needed on the book
+// page, and the library list is sent to the client whole.
 const libraryColumns = {
 	id: tsundokuBooks.id,
 	title: tsundokuBooks.title,
@@ -34,58 +47,71 @@ const libraryColumns = {
 	seriesName: tsundokuBooks.seriesName,
 	seriesPosition: tsundokuBooks.seriesPosition,
 	position: tsundokuBooks.position,
+	startedAt: tsundokuBooks.startedAt,
 	finishedAt: tsundokuBooks.finishedAt,
+	createdAt: tsundokuBooks.createdAt,
 };
 
 export type LibraryBook = Pick<TsundokuBook, keyof typeof libraryColumns> & {
 	shelfIds: string[];
+	/** Reading books with logged pages: days left at the current pace. */
+	daysToFinish: number | null;
 };
 
 export type SeriesBook = Pick<TsundokuBook, "id" | "title" | "status" | "seriesPosition">;
 
-function today(): string {
-	return new Date().toISOString().slice(0, 10);
+type Result<T = object> = { error: string } | ({ success: true } & T);
+
+function invalid(error: z.ZodError) {
+	return { error: error.issues[0]?.message ?? "Invalid input" };
 }
 
-export async function getBooks(workspaceId: string): Promise<LibraryBook[]> {
-	const ws = await getOwnedWorkspace(workspaceId);
-	if (!ws) throw new Error("Forbidden");
+/** Every page that shows books: library, book pages, year. */
+function revalidate() {
+	revalidatePath("/tsundoku", "layout");
+}
 
+export async function getBooks(): Promise<LibraryBook[]> {
+	const workspace = await requireWorkspace();
 	const books = await db
 		.select(libraryColumns)
 		.from(tsundokuBooks)
-		.where(eq(tsundokuBooks.workspaceId, workspaceId))
+		.where(eq(tsundokuBooks.workspaceId, workspace.id))
 		.orderBy(asc(tsundokuBooks.position), desc(tsundokuBooks.createdAt));
-
 	if (books.length === 0) return [];
 
-	const memberships = await db
-		.select({ bookId: tsundokuBookShelves.bookId, shelfId: tsundokuBookShelves.shelfId })
-		.from(tsundokuBookShelves)
-		.where(
-			inArray(
-				tsundokuBookShelves.bookId,
-				books.map((b) => b.id),
-			),
-		);
+	const ids = books.map((b) => b.id);
+	const readingIds = books.filter((b) => b.status === "reading").map((b) => b.id);
+	const [memberships, sessions] = await Promise.all([
+		db
+			.select({ bookId: tsundokuBookShelves.bookId, shelfId: tsundokuBookShelves.shelfId })
+			.from(tsundokuBookShelves)
+			.where(inArray(tsundokuBookShelves.bookId, ids)),
+		readingIds.length > 0
+			? db
+					.select({
+						bookId: tsundokuSessions.bookId,
+						date: tsundokuSessions.date,
+						pagesRead: tsundokuSessions.pagesRead,
+					})
+					.from(tsundokuSessions)
+					.where(inArray(tsundokuSessions.bookId, readingIds))
+			: [],
+	]);
 
-	const byBook = new Map<string, string[]>();
-	for (const m of memberships) {
-		const arr = byBook.get(m.bookId) ?? [];
-		arr.push(m.shelfId);
-		byBook.set(m.bookId, arr);
-	}
-
-	return books.map((b) => ({ ...b, shelfIds: byBook.get(b.id) ?? [] }));
+	const shelvesByBook = Map.groupBy(memberships, (m) => m.bookId);
+	const sessionsByBook = Map.groupBy(sessions, (s) => s.bookId);
+	return books.map((b) => ({
+		...b,
+		shelfIds: (shelvesByBook.get(b.id) ?? []).map((m) => m.shelfId),
+		daysToFinish:
+			computePace(sessionsByBook.get(b.id) ?? [], b.currentPage, b.pageCount)?.daysToFinish ?? null,
+	}));
 }
 
-/** Books of one series in the workspace (includes the current book). */
-export async function getSeriesBooks(
-	workspaceId: string,
-	seriesName: string,
-): Promise<SeriesBook[]> {
-	const ws = await getOwnedWorkspace(workspaceId);
-	if (!ws) throw new Error("Forbidden");
+/** Books of one series (includes the current book). */
+export async function getSeriesBooks(seriesName: string): Promise<SeriesBook[]> {
+	const workspace = await requireWorkspace();
 	return db
 		.select({
 			id: tsundokuBooks.id,
@@ -95,12 +121,14 @@ export async function getSeriesBooks(
 		})
 		.from(tsundokuBooks)
 		.where(
-			and(eq(tsundokuBooks.workspaceId, workspaceId), eq(tsundokuBooks.seriesName, seriesName)),
-		);
+			and(eq(tsundokuBooks.workspaceId, workspace.id), eq(tsundokuBooks.seriesName, seriesName)),
+		)
+		.orderBy(asc(tsundokuBooks.seriesPosition));
 }
 
 export async function getBook(bookId: string): Promise<TsundokuBook | null> {
-	const book = await getOwnedBook(bookId);
+	const workspace = await requireWorkspace();
+	const book = await getOwnedBook(bookId, workspace.id);
 	if (!book) return null;
 	const memberships = await db
 		.select({ shelfId: tsundokuBookShelves.shelfId })
@@ -109,185 +137,167 @@ export async function getBook(bookId: string): Promise<TsundokuBook | null> {
 	return { ...book, shelfIds: memberships.map((m) => m.shelfId) };
 }
 
-export async function createBook(
-	workspaceId: string,
-	values: CreateBookValues,
-): Promise<{ error: string } | { success: true; id: string }> {
-	const ws = await getOwnedWorkspace(workspaceId);
-	if (!ws) return { error: "Forbidden" };
+export async function createBook(input: unknown): Promise<Result<{ id: string }>> {
+	const workspace = await requireWorkspace();
+	const parsed = createBookSchema.safeParse(input);
+	if (!parsed.success) return invalid(parsed.error);
+	const { status, ...v } = parsed.data;
 
-	const parsed = createBookSchema.safeParse(values);
-	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
-	const v = parsed.data;
-
-	// Position at the front of the library (newest first when sorted asc by key).
+	// Front of the library: the newest book comes first by position.
 	const [first] = await db
 		.select({ position: tsundokuBooks.position })
 		.from(tsundokuBooks)
-		.where(eq(tsundokuBooks.workspaceId, workspaceId))
+		.where(eq(tsundokuBooks.workspaceId, workspace.id))
 		.orderBy(asc(tsundokuBooks.position))
 		.limit(1);
-	const position = generateKeyBetween(null, first?.position ?? null);
 
-	const startedAt = v.status === "reading" ? today() : null;
-	const finishedAt = v.status === "read" ? today() : null;
-
+	const today = await getUserToday();
+	const fresh = {
+		status: "want" as const,
+		currentPage: 0,
+		pageCount: v.pageCount,
+		startedAt: null,
+		finishedAt: null,
+	};
 	const [inserted] = await db
 		.insert(tsundokuBooks)
 		.values({
-			workspaceId,
-			title: v.title,
-			authors: v.authors ?? [],
-			isbn: v.isbn ?? null,
-			coverUrl: v.coverUrl ?? null,
-			olKey: v.olKey ?? null,
-			pageCount: v.pageCount ?? null,
-			publishedYear: v.publishedYear ?? null,
-			description: v.description ?? null,
-			genre: v.genre ?? null,
-			seriesName: v.seriesName ?? null,
-			seriesPosition: v.seriesPosition ?? null,
-			source: v.source,
-			status: v.status,
-			startedAt,
-			finishedAt,
-			position,
+			...v,
+			workspaceId: workspace.id,
+			...fresh,
+			...statusPatch(fresh, status, today),
+			position: generateKeyBetween(null, first?.position ?? null),
 		})
 		.returning({ id: tsundokuBooks.id });
 
-	revalidatePath("/tsundoku");
+	revalidate();
 	return { success: true, id: inserted.id };
 }
 
-export async function updateBook(
-	bookId: string,
-	values: UpdateBookValues,
-): Promise<{ error: string } | { success: true }> {
-	const book = await getOwnedBook(bookId);
+/** Changed fields only (the book page autosaves one field at a time). */
+export async function updateBook(bookId: string, input: unknown): Promise<Result> {
+	const workspace = await requireWorkspace();
+	const parsed = updateBookSchema.safeParse(input);
+	if (!parsed.success) return invalid(parsed.error);
+	const book = await getOwnedBook(bookId, workspace.id);
 	if (!book) return { error: "Book not found" };
 
-	const parsed = updateBookSchema.safeParse(values);
-	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
-	const v = parsed.data;
+	const patch: Partial<typeof tsundokuBooks.$inferInsert> = parsed.data;
+	// A shorter book can't be read past its end.
+	const { pageCount } = parsed.data;
+	if (pageCount !== undefined) {
+		const today = await getUserToday();
+		Object.assign(patch, progressPatch({ ...book, pageCount }, book.currentPage, today));
+	}
+	if (Object.keys(patch).length === 0) return { success: true };
 
-	await db
-		.update(tsundokuBooks)
-		.set({
-			title: v.title,
-			authors: v.authors ?? [],
-			isbn: v.isbn ?? null,
-			coverUrl: v.coverUrl ?? null,
-			pageCount: v.pageCount ?? null,
-			publishedYear: v.publishedYear ?? null,
-			description: v.description ?? null,
-			genre: v.genre ?? null,
-			seriesName: v.seriesName ?? null,
-			seriesPosition: v.seriesPosition ?? null,
-			rating: v.rating ?? null,
-			review: v.review ?? null,
-		})
-		.where(eq(tsundokuBooks.id, bookId));
-
-	revalidatePath("/tsundoku");
-	revalidatePath(`/tsundoku/${bookId}`);
+	await db.update(tsundokuBooks).set(patch).where(eq(tsundokuBooks.id, bookId));
+	revalidate();
 	return { success: true };
 }
 
-export async function updateStatus(
-	bookId: string,
-	status: string,
-): Promise<{ error: string } | { success: true }> {
-	const book = await getOwnedBook(bookId);
-	if (!book) return { error: "Book not found" };
-
+export async function updateStatus(bookId: string, status: unknown): Promise<Result> {
+	const workspace = await requireWorkspace();
 	const parsed = bookStatusSchema.safeParse(status);
 	if (!parsed.success) return { error: "Invalid status" };
-	const next = parsed.data;
+	const book = await getOwnedBook(bookId, workspace.id);
+	if (!book) return { error: "Book not found" };
+	if (book.status === parsed.data) return { success: true };
 
-	const patch: Partial<typeof tsundokuBooks.$inferInsert> = { status: next };
-	// First time moving into "reading" → stamp startedAt if missing.
-	if (next === "reading" && !book.startedAt) patch.startedAt = today();
-	// Marking read → stamp finishedAt + fill progress to pageCount if known.
-	if (next === "read") {
-		if (!book.finishedAt) patch.finishedAt = today();
-		if (book.pageCount && book.currentPage < book.pageCount) patch.currentPage = book.pageCount;
-	}
-
-	await db.update(tsundokuBooks).set(patch).where(eq(tsundokuBooks.id, bookId));
-	revalidatePath("/tsundoku");
-	revalidatePath(`/tsundoku/${bookId}`);
+	const today = await getUserToday();
+	await db
+		.update(tsundokuBooks)
+		.set(statusPatch(book, parsed.data, today))
+		.where(eq(tsundokuBooks.id, bookId));
+	revalidate();
 	return { success: true };
 }
 
-export async function updateProgress(
+/**
+ * "I'm on page N". Reading forward is a session dated today (added to today's session if
+ * there is one), so the streak and pace follow without a separate log.
+ */
+export async function setProgress(bookId: string, input: unknown): Promise<Result> {
+	const workspace = await requireWorkspace();
+	const parsed = setProgressSchema.safeParse(input);
+	if (!parsed.success) return invalid(parsed.error);
+	const book = await getOwnedBook(bookId, workspace.id);
+	if (!book) return { error: "Book not found" };
+
+	const today = await getUserToday();
+	const patch = progressPatch(book, parsed.data.currentPage, today);
+	const delta = (patch.currentPage ?? book.currentPage) - book.currentPage;
+
+	await db.transaction(async (tx) => {
+		if (delta > 0) {
+			const [todays] = await tx
+				.select({ id: tsundokuSessions.id, pagesRead: tsundokuSessions.pagesRead })
+				.from(tsundokuSessions)
+				.where(and(eq(tsundokuSessions.bookId, bookId), eq(tsundokuSessions.date, today)))
+				.limit(1);
+			if (todays) {
+				await tx
+					.update(tsundokuSessions)
+					.set({ pagesRead: todays.pagesRead + delta })
+					.where(eq(tsundokuSessions.id, todays.id));
+			} else {
+				await tx.insert(tsundokuSessions).values({ bookId, date: today, pagesRead: delta });
+			}
+		}
+		await tx.update(tsundokuBooks).set(patch).where(eq(tsundokuBooks.id, bookId));
+	});
+
+	revalidate();
+	return { success: true };
+}
+
+const ratingSchema = z.number().int().min(1).max(10).nullable();
+
+export async function updateRating(bookId: string, rating: unknown): Promise<Result> {
+	const workspace = await requireWorkspace();
+	const parsed = ratingSchema.safeParse(rating);
+	if (!parsed.success) return { error: "Invalid rating" };
+	const book = await getOwnedBook(bookId, workspace.id);
+	if (!book) return { error: "Book not found" };
+
+	await db.update(tsundokuBooks).set({ rating: parsed.data }).where(eq(tsundokuBooks.id, bookId));
+	revalidate();
+	return { success: true };
+}
+
+/** Deletes and, from the book page, redirects to the library in the same round trip. */
+export async function deleteBook(
 	bookId: string,
-	currentPage: number,
-): Promise<{ error: string } | { success: true }> {
-	const book = await getOwnedBook(bookId);
+	options: { redirect?: boolean } = {},
+): Promise<Result> {
+	const workspace = await requireWorkspace();
+	const book = await getOwnedBook(bookId, workspace.id);
 	if (!book) return { error: "Book not found" };
-	if (!Number.isInteger(currentPage) || currentPage < 0) return { error: "Invalid page" };
 
-	const clamped = book.pageCount ? Math.min(currentPage, book.pageCount) : currentPage;
-	const patch: Partial<typeof tsundokuBooks.$inferInsert> = { currentPage: clamped };
-	if (clamped > 0 && book.status === "want") {
-		patch.status = "reading";
-		if (!book.startedAt) patch.startedAt = today();
-	}
-	if (book.pageCount && clamped >= book.pageCount && book.status !== "read") {
-		patch.status = "read";
-		patch.finishedAt = today();
-	}
-
-	await db.update(tsundokuBooks).set(patch).where(eq(tsundokuBooks.id, bookId));
-	revalidatePath("/tsundoku");
-	revalidatePath(`/tsundoku/${bookId}`);
-	return { success: true };
-}
-
-export async function updateRating(
-	bookId: string,
-	rating: number | null,
-): Promise<{ error: string } | { success: true }> {
-	const book = await getOwnedBook(bookId);
-	if (!book) return { error: "Book not found" };
-	if (rating != null && (!Number.isInteger(rating) || rating < 1 || rating > 10)) {
-		return { error: "Invalid rating" };
-	}
-	await db.update(tsundokuBooks).set({ rating }).where(eq(tsundokuBooks.id, bookId));
-	revalidatePath("/tsundoku");
-	revalidatePath(`/tsundoku/${bookId}`);
-	return { success: true };
-}
-
-/** Deletes and redirects to the library (one round trip; the book page can't re-render). */
-export async function deleteBook(bookId: string): Promise<{ error: string }> {
-	const book = await getOwnedBook(bookId);
-	if (!book) return { error: "Book not found" };
 	await db.delete(tsundokuBooks).where(eq(tsundokuBooks.id, bookId));
-	revalidatePath("/tsundoku");
-	redirect("/tsundoku");
+	revalidate();
+	if (options.redirect) redirect("/tsundoku");
+	return { success: true };
 }
 
-export async function setBookShelves(
-	bookId: string,
-	shelfIds: string[],
-): Promise<{ error: string } | { success: true }> {
-	const book = await getOwnedBook(bookId);
-	if (!book) return { error: "Book not found" };
+const shelfIdsSchema = z.array(z.string()).max(100);
 
-	if (shelfIds.length > 0) {
-		const ok = await assertShelvesInWorkspace(shelfIds, book.workspaceId);
-		if (!ok) return { error: "Shelf not found" };
-	}
+export async function setBookShelves(bookId: string, shelfIds: unknown): Promise<Result> {
+	const workspace = await requireWorkspace();
+	const parsed = shelfIdsSchema.safeParse(shelfIds);
+	if (!parsed.success) return { error: "Invalid shelves" };
+	const ids = [...new Set(parsed.data)];
+	const book = await getOwnedBook(bookId, workspace.id);
+	if (!book) return { error: "Book not found" };
+	if (!(await assertShelvesInWorkspace(ids, workspace.id))) return { error: "Shelf not found" };
 
 	await db.transaction(async (tx) => {
 		await tx.delete(tsundokuBookShelves).where(eq(tsundokuBookShelves.bookId, bookId));
-		if (shelfIds.length > 0) {
-			await tx.insert(tsundokuBookShelves).values(shelfIds.map((shelfId) => ({ bookId, shelfId })));
+		if (ids.length > 0) {
+			await tx.insert(tsundokuBookShelves).values(ids.map((shelfId) => ({ bookId, shelfId })));
 		}
 	});
 
-	revalidatePath("/tsundoku");
-	revalidatePath(`/tsundoku/${bookId}`);
+	revalidate();
 	return { success: true };
 }

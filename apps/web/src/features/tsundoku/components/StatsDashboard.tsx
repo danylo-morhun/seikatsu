@@ -1,7 +1,5 @@
-import type { HeatmapDay } from "@/features/tsundoku/actions/sessions";
-import type { TsundokuStats } from "@/features/tsundoku/actions/stats";
+import type { YearStats } from "@/features/tsundoku/actions/stats";
 import { ChallengeCard } from "@/features/tsundoku/components/ChallengeCard";
-import { GenreChart } from "@/features/tsundoku/components/GenreChart";
 import { PagesChart } from "@/features/tsundoku/components/PagesChart";
 import { ReadingHeatmap } from "@/features/tsundoku/components/ReadingHeatmap";
 import { Card, CardContent, CardHeader, CardTitle } from "@seikatsu/ui";
@@ -20,16 +18,12 @@ function Kpi({ label, value, sub }: { label: string; value: string; sub?: string
 
 export function StatsDashboard({
 	stats,
-	heatmap,
 	target,
 	year,
-	workspaceId,
 }: {
-	stats: TsundokuStats;
-	heatmap: HeatmapDay[];
+	stats: YearStats;
 	target: number | null;
 	year: number;
-	workspaceId: string;
 }) {
 	return (
 		<div className="space-y-6">
@@ -39,35 +33,29 @@ export function StatsDashboard({
 			</div>
 
 			<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-				<Kpi label="Total books" value={String(stats.totalBooks)} />
-				<Kpi label="Read" value={String(stats.readCount)} sub={`${stats.readingCount} reading`} />
+				<Kpi
+					label="Total books"
+					value={String(Object.values(stats.counts).reduce((s, n) => s + n, 0))}
+				/>
+				<Kpi
+					label="Read"
+					value={String(stats.counts.read)}
+					sub={`${stats.counts.reading} reading`}
+				/>
 				<Kpi
 					label={`Pages in ${year}`}
-					value={stats.pagesThisYear.toLocaleString()}
+					value={stats.pages.toLocaleString()}
 					sub={`${stats.pagesAllTime.toLocaleString()} all-time`}
 				/>
 				<Kpi
 					label="Avg rating"
 					value={stats.avgRating != null ? `${stats.avgRating}/10` : "—"}
-					sub={`${stats.wantCount} on the pile`}
+					sub={`${stats.counts.want} on the pile`}
 				/>
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-2">
-				<ChallengeCard
-					workspaceId={workspaceId}
-					year={year}
-					target={target}
-					booksRead={stats.booksReadThisYear}
-				/>
-				<Card>
-					<CardHeader className="pb-2">
-						<CardTitle className="text-base">Genres</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<GenreChart genres={stats.genres} />
-					</CardContent>
-				</Card>
+				<ChallengeCard year={year} target={target} booksRead={stats.finished.length} />
 			</div>
 
 			<Card>
@@ -75,7 +63,12 @@ export function StatsDashboard({
 					<CardTitle className="text-base">Pages read by month · {year}</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<PagesChart data={stats.pagesByMonth} />
+					<PagesChart
+						data={stats.months.map((pages, i) => ({
+							month: `${year}-${String(i + 1).padStart(2, "0")}`,
+							pages,
+						}))}
+					/>
 				</CardContent>
 			</Card>
 
@@ -84,24 +77,24 @@ export function StatsDashboard({
 					<CardTitle className="text-base">Reading activity</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<ReadingHeatmap days={heatmap} />
+					<ReadingHeatmap days={stats.days} />
 				</CardContent>
 			</Card>
 
-			{(stats.longestBook || stats.fastestRead) && (
+			{(stats.longest || stats.fastest) && (
 				<div className="grid gap-3 sm:grid-cols-2">
-					{stats.longestBook && (
+					{stats.longest && (
 						<Kpi
 							label="Longest book"
-							value={`${stats.longestBook.pageCount} pages`}
-							sub={stats.longestBook.title}
+							value={`${stats.longest.pageCount} pages`}
+							sub={stats.longest.title}
 						/>
 					)}
-					{stats.fastestRead && (
+					{stats.fastest?.days != null && (
 						<Kpi
 							label="Fastest read"
-							value={`${stats.fastestRead.days} ${stats.fastestRead.days === 1 ? "day" : "days"}`}
-							sub={stats.fastestRead.title}
+							value={`${stats.fastest.days} ${stats.fastest.days === 1 ? "day" : "days"}`}
+							sub={stats.fastest.title}
 						/>
 					)}
 				</div>

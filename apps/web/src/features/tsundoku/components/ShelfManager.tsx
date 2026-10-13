@@ -13,12 +13,10 @@ import { toast } from "sonner";
 
 export function ShelfManager({
 	bookId,
-	workspaceId,
 	shelves,
 	bookShelfIds,
 }: {
 	bookId: string;
-	workspaceId: string;
 	shelves: TsundokuShelf[];
 	bookShelfIds: string[];
 }) {
@@ -52,7 +50,7 @@ export function ShelfManager({
 		if (!newName.trim()) return;
 		setCreating(true);
 		const color = SHELF_COLORS[shelves.length % SHELF_COLORS.length];
-		const res = await createShelf(workspaceId, { name: newName.trim(), color });
+		const res = await createShelf({ name: newName.trim(), color });
 		setCreating(false);
 		if ("error" in res) {
 			toast.error(res.error);

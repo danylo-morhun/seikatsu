@@ -1,6 +1,6 @@
 "use client";
 
-import type { HeatmapDay } from "@/features/tsundoku/actions/sessions";
+import type { ReadingDay as HeatmapDay } from "@/features/tsundoku/actions/stats";
 import { cn } from "@seikatsu/ui";
 import { useMemo } from "react";
 

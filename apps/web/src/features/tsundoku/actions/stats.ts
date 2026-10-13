@@ -1,132 +1,142 @@
 "use server";
 
-import { getOwnedWorkspace } from "@/features/tsundoku/actions/guard";
-import { and, db, eq, gte, lte, sql, tsundokuBooks, tsundokuSessions } from "@seikatsu/db";
+import { requireWorkspace } from "@/features/tsundoku/actions/guard";
+import { computeStreaks, daysBetween } from "@/features/tsundoku/lib/streak";
+import { getUserToday } from "@/lib/timezone";
+import { db, eq, sum, tsundokuBooks, tsundokuSessions } from "@seikatsu/db";
 
-export interface GenreSlice {
-	genre: string;
-	count: number;
+export interface YearBook {
+	id: string;
+	title: string;
+	authors: string[] | null;
+	coverUrl: string | null;
+	rating: number | null;
+	pageCount: number | null;
+	finishedAt: string;
+	days: number | null;
 }
-export interface MonthPages {
-	month: string; // YYYY-MM
+
+export interface ReadingDay {
+	date: string;
 	pages: number;
 }
-export interface TsundokuStats {
-	totalBooks: number;
-	readCount: number;
-	readingCount: number;
-	wantCount: number;
-	booksReadThisYear: number;
-	pagesThisYear: number;
-	pagesAllTime: number;
+
+export interface YearStats {
+	year: number;
+	/** Years with any finished book or session, newest first (always includes this year). */
+	years: number[];
+	/** Books finished this year, newest first. */
+	finished: YearBook[];
+	/** Pages of the books finished this year (sessions are optional, so not the logged pages). */
+	pages: number;
 	avgRating: number | null;
-	longestBook: { title: string; pageCount: number } | null;
-	fastestRead: { title: string; days: number } | null;
-	genres: GenreSlice[];
-	pagesByMonth: MonthPages[];
+	/** Logged pages per month, Jan..Dec. */
+	months: number[];
+	/** Books finished per month, Jan..Dec. */
+	monthBooks: number[];
+	/** Days read this year, ascending. */
+	days: ReadingDay[];
+	streak: { current: number; longest: number };
+	longest: YearBook | null;
+	shortest: YearBook | null;
+	fastest: YearBook | null;
+	counts: { reading: number; want: number; read: number; dnf: number; paused: number };
+	pagesAllTime: number;
 }
 
-function daysBetween(start: string, end: string): number {
-	return Math.max(
-		0,
-		Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86_400_000),
-	);
-}
+export async function getYearStats(year: number): Promise<YearStats> {
+	const workspace = await requireWorkspace();
+	const [books, daily, today] = await Promise.all([
+		db
+			.select({
+				id: tsundokuBooks.id,
+				title: tsundokuBooks.title,
+				authors: tsundokuBooks.authors,
+				coverUrl: tsundokuBooks.coverUrl,
+				rating: tsundokuBooks.rating,
+				pageCount: tsundokuBooks.pageCount,
+				status: tsundokuBooks.status,
+				startedAt: tsundokuBooks.startedAt,
+				finishedAt: tsundokuBooks.finishedAt,
+			})
+			.from(tsundokuBooks)
+			.where(eq(tsundokuBooks.workspaceId, workspace.id)),
+		db
+			.select({
+				date: tsundokuSessions.date,
+				pages: sum(tsundokuSessions.pagesRead).mapWith(Number),
+			})
+			.from(tsundokuSessions)
+			.innerJoin(tsundokuBooks, eq(tsundokuBooks.id, tsundokuSessions.bookId))
+			.where(eq(tsundokuBooks.workspaceId, workspace.id))
+			.groupBy(tsundokuSessions.date)
+			.orderBy(tsundokuSessions.date),
+		getUserToday(),
+	]);
 
-export async function getStats(workspaceId: string, year: number): Promise<TsundokuStats | null> {
-	const ws = await getOwnedWorkspace(workspaceId);
-	if (!ws) return null;
-
-	const books = await db
-		.select({
-			title: tsundokuBooks.title,
-			status: tsundokuBooks.status,
-			rating: tsundokuBooks.rating,
-			pageCount: tsundokuBooks.pageCount,
-			genre: tsundokuBooks.genre,
-			startedAt: tsundokuBooks.startedAt,
-			finishedAt: tsundokuBooks.finishedAt,
-		})
-		.from(tsundokuBooks)
-		.where(eq(tsundokuBooks.workspaceId, workspaceId));
-
-	let readCount = 0;
-	let readingCount = 0;
-	let wantCount = 0;
-	let booksReadThisYear = 0;
-	let ratingSum = 0;
-	let ratingN = 0;
-	let longestBook: TsundokuStats["longestBook"] = null;
-	let fastestRead: TsundokuStats["fastestRead"] = null;
-	const genreMap = new Map<string, number>();
-	const yearStr = String(year);
-
+	const prefix = String(year);
+	const counts = { reading: 0, want: 0, read: 0, dnf: 0, paused: 0 };
+	const years = new Set([Number(today.slice(0, 4))]);
+	const finished: YearBook[] = [];
 	for (const b of books) {
-		if (b.status === "read") readCount++;
-		else if (b.status === "reading") readingCount++;
-		else if (b.status === "want") wantCount++;
+		counts[b.status]++;
+		if (b.status !== "read" || !b.finishedAt) continue;
+		years.add(Number(b.finishedAt.slice(0, 4)));
+		if (!b.finishedAt.startsWith(prefix)) continue;
+		finished.push({
+			id: b.id,
+			title: b.title,
+			authors: b.authors,
+			coverUrl: b.coverUrl,
+			rating: b.rating,
+			pageCount: b.pageCount,
+			finishedAt: b.finishedAt,
+			days: b.startedAt ? daysBetween(b.startedAt, b.finishedAt) + 1 : null,
+		});
+	}
+	finished.sort((a, b) => b.finishedAt.localeCompare(a.finishedAt));
 
-		if (b.finishedAt?.startsWith(yearStr)) booksReadThisYear++;
-		if (b.rating != null) {
-			ratingSum += b.rating;
-			ratingN++;
-		}
-		if (b.genre) genreMap.set(b.genre, (genreMap.get(b.genre) ?? 0) + 1);
-		if (b.pageCount && (!longestBook || b.pageCount > longestBook.pageCount)) {
-			longestBook = { title: b.title, pageCount: b.pageCount };
-		}
-		if (b.status === "read" && b.startedAt && b.finishedAt) {
-			const days = daysBetween(b.startedAt, b.finishedAt);
-			if (!fastestRead || days < fastestRead.days) fastestRead = { title: b.title, days };
-		}
+	const months = Array.from({ length: 12 }, () => 0);
+	const days: ReadingDay[] = [];
+	let pagesAllTime = 0;
+	for (const d of daily) {
+		pagesAllTime += d.pages;
+		years.add(Number(d.date.slice(0, 4)));
+		if (!d.date.startsWith(prefix)) continue;
+		months[Number(d.date.slice(5, 7)) - 1] += d.pages;
+		days.push(d);
 	}
 
-	// Pages per month for the chosen year + all-time total.
-	const monthRows = await db
-		.select({
-			month: sql<string>`to_char(${tsundokuSessions.date}::date, 'YYYY-MM')`,
-			pages: sql<number>`sum(${tsundokuSessions.pagesRead})::int`,
-		})
-		.from(tsundokuSessions)
-		.innerJoin(tsundokuBooks, eq(tsundokuSessions.bookId, tsundokuBooks.id))
-		.where(
-			and(
-				eq(tsundokuBooks.workspaceId, workspaceId),
-				gte(tsundokuSessions.date, `${year}-01-01`),
-				lte(tsundokuSessions.date, `${year}-12-31`),
-			),
-		)
-		.groupBy(sql`to_char(${tsundokuSessions.date}::date, 'YYYY-MM')`);
+	const monthBooks = Array.from({ length: 12 }, () => 0);
+	for (const b of finished) monthBooks[Number(b.finishedAt.slice(5, 7)) - 1]++;
 
-	const [allTime] = await db
-		.select({ pages: sql<number>`coalesce(sum(${tsundokuSessions.pagesRead}), 0)::int` })
-		.from(tsundokuSessions)
-		.innerJoin(tsundokuBooks, eq(tsundokuSessions.bookId, tsundokuBooks.id))
-		.where(eq(tsundokuBooks.workspaceId, workspaceId));
-
-	const pagesByMonth = Array.from({ length: 12 }, (_, i) => {
-		const month = `${year}-${String(i + 1).padStart(2, "0")}`;
-		const found = monthRows.find((r) => r.month === month);
-		return { month, pages: found ? Number(found.pages) : 0 };
-	});
-	const pagesThisYear = pagesByMonth.reduce((s, m) => s + m.pages, 0);
-
-	const genres = Array.from(genreMap.entries())
-		.map(([genre, count]) => ({ genre, count }))
-		.sort((a, b) => b.count - a.count);
+	const rated = finished.filter((b) => b.rating != null);
+	const paged = finished.filter((b) => b.pageCount != null);
+	const timed = finished.filter((b) => b.days != null);
+	const pick = (list: YearBook[], better: (a: YearBook, b: YearBook) => boolean) =>
+		list.reduce<YearBook | null>((best, b) => (best == null || better(b, best) ? b : best), null);
 
 	return {
-		totalBooks: books.length,
-		readCount,
-		readingCount,
-		wantCount,
-		booksReadThisYear,
-		pagesThisYear,
-		pagesAllTime: Number(allTime?.pages ?? 0),
-		avgRating: ratingN > 0 ? Math.round((ratingSum / ratingN) * 10) / 10 : null,
-		longestBook,
-		fastestRead,
-		genres,
-		pagesByMonth,
+		year,
+		years: [...years].sort((a, b) => b - a),
+		finished,
+		pages: paged.reduce((s, b) => s + (b.pageCount ?? 0), 0),
+		avgRating:
+			rated.length > 0
+				? Math.round((rated.reduce((s, b) => s + (b.rating ?? 0), 0) / rated.length) * 10) / 10
+				: null,
+		months,
+		monthBooks,
+		days,
+		streak: computeStreaks(
+			daily.map((d) => d.date),
+			today,
+		),
+		longest: pick(paged, (a, b) => (a.pageCount ?? 0) > (b.pageCount ?? 0)),
+		shortest:
+			paged.length > 1 ? pick(paged, (a, b) => (a.pageCount ?? 0) < (b.pageCount ?? 0)) : null,
+		fastest: pick(timed, (a, b) => (a.days ?? 0) < (b.days ?? 0)),
+		counts,
+		pagesAllTime,
 	};
 }

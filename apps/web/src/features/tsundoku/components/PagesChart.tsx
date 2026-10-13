@@ -1,6 +1,5 @@
 "use client";
 
-import type { MonthPages } from "@/features/tsundoku/actions/stats";
 import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@seikatsu/ui";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
@@ -8,7 +7,7 @@ const config: ChartConfig = {
 	pages: { label: "Pages", color: "var(--chart-2)" },
 };
 
-export function PagesChart({ data }: { data: MonthPages[] }) {
+export function PagesChart({ data }: { data: { month: string; pages: number }[] }) {
 	const formatted = data.map((d) => ({ ...d, label: d.month.slice(5) }));
 	const total = data.reduce((s, d) => s + d.pages, 0);
 

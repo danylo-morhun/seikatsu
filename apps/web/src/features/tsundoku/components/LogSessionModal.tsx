@@ -12,6 +12,7 @@ import {
 	Input,
 	Label,
 } from "@seikatsu/ui";
+import { format } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -24,7 +25,7 @@ export function LogSessionModal({
 }) {
 	const [open, setOpen] = useState(false);
 	const [saving, setSaving] = useState(false);
-	const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+	const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
 	const [pages, setPages] = useState("");
 
 	async function onSubmit(e: React.FormEvent) {
