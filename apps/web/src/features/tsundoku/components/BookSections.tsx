@@ -14,6 +14,7 @@ import {
 	Copy01Icon,
 	Delete01Icon,
 	MoreHorizontalIcon,
+	PencilEdit01Icon,
 	Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -222,10 +223,12 @@ export function SessionsSection({
 	sessions: saved,
 	today,
 	onLogEarlier,
+	onEdit,
 }: {
 	sessions: TsundokuSession[];
 	today: string;
 	onLogEarlier: () => void;
+	onEdit: (session: TsundokuSession) => void;
 }) {
 	const id = useId();
 	const [, startDelete] = useTransition();
@@ -280,6 +283,10 @@ export function SessionsSection({
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="end">
+									<DropdownMenuItem onClick={() => onEdit(s)}>
+										<HugeiconsIcon icon={PencilEdit01Icon} className="mr-2 h-4 w-4" />
+										Edit…
+									</DropdownMenuItem>
 									<DropdownMenuItem
 										className="text-destructive focus:text-destructive"
 										onClick={() => handleDelete(s.id)}
