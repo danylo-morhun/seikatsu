@@ -54,6 +54,7 @@ export const BookTile = memo(function BookTile({
 		>
 			<BookCover
 				coverUrl={book.coverUrl}
+				bookId={book.id}
 				title={book.title}
 				className="transition-[filter] duration-150 ease-out group-hover:brightness-110"
 			/>
@@ -98,6 +99,7 @@ export const BookRow = memo(function BookRow({
 			>
 				<BookCover
 					coverUrl={book.coverUrl}
+					bookId={book.id}
 					title={book.title}
 					sizes="32px"
 					className="w-8 shrink-0 rounded-sm"
@@ -141,6 +143,7 @@ export const ReadingRow = memo(function ReadingRow({
 		>
 			<BookCover
 				coverUrl={book.coverUrl}
+				bookId={book.id}
 				title={book.title}
 				sizes="48px"
 				className="w-12 shrink-0"

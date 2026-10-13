@@ -236,6 +236,7 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 					<div className="grid grid-cols-[6rem_minmax(0,1fr)] gap-x-5 gap-y-6 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-x-8">
 						<BookCover
 							coverUrl={book.coverUrl}
+							bookId={book.id}
 							title={book.title}
 							priority
 							className="animate-rise self-start"
