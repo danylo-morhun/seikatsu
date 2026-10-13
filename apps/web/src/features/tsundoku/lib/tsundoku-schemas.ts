@@ -62,6 +62,8 @@ export const logSessionSchema = z.object({
 export type LogSessionValues = z.infer<typeof logSessionSchema>;
 
 export const finishedAtSchema = day;
+// Optional: a book read before it was tracked has no start.
+export const startedAtSchema = day.nullable();
 
 export const setProgressSchema = z.object({
 	currentPage: z.number().int().min(0).max(MAX_PAGES),

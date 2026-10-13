@@ -18,6 +18,7 @@ import {
 	createBookSchema,
 	finishedAtSchema,
 	setProgressSchema,
+	startedAtSchema,
 	updateBookSchema,
 } from "@/features/tsundoku/lib/tsundoku-schemas";
 import { generateKeyBetween } from "@/lib/position";
@@ -237,6 +238,24 @@ export async function setFinishedAt(bookId: string, input: unknown): Promise<Res
 		.update(tsundokuBooks)
 		.set(finishDatePatch(book, parsed.data))
 		.where(eq(tsundokuBooks.id, bookId));
+	revalidate();
+	return { success: true };
+}
+
+/** The day reading began, or none (not known for a book read before it was tracked). */
+export async function setStartedAt(bookId: string, input: unknown): Promise<Result> {
+	const workspace = await requireWorkspace();
+	const parsed = startedAtSchema.safeParse(input);
+	if (!parsed.success) return { error: "Invalid date" };
+	const book = await getOwnedBook(bookId, workspace.id);
+	if (!book) return { error: "Book not found" };
+	const date = parsed.data;
+	if (date && date > (await getUserToday())) return { error: "Can't start on a future day" };
+	if (date && book.finishedAt && date > book.finishedAt) {
+		return { error: "The start can't come after the finish" };
+	}
+
+	await db.update(tsundokuBooks).set({ startedAt: date }).where(eq(tsundokuBooks.id, bookId));
 	revalidate();
 	return { success: true };
 }
