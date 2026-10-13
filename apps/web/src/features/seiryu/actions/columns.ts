@@ -1,13 +1,13 @@
 "use server";
 
 import { getOwnedColumn, isOwnedProject, requireWorkspace } from "@/features/seiryu/actions/guard";
-import { generateKeyBetween, generateNKeysBetween } from "@/features/seiryu/lib/position";
 import {
 	createColumnSchema,
 	deleteColumnSchema,
 	reorderColumnSchema,
 	updateColumnSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
+import { generateKeyBetween, generateNKeysBetween } from "@/lib/position";
 import { and, asc, db, desc, eq, isNull, seiryuCards, seiryuColumns } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 

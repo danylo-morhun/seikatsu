@@ -8,10 +8,10 @@ import {
 	updateChecklistItem,
 } from "@/features/seiryu/actions/checklist";
 import { QuietAdd } from "@/features/seiryu/components/QuietAdd";
-import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import { type ChecklistItemData, isTempId } from "@/features/seiryu/lib/types";
 import { useDraft } from "@/features/seiryu/lib/use-draft";
 import { BAR_FILL, barClip } from "@/lib/bar";
+import { generateKeyBetween } from "@/lib/position";
 import {
 	DndContext,
 	type DragEndEvent,

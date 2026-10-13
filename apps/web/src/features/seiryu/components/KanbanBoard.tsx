@@ -31,7 +31,6 @@ import {
 	readFilters,
 	writeFilters,
 } from "@/features/seiryu/lib/filters";
-import { generateKeyBetween, generateNKeysBetween } from "@/features/seiryu/lib/position";
 import { useServerState } from "@/features/seiryu/lib/server-state";
 import {
 	type CardData,
@@ -42,6 +41,7 @@ import {
 	isTempId,
 } from "@/features/seiryu/lib/types";
 import { pageKey } from "@/lib/capture-shortcut";
+import { generateKeyBetween, generateNKeysBetween } from "@/lib/position";
 import {
 	type CollisionDetection,
 	DndContext,

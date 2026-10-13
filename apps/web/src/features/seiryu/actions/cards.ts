@@ -7,7 +7,6 @@ import {
 	isUuid,
 	requireWorkspace,
 } from "@/features/seiryu/actions/guard";
-import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import {
 	archiveCardSchema,
 	createCardSchema,
@@ -17,6 +16,7 @@ import {
 	restoreCardSchema,
 	updateCardSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
+import { generateKeyBetween } from "@/lib/position";
 import {
 	and,
 	asc,

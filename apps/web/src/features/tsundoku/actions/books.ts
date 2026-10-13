@@ -5,7 +5,6 @@ import {
 	getOwnedBook,
 	getOwnedWorkspace,
 } from "@/features/tsundoku/actions/guard";
-import { generateKeyBetween } from "@/features/tsundoku/lib/position";
 import {
 	type CreateBookValues,
 	type UpdateBookValues,
@@ -13,6 +12,7 @@ import {
 	createBookSchema,
 	updateBookSchema,
 } from "@/features/tsundoku/lib/tsundoku-schemas";
+import { generateKeyBetween } from "@/lib/position";
 import { and, asc, db, desc, eq, inArray, tsundokuBookShelves, tsundokuBooks } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
