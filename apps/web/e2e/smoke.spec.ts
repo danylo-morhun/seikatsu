@@ -8,6 +8,8 @@ const ROUTES = [
 	"/kuroji/settings",
 	"/seiryu",
 	"/tsundoku",
+	"/tsundoku?s=read&view=list",
+	"/tsundoku/year",
 	"/tsundoku/stats",
 	"/keizoku",
 	"/kyuu",
@@ -19,6 +21,7 @@ const ROUTES = [
 	"/settings/seiryu",
 	"/settings/seiryu?section=labels",
 	"/settings/seiryu?section=archive",
+	"/settings/tsundoku",
 ];
 
 // Every page renders on the prod build with no console errors (the fixture fails on any).
