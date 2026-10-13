@@ -6,7 +6,7 @@ import {
 	isOwnedBook,
 	requireWorkspace,
 } from "@/features/tsundoku/actions/guard";
-import { pagesLeft, progressPatch } from "@/features/tsundoku/lib/progress";
+import { pagesLeft, progressPatch, sessionEditPatch } from "@/features/tsundoku/lib/progress";
 import { logSessionSchema } from "@/features/tsundoku/lib/tsundoku-schemas";
 import { getUserToday } from "@/lib/timezone";
 import { db, desc, eq, tsundokuBooks, tsundokuSessions } from "@seikatsu/db";
@@ -49,6 +49,31 @@ export async function logSession(bookId: string, input: unknown): Promise<Result
 	await db.transaction(async (tx) => {
 		await tx.insert(tsundokuSessions).values({ bookId, date, pagesRead });
 		await tx.update(tsundokuBooks).set(patch).where(eq(tsundokuBooks.id, bookId));
+	});
+
+	revalidatePath("/tsundoku", "layout");
+	return { success: true };
+}
+
+/** Correcting a logged day: its date, its pages, and the book's progress with them. */
+export async function updateSession(sessionId: string, input: unknown): Promise<Result> {
+	const workspace = await requireWorkspace();
+	const parsed = logSessionSchema.safeParse(input);
+	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+	const session = await getOwnedSession(sessionId, workspace.id);
+	if (!session) return { error: "Session not found" };
+
+	const today = await getUserToday();
+	if (parsed.data.date > today) return { error: "Can't log a future day" };
+	const { book } = session;
+	const { pagesRead, patch } = sessionEditPatch(book, session, parsed.data, today);
+
+	await db.transaction(async (tx) => {
+		await tx
+			.update(tsundokuSessions)
+			.set({ date: parsed.data.date, pagesRead })
+			.where(eq(tsundokuSessions.id, sessionId));
+		await tx.update(tsundokuBooks).set(patch).where(eq(tsundokuBooks.id, book.id));
 	});
 
 	revalidatePath("/tsundoku", "layout");
