@@ -472,7 +472,6 @@ function SearchResults({
 							<BookCover
 								coverUrl={coverThumb(r.coverUrl)}
 								title={r.title}
-								unoptimized
 								className="w-9 shrink-0 rounded-sm"
 							/>
 							<span className="min-w-0 flex-1">
