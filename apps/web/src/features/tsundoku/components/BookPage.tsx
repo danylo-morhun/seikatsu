@@ -250,6 +250,7 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 						<BookCover
 							coverUrl={book.coverUrl}
 							bookId={book.id}
+							stored={book.coverBlob}
 							title={book.title}
 							priority
 							className="animate-rise self-start"

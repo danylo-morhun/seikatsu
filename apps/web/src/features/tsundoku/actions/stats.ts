@@ -10,6 +10,7 @@ export interface YearBook {
 	title: string;
 	authors: string[] | null;
 	coverUrl: string | null;
+	coverBlob: string | null;
 	rating: number | null;
 	pageCount: number | null;
 	finishedAt: string;
@@ -53,6 +54,7 @@ export async function getYearStats(year: number): Promise<YearStats> {
 				title: tsundokuBooks.title,
 				authors: tsundokuBooks.authors,
 				coverUrl: tsundokuBooks.coverUrl,
+				coverBlob: tsundokuBooks.coverBlob,
 				rating: tsundokuBooks.rating,
 				pageCount: tsundokuBooks.pageCount,
 				status: tsundokuBooks.status,
@@ -88,6 +90,7 @@ export async function getYearStats(year: number): Promise<YearStats> {
 			title: b.title,
 			authors: b.authors,
 			coverUrl: b.coverUrl,
+			coverBlob: b.coverBlob,
 			rating: b.rating,
 			pageCount: b.pageCount,
 			finishedAt: b.finishedAt,
