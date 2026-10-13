@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { genreFromSubjects } from "./genre";
 import {
 	type ProgressState,
+	finishDatePatch,
 	pageCountPatch,
 	pagesLeft,
 	parseProgressInput,
@@ -189,5 +190,15 @@ describe("sessionEditPatch", () => {
 		expect(
 			sessionEditPatch(read, 40, day("2026-10-10", 40), day("2026-10-10", 300), TODAY),
 		).toEqual({ pagesRead: 300, patch: { currentPage: 300, finishedAt: "2026-10-10" } });
+	});
+});
+
+describe("finishDatePatch", () => {
+	it("moves the finish and keeps the start before it", () => {
+		expect(finishDatePatch(book(), "2026-10-05")).toEqual({ finishedAt: "2026-10-05" });
+		expect(finishDatePatch(book(), "2026-09-20")).toEqual({
+			finishedAt: "2026-09-20",
+			startedAt: "2026-09-20",
+		});
 	});
 });

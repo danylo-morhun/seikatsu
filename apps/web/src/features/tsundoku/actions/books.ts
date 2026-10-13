@@ -6,11 +6,17 @@ import {
 	requireWorkspace,
 } from "@/features/tsundoku/actions/guard";
 import { computePace } from "@/features/tsundoku/lib/pace";
-import { pageCountPatch, progressPatch, statusPatch } from "@/features/tsundoku/lib/progress";
+import {
+	finishDatePatch,
+	pageCountPatch,
+	progressPatch,
+	statusPatch,
+} from "@/features/tsundoku/lib/progress";
 import { fetchWorkDescription } from "@/features/tsundoku/lib/search-providers";
 import {
 	bookStatusSchema,
 	createBookSchema,
+	finishedAtSchema,
 	setProgressSchema,
 	updateBookSchema,
 } from "@/features/tsundoku/lib/tsundoku-schemas";
@@ -212,6 +218,24 @@ export async function updateStatus(bookId: string, status: unknown): Promise<Res
 	await db
 		.update(tsundokuBooks)
 		.set(statusPatch(book, parsed.data, today))
+		.where(eq(tsundokuBooks.id, bookId));
+	revalidate();
+	return { success: true };
+}
+
+/** The day a finished book was finished, set apart from the reading log. */
+export async function setFinishedAt(bookId: string, input: unknown): Promise<Result> {
+	const workspace = await requireWorkspace();
+	const parsed = finishedAtSchema.safeParse(input);
+	if (!parsed.success) return { error: "Invalid date" };
+	const book = await getOwnedBook(bookId, workspace.id);
+	if (!book) return { error: "Book not found" };
+	if (book.status !== "read") return { error: "The book isn't finished" };
+	if (parsed.data > (await getUserToday())) return { error: "Can't finish on a future day" };
+
+	await db
+		.update(tsundokuBooks)
+		.set(finishDatePatch(book, parsed.data))
 		.where(eq(tsundokuBooks.id, bookId));
 	revalidate();
 	return { success: true };
