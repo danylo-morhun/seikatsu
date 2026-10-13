@@ -133,6 +133,7 @@ export function YearCovers({ books }: { books: YearBook[] }) {
 						<BookCover
 							coverUrl={b.coverUrl}
 							bookId={b.id}
+							stored={b.coverBlob}
 							title={b.title}
 							className="transition-[filter] duration-150 ease-out group-hover:brightness-110"
 						/>

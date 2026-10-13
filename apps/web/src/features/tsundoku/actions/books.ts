@@ -49,6 +49,7 @@ const libraryColumns = {
 	title: tsundokuBooks.title,
 	authors: tsundokuBooks.authors,
 	coverUrl: tsundokuBooks.coverUrl,
+	coverBlob: tsundokuBooks.coverBlob,
 	status: tsundokuBooks.status,
 	rating: tsundokuBooks.rating,
 	currentPage: tsundokuBooks.currentPage,
