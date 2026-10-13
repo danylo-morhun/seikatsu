@@ -1,5 +1,5 @@
 import { PageLoader } from "@/components/PageLoader";
 
-export default function StatsLoading() {
+export default function YearLoading() {
 	return <PageLoader />;
 }
