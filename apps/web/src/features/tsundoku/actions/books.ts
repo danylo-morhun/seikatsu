@@ -7,6 +7,7 @@ import {
 } from "@/features/tsundoku/actions/guard";
 import { computePace } from "@/features/tsundoku/lib/pace";
 import { pageCountPatch, progressPatch, statusPatch } from "@/features/tsundoku/lib/progress";
+import { fetchWorkDescription } from "@/features/tsundoku/lib/search-providers";
 import {
 	bookStatusSchema,
 	createBookSchema,
@@ -142,6 +143,10 @@ export async function createBook(input: unknown): Promise<Result<{ id: string }>
 	const parsed = createBookSchema.safeParse(input);
 	if (!parsed.success) return invalid(parsed.error);
 	const { status, ...v } = parsed.data;
+	// Open Library leaves the description out of search results; fetch it once, on add.
+	if (!v.description && v.source === "openlibrary" && v.olKey) {
+		v.description = await fetchWorkDescription(v.olKey);
+	}
 
 	// Front of the library: the newest book comes first by position.
 	const [first] = await db
