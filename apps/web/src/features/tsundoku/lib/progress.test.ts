@@ -200,4 +200,8 @@ describe("finishDatePatch", () => {
 			startedAt: "2026-09-20",
 		});
 	});
+
+	it("clears the finish and keeps the start", () => {
+		expect(finishDatePatch(book(), null)).toEqual({ finishedAt: null });
+	});
 });
