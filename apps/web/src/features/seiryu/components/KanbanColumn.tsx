@@ -1,9 +1,9 @@
 "use client";
 
-import { ConfirmDelete } from "@/features/seiryu/components/ConfirmDelete";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { KanbanCard, SORT_TRANSITION } from "@/features/seiryu/components/KanbanCard";
-import { LABEL_COLORS } from "@/features/seiryu/lib/constants";
 import type { CardData, ColumnData, ColumnUpdates } from "@/features/seiryu/lib/types";
+import { LABEL_COLORS } from "@/lib/pigments";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {

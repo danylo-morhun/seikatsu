@@ -1,9 +1,9 @@
 "use client";
 
+import { ColorSwatches } from "@/components/ColorSwatches";
 import { Spinner } from "@/components/Spinner";
 import { createProject, updateProject } from "@/features/seiryu/actions/projects";
-import { ColorSwatches } from "@/features/seiryu/components/ColorSwatches";
-import { LABEL_COLORS } from "@/features/seiryu/lib/constants";
+import { LABEL_COLORS } from "@/lib/pigments";
 import {
 	Button,
 	Dialog,

@@ -1,7 +1,7 @@
 "use client";
 
+import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { CardDetail } from "@/features/seiryu/components/CardDetail";
-import { ConfirmDelete } from "@/features/seiryu/components/ConfirmDelete";
 import type { CardData, CardFieldUpdates, LabelData } from "@/features/seiryu/lib/types";
 import {
 	Archive01Icon,

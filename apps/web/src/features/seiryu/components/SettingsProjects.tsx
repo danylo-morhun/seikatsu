@@ -1,7 +1,7 @@
 "use client";
 
+import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { deleteProject } from "@/features/seiryu/actions/projects";
-import { ConfirmDelete } from "@/features/seiryu/components/ConfirmDelete";
 import { ProjectDialog, type ProjectSummary } from "@/features/seiryu/components/ProjectDialog";
 import { Delete01Icon, MoreHorizontalIcon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";

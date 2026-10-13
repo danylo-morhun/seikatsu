@@ -1,6 +1,6 @@
 "use client";
 
-import { LABEL_COLORS } from "@/features/seiryu/lib/constants";
+import { LABEL_COLORS } from "@/lib/pigments";
 import { PaintBoardIcon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";

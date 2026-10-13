@@ -1,13 +1,13 @@
 "use client";
 
+import { QuietAdd } from "@/components/QuietAdd";
 import { ChecklistSection } from "@/features/seiryu/components/ChecklistSection";
 import { DueDateChip } from "@/features/seiryu/components/DueDateChip";
 import { LabelPicker } from "@/features/seiryu/components/LabelPicker";
 import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
-import { QuietAdd } from "@/features/seiryu/components/QuietAdd";
 import { PRIORITIES, PRIORITY_CONFIG, type Priority } from "@/features/seiryu/lib/constants";
 import type { CardData, CardFieldUpdates, LabelData } from "@/features/seiryu/lib/types";
-import { useDraft } from "@/features/seiryu/lib/use-draft";
+import { useDraft } from "@/hooks/useDraft";
 import {
 	Input,
 	Label,

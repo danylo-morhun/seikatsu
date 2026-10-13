@@ -1,9 +1,9 @@
 "use client";
 
+import { ColorSwatches } from "@/components/ColorSwatches";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { Spinner } from "@/components/Spinner";
 import { deleteLabel, updateLabel } from "@/features/seiryu/actions/labels";
-import { ColorSwatches } from "@/features/seiryu/components/ColorSwatches";
-import { ConfirmDelete } from "@/features/seiryu/components/ConfirmDelete";
 import { Delete01Icon, MoreHorizontalIcon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {

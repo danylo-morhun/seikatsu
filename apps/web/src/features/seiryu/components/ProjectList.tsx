@@ -1,9 +1,9 @@
 "use client";
 
+import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { ContextArea } from "@/components/ContextArea";
 import { startNavigationProgress } from "@/components/NavigationProgress";
 import { deleteProject, reorderProject } from "@/features/seiryu/actions/projects";
-import { ConfirmDelete } from "@/features/seiryu/components/ConfirmDelete";
-import { ContextArea } from "@/features/seiryu/components/ContextArea";
 import { ProjectDialog, type ProjectSummary } from "@/features/seiryu/components/ProjectDialog";
 import { useServerState } from "@/features/seiryu/lib/server-state";
 import { generateKeyBetween } from "@/lib/position";

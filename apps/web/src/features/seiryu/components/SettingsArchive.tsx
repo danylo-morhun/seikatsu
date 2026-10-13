@@ -1,8 +1,8 @@
 "use client";
 
+import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { formatShortDate } from "@/features/kuroji/lib/dates";
 import { deleteCard, restoreCard } from "@/features/seiryu/actions/cards";
-import { ConfirmDelete } from "@/features/seiryu/components/ConfirmDelete";
 import type { ArchivedCardRow } from "@/features/seiryu/lib/archive";
 import { Archive01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
