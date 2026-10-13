@@ -7,9 +7,9 @@ export default async function TsundokuLayout({ children }: { children: React.Rea
 	if (!workspace) redirect("/");
 
 	return (
-		<div className="flex flex-col">
-			<TsundokuNavTabs />
+		<>
 			{children}
-		</div>
+			<TsundokuNavTabs />
+		</>
 	);
 }
