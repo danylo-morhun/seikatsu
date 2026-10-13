@@ -61,17 +61,17 @@ export function EditBookModal({
 				.split(",")
 				.map((a) => a.trim())
 				.filter(Boolean),
-			isbn: form.isbn || undefined,
-			coverUrl: form.coverUrl || undefined,
+			isbn: form.isbn || null,
+			coverUrl: form.coverUrl || null,
 			// Not editable here; updateBook overwrites every field, so pass it through.
 			description: book.description ?? undefined,
 			pageCount: form.pageCount ? Number.parseInt(form.pageCount, 10) : null,
 			publishedYear: form.publishedYear ? Number.parseInt(form.publishedYear, 10) : null,
-			genre: form.genre || undefined,
-			seriesName: form.seriesName || undefined,
+			genre: form.genre || null,
+			seriesName: form.seriesName || null,
 			seriesPosition: form.seriesPosition ? Number.parseInt(form.seriesPosition, 10) : null,
 			rating: book.rating,
-			review: form.review || undefined,
+			review: form.review || null,
 		});
 		setSaving(false);
 		if ("error" in res) {

@@ -3,7 +3,7 @@ import { Book01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Card, CardContent } from "@seikatsu/ui";
 
-export function BooksEmptyState({ workspaceId }: { workspaceId: string }) {
+export function BooksEmptyState() {
 	return (
 		<Card className="border-dashed">
 			<CardContent className="flex flex-col items-center gap-4 py-14 text-center">
@@ -17,10 +17,7 @@ export function BooksEmptyState({ workspaceId }: { workspaceId: string }) {
 						reading.
 					</p>
 				</div>
-				<AddBookModal
-					workspaceId={workspaceId}
-					trigger={<Button size="lg">Add your first book</Button>}
-				/>
+				<AddBookModal trigger={<Button size="lg">Add your first book</Button>} />
 			</CardContent>
 		</Card>
 	);

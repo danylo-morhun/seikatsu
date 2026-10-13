@@ -47,17 +47,9 @@ interface Props {
 	quotes: TsundokuQuote[];
 	shelves: TsundokuShelf[];
 	seriesBooks: SeriesBook[];
-	workspaceId: string;
 }
 
-export function BookDetailView({
-	book,
-	sessions,
-	quotes,
-	shelves,
-	seriesBooks,
-	workspaceId,
-}: Props) {
+export function BookDetailView({ book, sessions, quotes, shelves, seriesBooks }: Props) {
 	const [, startRating] = useTransition();
 	const [isDeleting, startDelete] = useTransition();
 	const [rating, setRating] = useOptimistic(book.rating);
@@ -73,7 +65,7 @@ export function BookDetailView({
 	// deleteBook redirects to the library itself, in the same round trip.
 	function onDelete() {
 		startDelete(async () => {
-			const res = await deleteBook(book.id);
+			const res = await deleteBook(book.id, { redirect: true });
 			if (res && "error" in res) toast.error(res.error);
 		});
 	}
@@ -210,12 +202,7 @@ export function BookDetailView({
 					<h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
 						Shelves
 					</h2>
-					<ShelfManager
-						bookId={book.id}
-						workspaceId={workspaceId}
-						shelves={shelves}
-						bookShelfIds={book.shelfIds}
-					/>
+					<ShelfManager bookId={book.id} shelves={shelves} bookShelfIds={book.shelfIds} />
 				</section>
 
 				<Separator />

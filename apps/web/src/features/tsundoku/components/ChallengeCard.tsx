@@ -9,12 +9,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export function ChallengeCard({
-	workspaceId,
 	year,
 	target,
 	booksRead,
 }: {
-	workspaceId: string;
 	year: number;
 	target: number | null;
 	booksRead: number;
@@ -31,7 +29,7 @@ export function ChallengeCard({
 			return;
 		}
 		setSaving(true);
-		const res = await setGoal(workspaceId, { year, targetBooks });
+		const res = await setGoal({ year, targetBooks });
 		setSaving(false);
 		if ("error" in res) {
 			toast.error(res.error);

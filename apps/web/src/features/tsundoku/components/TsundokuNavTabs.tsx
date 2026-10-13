@@ -15,7 +15,7 @@ const TABS = [
 	{ href: "/tsundoku/stats", label: "Stats", icon: Chart01Icon, exact: false },
 ] as const;
 
-export function TsundokuNavTabs({ workspaceId }: { workspaceId: string }) {
+export function TsundokuNavTabs() {
 	const pathname = usePathname();
 	// One underline travels between the desktop tabs.
 	const tabsRef = useRef<HTMLDivElement>(null);
@@ -72,7 +72,6 @@ export function TsundokuNavTabs({ workspaceId }: { workspaceId: string }) {
 
 						<div className="flex shrink-0 items-center justify-center px-1">
 							<AddBookModal
-								workspaceId={workspaceId}
 								trigger={
 									<Button
 										size="icon"
