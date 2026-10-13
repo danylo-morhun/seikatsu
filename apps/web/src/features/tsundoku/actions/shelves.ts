@@ -3,13 +3,41 @@
 import { isUuid, requireWorkspace } from "@/features/tsundoku/actions/guard";
 import { shelfSchema } from "@/features/tsundoku/lib/tsundoku-schemas";
 import { generateKeyBetween } from "@/lib/position";
-import { and, asc, count, db, desc, eq, tsundokuBookShelves, tsundokuShelves } from "@seikatsu/db";
+import {
+	and,
+	asc,
+	count,
+	db,
+	desc,
+	eq,
+	ilike,
+	ne,
+	tsundokuBookShelves,
+	tsundokuShelves,
+} from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 export type TsundokuShelf = typeof tsundokuShelves.$inferSelect;
 export type ShelfWithCount = TsundokuShelf & { bookCount: number };
 
 type Result<T = object> = { error: string } | ({ success: true } & T);
+
+/** Shelf names are unique per workspace, ignoring case (the filter lists them by name). */
+async function nameTaken(workspaceId: string, name: string, exceptId?: string) {
+	const escaped = name.replace(/[\\%_]/g, (c) => `\\${c}`);
+	const [row] = await db
+		.select({ id: tsundokuShelves.id })
+		.from(tsundokuShelves)
+		.where(
+			and(
+				eq(tsundokuShelves.workspaceId, workspaceId),
+				ilike(tsundokuShelves.name, escaped),
+				exceptId ? ne(tsundokuShelves.id, exceptId) : undefined,
+			),
+		)
+		.limit(1);
+	return row != null;
+}
 
 function revalidate() {
 	revalidatePath("/tsundoku", "layout");
@@ -49,6 +77,8 @@ export async function createShelf(input: unknown): Promise<Result<{ id: string }
 	const workspace = await requireWorkspace();
 	const parsed = shelfSchema.safeParse(input);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+	if (await nameTaken(workspace.id, parsed.data.name))
+		return { error: "A shelf with that name exists" };
 
 	const [last] = await db
 		.select({ position: tsundokuShelves.position })
@@ -75,6 +105,9 @@ export async function updateShelf(shelfId: string, input: unknown): Promise<Resu
 	const parsed = shelfSchema.safeParse(input);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
 	if (!isUuid(shelfId)) return { error: "Shelf not found" };
+	if (await nameTaken(workspace.id, parsed.data.name, shelfId)) {
+		return { error: "A shelf with that name exists" };
+	}
 
 	const updated = await db
 		.update(tsundokuShelves)
