@@ -4,7 +4,7 @@ import { Spinner } from "@/components/Spinner";
 import { setBookShelves } from "@/features/tsundoku/actions/books";
 import { createShelf } from "@/features/tsundoku/actions/shelves";
 import type { TsundokuShelf } from "@/features/tsundoku/actions/shelves";
-import { SHELF_COLORS } from "@/features/tsundoku/lib/constants";
+import { LABEL_COLORS } from "@/lib/pigments";
 import { Add01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Input, cn } from "@seikatsu/ui";
@@ -49,7 +49,7 @@ export function ShelfManager({
 		e.preventDefault();
 		if (!newName.trim()) return;
 		setCreating(true);
-		const color = SHELF_COLORS[shelves.length % SHELF_COLORS.length];
+		const color = LABEL_COLORS[shelves.length % LABEL_COLORS.length]?.hex ?? null;
 		const res = await createShelf({ name: newName.trim(), color });
 		setCreating(false);
 		if ("error" in res) {
