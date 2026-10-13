@@ -102,6 +102,13 @@ export function statusPatch(book: ProgressState, next: BookStatus, today: string
 	return patch;
 }
 
+/** The finish day set by hand, apart from the reading log: the start can't come after it. */
+export function finishDatePatch(book: ProgressState, date: string): ProgressPatch {
+	const patch: ProgressPatch = { finishedAt: date };
+	if (book.startedAt && book.startedAt > date) patch.startedAt = date;
+	return patch;
+}
+
 /** "140" is a page, "45%" a share of `pageCount`. Null when it can't be read. */
 export function parseProgressInput(raw: string, pageCount: number | null): number | null {
 	const value = raw.trim().replace(",", ".");

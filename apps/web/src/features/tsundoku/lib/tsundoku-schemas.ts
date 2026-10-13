@@ -53,11 +53,15 @@ export type CreateBookValues = z.input<typeof createBookSchema>;
 export const updateBookSchema = z.object(bookFields).partial();
 export type UpdateBookValues = z.input<typeof updateBookSchema>;
 
+const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date");
+
 export const logSessionSchema = z.object({
-	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date"),
+	date: day,
 	pagesRead: z.number().int().positive("Pages must be positive").max(MAX_PAGES),
 });
 export type LogSessionValues = z.infer<typeof logSessionSchema>;
+
+export const finishedAtSchema = day;
 
 export const setProgressSchema = z.object({
 	currentPage: z.number().int().min(0).max(MAX_PAGES),
