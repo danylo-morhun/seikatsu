@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { coverSrc, coverVersion, coverWidth } from "./cover";
+import {
+	coverBlobBase,
+	coverBlobPath,
+	coverSrc,
+	coverVersion,
+	coverWidth,
+	storedCoverSrc,
+} from "./cover";
 
 describe("coverWidth", () => {
 	it("snaps to the next rendered width", () => {
@@ -21,5 +28,14 @@ describe("coverSrc", () => {
 		const a = coverSrc("b1", "https://a.test/1.jpg");
 		expect(a).toMatch(/^\/api\/tsundoku\/cover\/b1\?w=192&v=[0-9a-z]+$/);
 		expect(coverVersion("https://a.test/1.jpg")).not.toBe(coverVersion("https://a.test/2.jpg"));
+	});
+});
+
+describe("stored covers", () => {
+	it("round-trips a blob URL to its widths", () => {
+		const path = coverBlobPath("production", "b1", "https://a.test/1.jpg", 96);
+		expect(path).toMatch(/^tsundoku\/covers\/production\/b1\/[0-9a-z]+-96\.webp$/);
+		const base = coverBlobBase(`https://store.test/${path}`);
+		expect(storedCoverSrc(base, 384)).toBe(`https://store.test/${path.replace("-96", "-384")}`);
 	});
 });
