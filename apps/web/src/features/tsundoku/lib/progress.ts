@@ -53,10 +53,14 @@ export function pageCountPatch(book: ProgressState, pageCount: number | null): P
 	return { currentPage: clampPage(book.currentPage, pageCount) };
 }
 
-/** Pages a session can add before the book's end (all of them when the length is unknown). */
-export function pagesLeft(book: ProgressState, pagesRead: number): number {
-	if (!book.pageCount) return pagesRead;
-	return Math.max(0, Math.min(pagesRead, book.pageCount - book.currentPage));
+/**
+ * Pages a session can add: the book has `pageCount` pages and `logged` of them are already in
+ * its sessions (no cap when the length is unknown). Counted against the log, not the current
+ * page, so a book finished by hand can still get its reading days filled in.
+ */
+export function pagesLeft(pageCount: number | null, logged: number, pagesRead: number): number {
+	if (!pageCount) return pagesRead;
+	return Math.max(0, Math.min(pagesRead, pageCount - logged));
 }
 
 export interface SessionDay {
@@ -70,12 +74,13 @@ export interface SessionDay {
  */
 export function sessionEditPatch(
 	book: ProgressState,
+	logged: number,
 	before: SessionDay,
 	after: SessionDay,
 	today: string,
 ): { pagesRead: number; patch: ProgressPatch } {
 	const change = after.pagesRead - before.pagesRead;
-	const moved = change > 0 ? pagesLeft(book, change) : change;
+	const moved = change > 0 ? pagesLeft(book.pageCount, logged, change) : change;
 	const patch = progressPatch(book, book.currentPage + moved, today);
 	const startedAt = patch.startedAt ?? book.startedAt;
 	if (!startedAt || after.date < startedAt) patch.startedAt = after.date;
