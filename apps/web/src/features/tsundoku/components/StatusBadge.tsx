@@ -5,10 +5,7 @@ export function StatusBadge({ status, short }: { status: BookStatus; short?: boo
 	const cfg = STATUS_CONFIG[status];
 	return (
 		<span
-			className={cn(
-				"inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium",
-				cfg.className,
-			)}
+			className={cn("text-xs", status === "reading" ? "text-primary" : "text-muted-foreground")}
 		>
 			{short ? cfg.short : cfg.label}
 		</span>
