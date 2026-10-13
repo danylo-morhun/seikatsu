@@ -1,5 +1,6 @@
 "use client";
 
+import { QuietAdd } from "@/components/QuietAdd";
 import {
 	createChecklistItem,
 	deleteChecklistItem,
@@ -7,9 +8,8 @@ import {
 	toggleChecklistItem,
 	updateChecklistItem,
 } from "@/features/seiryu/actions/checklist";
-import { QuietAdd } from "@/features/seiryu/components/QuietAdd";
 import { type ChecklistItemData, isTempId } from "@/features/seiryu/lib/types";
-import { useDraft } from "@/features/seiryu/lib/use-draft";
+import { useDraft } from "@/hooks/useDraft";
 import { BAR_FILL, barClip } from "@/lib/bar";
 import { generateKeyBetween } from "@/lib/position";
 import {

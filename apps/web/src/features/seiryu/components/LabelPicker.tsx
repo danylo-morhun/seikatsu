@@ -1,10 +1,10 @@
 "use client";
 
+import { QuietAdd } from "@/components/QuietAdd";
 import { Spinner } from "@/components/Spinner";
 import { createLabel, setCardLabels } from "@/features/seiryu/actions/labels";
-import { QuietAdd } from "@/features/seiryu/components/QuietAdd";
-import { LABEL_COLORS } from "@/features/seiryu/lib/constants";
 import { type LabelData, isTempId } from "@/features/seiryu/lib/types";
+import { LABEL_COLORS } from "@/lib/pigments";
 import { Tick02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Input, cn } from "@seikatsu/ui";

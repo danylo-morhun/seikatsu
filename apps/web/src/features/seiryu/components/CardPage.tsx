@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { Spinner } from "@/components/Spinner";
 import {
 	archiveCard,
@@ -9,7 +10,6 @@ import {
 	updateCard,
 } from "@/features/seiryu/actions/cards";
 import { CardDetail } from "@/features/seiryu/components/CardDetail";
-import { ConfirmDelete } from "@/features/seiryu/components/ConfirmDelete";
 import type {
 	ActionResult,
 	CardData,
