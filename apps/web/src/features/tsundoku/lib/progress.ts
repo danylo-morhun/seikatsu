@@ -89,13 +89,15 @@ export function sessionEditPatch(
 	return { pagesRead: before.pagesRead + moved, patch };
 }
 
-/** The patch for setting a status by hand: dates follow, finishing fills the progress. */
+/**
+ * The patch for setting a status by hand: dates follow, finishing fills the progress. Finishing
+ * doesn't invent a start: a book read before it was tracked has no start to give.
+ */
 export function statusPatch(book: ProgressState, next: BookStatus, today: string): ProgressPatch {
 	const patch: ProgressPatch = { status: next };
 	if (next === "reading" && !book.startedAt) patch.startedAt = today;
 	if (next === "read") {
 		if (!book.finishedAt) patch.finishedAt = today;
-		if (!book.startedAt) patch.startedAt = today;
 		if (book.pageCount && book.currentPage < book.pageCount) patch.currentPage = book.pageCount;
 	}
 	if (next !== "read" && book.finishedAt) patch.finishedAt = null;

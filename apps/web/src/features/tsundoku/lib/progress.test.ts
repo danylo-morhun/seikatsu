@@ -56,11 +56,10 @@ describe("progressPatch", () => {
 });
 
 describe("statusPatch", () => {
-	it("marking read fills progress and dates", () => {
+	it("marking read fills progress and the finish, not the start", () => {
 		expect(statusPatch(book({ startedAt: null }), "read", TODAY)).toEqual({
 			status: "read",
 			finishedAt: TODAY,
-			startedAt: TODAY,
 			currentPage: 300,
 		});
 	});
