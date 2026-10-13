@@ -2,13 +2,13 @@
 
 import { requireWorkspace } from "@/features/seiryu/actions/guard";
 import { DEFAULT_COLUMNS, DEFAULT_DONE_COLUMN } from "@/features/seiryu/lib/constants";
-import { generateKeyBetween, generateNKeysBetween } from "@/features/seiryu/lib/position";
 import {
 	createProjectSchema,
 	deleteProjectSchema,
 	reorderProjectsSchema,
 	updateProjectSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
+import { generateKeyBetween, generateNKeysBetween } from "@/lib/position";
 import {
 	and,
 	asc,

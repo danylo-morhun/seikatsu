@@ -5,7 +5,6 @@ import {
 	getOwnedChecklistItem,
 	requireWorkspace,
 } from "@/features/seiryu/actions/guard";
-import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import {
 	createChecklistItemSchema,
 	deleteChecklistItemSchema,
@@ -13,6 +12,7 @@ import {
 	toggleChecklistItemSchema,
 	updateChecklistItemSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
+import { generateKeyBetween } from "@/lib/position";
 import { db, desc, eq, seiryuChecklistItems } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 

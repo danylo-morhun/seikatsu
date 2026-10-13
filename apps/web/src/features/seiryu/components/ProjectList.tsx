@@ -5,8 +5,8 @@ import { deleteProject, reorderProject } from "@/features/seiryu/actions/project
 import { ConfirmDelete } from "@/features/seiryu/components/ConfirmDelete";
 import { ContextArea } from "@/features/seiryu/components/ContextArea";
 import { ProjectDialog, type ProjectSummary } from "@/features/seiryu/components/ProjectDialog";
-import { generateKeyBetween } from "@/features/seiryu/lib/position";
 import { useServerState } from "@/features/seiryu/lib/server-state";
+import { generateKeyBetween } from "@/lib/position";
 import {
 	DndContext,
 	type DragEndEvent,

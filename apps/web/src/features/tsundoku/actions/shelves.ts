@@ -1,11 +1,11 @@
 "use server";
 
 import { getOwnedWorkspace } from "@/features/tsundoku/actions/guard";
-import { generateKeyBetween } from "@/features/tsundoku/lib/position";
 import {
 	type CreateShelfValues,
 	createShelfSchema,
 } from "@/features/tsundoku/lib/tsundoku-schemas";
+import { generateKeyBetween } from "@/lib/position";
 import { asc, db, desc, eq, tsundokuShelves } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
