@@ -115,6 +115,8 @@ export async function getYearStats(year: number): Promise<YearStats> {
 	const timed = finished.filter((b) => b.days != null);
 	const pick = (list: YearBook[], better: (a: YearBook, b: YearBook) => boolean) =>
 		list.reduce<YearBook | null>((best, b) => (best == null || better(b, best) ? b : best), null);
+	const longest = pick(paged, (a, b) => (a.pageCount ?? 0) > (b.pageCount ?? 0));
+	const shortest = pick(paged, (a, b) => (a.pageCount ?? 0) < (b.pageCount ?? 0));
 
 	return {
 		year,
@@ -132,9 +134,9 @@ export async function getYearStats(year: number): Promise<YearStats> {
 			daily.map((d) => d.date),
 			today,
 		),
-		longest: pick(paged, (a, b) => (a.pageCount ?? 0) > (b.pageCount ?? 0)),
-		shortest:
-			paged.length > 1 ? pick(paged, (a, b) => (a.pageCount ?? 0) < (b.pageCount ?? 0)) : null,
+		longest,
+		// Books of one length have no shortest: it would repeat the longest.
+		shortest: shortest && shortest.pageCount !== longest?.pageCount ? shortest : null,
 		fastest: pick(timed, (a, b) => (a.days ?? 0) < (b.days ?? 0)),
 		counts,
 		pagesAllTime,
