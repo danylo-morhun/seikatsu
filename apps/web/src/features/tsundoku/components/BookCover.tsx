@@ -1,6 +1,11 @@
 "use client";
 
-import { coverSrc, coverSrcSet } from "@/features/tsundoku/lib/cover";
+import {
+	coverSrc,
+	coverSrcSet,
+	storedCoverSrc,
+	storedCoverSrcSet,
+} from "@/features/tsundoku/lib/cover";
 import { Book01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
@@ -12,6 +17,8 @@ interface Props {
 	/** A saved book: its cover comes resized from the cover route. Without it (search
 	 * previews), the source loads as is. */
 	bookId?: string;
+	/** The saved book's cover, resized and kept in the blob store: straight from the CDN. */
+	stored?: string | null;
 	className?: string;
 	/** Above the fold (the book page): load at once instead of lazily. */
 	priority?: boolean;
@@ -27,6 +34,7 @@ export function BookCover({
 	coverUrl,
 	title,
 	bookId,
+	stored,
 	className,
 	priority = false,
 	sizes = "160px",
@@ -53,9 +61,11 @@ export function BookCover({
 					ref={(img) => {
 						if (img?.complete && img.naturalWidth > 0 && state === "loading") setState("loaded");
 					}}
-					src={bookId ? coverSrc(bookId, coverUrl) : coverUrl}
-					srcSet={bookId ? coverSrcSet(bookId, coverUrl) : undefined}
-					sizes={bookId ? sizes : undefined}
+					src={stored ? storedCoverSrc(stored) : bookId ? coverSrc(bookId, coverUrl) : coverUrl}
+					srcSet={
+						stored ? storedCoverSrcSet(stored) : bookId ? coverSrcSet(bookId, coverUrl) : undefined
+					}
+					sizes={stored || bookId ? sizes : undefined}
 					alt=""
 					loading={priority ? "eager" : "lazy"}
 					fetchPriority={priority ? "high" : undefined}
