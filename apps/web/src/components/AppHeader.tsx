@@ -5,6 +5,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { TravelUnderline } from "@/components/TravelUnderline";
 import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
 import { requestNewCard } from "@/features/seiryu/lib/events";
+import { requestNewBook } from "@/features/tsundoku/lib/events";
 import { useIndicator } from "@/hooks/useIndicator";
 import { getAppForPath } from "@/lib/app-themes";
 import { Add01Icon } from "@hugeicons/core-free-icons";
@@ -27,6 +28,11 @@ const AddTransactionModal = dynamic(
 	{ loading: () => <div className="h-9 w-40" /> },
 );
 
+const TSUNDOKU_TABS = [
+	{ value: "/tsundoku", label: "Library" },
+	{ value: "/tsundoku/year", label: "Year" },
+] as const;
+
 const KUROJI_TABS: { value: KurojiTab; label: string }[] = [
 	{ value: "expense", label: "Expenses" },
 	{ value: "accounts", label: "Accounts" },
@@ -47,11 +53,14 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 	const isKuroji = pathname.startsWith("/kuroji");
 	// A Seiryu board (not a card page): its capture action sits where Kuroji's does.
 	const isSeiryuBoard = /^\/seiryu\/[^/]+$/.test(pathname);
+	// Tsundoku's library and year carry their tabs, and capture, like Kuroji's overview.
+	const isTsundokuHome = TSUNDOKU_TABS.some((t) => t.value === pathname);
+	const isTsundoku = pathname === "/tsundoku" || pathname.startsWith("/tsundoku/");
 	// Seiryu's project list names what's open; "· Projects" beside it says nothing new.
-	const showPurpose = !isKurojiHome && !pathname.startsWith("/seiryu");
-	const activeTab = (searchParams.get("tab") as KurojiTab) || "expense";
+	const showPurpose = !isKurojiHome && !isTsundokuHome && !pathname.startsWith("/seiryu");
+	const activeTab = isTsundokuHome ? pathname : (searchParams.get("tab") as KurojiTab) || "expense";
 	// Highlight the clicked tab immediately; the URL catches up when navigation commits.
-	const [pendingTab, setPendingTab] = useState<KurojiTab | null>(null);
+	const [pendingTab, setPendingTab] = useState<string | null>(null);
 	const displayTab = pendingTab ?? activeTab;
 
 	useEffect(() => {
@@ -66,9 +75,15 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 		`${pathname}:${displayTab}`,
 	);
 
-	function tabHref(tab: KurojiTab) {
-		return buildTabHref(tab, searchParams.toString());
-	}
+	const tabs = isKurojiHome
+		? KUROJI_TABS.map(({ value, label }) => ({
+				value,
+				label,
+				href: buildTabHref(value, searchParams.toString()),
+			}))
+		: isTsundokuHome
+			? TSUNDOKU_TABS.map(({ value, label }) => ({ value, label, href: value }))
+			: [];
 
 	return (
 		<header className="flex h-14 shrink-0 items-center gap-1 border-b border-border px-2">
@@ -80,26 +95,26 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 				className="ml-2 flex shrink-0 items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
 			>
 				{app && <span className="text-primary">{app.kanji}</span>}
-				<span className={cn("truncate", isKurojiHome && "md:max-lg:sr-only")}>
+				<span className={cn("truncate", tabs.length > 0 && "md:max-lg:sr-only")}>
 					{app ? app.name : "seikatsu"}
 					{/* The sidebar already names the app's purpose; on a phone or beside tabs the label is noise. */}
 					{app && showPurpose && <span className="hidden md:inline"> · {app.label}</span>}
 				</span>
 			</Link>
 
-			{isKurojiHome && (
+			{tabs.length > 0 && (
 				<nav
 					ref={navRef}
-					aria-label="Kuroji sections"
+					aria-label={`${app?.name ?? ""} sections`}
 					className="relative ml-3 hidden h-full shrink-0 items-stretch md:flex lg:ml-5"
 				>
 					<TravelUnderline indicator={underline} />
-					{KUROJI_TABS.map(({ value, label }) => {
+					{tabs.map(({ value, label, href }) => {
 						const active = displayTab === value;
 						return (
 							<Link
 								key={value}
-								href={tabHref(value)}
+								href={href}
 								prefetch
 								data-tab={value}
 								aria-current={active ? "page" : undefined}
@@ -142,6 +157,20 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 							>
 								<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
 								<span className="hidden lg:inline">New Card</span>
+							</Button>
+						</span>
+					)}
+					{isTsundoku && (
+						<span className="hidden md:contents">
+							<Button
+								size="icon"
+								className="lg:w-auto lg:gap-2 lg:px-3"
+								aria-label="Add book"
+								aria-keyshortcuts="N"
+								onClick={requestNewBook}
+							>
+								<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
+								<span className="hidden lg:inline">Add Book</span>
 							</Button>
 						</span>
 					)}
