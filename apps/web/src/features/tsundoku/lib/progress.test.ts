@@ -1,0 +1,93 @@
+import { describe, expect, it } from "vitest";
+import { genreFromSubjects } from "./genre";
+import { type ProgressState, parseProgressInput, progressPatch, statusPatch } from "./progress";
+import { computeStreaks } from "./streak";
+
+const TODAY = "2026-10-13";
+const book = (over: Partial<ProgressState> = {}): ProgressState => ({
+	status: "reading",
+	currentPage: 100,
+	pageCount: 300,
+	startedAt: "2026-10-01",
+	finishedAt: null,
+	...over,
+});
+
+describe("progressPatch", () => {
+	it("starts a want book on the first pages", () => {
+		expect(
+			progressPatch(book({ status: "want", currentPage: 0, startedAt: null }), 20, TODAY),
+		).toEqual({ currentPage: 20, status: "reading", startedAt: TODAY });
+	});
+
+	it("finishes at the last page and clamps past it", () => {
+		expect(progressPatch(book(), 400, TODAY)).toEqual({
+			currentPage: 300,
+			status: "read",
+			finishedAt: TODAY,
+		});
+	});
+
+	it("reopens a finished book when progress goes back", () => {
+		const read = book({ status: "read", currentPage: 300, finishedAt: "2026-10-10" });
+		expect(progressPatch(read, 250, TODAY)).toEqual({
+			currentPage: 250,
+			status: "reading",
+			finishedAt: null,
+		});
+	});
+
+	it("never goes below zero", () => {
+		expect(progressPatch(book(), -5, TODAY).currentPage).toBe(0);
+	});
+});
+
+describe("statusPatch", () => {
+	it("marking read fills progress and dates", () => {
+		expect(statusPatch(book({ startedAt: null }), "read", TODAY)).toEqual({
+			status: "read",
+			finishedAt: TODAY,
+			startedAt: TODAY,
+			currentPage: 300,
+		});
+	});
+
+	it("leaving read clears finishedAt", () => {
+		expect(
+			statusPatch(book({ status: "read", finishedAt: "2026-10-10" }), "reading", TODAY),
+		).toEqual({ status: "reading", finishedAt: null });
+	});
+});
+
+describe("parseProgressInput", () => {
+	it("reads pages and percents", () => {
+		expect(parseProgressInput("140", 300)).toBe(140);
+		expect(parseProgressInput("45%", 300)).toBe(135);
+		expect(parseProgressInput("12,5 %", 200)).toBe(25);
+	});
+
+	it("rejects what it can't read", () => {
+		expect(parseProgressInput("45%", null)).toBeNull();
+		expect(parseProgressInput("abc", 300)).toBeNull();
+		expect(parseProgressInput("120%", 300)).toBeNull();
+	});
+});
+
+describe("computeStreaks", () => {
+	it("counts a streak that runs to yesterday", () => {
+		const days = ["2026-10-10", "2026-10-11", "2026-10-12", "2026-10-01"];
+		expect(computeStreaks(days, TODAY)).toEqual({ current: 3, longest: 3 });
+	});
+
+	it("is broken by a missed day", () => {
+		expect(computeStreaks(["2026-10-11"], TODAY)).toEqual({ current: 0, longest: 1 });
+	});
+});
+
+describe("genreFromSubjects", () => {
+	it("prefers the specific genre", () => {
+		expect(genreFromSubjects(["Fiction", "Science fiction, American"])).toBe("Sci-fi");
+		expect(genreFromSubjects(["Fiction, general"])).toBe("Fiction");
+		expect(genreFromSubjects([])).toBeUndefined();
+	});
+});

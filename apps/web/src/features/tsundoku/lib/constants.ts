@@ -53,6 +53,7 @@ export const GENRE_OPTIONS = [
 	"Comics",
 	"Other",
 ] as const;
+export type Genre = (typeof GENRE_OPTIONS)[number];
 
 export const SHELF_COLORS = [
 	"#14b8a6",
