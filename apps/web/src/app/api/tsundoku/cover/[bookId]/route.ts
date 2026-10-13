@@ -2,7 +2,6 @@ import { getOwnedBook } from "@/features/tsundoku/actions/guard";
 import { coverWidth } from "@/features/tsundoku/lib/cover";
 import { getCurrentWorkspace } from "@/lib/session";
 import type { NextRequest } from "next/server";
-import sharp from "sharp";
 
 const MAX_BYTES = 8 * 1024 * 1024;
 
@@ -29,18 +28,27 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ book
 	if (bytes.byteLength > MAX_BYTES) return new Response(null, { status: 502 });
 
 	const width = coverWidth(req.nextUrl.searchParams.get("w"));
-	const image = await sharp(bytes)
-		.rotate()
-		.resize({ width, withoutEnlargement: true })
-		.webp({ quality: 78 })
-		.toBuffer()
-		.catch(() => null);
-	if (!image) return new Response(null, { status: 502 });
-
-	return new Response(new Uint8Array(image), {
+	const small = await toWebp(bytes, width);
+	// Without a resize the original still goes out: owner-only and cached, just heavier.
+	return new Response(new Uint8Array(small ?? bytes), {
 		headers: {
-			"Content-Type": "image/webp",
+			"Content-Type": small ? "image/webp" : type,
 			"Cache-Control": "private, max-age=31536000, immutable",
 		},
 	});
+}
+
+async function toWebp(bytes: Buffer, width: number): Promise<Buffer | null> {
+	try {
+		// Loaded here, not at the top: auth and ownership answers never wait on the native module.
+		const { default: sharp } = await import("sharp");
+		return await sharp(bytes)
+			.rotate()
+			.resize({ width, withoutEnlargement: true })
+			.webp({ quality: 78 })
+			.toBuffer();
+	} catch (error) {
+		console.error("[tsundoku] cover resize failed", error);
+		return null;
+	}
 }
