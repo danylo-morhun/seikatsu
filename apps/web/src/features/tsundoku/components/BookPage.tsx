@@ -180,7 +180,7 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 	const finished = book.status === "read" && book.finishedAt;
 
 	return (
-		<div className="max-w-3xl px-4 pt-5 pb-28 sm:px-8 md:pb-10">
+		<div className="px-4 pt-5 pb-28 sm:px-8 md:pb-10">
 			<div className="mb-6 flex items-center justify-between gap-4">
 				<Link
 					href="/tsundoku"
@@ -230,145 +230,160 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 				</DropdownMenu>
 			</div>
 
-			<div className="grid grid-cols-[6rem_minmax(0,1fr)] gap-x-5 gap-y-6 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-x-8">
-				<BookCover
-					coverUrl={book.coverUrl}
-					title={book.title}
-					priority
-					className="animate-rise self-start"
-				/>
+			{/* Wide screens: the book and what stayed with you on the left, its record on the right. */}
+			<div className="grid gap-10 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-12">
+				<div className="min-w-0">
+					<div className="grid grid-cols-[6rem_minmax(0,1fr)] gap-x-5 gap-y-6 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-x-8">
+						<BookCover
+							coverUrl={book.coverUrl}
+							title={book.title}
+							priority
+							className="animate-rise self-start"
+						/>
 
-				<div className="animate-rise min-w-0 space-y-1" style={{ "--i": 1 } as React.CSSProperties}>
-					<h1 className="sr-only">{book.title}</h1>
-					<textarea
-						aria-label="Title"
-						value={title.draft}
-						rows={1}
-						maxLength={500}
-						onChange={(e) => title.change(e.target.value)}
-						onBlur={title.flush}
-						onKeyDown={(e) => {
-							// A title is one line: Enter commits instead of breaking it.
-							if (e.key === "Enter") {
-								e.preventDefault();
-								e.currentTarget.blur();
-							}
-						}}
-						className="-mx-2 block w-[calc(100%+1rem)] resize-none rounded-md bg-transparent px-2 py-1 text-xl leading-snug font-semibold tracking-tight break-words outline-none transition-colors duration-150 [field-sizing:content] hover:bg-surface focus-visible:bg-transparent focus-visible:ring-2 focus-visible:ring-ring"
-					/>
-					{book.authors && book.authors.length > 0 && (
-						<p className="text-sm break-words">{book.authors.join(", ")}</p>
-					)}
-					{meta.length > 0 && (
-						<p className="font-figures text-xs text-muted-foreground break-words">
-							{meta.join(" · ")}
-						</p>
-					)}
+						<div
+							className="animate-rise min-w-0 space-y-1"
+							style={{ "--i": 1 } as React.CSSProperties}
+						>
+							<h1 className="sr-only">{book.title}</h1>
+							<textarea
+								aria-label="Title"
+								value={title.draft}
+								rows={1}
+								maxLength={500}
+								onChange={(e) => title.change(e.target.value)}
+								onBlur={title.flush}
+								onKeyDown={(e) => {
+									// A title is one line: Enter commits instead of breaking it.
+									if (e.key === "Enter") {
+										e.preventDefault();
+										e.currentTarget.blur();
+									}
+								}}
+								className="-mx-2 block w-[calc(100%+1rem)] resize-none rounded-md bg-transparent px-2 py-1 text-xl leading-snug font-semibold tracking-tight break-words outline-none transition-colors duration-150 [field-sizing:content] hover:bg-surface focus-visible:bg-transparent focus-visible:ring-2 focus-visible:ring-ring"
+							/>
+							{book.authors && book.authors.length > 0 && (
+								<p className="text-sm break-words">{book.authors.join(", ")}</p>
+							)}
+							{meta.length > 0 && (
+								<p className="font-figures text-xs text-muted-foreground break-words">
+									{meta.join(" · ")}
+								</p>
+							)}
 
-					<div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-4 max-sm:hidden">
-						<StatusAndRating id={id} book={book} onStatus={setStatus} onRating={setRating} />
+							<div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-4 max-sm:hidden">
+								<StatusAndRating id={id} book={book} onStatus={setStatus} onRating={setRating} />
+							</div>
+						</div>
+
+						{/* Phones: the controls take the full width under cover and title. */}
+						<div className="col-span-2 -mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 sm:hidden">
+							<StatusAndRating
+								id={`${id}-m`}
+								book={book}
+								onStatus={setStatus}
+								onRating={setRating}
+							/>
+						</div>
+					</div>
+
+					<div className="mt-10 space-y-10">
+						{/* Where you are */}
+						<section
+							aria-labelledby={`${id}-progress`}
+							className="animate-rise"
+							style={{ "--i": 2 } as React.CSSProperties}
+						>
+							<h2 id={`${id}-progress`} className="mb-3 text-sm font-medium">
+								{finished ? "Finished" : "Progress"}
+							</h2>
+							{finished ? (
+								<p className="text-sm text-muted-foreground">
+									{longDate.format(parseLocal(book.finishedAt as string))}
+									{book.startedAt &&
+										` · in ${pluralDays(daysBetween(book.startedAt, book.finishedAt as string) + 1)}`}
+								</p>
+							) : (
+								<div className="space-y-4">
+									<ProgressMeter
+										currentPage={book.currentPage}
+										pageCount={book.pageCount}
+										daysToFinish={pace?.daysToFinish}
+									/>
+									<ProgressField
+										ref={progressRef}
+										id={`${id}-page`}
+										currentPage={book.currentPage}
+										pageCount={book.pageCount}
+										onSubmit={saveProgress}
+										className="max-w-sm"
+									/>
+								</div>
+							)}
+						</section>
+
+						{/* What stayed with you */}
+						<section aria-labelledby={`${id}-notes`}>
+							<h2 id={`${id}-notes`} className="mb-3 text-sm font-medium">
+								Notes
+							</h2>
+							{!notes.draft && !writingNotes ? (
+								<QuietAdd onClick={() => setWritingNotes(true)}>Add notes</QuietAdd>
+							) : (
+								<div className="animate-swap">
+									<label htmlFor={`${id}-notes-field`} className="sr-only">
+										Notes
+									</label>
+									<textarea
+										id={`${id}-notes-field`}
+										value={notes.draft}
+										maxLength={20000}
+										autoFocus={writingNotes && !book.review}
+										onChange={(e) => notes.change(e.target.value)}
+										// Emptying it while typing keeps the field; leaving it empty folds it away.
+										onFocus={() => setWritingNotes(true)}
+										onBlur={() => {
+											notes.flush();
+											setWritingNotes(false);
+										}}
+										placeholder="What it was about, what stayed with you…"
+										className={cn(FIELD_TEXTAREA, "min-h-28 leading-relaxed")}
+									/>
+								</div>
+							)}
+						</section>
+
+						<QuotesSection
+							bookId={book.id}
+							quotes={quotes}
+							adding={addingQuote}
+							onAddingChange={setAddingQuote}
+						/>
+
+						{book.seriesName && seriesBooks.length > 1 && (
+							<SeriesSection name={book.seriesName} books={seriesBooks} currentId={book.id} />
+						)}
 					</div>
 				</div>
 
-				{/* Phones: the controls take the full width under cover and title. */}
-				<div className="col-span-2 -mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 sm:hidden">
-					<StatusAndRating id={`${id}-m`} book={book} onStatus={setStatus} onRating={setRating} />
-				</div>
-			</div>
+				<aside aria-label="Record" className="min-w-0 space-y-10 lg:pt-1">
+					<SessionsSection
+						sessions={sessions}
+						today={today}
+						onLogEarlier={() => setDayDialog({ open: true, session: null })}
+						onEdit={(session) => setDayDialog({ open: true, session })}
+					/>
 
-			<div className="mt-10 space-y-10">
-				{/* Where you are */}
-				<section
-					aria-labelledby={`${id}-progress`}
-					className="animate-rise"
-					style={{ "--i": 2 } as React.CSSProperties}
-				>
-					<h2 id={`${id}-progress`} className="mb-3 text-sm font-medium">
-						{finished ? "Finished" : "Progress"}
-					</h2>
-					{finished ? (
-						<p className="text-sm text-muted-foreground">
-							{longDate.format(parseLocal(book.finishedAt as string))}
-							{book.startedAt &&
-								` · in ${pluralDays(daysBetween(book.startedAt, book.finishedAt as string) + 1)}`}
-						</p>
-					) : (
-						<div className="space-y-4">
-							<ProgressMeter
-								currentPage={book.currentPage}
-								pageCount={book.pageCount}
-								daysToFinish={pace?.daysToFinish}
-							/>
-							<ProgressField
-								ref={progressRef}
-								id={`${id}-page`}
-								currentPage={book.currentPage}
-								pageCount={book.pageCount}
-								onSubmit={saveProgress}
-								className="max-w-sm"
-							/>
-						</div>
-					)}
-				</section>
+					<ShelfPicker
+						shelves={shelves}
+						selected={book.shelfIds}
+						onChange={async (shelfIds) => {
+							await persist({ shelfIds }, () => setBookShelves(book.id, shelfIds));
+						}}
+					/>
 
-				{/* What stayed with you */}
-				<section aria-labelledby={`${id}-notes`}>
-					<h2 id={`${id}-notes`} className="mb-3 text-sm font-medium">
-						Notes
-					</h2>
-					{!notes.draft && !writingNotes ? (
-						<QuietAdd onClick={() => setWritingNotes(true)}>Add notes</QuietAdd>
-					) : (
-						<div className="animate-swap">
-							<label htmlFor={`${id}-notes-field`} className="sr-only">
-								Notes
-							</label>
-							<textarea
-								id={`${id}-notes-field`}
-								value={notes.draft}
-								maxLength={20000}
-								autoFocus={writingNotes && !book.review}
-								onChange={(e) => notes.change(e.target.value)}
-								// Emptying it while typing keeps the field; leaving it empty folds it away.
-								onFocus={() => setWritingNotes(true)}
-								onBlur={() => {
-									notes.flush();
-									setWritingNotes(false);
-								}}
-								placeholder="What it was about, what stayed with you…"
-								className={cn(FIELD_TEXTAREA, "min-h-28 leading-relaxed")}
-							/>
-						</div>
-					)}
-				</section>
-
-				<QuotesSection
-					bookId={book.id}
-					quotes={quotes}
-					adding={addingQuote}
-					onAddingChange={setAddingQuote}
-				/>
-
-				{book.seriesName && seriesBooks.length > 1 && (
-					<SeriesSection name={book.seriesName} books={seriesBooks} currentId={book.id} />
-				)}
-
-				<ShelfPicker
-					shelves={shelves}
-					selected={book.shelfIds}
-					onChange={async (shelfIds) => {
-						await persist({ shelfIds }, () => setBookShelves(book.id, shelfIds));
-					}}
-				/>
-
-				<SessionsSection
-					sessions={sessions}
-					today={today}
-					onLogEarlier={() => setDayDialog({ open: true, session: null })}
-					onEdit={(session) => setDayDialog({ open: true, session })}
-				/>
-
-				{book.description && <About text={book.description} />}
+					{book.description && <About text={book.description} />}
+				</aside>
 			</div>
 
 			<EditDetailsDialog
