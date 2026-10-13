@@ -7,6 +7,7 @@ import {
 	type TsundokuBook,
 	deleteBook,
 	setBookShelves,
+	setFinishedAt,
 	setProgress,
 	updateBook,
 	updateRating,
@@ -36,11 +37,10 @@ import { ProgressMeter } from "@/features/tsundoku/components/ProgressMeter";
 import { StarRating } from "@/features/tsundoku/components/StarRating";
 import { BOOK_STATUSES, type BookStatus, STATUS_CONFIG } from "@/features/tsundoku/lib/constants";
 import { computePace } from "@/features/tsundoku/lib/pace";
-import { progressPatch, statusPatch } from "@/features/tsundoku/lib/progress";
+import { finishDatePatch, progressPatch, statusPatch } from "@/features/tsundoku/lib/progress";
 import { daysBetween } from "@/features/tsundoku/lib/streak";
 import { useDraft } from "@/hooks/useDraft";
 import { pageKey } from "@/lib/capture-shortcut";
-import { parseLocal } from "@/lib/dates";
 import {
 	ArrowLeft01Icon,
 	Calendar03Icon,
@@ -58,6 +58,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuShortcut,
 	DropdownMenuTrigger,
+	Input,
 	Label,
 	Select,
 	SelectContent,
@@ -84,7 +85,7 @@ type Result = { error: string } | { success: true };
 const offline = (): Result => ({ error: "Couldn't save. Check your connection." });
 const KEY_STATUS: Record<string, BookStatus> = { p: "want", r: "reading", d: "read" };
 const pluralDays = (n: number) => `${n} ${n === 1 ? "day" : "days"}`;
-const longDate = new Intl.DateTimeFormat("en", { day: "numeric", month: "long", year: "numeric" });
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * One book: who wrote it and where you are in it, then what stayed with you — notes, quotes —
@@ -128,6 +129,13 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 		persist(statusPatch(book, status, today), () => updateStatus(book.id, status));
 	const setRating = (rating: number | null) =>
 		persist({ rating }, () => updateRating(book.id, rating));
+	// A year typed digit by digit passes through "0002-…": wait for a real one.
+	const setFinished = (date: string) =>
+		DATE.test(date) &&
+		date >= "1900" &&
+		date <= today &&
+		date !== book.finishedAt &&
+		persist(finishDatePatch(book, date), () => setFinishedAt(book.id, date));
 	const saveProgress = (page: number) =>
 		persist(progressPatch(book, page, today), () => setProgress(book.id, { currentPage: page }));
 
@@ -299,11 +307,26 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 								{finished ? "Finished" : "Progress"}
 							</h2>
 							{finished ? (
-								<p className="text-sm text-muted-foreground">
-									{longDate.format(parseLocal(book.finishedAt as string))}
-									{book.startedAt &&
-										` · in ${pluralDays(daysBetween(book.startedAt, book.finishedAt as string) + 1)}`}
-								</p>
+								<div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+									<Label htmlFor={`${id}-finished`} className="sr-only">
+										Finished on
+									</Label>
+									<Input
+										id={`${id}-finished`}
+										type="date"
+										max={today}
+										// Uncontrolled while typing: a half-typed date reads as "" and must not save.
+										key={book.finishedAt}
+										defaultValue={book.finishedAt ?? ""}
+										onChange={(e) => setFinished(e.target.value)}
+										className="w-auto"
+									/>
+									{book.startedAt && (
+										<span className="text-sm text-muted-foreground">
+											in {pluralDays(daysBetween(book.startedAt, book.finishedAt as string) + 1)}
+										</span>
+									)}
+								</div>
 							) : (
 								<div className="space-y-4">
 									<ProgressMeter
