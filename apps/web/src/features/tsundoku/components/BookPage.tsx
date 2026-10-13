@@ -79,6 +79,7 @@ interface Props {
 type Result = { error: string } | { success: true };
 const offline = (): Result => ({ error: "Couldn't save. Check your connection." });
 const KEY_STATUS: Record<string, BookStatus> = { p: "want", r: "reading", d: "read" };
+const pluralDays = (n: number) => `${n} ${n === 1 ? "day" : "days"}`;
 const longDate = new Intl.DateTimeFormat("en", { day: "numeric", month: "long", year: "numeric" });
 
 /**
@@ -281,7 +282,7 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 						<p className="text-sm text-muted-foreground">
 							{longDate.format(parseLocal(book.finishedAt as string))}
 							{book.startedAt &&
-								` · in ${daysBetween(book.startedAt, book.finishedAt as string) + 1} days`}
+								` · in ${pluralDays(daysBetween(book.startedAt, book.finishedAt as string) + 1)}`}
 						</p>
 					) : (
 						<div className="space-y-4">
