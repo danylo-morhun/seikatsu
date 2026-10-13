@@ -19,13 +19,14 @@ export function clampPage(page: number, pageCount: number | null): number {
 }
 
 /**
- * The patch for moving to `nextPage`. Reading forward starts a want/paused book; reaching the
- * last page finishes it; going back below the end of a finished book reopens it.
+ * The patch for moving to `nextPage`. Reading forward starts a want/paused book; reading
+ * forward to the last page finishes it; going back from a finished book reopens it. Standing
+ * still changes nothing, so a book reopened at 100% stays open until it moves.
  */
 export function progressPatch(book: ProgressState, nextPage: number, today: string): ProgressPatch {
 	const page = clampPage(nextPage, book.pageCount);
 	const patch: ProgressPatch = { currentPage: page };
-	const done = book.pageCount != null && page >= book.pageCount;
+	const done = book.pageCount != null && page >= book.pageCount && page > book.currentPage;
 
 	if (done) {
 		if (book.status !== "read") {
@@ -41,6 +42,21 @@ export function progressPatch(book: ProgressState, nextPage: number, today: stri
 		if (!book.startedAt) patch.startedAt = today;
 	}
 	return patch;
+}
+
+/**
+ * The patch for correcting the page count: progress stays inside the book, a finished book
+ * stays finished (at the new last page), and nothing else changes state.
+ */
+export function pageCountPatch(book: ProgressState, pageCount: number | null): ProgressPatch {
+	if (book.status === "read" && pageCount) return { currentPage: pageCount };
+	return { currentPage: clampPage(book.currentPage, pageCount) };
+}
+
+/** Pages a session can add before the book's end (all of them when the length is unknown). */
+export function pagesLeft(book: ProgressState, pagesRead: number): number {
+	if (!book.pageCount) return pagesRead;
+	return Math.max(0, Math.min(pagesRead, book.pageCount - book.currentPage));
 }
 
 /** The patch for setting a status by hand: dates follow, finishing fills the progress. */
