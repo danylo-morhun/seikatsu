@@ -1,4 +1,5 @@
 import { db, eq, tsundokuBooks, tsundokuSessions } from "@seikatsu/db";
+import { BASE_URL } from "./env";
 import { expect, test, workspaceId } from "./fixtures";
 
 let bookId: string;
@@ -134,6 +135,18 @@ test("editing a reading day moves its date and pages", async ({ page }) => {
 	expect((await bookRow())?.startedAt).toBe("2026-01-05");
 	const [day] = await db.select().from(tsundokuSessions).where(eq(tsundokuSessions.bookId, bookId));
 	expect(day).toMatchObject({ date: "2026-01-05", pagesRead: 45 });
+});
+
+test("a cover loads only for its owner", async ({ page, browser }) => {
+	const url = `/api/tsundoku/cover/${bookId}?w=192`;
+	// The seeded book has no cover: the owner gets a 404, a stranger a 401.
+	expect((await page.request.get(url)).status()).toBe(404);
+	const stranger = await browser.newContext({
+		baseURL: BASE_URL,
+		storageState: { cookies: [], origins: [] },
+	});
+	expect((await stranger.request.get(url)).status()).toBe(401);
+	await stranger.close();
 });
 
 test("a malformed book link is a not-found page inside the shell", async ({ page }) => {
