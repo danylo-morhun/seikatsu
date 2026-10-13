@@ -9,7 +9,8 @@ const text = (max: number) =>
 		.nullable()
 		.transform((v) => v?.trim() || null);
 
-const positiveInt = z.number().int().positive().nullable();
+const MAX_PAGES = 100_000;
+const positiveInt = z.number().int().positive().max(MAX_PAGES).nullable();
 
 export const bookStatusSchema = z.enum(BOOK_STATUSES);
 
@@ -54,12 +55,12 @@ export type UpdateBookValues = z.input<typeof updateBookSchema>;
 
 export const logSessionSchema = z.object({
 	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date"),
-	pagesRead: z.number().int().positive("Pages must be positive").max(100_000),
+	pagesRead: z.number().int().positive("Pages must be positive").max(MAX_PAGES),
 });
 export type LogSessionValues = z.infer<typeof logSessionSchema>;
 
 export const setProgressSchema = z.object({
-	currentPage: z.number().int().min(0).max(100_000),
+	currentPage: z.number().int().min(0).max(MAX_PAGES),
 });
 
 export const shelfSchema = z.object({
