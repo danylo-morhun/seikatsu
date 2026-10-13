@@ -1,3 +1,4 @@
+import { parseLocal } from "@/lib/dates";
 import {
 	addDays,
 	differenceInCalendarDays,
@@ -9,10 +10,7 @@ import {
 	subMonths,
 } from "date-fns";
 
-export function parseLocal(str: string): Date {
-	const [y, m, d] = str.split("-").map(Number);
-	return new Date(y, m - 1, d);
-}
+export { parseLocal };
 
 export function buildPeriodLabel(
 	from: string | undefined,
