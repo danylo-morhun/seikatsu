@@ -9,6 +9,7 @@ import {
 	setBookShelves,
 	setFinishedAt,
 	setProgress,
+	setStartedAt,
 	updateBook,
 	updateRating,
 	updateStatus,
@@ -136,6 +137,11 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 		date <= today &&
 		date !== book.finishedAt &&
 		persist(finishDatePatch(book, date), () => setFinishedAt(book.id, date));
+	// Empty clears it: the start isn't known for a book read before it was tracked.
+	const setStarted = (date: string | null) =>
+		date !== book.startedAt &&
+		(date === null || (DATE.test(date) && date >= "1900" && date <= (book.finishedAt ?? today))) &&
+		persist({ startedAt: date }, () => setStartedAt(book.id, date));
 	const saveProgress = (page: number) =>
 		persist(progressPatch(book, page, today), () => setProgress(book.id, { currentPage: page }));
 
@@ -307,24 +313,57 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 								{finished ? "Finished" : "Progress"}
 							</h2>
 							{finished ? (
-								<div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-									<Label htmlFor={`${id}-finished`} className="sr-only">
-										Finished on
-									</Label>
-									<Input
-										id={`${id}-finished`}
-										type="date"
-										max={today}
-										// Uncontrolled while typing: a half-typed date reads as "" and must not save.
-										key={book.finishedAt}
-										defaultValue={book.finishedAt ?? ""}
-										onChange={(e) => setFinished(e.target.value)}
-										className="w-auto"
-									/>
+								<div className="space-y-3">
+									<div className="flex flex-wrap items-end gap-3">
+										<div className="space-y-1.5">
+											<Label htmlFor={`${id}-started`} className="text-xs text-muted-foreground">
+												Started
+											</Label>
+											<div className="flex items-center gap-1">
+												<Input
+													id={`${id}-started`}
+													type="date"
+													max={book.finishedAt ?? today}
+													// Uncontrolled while typing: a half-typed date reads as "" and must not save.
+													key={book.startedAt ?? "none"}
+													defaultValue={book.startedAt ?? ""}
+													onChange={(e) => setStarted(e.target.value)}
+													onBlur={(e) => !e.target.value && setStarted(null)}
+													className="w-auto"
+												/>
+												{book.startedAt && (
+													<Button
+														variant="ghost"
+														size="sm"
+														className="text-muted-foreground"
+														onClick={() => setStarted(null)}
+													>
+														Clear
+													</Button>
+												)}
+											</div>
+										</div>
+										<div className="space-y-1.5">
+											<Label htmlFor={`${id}-finished`} className="text-xs text-muted-foreground">
+												Finished
+											</Label>
+											<Input
+												id={`${id}-finished`}
+												type="date"
+												max={today}
+												key={book.finishedAt}
+												defaultValue={book.finishedAt ?? ""}
+												onChange={(e) => setFinished(e.target.value)}
+												className="w-auto"
+											/>
+										</div>
+									</div>
+									{/* No start, no length: a book read before it was tracked. */}
 									{book.startedAt && (
-										<span className="text-sm text-muted-foreground">
-											in {pluralDays(daysBetween(book.startedAt, book.finishedAt as string) + 1)}
-										</span>
+										<p className="text-sm text-muted-foreground">
+											Read in{" "}
+											{pluralDays(daysBetween(book.startedAt, book.finishedAt as string) + 1)}
+										</p>
 									)}
 								</div>
 							) : (
