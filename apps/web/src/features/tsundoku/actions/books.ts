@@ -5,6 +5,7 @@ import {
 	getOwnedBook,
 	requireWorkspace,
 } from "@/features/tsundoku/actions/guard";
+import { dropCover, storeCover } from "@/features/tsundoku/lib/cover-store";
 import { computePace } from "@/features/tsundoku/lib/pace";
 import {
 	finishDatePatch,
@@ -36,6 +37,7 @@ import {
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 
 export type TsundokuBook = typeof tsundokuBooks.$inferSelect & { shelfIds: string[] };
@@ -183,6 +185,8 @@ export async function createBook(input: unknown): Promise<Result<{ id: string }>
 		})
 		.returning({ id: tsundokuBooks.id });
 
+	const { coverUrl } = v;
+	if (coverUrl) after(() => storeCover(inserted.id, coverUrl));
 	revalidate();
 	return { success: true, id: inserted.id };
 }
@@ -201,9 +205,19 @@ export async function updateBook(bookId: string, input: unknown): Promise<Result
 	if (pageCount !== undefined && pageCount !== book.pageCount) {
 		Object.assign(patch, pageCountPatch(book, pageCount));
 	}
+	// A new cover is stored again; until then the cover route serves it.
+	const { coverUrl } = parsed.data;
+	const newCover = coverUrl !== undefined && coverUrl !== book.coverUrl;
+	if (newCover) patch.coverBlob = null;
 	if (Object.keys(patch).length === 0) return { success: true };
 
 	await db.update(tsundokuBooks).set(patch).where(eq(tsundokuBooks.id, bookId));
+	if (newCover) {
+		after(async () => {
+			await dropCover(book.coverBlob);
+			if (coverUrl) await storeCover(bookId, coverUrl);
+		});
+	}
 	revalidate();
 	return { success: true };
 }
@@ -326,6 +340,7 @@ export async function deleteBook(
 	if (!book) return { error: "Book not found" };
 
 	await db.delete(tsundokuBooks).where(eq(tsundokuBooks.id, bookId));
+	after(() => dropCover(book.coverBlob));
 	revalidate();
 	if (options.redirect) redirect("/tsundoku");
 	return { success: true };
