@@ -5,13 +5,14 @@ import type { Genre } from "./constants";
 
 // Most specific first: "science fiction" must win over "fiction".
 const RULES: [Genre, RegExp][] = [
+	["Fiction", /historical fiction|magic(al)? realism|literary fiction/],
 	["Sci-fi", /science[ -]?fiction|sci-?fi|dystopi|space opera|cyberpunk/],
-	["Fantasy", /fantasy|magic|dragons|wizards/],
-	["Mystery", /mystery|detective|crime|whodunit/],
+	["Fantasy", /fantasy|dragons|wizards/],
 	["Thriller", /thriller|suspense|espionage|spy/],
+	["Mystery", /mystery|detective|crime|whodunit/],
 	["Romance", /romance|love stories/],
 	["Horror", /horror|ghost stories|supernatural/],
-	["Comics", /comic|graphic novel|manga/],
+	["Comics", /comics|graphic novel|manga/],
 	["Poetry", /poetry|poems/],
 	["Biography", /biograph|memoir|autobiograph/],
 	["History", /history|historical/],
