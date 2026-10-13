@@ -41,6 +41,7 @@ export async function getOwnedSession(sessionId: string, workspaceId: string) {
 	if (!isUuid(sessionId)) return null;
 	const [row] = await db
 		.select({
+			date: tsundokuSessions.date,
 			pagesRead: tsundokuSessions.pagesRead,
 			book: {
 				id: tsundokuBooks.id,
