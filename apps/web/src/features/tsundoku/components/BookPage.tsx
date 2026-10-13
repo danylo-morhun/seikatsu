@@ -13,7 +13,11 @@ import {
 	updateStatus,
 } from "@/features/tsundoku/actions/books";
 import type { TsundokuQuote } from "@/features/tsundoku/actions/quotes";
-import { type TsundokuSession, logSession } from "@/features/tsundoku/actions/sessions";
+import {
+	type TsundokuSession,
+	logSession,
+	updateSession,
+} from "@/features/tsundoku/actions/sessions";
 import type { TsundokuShelf } from "@/features/tsundoku/actions/shelves";
 import { BookCover } from "@/features/tsundoku/components/BookCover";
 import {
@@ -93,7 +97,11 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 		open: false,
 		instant: false,
 	});
-	const [loggingDay, setLoggingDay] = useState(false);
+	// Logging a new day (session null) or editing a logged one.
+	const [dayDialog, setDayDialog] = useState<{ open: boolean; session: TsundokuSession | null }>({
+		open: false,
+		session: null,
+	});
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const [addingQuote, setAddingQuote] = useState(false);
 	const [writingNotes, setWritingNotes] = useState(false);
@@ -194,7 +202,7 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 							Edit details…
 							<DropdownMenuShortcut>E</DropdownMenuShortcut>
 						</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => setLoggingDay(true)}>
+						<DropdownMenuItem onClick={() => setDayDialog({ open: true, session: null })}>
 							<HugeiconsIcon icon={Calendar03Icon} className="mr-2 h-4 w-4" />
 							Log an earlier day…
 						</DropdownMenuItem>
@@ -356,7 +364,8 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 				<SessionsSection
 					sessions={sessions}
 					today={today}
-					onLogEarlier={() => setLoggingDay(true)}
+					onLogEarlier={() => setDayDialog({ open: true, session: null })}
+					onEdit={(session) => setDayDialog({ open: true, session })}
 				/>
 
 				{book.description && <About text={book.description} />}
@@ -372,11 +381,16 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 				}
 			/>
 			<LogDayDialog
-				open={loggingDay}
-				onOpenChange={setLoggingDay}
+				open={dayDialog.open}
+				onOpenChange={(open) => setDayDialog((d) => ({ ...d, open }))}
 				today={today}
+				day={dayDialog.session}
 				onLog={async (values) => {
-					const result = await logSession(book.id, values).catch(offline);
+					const { session } = dayDialog;
+					const result = await (session
+						? updateSession(session.id, values)
+						: logSession(book.id, values)
+					).catch(offline);
 					return "error" in result ? result.error : undefined;
 				}}
 			/>

@@ -295,16 +295,19 @@ export function EditDetailsDialog({
 }
 
 /** An earlier reading day: pages first (the number that matters), the day beside it. */
+/** Logs a forgotten day, or corrects a logged one when `day` is given. */
 export function LogDayDialog({
 	open,
 	onOpenChange,
 	today,
+	day,
 	onLog,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	today: string;
-	/** Resolves with an error message, or nothing when logged. */
+	day?: { date: string; pagesRead: number } | null;
+	/** Resolves with an error message, or nothing when saved. */
 	onLog: (values: { date: string; pagesRead: number }) => Promise<string | undefined>;
 }) {
 	const id = useId();
@@ -315,11 +318,11 @@ export function LogDayDialog({
 
 	useEffect(() => {
 		if (open) {
-			setPages("");
-			setDate(today);
+			setPages(day ? String(day.pagesRead) : "");
+			setDate(day?.date ?? today);
 			setError(null);
 		}
-	}, [open, today]);
+	}, [open, today, day]);
 
 	const pagesRead = toInt(pages) ?? 0;
 	const valid = pagesRead > 0 && /^\d{4}-\d{2}-\d{2}$/.test(date) && date <= today;
@@ -346,8 +349,12 @@ export function LogDayDialog({
 				}}
 			>
 				<DialogHeader>
-					<DialogTitle>Log a Reading Day</DialogTitle>
-					<DialogDescription>For a day you forgot; the pages move the book on.</DialogDescription>
+					<DialogTitle>{day ? "Edit Reading Day" : "Log a Reading Day"}</DialogTitle>
+					<DialogDescription>
+						{day
+							? "The book's progress follows the pages."
+							: "For a day you forgot; the pages move the book on."}
+					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-4">
 					<div className="grid grid-cols-2 gap-4">
@@ -391,7 +398,7 @@ export function LogDayDialog({
 						</Button>
 						<Button type="submit" className="gap-1.5 max-sm:flex-1" disabled={isSaving || !valid}>
 							{isSaving && <Spinner />}
-							{isSaving ? "Saving…" : "Log"}
+							{isSaving ? "Saving…" : day ? "Save" : "Log"}
 						</Button>
 					</div>
 				</form>
