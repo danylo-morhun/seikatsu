@@ -130,17 +130,16 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 		persist(statusPatch(book, status, today), () => updateStatus(book.id, status));
 	const setRating = (rating: number | null) =>
 		persist({ rating }, () => updateRating(book.id, rating));
+	// Null clears a date: neither is known for a book read before it was tracked.
 	// A year typed digit by digit passes through "0002-…": wait for a real one.
-	const setFinished = (date: string) =>
-		DATE.test(date) &&
-		date >= "1900" &&
-		date <= today &&
+	const validDay = (date: string, max: string) => DATE.test(date) && date >= "1900" && date <= max;
+	const setFinished = (date: string | null) =>
 		date !== book.finishedAt &&
+		(date === null || validDay(date, today)) &&
 		persist(finishDatePatch(book, date), () => setFinishedAt(book.id, date));
-	// Empty clears it: the start isn't known for a book read before it was tracked.
 	const setStarted = (date: string | null) =>
 		date !== book.startedAt &&
-		(date === null || (DATE.test(date) && date >= "1900" && date <= (book.finishedAt ?? today))) &&
+		(date === null || validDay(date, book.finishedAt ?? today)) &&
 		persist({ startedAt: date }, () => setStartedAt(book.id, date));
 	const saveProgress = (page: number) =>
 		persist(progressPatch(book, page, today), () => setProgress(book.id, { currentPage: page }));
@@ -191,7 +190,7 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 		book.seriesName &&
 			`${book.seriesPosition ? `#${book.seriesPosition} · ` : ""}${book.seriesName}`,
 	].filter(Boolean);
-	const finished = book.status === "read" && book.finishedAt;
+	const finished = book.status === "read";
 
 	return (
 		<div className="px-4 pt-5 pb-28 sm:px-8 md:pb-10">
@@ -347,22 +346,34 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 											<Label htmlFor={`${id}-finished`} className="text-xs text-muted-foreground">
 												Finished
 											</Label>
-											<Input
-												id={`${id}-finished`}
-												type="date"
-												max={today}
-												key={book.finishedAt}
-												defaultValue={book.finishedAt ?? ""}
-												onChange={(e) => setFinished(e.target.value)}
-												className="w-auto"
-											/>
+											<div className="flex items-center gap-1">
+												<Input
+													id={`${id}-finished`}
+													type="date"
+													max={today}
+													key={book.finishedAt ?? "none"}
+													defaultValue={book.finishedAt ?? ""}
+													onChange={(e) => setFinished(e.target.value)}
+													onBlur={(e) => !e.target.value && setFinished(null)}
+													className="w-auto"
+												/>
+												{book.finishedAt && (
+													<Button
+														variant="ghost"
+														size="sm"
+														className="text-muted-foreground"
+														onClick={() => setFinished(null)}
+													>
+														Clear
+													</Button>
+												)}
+											</div>
 										</div>
 									</div>
-									{/* No start, no length: a book read before it was tracked. */}
-									{book.startedAt && (
+									{/* Both days known, or no length: a book read before it was tracked. */}
+									{book.startedAt && book.finishedAt && (
 										<p className="text-sm text-muted-foreground">
-											Read in{" "}
-											{pluralDays(daysBetween(book.startedAt, book.finishedAt as string) + 1)}
+											Read in {pluralDays(daysBetween(book.startedAt, book.finishedAt) + 1)}
 										</p>
 									)}
 								</div>
