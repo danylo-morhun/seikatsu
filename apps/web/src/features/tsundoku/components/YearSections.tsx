@@ -50,6 +50,7 @@ function Figure({
 
 /** The year at a glance: books read leads, then pages, the average rating and the streak. */
 export function YearFigures({ stats, isCurrent }: { stats: YearStats; isCurrent: boolean }) {
+	const streak = isCurrent ? stats.streak.current : longestIn(stats.days);
 	const logged = stats.months.reduce((s, m) => s + m, 0);
 	return (
 		<section
@@ -86,8 +87,8 @@ export function YearFigures({ stats, isCurrent }: { stats: YearStats; isCurrent:
 				<Figure
 					index={3}
 					label={isCurrent ? "Reading streak" : "Longest streak"}
-					value={isCurrent ? stats.streak.current : longestIn(stats.days)}
-					suffix="days"
+					value={streak}
+					suffix={streak === 1 ? "day" : "days"}
 					note={
 						isCurrent
 							? `Longest ${stats.streak.longest} ${stats.streak.longest === 1 ? "day" : "days"}`
