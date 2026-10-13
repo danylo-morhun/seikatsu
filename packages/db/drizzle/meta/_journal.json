@@ -134,6 +134,13 @@
 			"when": 1791748848750,
 			"tag": "0018_seiryu_done_column",
 			"breakpoints": true
+		},
+		{
+			"idx": 19,
+			"version": "7",
+			"when": 1791881015152,
+			"tag": "0019_kyuu_application_details",
+			"breakpoints": true
 		}
 	]
 }
