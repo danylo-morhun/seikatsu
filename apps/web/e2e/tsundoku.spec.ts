@@ -113,6 +113,29 @@ test("deleting a reading day takes its pages back", async ({ page }) => {
 	expect((await bookRow())?.status).toBe("reading");
 });
 
+test("editing a reading day moves its date and pages", async ({ page }) => {
+	await db.insert(tsundokuSessions).values({ bookId, date: "2026-01-10", pagesRead: 30 });
+	await db
+		.update(tsundokuBooks)
+		.set({ status: "reading", currentPage: 30, startedAt: "2026-01-10" })
+		.where(eq(tsundokuBooks.id, bookId));
+	await page.goto(`/tsundoku/${bookId}`);
+
+	await page.getByRole("button", { name: "Reading day actions" }).click();
+	await page.getByRole("menuitem", { name: "Edit…" }).click();
+	const dialog = page.getByRole("dialog", { name: "Edit Reading Day" });
+	await expect(dialog.getByLabel("Pages read")).toHaveValue("30");
+	await dialog.getByLabel("Pages read").fill("45");
+	await dialog.getByLabel("Day").fill("2026-01-05");
+	await dialog.getByRole("button", { name: "Save" }).click();
+	await expect(dialog).toBeHidden();
+
+	await expect.poll(async () => (await bookRow())?.currentPage).toBe(45);
+	expect((await bookRow())?.startedAt).toBe("2026-01-05");
+	const [day] = await db.select().from(tsundokuSessions).where(eq(tsundokuSessions.bookId, bookId));
+	expect(day).toMatchObject({ date: "2026-01-05", pagesRead: 45 });
+});
+
 test("a malformed book link is a not-found page inside the shell", async ({ page }) => {
 	await page.goto("/tsundoku/not-a-book");
 	await expect(page.getByRole("heading", { name: "Nothing here" })).toBeVisible();
