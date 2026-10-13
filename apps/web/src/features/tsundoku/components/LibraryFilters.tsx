@@ -1,7 +1,7 @@
 "use client";
 
 import type { TsundokuShelf } from "@/features/tsundoku/actions/shelves";
-import { formatStars } from "@/features/tsundoku/components/StarRating";
+import { formatStars } from "@/features/tsundoku/components/Stars";
 import { SEGMENTS, type Segment } from "@/features/tsundoku/lib/constants";
 import {
 	type LibraryFilters,

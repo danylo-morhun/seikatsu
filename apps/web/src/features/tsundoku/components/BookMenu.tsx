@@ -2,7 +2,7 @@
 
 import type { LibraryBook } from "@/features/tsundoku/actions/books";
 import type { TsundokuShelf } from "@/features/tsundoku/actions/shelves";
-import { formatStars } from "@/features/tsundoku/components/StarRating";
+import { formatStars } from "@/features/tsundoku/components/Stars";
 import { BOOK_STATUSES, type BookStatus, STATUS_CONFIG } from "@/features/tsundoku/lib/constants";
 import {
 	BookOpen01Icon,

@@ -3,7 +3,7 @@
 import type { LibraryBook } from "@/features/tsundoku/actions/books";
 import { BookCover } from "@/features/tsundoku/components/BookCover";
 import { ProgressMeter } from "@/features/tsundoku/components/ProgressMeter";
-import { Stars } from "@/features/tsundoku/components/StarRating";
+import { Stars } from "@/features/tsundoku/components/Stars";
 import { STATUS_CONFIG } from "@/features/tsundoku/lib/constants";
 import { takeFresh } from "@/features/tsundoku/lib/fresh";
 import { progressPercent } from "@/features/tsundoku/lib/pace";
