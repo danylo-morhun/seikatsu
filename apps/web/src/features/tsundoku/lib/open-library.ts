@@ -67,3 +67,8 @@ export function parseWorkDescription(json: unknown): string | null {
 	if (!desc) return null;
 	return typeof desc === "string" ? desc : (desc.value ?? null);
 }
+
+/** A smaller Open Library cover for thumbnails (stored URLs are the large size). */
+export function coverThumb(url: string | null): string | null {
+	return url?.replace(/-L\.jpg$/, "-M.jpg") ?? null;
+}

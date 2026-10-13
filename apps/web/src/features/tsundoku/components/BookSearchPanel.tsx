@@ -1,8 +1,8 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { searchBooks } from "@/features/tsundoku/actions/search";
 import type { BookSearchResult } from "@/features/tsundoku/lib/book-search";
+import { searchBooks } from "@/features/tsundoku/lib/search-client";
 import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Input } from "@seikatsu/ui";
@@ -23,17 +23,19 @@ export function BookSearchPanel({ onPick, pendingKey }: Props) {
 
 	useEffect(() => {
 		const q = query.trim();
+		const id = ++reqId.current;
 		if (q.length < 2) {
 			setResults([]);
 			setSearched(false);
+			setLoading(false);
 			return;
 		}
-		const id = ++reqId.current;
 		setLoading(true);
 		setError(null);
+		const controller = new AbortController();
 		const t = setTimeout(async () => {
-			const res = await searchBooks(q);
-			if (id !== reqId.current) return; // stale
+			const res = await searchBooks(q, controller.signal).catch(() => null);
+			if (!res || id !== reqId.current) return; // stale
 			setLoading(false);
 			setSearched(true);
 			if ("error" in res) {
@@ -43,7 +45,10 @@ export function BookSearchPanel({ onPick, pendingKey }: Props) {
 				setResults(res.results);
 			}
 		}, 400);
-		return () => clearTimeout(t);
+		return () => {
+			clearTimeout(t);
+			controller.abort();
+		};
 	}, [query]);
 
 	return (

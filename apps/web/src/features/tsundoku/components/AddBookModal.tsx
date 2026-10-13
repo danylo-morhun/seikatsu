@@ -2,7 +2,6 @@
 
 import { Spinner } from "@/components/Spinner";
 import { createBook } from "@/features/tsundoku/actions/books";
-import { fetchWorkDescription } from "@/features/tsundoku/actions/search";
 import { BookSearchPanel } from "@/features/tsundoku/components/BookSearchPanel";
 import type { BookSearchResult } from "@/features/tsundoku/lib/book-search";
 import { BOOK_STATUSES, GENRE_OPTIONS, STATUS_CONFIG } from "@/features/tsundoku/lib/constants";
@@ -67,19 +66,15 @@ export function AddBookModal({
 
 	async function handlePick(r: BookSearchResult) {
 		setPendingKey(r.externalId);
-		// Google returns description inline; Open Library needs a lazy follow-up fetch.
-		const description =
-			r.description ??
-			(r.source === "openlibrary" ? await fetchWorkDescription(r.externalId) : null);
 		const result = await createBook({
 			title: r.title,
 			authors: r.authors,
 			isbn: r.isbn,
 			coverUrl: r.coverUrl,
-			olKey: r.externalId,
+			olKey: r.source === "openlibrary" ? r.externalId : null,
 			pageCount: r.pageCount ?? null,
 			publishedYear: r.publishedYear ?? null,
-			description,
+			description: r.description,
 			genre: genreFromSubjects(r.subjects) ?? null,
 			source: r.source,
 			status: "want",
