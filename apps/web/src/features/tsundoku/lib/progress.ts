@@ -59,6 +59,31 @@ export function pagesLeft(book: ProgressState, pagesRead: number): number {
 	return Math.max(0, Math.min(pagesRead, book.pageCount - book.currentPage));
 }
 
+export interface SessionDay {
+	date: string;
+	pagesRead: number;
+}
+
+/**
+ * Correcting a logged day: the book moves by the change in pages (never past its end); an
+ * earlier day can move the start back, and the finish follows the day it was set on.
+ */
+export function sessionEditPatch(
+	book: ProgressState,
+	before: SessionDay,
+	after: SessionDay,
+	today: string,
+): { pagesRead: number; patch: ProgressPatch } {
+	const change = after.pagesRead - before.pagesRead;
+	const moved = change > 0 ? pagesLeft(book, change) : change;
+	const patch = progressPatch(book, book.currentPage + moved, today);
+	const startedAt = patch.startedAt ?? book.startedAt;
+	if (!startedAt || after.date < startedAt) patch.startedAt = after.date;
+	const finishedHere = patch.finishedAt === undefined && book.finishedAt === before.date;
+	if (patch.finishedAt || finishedHere) patch.finishedAt = after.date;
+	return { pagesRead: before.pagesRead + moved, patch };
+}
+
 /** The patch for setting a status by hand: dates follow, finishing fills the progress. */
 export function statusPatch(book: ProgressState, next: BookStatus, today: string): ProgressPatch {
 	const patch: ProgressPatch = { status: next };
