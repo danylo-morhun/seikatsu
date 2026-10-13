@@ -16,6 +16,15 @@ export type TsundokuSession = typeof tsundokuSessions.$inferSelect;
 
 type Result = { error: string } | { success: true };
 
+/** Pages already in the book's sessions: what a session can still add is checked against it. */
+async function loggedPages(bookId: string): Promise<number> {
+	const rows = await db
+		.select({ pagesRead: tsundokuSessions.pagesRead })
+		.from(tsundokuSessions)
+		.where(eq(tsundokuSessions.bookId, bookId));
+	return rows.reduce((sum, r) => sum + r.pagesRead, 0);
+}
+
 export async function getSessions(bookId: string): Promise<TsundokuSession[]> {
 	const workspace = await requireWorkspace();
 	if (!(await isOwnedBook(bookId, workspace.id))) return [];
@@ -37,9 +46,9 @@ export async function logSession(bookId: string, input: unknown): Promise<Result
 	const { date } = parsed.data;
 	const today = await getUserToday();
 	if (date > today) return { error: "Can't log a future day" };
-	// A session never reads past the last page, so deleting it later takes back what it added.
-	const pagesRead = pagesLeft(book, parsed.data.pagesRead);
-	if (pagesRead === 0) return { error: "Already on the last page" };
+	// The log never holds more pages than the book, so deleting a session takes back what it added.
+	const pagesRead = pagesLeft(book.pageCount, await loggedPages(bookId), parsed.data.pagesRead);
+	if (pagesRead === 0) return { error: "Every page is already logged" };
 	const patch = progressPatch(book, book.currentPage + pagesRead, today);
 	// The day it was read, not the day it was logged.
 	const startedAt = patch.startedAt ?? book.startedAt;
@@ -66,7 +75,8 @@ export async function updateSession(sessionId: string, input: unknown): Promise<
 	const today = await getUserToday();
 	if (parsed.data.date > today) return { error: "Can't log a future day" };
 	const { book } = session;
-	const { pagesRead, patch } = sessionEditPatch(book, session, parsed.data, today);
+	const logged = await loggedPages(book.id);
+	const { pagesRead, patch } = sessionEditPatch(book, logged, session, parsed.data, today);
 
 	await db.transaction(async (tx) => {
 		await tx

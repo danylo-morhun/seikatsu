@@ -84,9 +84,10 @@ describe("pageCountPatch", () => {
 });
 
 describe("pagesLeft", () => {
-	it("caps a session at the book's end", () => {
-		expect(pagesLeft(book({ pageCount: 50, currentPage: 8 }), 100)).toBe(42);
-		expect(pagesLeft(book({ pageCount: null }), 100)).toBe(100);
+	it("caps a session at the pages not yet logged", () => {
+		expect(pagesLeft(50, 8, 100)).toBe(42);
+		expect(pagesLeft(50, 60, 10)).toBe(0);
+		expect(pagesLeft(null, 8, 100)).toBe(100);
 	});
 });
 
@@ -127,10 +128,13 @@ describe("genreFromSubjects", () => {
 });
 
 describe("sessionEditPatch", () => {
+	const LOGGED = 100;
 	const day = (date: string, pagesRead: number) => ({ date, pagesRead });
 
 	it("moves only the date when pages stay", () => {
-		expect(sessionEditPatch(book(), day("2026-10-10", 20), day("2026-10-08", 20), TODAY)).toEqual({
+		expect(
+			sessionEditPatch(book(), LOGGED, day("2026-10-10", 20), day("2026-10-08", 20), TODAY),
+		).toEqual({
 			pagesRead: 20,
 			patch: { currentPage: 100 },
 		});
@@ -138,12 +142,14 @@ describe("sessionEditPatch", () => {
 
 	it("moves the start back to an earlier day", () => {
 		expect(
-			sessionEditPatch(book(), day("2026-10-01", 20), day("2026-09-28", 20), TODAY).patch,
+			sessionEditPatch(book(), LOGGED, day("2026-10-01", 20), day("2026-09-28", 20), TODAY).patch,
 		).toEqual({ currentPage: 100, startedAt: "2026-09-28" });
 	});
 
 	it("takes pages back when fewer were read", () => {
-		expect(sessionEditPatch(book(), day("2026-10-10", 30), day("2026-10-10", 10), TODAY)).toEqual({
+		expect(
+			sessionEditPatch(book(), LOGGED, day("2026-10-10", 30), day("2026-10-10", 10), TODAY),
+		).toEqual({
 			pagesRead: 10,
 			patch: { currentPage: 80 },
 		});
@@ -153,6 +159,7 @@ describe("sessionEditPatch", () => {
 		expect(
 			sessionEditPatch(
 				book({ currentPage: 290 }),
+				290,
 				day("2026-10-10", 10),
 				day("2026-10-11", 50),
 				TODAY,
@@ -166,14 +173,21 @@ describe("sessionEditPatch", () => {
 	it("carries the finish to the new day", () => {
 		const read = book({ status: "read", currentPage: 300, finishedAt: "2026-10-10" });
 		expect(
-			sessionEditPatch(read, day("2026-10-10", 40), day("2026-10-09", 40), TODAY).patch,
+			sessionEditPatch(read, LOGGED, day("2026-10-10", 40), day("2026-10-09", 40), TODAY).patch,
 		).toEqual({ currentPage: 300, finishedAt: "2026-10-09" });
 	});
 
 	it("reopens a finished book when its pages shrink", () => {
 		const read = book({ status: "read", currentPage: 300, finishedAt: "2026-10-10" });
 		expect(
-			sessionEditPatch(read, day("2026-10-10", 40), day("2026-10-10", 30), TODAY).patch,
+			sessionEditPatch(read, LOGGED, day("2026-10-10", 40), day("2026-10-10", 30), TODAY).patch,
 		).toEqual({ currentPage: 290, status: "reading", finishedAt: null });
+	});
+
+	it("grows a day of a book finished by hand", () => {
+		const read = book({ status: "read", currentPage: 300, finishedAt: "2026-10-10" });
+		expect(
+			sessionEditPatch(read, 40, day("2026-10-10", 40), day("2026-10-10", 300), TODAY),
+		).toEqual({ pagesRead: 300, patch: { currentPage: 300, finishedAt: "2026-10-10" } });
 	});
 });
