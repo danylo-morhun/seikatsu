@@ -307,3 +307,35 @@ export async function updateApplicationStage(
 	revalidatePath("/kyuu");
 	return { success: true as const, data: application };
 }
+
+// Long-form posting data (JD, cover letter, verdict) written by the job-search workflow.
+// Loaded on demand for the details dialog so the table payload stays small.
+export async function getApplicationDetails(applicationId: string) {
+	const session = await auth();
+	if (!session?.user?.id) return { error: "Unauthorized" };
+
+	const [row] = await db
+		.select({
+			workspaceId: kyuuApplications.workspaceId,
+			jobDescription: kyuuApplications.jobDescription,
+			coverLetter: kyuuApplications.coverLetter,
+			location: kyuuApplications.location,
+			remote: kyuuApplications.remote,
+			salary: kyuuApplications.salary,
+			fitVerdict: kyuuApplications.fitVerdict,
+			stackTags: kyuuApplications.stackTags,
+		})
+		.from(kyuuApplications)
+		.where(eq(kyuuApplications.id, applicationId))
+		.limit(1);
+	if (!row) return { error: "Application not found" };
+	await assertWorkspaceOwner(row.workspaceId);
+
+	const { workspaceId: _, ...details } = row;
+	return { success: true as const, data: details };
+}
+
+export type ApplicationDetails = Extract<
+	Awaited<ReturnType<typeof getApplicationDetails>>,
+	{ success: true }
+>["data"];

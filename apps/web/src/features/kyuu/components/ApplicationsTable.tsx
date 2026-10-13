@@ -6,6 +6,7 @@ import {
 	Alert01Icon,
 	CheckmarkCircle02Icon,
 	Delete01Icon,
+	InformationCircleIcon,
 	MoreHorizontalIcon,
 	PencilEdit01Icon,
 } from "@hugeicons/core-free-icons";
@@ -47,6 +48,7 @@ import {
 } from "../actions/applications";
 import { type KyuuStatus, kyuuStatusValues } from "../lib/kyuu-schemas";
 import { isIgnored } from "../lib/status";
+import { ApplicationDetailsDialog } from "./ApplicationDetailsDialog";
 import { EditApplicationModal } from "./EditApplicationModal";
 import { KyuuFilterBar } from "./KyuuFilterBar";
 import { StatusBadge } from "./StatusBadge";
@@ -103,6 +105,7 @@ interface RowProps {
 	onStatusChange: (id: string, status: KyuuStatus) => void;
 	onStageToggle: (id: string, stage: StageField, currentValue: boolean) => void;
 	onEdit: (app: Application) => void;
+	onDetails: (app: Application) => void;
 	onDelete: (app: Application) => void;
 }
 
@@ -117,7 +120,14 @@ function sameApplication(a: Application, b: Application): boolean {
 }
 
 const ApplicationRow = memo(
-	function ApplicationRow({ app, onStatusChange, onStageToggle, onEdit, onDelete }: RowProps) {
+	function ApplicationRow({
+		app,
+		onStatusChange,
+		onStageToggle,
+		onEdit,
+		onDetails,
+		onDelete,
+	}: RowProps) {
 		return (
 			<TableRow>
 				<TableCell className="text-muted-foreground whitespace-nowrap">
@@ -216,6 +226,10 @@ const ApplicationRow = memo(
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
+							<DropdownMenuItem onSelect={() => onDetails(app)}>
+								<HugeiconsIcon icon={InformationCircleIcon} className="mr-2 h-4 w-4" />
+								Details
+							</DropdownMenuItem>
 							<DropdownMenuItem onSelect={() => onEdit(app)}>
 								<HugeiconsIcon icon={PencilEdit01Icon} className="mr-2 h-4 w-4" />
 								Edit
@@ -239,6 +253,7 @@ const ApplicationRow = memo(
 		prev.onStatusChange === next.onStatusChange &&
 		prev.onStageToggle === next.onStageToggle &&
 		prev.onEdit === next.onEdit &&
+		prev.onDetails === next.onDetails &&
 		prev.onDelete === next.onDelete,
 );
 
@@ -259,6 +274,7 @@ export function ApplicationsTable({
 	const [, startTransition] = useTransition();
 	const [deleteTarget, setDeleteTarget] = useState<Application | null>(null);
 	const [editTarget, setEditTarget] = useState<Application | null>(null);
+	const [detailsTarget, setDetailsTarget] = useState<Application | null>(null);
 
 	const [optimisticApplications, setOptimisticApplications] = useOptimistic(
 		applications,
@@ -320,6 +336,7 @@ export function ApplicationsTable({
 	);
 
 	const handleEdit = useCallback((app: Application) => setEditTarget(app), []);
+	const handleDetails = useCallback((app: Application) => setDetailsTarget(app), []);
 	const handleDeleteRequest = useCallback((app: Application) => setDeleteTarget(app), []);
 
 	function handleDelete(id: string) {
@@ -405,6 +422,7 @@ export function ApplicationsTable({
 									onStatusChange={handleStatusChange}
 									onStageToggle={handleStageToggle}
 									onEdit={handleEdit}
+									onDetails={handleDetails}
 									onDelete={handleDeleteRequest}
 								/>
 							))
@@ -467,6 +485,16 @@ export function ApplicationsTable({
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+
+			{detailsTarget && (
+				<ApplicationDetailsDialog
+					application={detailsTarget}
+					open={!!detailsTarget}
+					onOpenChange={(v) => {
+						if (!v) setDetailsTarget(null);
+					}}
+				/>
+			)}
 
 			{editTarget && (
 				<EditApplicationModal
