@@ -16,4 +16,6 @@ export {
 	isNull,
 	isNotNull,
 	ne,
+	sum,
+	max,
 } from "drizzle-orm";
