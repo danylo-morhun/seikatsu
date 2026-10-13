@@ -5,6 +5,7 @@
 import { auth } from "@/auth";
 import { accounts, db, eq, workspaces } from "@seikatsu/db";
 import { cache } from "react";
+import { z } from "zod";
 
 export type Workspace = typeof workspaces.$inferSelect;
 
@@ -25,6 +26,18 @@ export const getCurrentWorkspace = cache(async (): Promise<Workspace | null> => 
 		.limit(1);
 	return existing ?? createWorkspace(userId);
 });
+
+/** The signed-in user's workspace; throws when signed out (actions are never public). */
+export async function requireWorkspace(): Promise<Workspace> {
+	const workspace = await getCurrentWorkspace();
+	if (!workspace) throw new Error("Unauthorized");
+	return workspace;
+}
+
+const uuid = z.string().uuid();
+
+/** Route params come from the URL: anything that isn't a uuid can't name a row. */
+export const isUuid = (value: string) => uuid.safeParse(value).success;
 
 /** Returns the workspace if it belongs to the current user, else null. No extra query. */
 export async function getOwnedWorkspace(workspaceId: string): Promise<Workspace | null> {
