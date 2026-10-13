@@ -30,6 +30,34 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 			],
 		},
 	],
+	"/tsundoku": [
+		{
+			title: "Tsundoku",
+			items: [
+				{ keys: ["N"], label: "Add book" },
+				{ keys: ["/"], label: "Search the library" },
+				{ keys: ["F"], label: "Filter the library" },
+				{ keys: ["B"], label: "Library" },
+				{ keys: ["Y"], label: "Year" },
+				{ keys: [","], label: "Settings" },
+			],
+		},
+		{
+			title: "Book in focus, under the pointer, or open",
+			items: [
+				{ keys: ["←", "↑", "↓", "→"], label: "Move focus between books" },
+				{ keys: ["Enter"], label: "Open" },
+				{ keys: ["L"], label: "Update progress" },
+				{ keys: ["1", "2", "3", "4", "5"], label: "Rate in stars" },
+				{ keys: ["0"], label: "Clear the rating" },
+				{ keys: ["P", "R", "D"], label: "Pile, Reading, Done" },
+				{ keys: ["E"], label: "Edit details (book page)" },
+				{ keys: ["Q"], label: "Add a quote (book page)" },
+				{ keys: ["."], label: "Open its menu" },
+				{ keys: ["⌫"], label: "Delete" },
+			],
+		},
+	],
 	"/seiryu": [
 		{
 			title: "Board",
