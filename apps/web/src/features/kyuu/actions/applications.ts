@@ -29,6 +29,7 @@ const tableColumns = {
 	resumeFileUrl: kyuuApplications.resumeFileUrl,
 	resumeFileName: kyuuApplications.resumeFileName,
 	status: kyuuApplications.status,
+	applyMethod: kyuuApplications.applyMethod,
 	hrScreening: kyuuApplications.hrScreening,
 	technicalInterview: kyuuApplications.technicalInterview,
 	offer: kyuuApplications.offer,

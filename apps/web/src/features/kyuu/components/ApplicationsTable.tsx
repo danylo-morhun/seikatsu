@@ -161,6 +161,14 @@ const ApplicationRow = memo(
 				</TableCell>
 				<TableCell className="hidden text-muted-foreground whitespace-nowrap sm:table-cell">
 					{app.source ?? "—"}
+					{app.applyMethod === "auto" && (
+						<span
+							title="Submitted automatically by the job-search pipeline"
+							className="ml-1.5 rounded border border-border px-1 py-px text-[10px] font-medium uppercase tracking-wide"
+						>
+							auto
+						</span>
+					)}
 				</TableCell>
 				<TableCell className="hidden max-w-[140px] text-muted-foreground whitespace-nowrap md:table-cell">
 					{app.resumeFileUrl ? (

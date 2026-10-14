@@ -11,7 +11,7 @@ import { KyuuDateRangeFilter } from "./KyuuDateRangeFilter";
 import { StageFilter, type StageKey } from "./StageFilter";
 import { STATUS_CONFIG } from "./StatusBadge";
 
-const FILTER_KEYS = ["status", "source", "stage", "from", "to", "q"] as const;
+const FILTER_KEYS = ["status", "source", "method", "stage", "from", "to", "q"] as const;
 
 interface Props {
 	sources: string[];
@@ -57,6 +57,7 @@ export function KyuuFilterBar({ sources }: Props) {
 
 	const status = searchParams.get("status") ?? "all";
 	const source = searchParams.get("source") ?? "all";
+	const method = searchParams.get("method") ?? "all";
 	const stages = (searchParams.get("stage")?.split(",").filter(Boolean) ?? []) as StageKey[];
 	const hasFilters = FILTER_KEYS.some((k) => searchParams.get(k));
 
@@ -117,6 +118,17 @@ export function KyuuFilterBar({ sources }: Props) {
 						</SelectContent>
 					</Select>
 				)}
+
+				<Select value={method} onValueChange={(v) => setParam("method", v === "all" ? null : v)}>
+					<SelectTrigger className="h-8 w-32">
+						<SelectValue placeholder="Any method" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">Any method</SelectItem>
+						<SelectItem value="auto">Auto-applied</SelectItem>
+						<SelectItem value="manual">Manual</SelectItem>
+					</SelectContent>
+				</Select>
 
 				<StageFilter
 					value={stages}
