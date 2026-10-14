@@ -163,6 +163,11 @@
 	}
 }
 
+/* Each app's kanji (mirrors APPS_CONFIG) seals its dialog titles; 生 outside the apps. */
+:root {
+	--app-kanji: "生";
+}
+
 /* ── App pigments ────────────────────────────────────────────────────────────
    Traditional lacquer pigments, one per app. Only --primary/--ring/charts change:
    the black shell stays shared so the super-app reads as one set of boxes.
@@ -170,6 +175,7 @@
 
 /* Kuroji — kin (maki-e gold) */
 .theme-kuroji {
+	--app-kanji: "黒";
 	--primary: oklch(0.6 0.12 80);
 	--primary-foreground: oklch(0.98 0.01 80);
 	--ring: oklch(0.6 0.12 80);
@@ -182,6 +188,7 @@
 
 /* Seiryu — ruri (lapis) */
 .theme-seiryu {
+	--app-kanji: "清";
 	--primary: oklch(0.45 0.14 258);
 	--primary-foreground: oklch(0.98 0.01 258);
 	--ring: oklch(0.45 0.14 258);
@@ -194,6 +201,7 @@
 
 /* Tsundoku — seiji (celadon) */
 .theme-tsundoku {
+	--app-kanji: "積";
 	--primary: oklch(0.48 0.07 175);
 	--primary-foreground: oklch(0.98 0.01 175);
 	--ring: oklch(0.48 0.07 175);
@@ -206,6 +214,7 @@
 
 /* Keizoku — midori (pine) */
 .theme-keizoku {
+	--app-kanji: "継";
 	--primary: oklch(0.5 0.11 150);
 	--primary-foreground: oklch(0.98 0.01 150);
 	--ring: oklch(0.5 0.11 150);
@@ -218,6 +227,7 @@
 
 /* Kyuu — shu (vermilion) */
 .theme-kyuu {
+	--app-kanji: "求";
 	--primary: oklch(0.52 0.17 35);
 	--primary-foreground: oklch(0.98 0.01 35);
 	--ring: oklch(0.52 0.17 35);
@@ -230,6 +240,7 @@
 
 /* Aisha — murasaki (purple) */
 .theme-aisha {
+	--app-kanji: "愛";
 	--primary: oklch(0.48 0.13 320);
 	--primary-foreground: oklch(0.98 0.01 320);
 	--ring: oklch(0.48 0.13 320);
@@ -250,57 +261,7 @@
 	box-shadow: 0 24px 48px -16px oklch(0 0 0 / 55%);
 }
 
-/* Inside, a lamp hangs above: a wide, faint ellipse of the app's pigment just under the top
-   edge, like light falling into a lacquer box. It lies under the content (isolation keeps it
-   in the surface). */
-:is(
-		[role="dialog"],
-		[role="alertdialog"],
-		[data-radix-popper-content-wrapper] > :not([data-slot="tooltip-content"])
-	) {
-	isolation: isolate;
-	--orb: color-mix(in oklch, var(--primary) 30%, transparent);
-	--orb-height: 9rem;
-	--orb-blur: 56px;
-}
-[role="alertdialog"] {
-	overflow: clip;
-}
-[data-radix-popper-content-wrapper] > :not([data-slot="tooltip-content"]) {
-	position: relative;
-	overflow: clip;
-	--orb-height: 6rem;
-	--orb-blur: 36px;
-}
-:is(
-		[role="dialog"],
-		[role="alertdialog"],
-		[data-radix-popper-content-wrapper] > :not([data-slot="tooltip-content"])
-	)::before {
-	content: "";
-	position: absolute;
-	z-index: -1;
-	top: calc(var(--orb-height) * -0.67);
-	left: 5%;
-	width: 90%;
-	height: var(--orb-height);
-	border-radius: 9999px;
-	background: var(--orb);
-	filter: blur(var(--orb-blur));
-	opacity: 0.8;
-	pointer-events: none;
-}
-/* On paper the orb would read as a stain: fainter there. */
-:root:not(.dark)
-	:is(
-		[role="dialog"],
-		[role="alertdialog"],
-		[data-radix-popper-content-wrapper] > :not([data-slot="tooltip-content"])
-	) {
-	--orb: color-mix(in oklch, var(--primary) 16%, transparent);
-}
-
-/* Toasts: a small lacquer slip, lit from inside like a dialog (above). Status is told by the
+/* Toasts: a small lacquer slip, flat like a dialog (above). Status is told by the
    icon alone (see AppToaster); the surface never takes a status colour. Selectors out-rank
    sonner's own stylesheet. */
 [data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
