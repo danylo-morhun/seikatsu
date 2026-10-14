@@ -15,6 +15,10 @@ export const kyuuStatusEnum = pgEnum("kyuu_status", [
 	"withdrawn",
 ]);
 
+// How the application went out: "auto" = submitted by the job-search pipeline's
+// headless applier, "manual" = sent by hand (or the default for anything added in the UI).
+export const kyuuApplyMethodEnum = pgEnum("kyuu_apply_method", ["manual", "auto"]);
+
 export const kyuuApplications = pgTable(
 	"kyuu_applications",
 	{
@@ -29,6 +33,7 @@ export const kyuuApplications = pgTable(
 		resumeFileUrl: text("resume_file_url"),
 		resumeFileName: text("resume_file_name"),
 		status: kyuuStatusEnum("status").notNull().default("applied"),
+		applyMethod: kyuuApplyMethodEnum("apply_method").notNull().default("manual"),
 		hrScreening: boolean("hr_screening").notNull().default(false),
 		technicalInterview: boolean("technical_interview").notNull().default(false),
 		offer: boolean("offer").notNull().default(false),
