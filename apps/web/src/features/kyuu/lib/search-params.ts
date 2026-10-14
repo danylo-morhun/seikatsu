@@ -1,8 +1,14 @@
-import { type KyuuFilterStatus, kyuuFilterStatusValues } from "./kyuu-schemas";
+import {
+	type KyuuApplyMethod,
+	type KyuuFilterStatus,
+	kyuuApplyMethodValues,
+	kyuuFilterStatusValues,
+} from "./kyuu-schemas";
 
 export interface RawKyuuSearchParams {
 	status?: string;
 	source?: string;
+	method?: string;
 	stage?: string;
 	from?: string;
 	to?: string;
@@ -17,6 +23,9 @@ export function parseKyuuFilters(raw: RawKyuuSearchParams) {
 	const status = (kyuuFilterStatusValues as readonly string[]).includes(raw.status ?? "")
 		? (raw.status as KyuuFilterStatus)
 		: undefined;
+	const method = (kyuuApplyMethodValues as readonly string[]).includes(raw.method ?? "")
+		? (raw.method as KyuuApplyMethod)
+		: undefined;
 	const from = raw.from && ISO_DATE.test(raw.from) ? raw.from : undefined;
 	const to = raw.to && ISO_DATE.test(raw.to) ? raw.to : undefined;
 	const stages = raw.stage
@@ -26,6 +35,7 @@ export function parseKyuuFilters(raw: RawKyuuSearchParams) {
 	return {
 		status,
 		source: raw.source || undefined,
+		method,
 		stages: stages && stages.length > 0 ? stages : undefined,
 		from,
 		to,
@@ -34,7 +44,7 @@ export function parseKyuuFilters(raw: RawKyuuSearchParams) {
 }
 
 export function hasActiveKyuuFilters(f: ReturnType<typeof parseKyuuFilters>): boolean {
-	return Boolean(f.status || f.source || f.stages || f.from || f.to || f.q);
+	return Boolean(f.status || f.source || f.method || f.stages || f.from || f.to || f.q);
 }
 
 // One page of the table. The page is resent after every inline edit, and on phones a few
