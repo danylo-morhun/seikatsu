@@ -3,11 +3,12 @@
 
 import { and, eq, gte, ilike, isNull, kyuuApplications, lte, or, sql } from "@seikatsu/db";
 import { IGNORE_THRESHOLD_DAYS } from "../lib/constants";
-import type { KyuuFilterStatus } from "../lib/kyuu-schemas";
+import type { KyuuApplyMethod, KyuuFilterStatus } from "../lib/kyuu-schemas";
 
 export interface KyuuFilters {
 	status?: KyuuFilterStatus;
 	source?: string;
+	method?: KyuuApplyMethod;
 	stages?: Array<"hr" | "tech" | "offer">;
 	from?: string;
 	to?: string;
@@ -33,6 +34,7 @@ export function buildKyuuConditions(workspaceId: string, f: KyuuFilters) {
 	}
 
 	if (f.source) conditions.push(eq(kyuuApplications.source, f.source));
+	if (f.method) conditions.push(eq(kyuuApplications.applyMethod, f.method));
 	if (f.stages && f.stages.length > 0) {
 		const stageConds = f.stages.map((s) =>
 			s === "hr"

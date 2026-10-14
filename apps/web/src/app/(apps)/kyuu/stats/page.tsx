@@ -12,6 +12,7 @@ export default async function KyuuStatsPage({
 	searchParams: Promise<{
 		status?: string;
 		source?: string;
+		method?: string;
 		stage?: string;
 		from?: string;
 		to?: string;

@@ -19,6 +19,7 @@ export default async function KyuuPage({
 	searchParams: Promise<{
 		status?: string;
 		source?: string;
+		method?: string;
 		stage?: string;
 		from?: string;
 		to?: string;
