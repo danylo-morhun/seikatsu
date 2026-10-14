@@ -69,7 +69,11 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
 	<DialogPrimitive.Title
 		ref={ref}
-		className={cn("text-lg leading-none font-semibold tracking-tight", className)}
+		className={cn(
+			// The app's kanji (--app-kanji, set per theme) in its pigment seals the dialog — the only colour on the surface.
+			"text-lg leading-none font-semibold tracking-tight before:mr-2 before:font-bold before:text-primary before:content-(--app-kanji)",
+			className,
+		)}
 		{...props}
 	/>
 ));
