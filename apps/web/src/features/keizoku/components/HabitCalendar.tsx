@@ -1,16 +1,20 @@
 "use client";
 
 import { formatDay } from "@/features/keizoku/components/DayNoteDialog";
+import { WeekGrid } from "@/features/keizoku/components/WeekGrid";
 import { CALENDAR_WEEKS } from "@/features/keizoku/lib/constants";
-import { type HabitSchedule, addDays, isScheduled, weekday } from "@/features/keizoku/lib/streak";
+import { type HabitSchedule, addDays, isScheduled } from "@/features/keizoku/lib/streak";
 import { cn } from "@seikatsu/ui";
 import { memo } from "react";
 
 /**
- * A year of one habit, a column per week (Monday on top), today at the right edge. Every past
+ * One habit from its first week (up to a year), a column per week, today at the end. Every past
  * day is a button: tap a missed day to check it in, a done one to clear it. Days are calendar
  * strings from the server, so a day is the day it happened, whatever the browser's zone.
  */
+/** Big enough to tap on a phone; the calendar scrolls to keep the newest weeks in view. */
+const CELL = "size-[1.375rem] md:size-3.5";
+
 export const HabitCalendar = memo(function HabitCalendar({
 	habit,
 	done,
@@ -27,49 +31,47 @@ export const HabitCalendar = memo(function HabitCalendar({
 	end: string;
 	onToggle?: (date: string) => void;
 }) {
-	const monday = addDays(today, -((weekday(today) + 6) % 7));
-	const first = addDays(monday, -(CALENDAR_WEEKS - 1) * 7);
-	const cells: string[] = [];
-	for (let d = first; cells.length < CALENDAR_WEEKS * 7; d = addDays(d, 1)) cells.push(d);
+	// From the habit's first week (a year at most, twelve weeks at least): no empty past.
+	const earliest = [...done].reduce((min, d) => (d < min ? d : min), start);
+	const yearAgo = addDays(today, -(CALENDAR_WEEKS - 1) * 7);
+	const twelve = addDays(today, -11 * 7);
+	const from = earliest < yearAgo ? yearAgo : earliest > twelve ? twelve : earliest;
 
 	return (
-		// Right-to-left scrolling keeps the newest weeks in view on a phone; the grid reads ltr.
-		<div className="-mx-4 overflow-x-auto px-4 pb-1 [direction:rtl] [scrollbar-width:thin] sm:mx-0 sm:px-0 sm:[direction:ltr]">
-			<div
-				role="group"
-				aria-label={`${done.size} ${done.size === 1 ? "day" : "days"} done in the last year`}
-				className="inline-grid grid-flow-col grid-rows-7 gap-[3px] [direction:ltr]"
-			>
-				{cells.map((date) => {
-					if (date > today) return <span key={date} aria-hidden className="size-3" />;
-					const isDone = done.has(date);
-					const counted = date >= start && date <= end;
-					const due = counted && isScheduled(habit, date);
-					const label = `${formatDay(date)} · ${isDone ? "done" : due ? "missed" : "not due"}`;
-					const className = cn(
-						"size-3 rounded-[3px] transition-colors duration-150",
-						isDone
-							? "bg-primary/85 hover:bg-primary"
-							: due || (counted && habit.frequencyType === "times_per_week")
-								? "bg-surface-2 hover:bg-primary/30"
-								: "bg-surface/60 hover:bg-primary/20",
-						date === today && "ring-1 ring-foreground/50",
-					);
-					return onToggle ? (
-						<button
-							key={date}
-							type="button"
-							aria-pressed={isDone}
-							aria-label={label}
-							title={label}
-							onClick={() => onToggle(date)}
-							className={cn(className, "outline-none focus-visible:ring-2 focus-visible:ring-ring")}
-						/>
-					) : (
-						<span key={date} title={label} className={className} />
-					);
-				})}
-			</div>
-		</div>
+		<WeekGrid
+			from={from}
+			to={today}
+			cellClassName={CELL}
+			label={`${done.size} ${done.size === 1 ? "day" : "days"} done`}
+			cell={(date) => {
+				const isDone = done.has(date);
+				const counted = date >= start && date <= end;
+				const due =
+					counted && (isScheduled(habit, date) || habit.frequencyType === "times_per_week");
+				const label = `${formatDay(date)} · ${isDone ? "done" : due ? "not done" : date < start ? "before it began" : "not due"}`;
+				const className = cn(
+					CELL,
+					"rounded-[4px] transition-colors duration-150",
+					isDone
+						? "bg-primary/85 hover:bg-primary"
+						: due
+							? "bg-surface-2 hover:bg-primary/30"
+							: "bg-surface/60 hover:bg-primary/20",
+					date === today && "ring-1 ring-foreground/50",
+				);
+				return onToggle ? (
+					<button
+						type="button"
+						aria-pressed={isDone}
+						aria-label={label}
+						title={label}
+						onClick={() => onToggle(date)}
+						className={cn(className, "outline-none focus-visible:ring-2 focus-visible:ring-ring")}
+					/>
+				) : (
+					<span title={label} className={className} />
+				);
+			}}
+		/>
 	);
 });
