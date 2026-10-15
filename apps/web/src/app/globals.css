@@ -436,6 +436,19 @@
 	}
 }
 
+/* A heatmap fills in as a sweep, week by week from the oldest: opacity and a small settle,
+   delayed by the cell's column (--c). One moment on arrival, nothing after. */
+.animate-heat {
+	animation: heat-in 420ms var(--ease-out) backwards;
+	animation-delay: calc(var(--c, 0) * 9ms);
+}
+@keyframes heat-in {
+	from {
+		opacity: 0;
+		transform: scale(0.82);
+	}
+}
+
 /* Revealed rows (expand, "show more") drop into place from the row above, cascading by --i. */
 .animate-drop {
 	animation: drop 260ms var(--ease-out) backwards;
@@ -497,6 +510,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+	.animate-heat {
+		animation: none;
+	}
 	.animate-rise,
 	.animate-page,
 	.animate-drop,
