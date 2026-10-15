@@ -14,11 +14,11 @@ import { DayNoteDialog, type DayNoteTarget } from "@/features/keizoku/components
 import { FIGURES_ROW, Figure } from "@/features/keizoku/components/Figure";
 import { HabitDialog } from "@/features/keizoku/components/HabitDialog";
 import {
+	DayLetter,
 	HabitRow,
 	ROW_GRID,
 	RUN_COL,
 	STRIP,
-	dayLetter,
 } from "@/features/keizoku/components/HabitRow";
 import { formatDay } from "@/features/keizoku/lib/constants";
 import { neighbourHabit, targetHabit } from "@/features/keizoku/lib/habit-nav";
@@ -318,7 +318,7 @@ export function TodayView({
 											: "text-center text-[11px] text-muted-foreground"
 									}
 								>
-									{dayLetter(d.date)}
+									<DayLetter date={d.date} />
 								</span>
 							))}
 						</span>

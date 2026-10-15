@@ -41,7 +41,7 @@ export function CheckButton({
 					"flex size-7 items-center justify-center rounded-full transition-[background-color,box-shadow,transform] duration-150 ease-out group-active/check:scale-[0.94]",
 					done
 						? "bg-primary text-primary-foreground"
-						: "shadow-[inset_0_0_0_1.5px_var(--input)] group-hover/check:shadow-[inset_0_0_0_1.5px_var(--muted-foreground)]",
+						: "shadow-[inset_0_0_0_1.5px_color-mix(in_oklch,var(--muted-foreground)_60%,transparent)] group-hover/check:bg-primary/10 group-hover/check:shadow-[inset_0_0_0_1.5px_var(--primary)]",
 				)}
 			>
 				{done && (
@@ -66,8 +66,18 @@ export function CheckButton({
 	);
 }
 
-const LETTER = new Intl.DateTimeFormat("en", { weekday: "narrow", timeZone: "UTC" });
-export const dayLetter = (date: string) => LETTER.format(new Date(`${date}T00:00:00Z`));
+const NARROW = new Intl.DateTimeFormat("en", { weekday: "narrow", timeZone: "UTC" });
+const SHORT = new Intl.DateTimeFormat("en", { weekday: "short", timeZone: "UTC" });
+/** The day over a strip column: "T" on a phone, "Tue" from md (so Tue and Thu differ). */
+export function DayLetter({ date }: { date: string }) {
+	const d = new Date(`${date}T00:00:00Z`);
+	return (
+		<>
+			<span className="md:hidden">{NARROW.format(d)}</span>
+			<span className="max-md:hidden">{SHORT.format(d)}</span>
+		</>
+	);
+}
 
 /**
  * A row: the check, the name, the run, the week. On phones the week runs under the name and
@@ -100,14 +110,16 @@ function WeekStrip({
 			{days.map((d) => {
 				const before = d.date < start;
 				const off = habit.frequencyType === "weekdays" && !isScheduled(habit, d.date);
-				const state = d.done ? "done" : before || off ? "quiet" : "missed";
+				// A weekly target has no fixed day, so an open day isn't a miss.
+				const free = habit.frequencyType === "times_per_week";
+				const state = d.done ? "done" : before || off || free ? "quiet" : "missed";
 				return (
 					<button
 						key={d.date}
 						type="button"
 						aria-pressed={d.done}
-						aria-label={`${formatDay(d.date)}: ${d.done ? "done" : off ? "not due" : before ? "before it began" : "not done"}`}
-						title={`${formatDay(d.date)} · ${d.done ? "done" : off ? "not due" : before ? "before it began" : "not done"}`}
+						aria-label={`${formatDay(d.date)}: ${dayWord(d.done, off, before)}`}
+						title={`${formatDay(d.date)} · ${dayWord(d.done, off, before)}`}
 						onClick={() => onToggle(d.date)}
 						className="group/day flex min-h-9 items-center md:min-h-10 justify-center rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					>
@@ -119,7 +131,12 @@ function WeekStrip({
 								state === "missed" && "bg-surface-2 group-hover/day:bg-primary/25",
 								state === "quiet" &&
 									"shadow-[inset_0_0_0_1px_var(--rule)] group-hover/day:bg-primary/15",
-								d.date === today && !d.done && "shadow-[inset_0_0_0_1.5px_var(--muted-foreground)]",
+								// Today is outlined while it's still open — not on a day off or before the start.
+								d.date === today &&
+									!d.done &&
+									!off &&
+									!before &&
+									"shadow-[inset_0_0_0_1.5px_var(--muted-foreground)]",
 							)}
 						/>
 					</button>
@@ -128,6 +145,9 @@ function WeekStrip({
 		</div>
 	);
 }
+
+const dayWord = (done: boolean, off: boolean, before: boolean) =>
+	done ? "done" : off ? "not due" : before ? "before it began" : "not done";
 
 /** The run column: the figure that matters, its unit beside it, the best under it. */
 function RunFigure({ item }: { item: TodayHabit }) {
@@ -144,22 +164,27 @@ function RunFigure({ item }: { item: TodayHabit }) {
 			</span>
 		);
 	}
+	// No run going: only the best one, quietly — a row of zeros says nothing.
+	if (streak.current === 0) {
+		return (
+			<span className={cn(RUN_COL, "font-figures text-xs text-muted-foreground")}>
+				{streak.best > 0 ? `best ${streak.best}` : "—"}
+			</span>
+		);
+	}
 	return (
 		<span className={RUN_COL}>
-			<span
-				className={cn(
-					"block font-figures text-sm font-medium",
-					streak.current === 0 && "text-muted-foreground",
-				)}
-			>
+			<span className="block font-figures text-sm font-medium">
 				{streak.current}{" "}
 				<span className="text-xs font-normal text-muted-foreground">
 					{runUnit(habit, streak.current)}
 				</span>
 			</span>
-			<span className="block font-figures text-[11px] text-muted-foreground">
-				best {streak.best}
-			</span>
+			{streak.best > streak.current && (
+				<span className="block font-figures text-[11px] text-muted-foreground">
+					best {streak.best}
+				</span>
+			)}
 		</span>
 	);
 }
@@ -172,9 +197,7 @@ function progressLine({ habit, streak, week }: TodayHabit): string {
 			streak.current > 1 ? ` · ${streak.current} ${runUnit(habit, streak.current)} running` : "";
 		return `${Math.min(week, target)} of ${target} this week${run}`;
 	}
-	if (streak.current > 0) return `${streak.current}-${runUnit(habit, 1)} run`;
-	if (streak.best > 1) return `Best run ${streak.best} ${runUnit(habit, streak.best)}`;
-	return "";
+	return streak.current > 0 ? `${streak.current}-${runUnit(habit, 1)} run` : "";
 }
 
 /**
@@ -219,11 +242,18 @@ export const HabitRow = memo(
 				>
 					<span
 						className={cn(
-							"flex items-center gap-2 text-sm font-medium",
-							!due && "text-muted-foreground",
+							"flex items-center gap-2 text-sm font-medium transition-colors duration-200",
+							// Done for today, or not due: the row steps back so what's left stands out.
+							(!due || today.done) && "text-muted-foreground",
 						)}
 					>
-						<span aria-hidden className="shrink-0 text-base leading-none">
+						<span
+							aria-hidden
+							className={cn(
+								"shrink-0 text-base leading-none transition-opacity duration-200",
+								(!due || today.done) && "opacity-55",
+							)}
+						>
 							{habit.emoji}
 						</span>
 						<span className="truncate">{habit.name}</span>

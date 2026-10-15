@@ -24,7 +24,7 @@ test("marking a habit done flips the check at once and updates the count", async
 	await expect(summary.getByText("All done for today")).toBeVisible();
 
 	release();
-	await expect(page.getByText("1-day run")).toBeVisible();
+	await expect(page.locator("[data-habit-row]", { hasText: "E2E stretch" })).toContainText("1 day");
 
 	await page.reload();
 	await expect(page.getByRole("button", { name: "E2E stretch: done today" })).toBeVisible();
