@@ -92,9 +92,9 @@ export function HomeGrid({ user }: Props) {
 					<h2 className="mb-4 text-sm font-medium text-muted-foreground">Apps</h2>
 					<div className="grid gap-4 sm:grid-cols-2">
 						{Object.entries(APPS_CONFIG).map(([href, app]) => (
-							<Link
+							// The whole card opens the app (a stretched link); the Keizoku check-in sits above it.
+							<div
 								key={href}
-								href={href}
 								className={cn(
 									app.theme,
 									"group relative block overflow-hidden rounded-2xl border border-border/50 bg-card p-6",
@@ -117,19 +117,26 @@ export function HomeGrid({ user }: Props) {
 									<HugeiconsIcon icon={ArrowRight01Icon} className="h-3.5 w-3.5" />
 								</div>
 
-								{/* Content */}
-								<div className="relative">
+								{/* Content: not positioned, so the title's link stretches over the whole card. */}
+								<div>
 									<div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-lg font-bold text-primary ring-1 ring-primary/20">
 										{app.kanji}
 									</div>
 
-									<h3 className="text-base font-semibold">{app.name}</h3>
+									<h3 className="text-base font-semibold">
+										<Link
+											href={href}
+											className="outline-none after:absolute after:inset-0 after:z-[1] after:rounded-2xl focus-visible:after:ring-2 focus-visible:after:ring-ring"
+										>
+											{app.name}
+										</Link>
+									</h3>
 									<p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
 										{app.description}
 									</p>
-									{href === "/keizoku" && <KeizokuHomeWidget userId={user.id} />}
+									{href === "/keizoku" && <KeizokuHomeWidget />}
 								</div>
-							</Link>
+							</div>
 						))}
 					</div>
 				</section>

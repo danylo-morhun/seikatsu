@@ -1,29 +1,15 @@
-import { getArchivedHabits } from "@/features/keizoku/actions/habits";
 import { getTodayHabits } from "@/features/keizoku/actions/logs";
-import { getActivityHeatmap } from "@/features/keizoku/actions/stats";
-import { KeizokuActivityHeatmap } from "@/features/keizoku/components/KeizokuActivityHeatmap";
-import { TodayList } from "@/features/keizoku/components/TodayList";
-import { getCurrentWorkspace } from "@/lib/session";
+import { KeizokuWelcome } from "@/features/keizoku/components/KeizokuWelcome";
+import { TodayView } from "@/features/keizoku/components/TodayView";
 import { getUserToday } from "@/lib/timezone";
-import { redirect } from "next/navigation";
 
 export default async function KeizokuPage() {
-	const [workspace, date] = await Promise.all([getCurrentWorkspace(), getUserToday()]);
-	if (!workspace) redirect("/");
-
-	const [todayHabits, archivedHabits, heatmap] = await Promise.all([
-		getTodayHabits(workspace.id, date),
-		getArchivedHabits(workspace.id),
-		getActivityHeatmap(workspace.id, undefined, date),
-	]);
+	const today = await getUserToday();
+	const habits = await getTodayHabits(today);
 
 	return (
-		<TodayList
-			workspaceId={workspace.id}
-			date={date}
-			todayHabits={todayHabits}
-			archivedHabits={archivedHabits}
-			heatmap={<KeizokuActivityHeatmap days={heatmap} today={date} />}
-		/>
+		<div className="px-4 pt-6 pb-28 sm:px-8 md:py-8">
+			{habits.length === 0 ? <KeizokuWelcome /> : <TodayView habits={habits} today={today} />}
+		</div>
 	);
 }

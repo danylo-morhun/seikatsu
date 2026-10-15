@@ -1,23 +1,19 @@
-import { getTodayProgress } from "@/features/keizoku/actions/stats";
-import { getWorkspace, initializeWorkspace } from "@/features/kuroji/actions/workspace";
+import { getDueToday } from "@/features/keizoku/actions/logs";
+import { HomeHabits } from "@/features/keizoku/components/HomeHabits";
 
-export async function KeizokuHomeWidget({ userId }: { userId: string }) {
-	const workspace = (await getWorkspace(userId)) ?? (await initializeWorkspace(userId));
-	const today = new Date().toISOString().slice(0, 10);
-	const progress = await getTodayProgress(workspace.id, today);
-
-	if (progress.total === 0) return null;
-
-	const pct = Math.round((progress.done / progress.total) * 100);
-
+/** The home card's check-in: today's due habits, each a tap away. Nothing due, nothing shown. */
+export async function KeizokuHomeWidget() {
+	const due = await getDueToday();
+	if (due.length === 0) return null;
 	return (
-		<div className="relative mt-4 flex items-center gap-2">
-			<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-emerald-400/15">
-				<div className="h-full rounded-full bg-emerald-400" style={{ width: `${pct}%` }} />
-			</div>
-			<span className="shrink-0 text-xs font-medium text-emerald-400">
-				{progress.done}/{progress.total} today
-			</span>
-		</div>
+		<HomeHabits
+			today={due[0].today}
+			habits={due.map(({ habit, done }) => ({
+				id: habit.id,
+				name: habit.name,
+				emoji: habit.emoji,
+				done,
+			}))}
+		/>
 	);
 }
