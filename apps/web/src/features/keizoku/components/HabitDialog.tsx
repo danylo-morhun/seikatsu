@@ -201,6 +201,7 @@ export function HabitDialog({
 	const id = useId();
 	const [form, setForm] = useState(() => formOf(habit));
 	const [error, setError] = useState<string | null>(null);
+	const [nameError, setNameError] = useState(false);
 	const [isSaving, startSave] = useTransition();
 	const set = <K extends keyof Form>(key: K, value: Form[K]) =>
 		setForm((f) => ({ ...f, [key]: value }));
@@ -209,13 +210,18 @@ export function HabitDialog({
 		if (open) {
 			setForm(formOf(habit));
 			setError(null);
+			setNameError(false);
 		}
 	}, [open, habit]);
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		const values = valuesOf(form);
-		if (!values.name) return setError("Name the habit");
+		if (!values.name) {
+			setNameError(true);
+			document.getElementById(`${id}-name`)?.focus();
+			return;
+		}
 		if (values.frequencyType === "weekdays" && !values.frequencyDays?.length)
 			return setError("Pick at least one day");
 		const payload = habit ? changesOf(habit, form) : values;
@@ -262,11 +268,19 @@ export function HabitDialog({
 							maxLength={100}
 							autoComplete="off"
 							placeholder="Drink 2 l of water"
+							aria-invalid={nameError || undefined}
+							aria-describedby={nameError ? `${id}-name-error` : undefined}
 							onChange={(e) => {
 								set("name", e.target.value);
 								setError(null);
+								setNameError(false);
 							}}
 						/>
+						{nameError && (
+							<p id={`${id}-name-error`} role="alert" className="text-[0.8rem] text-destructive">
+								Name the habit
+							</p>
+						)}
 					</div>
 
 					<div className="space-y-2">
