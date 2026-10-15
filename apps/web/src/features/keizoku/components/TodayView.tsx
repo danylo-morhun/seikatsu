@@ -117,7 +117,6 @@ export function TodayView({ habits: saved, today }: { habits: TodayHabit[]; toda
 		const item = find(habitId);
 		if (!item) return;
 		const day = item.days[item.days.length - 1];
-		if (!day.done) run({ habitId, date: day.date, done: true }, () => checkDay(habitId, day.date));
 		setNoteTarget({
 			instant,
 			target: {
@@ -289,7 +288,7 @@ export function TodayView({ habits: saved, today }: { habits: TodayHabit[]; toda
 					)
 				}
 			>
-				<div className="mt-10 animate-rise" style={{ "--i": 3 } as React.CSSProperties}>
+				<div className="mt-10 max-w-4xl animate-rise" style={{ "--i": 3 } as React.CSSProperties}>
 					<div
 						aria-hidden
 						className={`${ROW_GRID} items-end gap-y-1 border-b border-rule pb-2 md:-mx-2 md:px-2`}
@@ -359,11 +358,20 @@ export function TodayView({ habits: saved, today }: { habits: TodayHabit[]; toda
 				instant={noteTarget?.instant}
 				onOpenChange={(open) => !open && setNoteTarget(null)}
 				onSave={async (data) => {
+					// A note belongs to a done day: saving one checks the day in, cancelling leaves it be.
+					const target = noteTarget?.target;
+					const item = target && find(target.habitId);
+					const day = item?.days.find((d) => d.date === target?.date);
+					if (target && day && !day.done) {
+						const checked = await checkDay(target.habitId, target.date).catch(() => FAILED);
+						if ("error" in checked) return checked.error;
+					}
 					const result = await saveDayNote(data).catch(() => FAILED);
 					return "error" in result ? result.error : undefined;
 				}}
 			/>
 			<ConfirmDelete
+				confirmLabel="Clear day"
 				open={clearing != null}
 				onOpenChange={(open) => !open && setClearing(null)}
 				title={`Clear ${clearing ? formatDay(clearing.date) : "the day"}?`}

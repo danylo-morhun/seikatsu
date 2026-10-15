@@ -20,6 +20,7 @@ import { HabitCalendar } from "@/features/keizoku/components/HabitCalendar";
 import { HabitDialog } from "@/features/keizoku/components/HabitDialog";
 import { CheckButton } from "@/features/keizoku/components/HabitRow";
 import { Photo } from "@/features/keizoku/components/Photo";
+import { weekStart } from "@/features/keizoku/components/WeekGrid";
 import { TIME_OF_DAY_LABELS, scheduleLabel } from "@/features/keizoku/lib/constants";
 import { runUnit } from "@/features/keizoku/lib/streak";
 import { pageKey } from "@/lib/capture-shortcut";
@@ -120,7 +121,6 @@ export function HabitPage({ habit, summary, days: saved, journal, today }: Props
 
 	function openNote(date: string, instant = false) {
 		const day = byDate.get(date);
-		if (!day) run({ date, done: true }, () => checkDay(habit.id, date));
 		setNoteTarget({
 			instant,
 			target: {
@@ -140,7 +140,15 @@ export function HabitPage({ habit, summary, days: saved, journal, today }: Props
 				() => FAILED,
 			);
 			if ("error" in result) toast.error(result.error);
-			else toast(archived ? `“${habit.name}” is back on Today` : `“${habit.name}” archived`);
+			else if (archived) toast(`“${habit.name}” is back on Today`);
+			else
+				toast(`“${habit.name}” archived`, {
+					action: {
+						label: "Undo",
+						onClick: () =>
+							void unarchiveHabit(habit.id).then((r) => "error" in r && toast.error(r.error)),
+					},
+				});
 		});
 	}
 
@@ -165,6 +173,17 @@ export function HabitPage({ habit, summary, days: saved, journal, today }: Props
 	}, []);
 
 	const { streak } = summary;
+	const weekly = habit.frequencyType === "times_per_week";
+	const target = habit.frequencyTarget ?? 1;
+	const thisWeekCount = [...done].filter((d) => d >= weekStart(today) && d <= today).length;
+	// What to do next, never contradicting the check beside it.
+	const runNote = archived
+		? undefined
+		: weekly
+			? `${Math.min(thisWeekCount, target)} of ${target} this week`
+			: streak.current === 0 && !doneToday
+				? "Check it in today to start one"
+				: undefined;
 	const unit = (n: number) => runUnit(habit, n);
 
 	return (
@@ -258,7 +277,7 @@ export function HabitPage({ habit, summary, days: saved, journal, today }: Props
 						label={archived ? "Last run" : "Current run"}
 						value={streak.current}
 						suffix={unit(streak.current)}
-						note={streak.current === 0 && !archived ? "Check it in today to start one" : undefined}
+						note={runNote}
 					/>
 				</div>
 				<Figure index={2} label="Best run" value={streak.best} suffix={unit(streak.best)} />
@@ -276,7 +295,7 @@ export function HabitPage({ habit, summary, days: saved, journal, today }: Props
 			<section aria-labelledby="habit-year" className="mt-10 animate-rise" style={rise(5)}>
 				<div className="mb-3 flex items-baseline justify-between gap-3">
 					<h2 id="habit-year" className="text-sm font-medium">
-						The last year
+						Days
 					</h2>
 					<span className="text-xs text-muted-foreground">
 						{archived ? "" : "Tap a day to fill it in"}
@@ -343,11 +362,18 @@ export function HabitPage({ habit, summary, days: saved, journal, today }: Props
 				instant={noteTarget?.instant}
 				onOpenChange={(open) => !open && setNoteTarget(null)}
 				onSave={async (data) => {
+					// A note belongs to a done day: saving one checks the day in, cancelling leaves it be.
+					const date = noteTarget?.target.date;
+					if (date && !byDate.has(date)) {
+						const checked = await checkDay(habit.id, date).catch(() => FAILED);
+						if ("error" in checked) return checked.error;
+					}
 					const result = await saveDayNote(data).catch(() => FAILED);
 					return "error" in result ? result.error : undefined;
 				}}
 			/>
 			<ConfirmDelete
+				confirmLabel="Clear day"
 				open={clearing != null}
 				onOpenChange={(open) => !open && setClearing(null)}
 				title={`Clear ${clearing ? formatDay(clearing) : "the day"}?`}
