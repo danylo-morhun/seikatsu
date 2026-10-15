@@ -25,14 +25,18 @@ export async function getUserTimeZone(): Promise<string> {
 	return isValidZone(fromGeo) ? fromGeo : "UTC";
 }
 
-/** YYYY-MM-DD in the user's time zone. */
-export async function getUserToday(): Promise<string> {
-	const timeZone = await getUserTimeZone();
+/** The calendar day (YYYY-MM-DD) an instant falls on in `timeZone`. */
+export function dayIn(timeZone: string, at: Date = new Date()): string {
 	// en-CA formats as YYYY-MM-DD.
 	return new Intl.DateTimeFormat("en-CA", {
 		timeZone,
 		year: "numeric",
 		month: "2-digit",
 		day: "2-digit",
-	}).format(new Date());
+	}).format(at);
+}
+
+/** YYYY-MM-DD in the user's time zone. */
+export async function getUserToday(): Promise<string> {
+	return dayIn(await getUserTimeZone());
 }
