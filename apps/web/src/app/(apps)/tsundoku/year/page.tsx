@@ -1,3 +1,4 @@
+import { YearSwitch } from "@/components/YearSwitch";
 import { getGoal } from "@/features/tsundoku/actions/goals";
 import { getYearQuotes } from "@/features/tsundoku/actions/quotes";
 import { getYearStats } from "@/features/tsundoku/actions/stats";
@@ -11,7 +12,6 @@ import {
 	YearCovers,
 	YearFigures,
 } from "@/features/tsundoku/components/YearSections";
-import { YearSwitch } from "@/features/tsundoku/components/YearSwitch";
 import { getUserToday } from "@/lib/timezone";
 import type { CSSProperties } from "react";
 
@@ -44,7 +44,9 @@ export default async function TsundokuYearPage({
 		<div className="space-y-10 px-4 pt-6 pb-28 sm:px-8 md:py-8">
 			<h1 className="sr-only">Tsundoku — {year} in books</h1>
 			<div className="space-y-6">
-				{stats.years.length > 1 && <YearSwitch years={stats.years} year={year} />}
+				{stats.years.length > 1 && (
+					<YearSwitch years={stats.years} year={year} base="/tsundoku/year" />
+				)}
 				<YearFigures stats={stats} isCurrent={isCurrent} />
 			</div>
 

@@ -1,8 +1,17 @@
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 
-/** The years with any reading, newest first; one chip slides under the year shown. */
-export function YearSwitch({ years, year }: { years: number[]; year: number }) {
+/** The years with any activity, newest first; one chip slides under the year shown. */
+export function YearSwitch({
+	years,
+	year,
+	base,
+}: {
+	years: number[];
+	year: number;
+	/** The year page's path; the newest year is the bare path. */
+	base: string;
+}) {
 	const index = Math.max(0, years.indexOf(year));
 	return (
 		<nav
@@ -17,7 +26,7 @@ export function YearSwitch({ years, year }: { years: number[]; year: number }) {
 			{years.map((y, i) => (
 				<Link
 					key={y}
-					href={i === 0 ? "/tsundoku/year" : `/tsundoku/year?year=${y}`}
+					href={i === 0 ? base : `${base}?year=${y}`}
 					prefetch
 					aria-current={y === year ? "page" : undefined}
 					className={cn(
