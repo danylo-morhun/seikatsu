@@ -58,6 +58,30 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 			],
 		},
 	],
+	"/keizoku": [
+		{
+			title: "Keizoku",
+			items: [
+				{ keys: ["N"], label: "New habit" },
+				{ keys: ["T"], label: "Today" },
+				{ keys: ["Y"], label: "Year" },
+				{ keys: [","], label: "Settings" },
+			],
+		},
+		{
+			title: "Habit in focus, under the pointer, or open",
+			items: [
+				{ keys: ["↑", "↓"], label: "Move focus between habits" },
+				{ keys: ["Enter"], label: "Open" },
+				{ keys: ["X"], label: "Done today, or not" },
+				{ keys: ["M"], label: "Today's note & photo" },
+				{ keys: ["E"], label: "Edit" },
+				{ keys: ["A"], label: "Archive (restore on an archived habit's page)" },
+				{ keys: ["."], label: "Open its menu" },
+				{ keys: ["⌫"], label: "Delete (habit page)" },
+			],
+		},
+	],
 	"/seiryu": [
 		{
 			title: "Board",

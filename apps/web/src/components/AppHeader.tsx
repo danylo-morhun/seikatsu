@@ -3,6 +3,7 @@
 import { ShortcutsButton } from "@/components/KeyboardShortcuts";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TravelUnderline } from "@/components/TravelUnderline";
+import { requestNewHabit } from "@/features/keizoku/lib/events";
 import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
 import { requestNewCard } from "@/features/seiryu/lib/events";
 import { requestNewBook } from "@/features/tsundoku/lib/events";
@@ -33,6 +34,12 @@ const TSUNDOKU_TABS = [
 	{ value: "/tsundoku/year", label: "Year" },
 ] as const;
 
+const KEIZOKU_TABS = [
+	{ value: "/keizoku", label: "Today" },
+	{ value: "/keizoku/year", label: "Year" },
+	{ value: "/keizoku/archive", label: "Archive" },
+] as const;
+
 const KUROJI_TABS: { value: KurojiTab; label: string }[] = [
 	{ value: "expense", label: "Expenses" },
 	{ value: "accounts", label: "Accounts" },
@@ -56,9 +63,13 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 	// Tsundoku's library and year carry their tabs, and capture, like Kuroji's overview.
 	const isTsundokuHome = TSUNDOKU_TABS.some((t) => t.value === pathname);
 	const isTsundoku = pathname === "/tsundoku" || pathname.startsWith("/tsundoku/");
+	// Keizoku's three pages carry their tabs; New Habit sits in the header on every Keizoku page.
+	const isKeizokuHome = KEIZOKU_TABS.some((t) => t.value === pathname);
+	const isKeizoku = pathname === "/keizoku" || pathname.startsWith("/keizoku/");
+	const isSectionHome = isTsundokuHome || isKeizokuHome;
 	// Seiryu's project list names what's open; "· Projects" beside it says nothing new.
-	const showPurpose = !isKurojiHome && !isTsundokuHome && !pathname.startsWith("/seiryu");
-	const activeTab = isTsundokuHome ? pathname : (searchParams.get("tab") as KurojiTab) || "expense";
+	const showPurpose = !isKurojiHome && !isSectionHome && !pathname.startsWith("/seiryu");
+	const activeTab = isSectionHome ? pathname : (searchParams.get("tab") as KurojiTab) || "expense";
 	// Highlight the clicked tab immediately; the URL catches up when navigation commits.
 	const [pendingTab, setPendingTab] = useState<string | null>(null);
 	const displayTab = pendingTab ?? activeTab;
@@ -83,7 +94,9 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 			}))
 		: isTsundokuHome
 			? TSUNDOKU_TABS.map(({ value, label }) => ({ value, label, href: value }))
-			: [];
+			: isKeizokuHome
+				? KEIZOKU_TABS.map(({ value, label }) => ({ value, label, href: value }))
+				: [];
 
 	return (
 		<header className="flex h-14 shrink-0 items-center gap-1 border-b border-border px-2">
@@ -171,6 +184,20 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 							>
 								<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
 								<span className="hidden lg:inline">Add Book</span>
+							</Button>
+						</span>
+					)}
+					{isKeizoku && (
+						<span className="hidden md:contents">
+							<Button
+								size="icon"
+								className="lg:w-auto lg:gap-2 lg:px-3"
+								aria-label="New habit"
+								aria-keyshortcuts="N"
+								onClick={requestNewHabit}
+							>
+								<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
+								<span className="hidden lg:inline">New Habit</span>
 							</Button>
 						</span>
 					)}
