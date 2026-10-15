@@ -24,6 +24,8 @@ interface Props {
 	onConfirm: () => Promise<unknown> | undefined;
 	/** A choice that shapes what goes, between the description and the buttons. */
 	children?: React.ReactNode;
+	/** The action's name when it isn't a plain delete ("Clear day"). */
+	confirmLabel?: string;
 }
 
 /** Kuroji's delete confirmation: alert icon in the title, destructive action, "Deleting…". */
@@ -34,6 +36,7 @@ export function ConfirmDelete({
 	description,
 	onConfirm,
 	children,
+	confirmLabel = "Delete",
 }: Props) {
 	const [isPending, startTransition] = useTransition();
 
@@ -64,7 +67,7 @@ export function ConfirmDelete({
 						onClick={handleConfirm}
 					>
 						{isPending ? <Spinner /> : <HugeiconsIcon icon={Delete01Icon} className="h-4 w-4" />}
-						{isPending ? "Deleting…" : "Delete"}
+						{isPending ? `${confirmLabel === "Delete" ? "Deleting" : "Clearing"}…` : confirmLabel}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>
