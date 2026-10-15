@@ -104,7 +104,7 @@ function WeekStrip({
 						key={d.date}
 						type="button"
 						aria-pressed={d.done}
-						aria-label={`${formatDay(d.date)}: ${d.done ? "done" : off ? "not due" : "not done"}`}
+						aria-label={`${formatDay(d.date)}: ${d.done ? "done" : off ? "not due" : before ? "before it began" : "not done"}`}
 						title={`${formatDay(d.date)} · ${d.done ? "done" : off ? "not due" : before ? "before it began" : "not done"}`}
 						onClick={() => onToggle(d.date)}
 						className="group/day flex h-9 items-center md:h-10 justify-center rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
