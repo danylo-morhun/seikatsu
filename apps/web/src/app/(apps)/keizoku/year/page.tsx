@@ -1,11 +1,8 @@
 import { YearSwitch } from "@/components/YearSwitch";
 import { getYearStats } from "@/features/keizoku/actions/stats";
-import {
-	HabitRanking,
-	MonthRows,
-	YearCalendar,
-	YearFigures,
-} from "@/features/keizoku/components/YearSections";
+import { Heatmap } from "@/features/keizoku/components/Heatmap";
+import { HabitRanking, MonthRows, YearFigures } from "@/features/keizoku/components/YearSections";
+import { activityText } from "@/features/keizoku/lib/constants";
 import { getUserToday } from "@/lib/timezone";
 import type { CSSProperties } from "react";
 
@@ -43,7 +40,15 @@ export default async function KeizokuYearPage({
 						{activeDays} {activeDays === 1 ? "day" : "days"} with check-ins
 					</span>
 				</div>
-				<YearCalendar year={year} days={stats.days} today={today} />
+				<Heatmap
+					from={`${year}-01-01`}
+					to={`${year}-12-31`}
+					anchor={year === thisYear ? today : `${year}-12-31`}
+					today={today}
+					days={stats.days.map((d) => ({ date: d.date, level: d.level, text: activityText(d) }))}
+					label={`${year}, every habit`}
+					summary={`${stats.checkIns} check-ins in ${year}`}
+				/>
 			</section>
 
 			<div

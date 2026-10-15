@@ -1,7 +1,7 @@
 "use client";
 
 import type { TodayHabit } from "@/features/keizoku/actions/logs";
-import { formatDay } from "@/features/keizoku/components/DayNoteDialog";
+import { formatDay } from "@/features/keizoku/lib/constants";
 import { scheduleLabel } from "@/features/keizoku/lib/constants";
 import { takeFresh } from "@/features/keizoku/lib/habit-nav";
 import { isScheduled, runUnit } from "@/features/keizoku/lib/streak";
@@ -70,13 +70,15 @@ const LETTER = new Intl.DateTimeFormat("en", { weekday: "narrow", timeZone: "UTC
 export const dayLetter = (date: string) => LETTER.format(new Date(`${date}T00:00:00Z`));
 
 /**
- * A row: the check, the name, the week. On phones the week runs under the name (the name
- * keeps the width); from md it's a fixed column, so every row's days line up under one header.
+ * A row: the check, the name, the run, the week. On phones the week runs under the name and
+ * the run joins the name's second line; from md they're columns, lined up under one header,
+ * and the week grows with the screen.
  */
 export const ROW_GRID =
-	"grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-3 md:grid-cols-[2.5rem_minmax(0,1fr)_auto]";
+	"grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-3 md:grid-cols-[2.5rem_minmax(0,1fr)_7.5rem_auto] md:gap-x-6 lg:grid-cols-[2.5rem_minmax(0,1fr)_9rem_auto]";
+export const RUN_COL = "max-md:hidden text-right";
 export const STRIP =
-	"grid grid-cols-7 gap-0.5 max-md:col-start-2 max-md:w-full max-md:max-w-64 md:w-[13.25rem]";
+	"grid grid-cols-7 gap-0.5 max-md:col-start-2 max-md:w-full max-md:max-w-64 md:w-[15rem] md:gap-1 lg:w-[20rem] xl:w-[24rem]";
 
 /**
  * The last seven days, today last. Each is a button: a missed day can be checked in later,
@@ -107,12 +109,12 @@ function WeekStrip({
 						aria-label={`${formatDay(d.date)}: ${d.done ? "done" : off ? "not due" : before ? "before it began" : "not done"}`}
 						title={`${formatDay(d.date)} · ${d.done ? "done" : off ? "not due" : before ? "before it began" : "not done"}`}
 						onClick={() => onToggle(d.date)}
-						className="group/day flex h-9 items-center md:h-10 justify-center rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						className="group/day flex min-h-9 items-center md:min-h-10 justify-center rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					>
 						<span
 							aria-hidden
 							className={cn(
-								"h-6 w-full max-w-7 rounded-[5px] transition-[background-color,box-shadow] duration-150 ease-out md:size-6",
+								"aspect-square w-full max-w-7 rounded-[22%] transition-[background-color,box-shadow,filter] duration-150 ease-out md:aspect-auto md:h-7 md:max-w-none md:rounded-md",
 								state === "done" && "bg-primary/80 group-hover/day:bg-primary",
 								state === "missed" && "bg-surface-2 group-hover/day:bg-primary/25",
 								state === "quiet" &&
@@ -124,6 +126,41 @@ function WeekStrip({
 				);
 			})}
 		</div>
+	);
+}
+
+/** The run column: the figure that matters, its unit beside it, the best under it. */
+function RunFigure({ item }: { item: TodayHabit }) {
+	const { habit, streak, week } = item;
+	if (habit.frequencyType === "times_per_week") {
+		const target = habit.frequencyTarget ?? 1;
+		return (
+			<span className={RUN_COL}>
+				<span className="block font-figures text-sm font-medium">
+					{Math.min(week, target)}
+					<span className="text-muted-foreground"> / {target}</span>
+				</span>
+				<span className="block text-[11px] text-muted-foreground">this week</span>
+			</span>
+		);
+	}
+	return (
+		<span className={RUN_COL}>
+			<span
+				className={cn(
+					"block font-figures text-sm font-medium",
+					streak.current === 0 && "text-muted-foreground",
+				)}
+			>
+				{streak.current}{" "}
+				<span className="text-xs font-normal text-muted-foreground">
+					{runUnit(habit, streak.current)}
+				</span>
+			</span>
+			<span className="block font-figures text-[11px] text-muted-foreground">
+				best {streak.best}
+			</span>
+		</span>
 	);
 }
 
@@ -192,9 +229,11 @@ export const HabitRow = memo(
 						<span className="truncate">{habit.name}</span>
 					</span>
 					<span className="mt-0.5 block truncate text-xs text-muted-foreground">
-						{[scheduleLabel(habit), progress].filter(Boolean).join(" · ")}
+						{scheduleLabel(habit)}
+						{progress && <span className="md:hidden"> · {progress}</span>}
 					</span>
 				</Link>
+				<RunFigure item={item} />
 				<WeekStrip item={item} name={habit.name} onToggle={(date) => onToggle(habit.id, date)} />
 			</li>
 		);

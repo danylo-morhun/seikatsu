@@ -10,19 +10,20 @@ import {
 } from "@/features/keizoku/actions/habits";
 import { type DayCell, checkDay, saveDayNote, uncheckDay } from "@/features/keizoku/actions/logs";
 import type { HabitSummary } from "@/features/keizoku/actions/stats";
-import {
-	DayNoteDialog,
-	type DayNoteTarget,
-	formatDay,
-} from "@/features/keizoku/components/DayNoteDialog";
+import { DayNoteDialog, type DayNoteTarget } from "@/features/keizoku/components/DayNoteDialog";
 import { FIGURES_ROW, Figure } from "@/features/keizoku/components/Figure";
-import { HabitCalendar } from "@/features/keizoku/components/HabitCalendar";
 import { HabitDialog } from "@/features/keizoku/components/HabitDialog";
 import { CheckButton } from "@/features/keizoku/components/HabitRow";
+import { type HeatDay, Heatmap } from "@/features/keizoku/components/Heatmap";
 import { Photo } from "@/features/keizoku/components/Photo";
-import { weekStart } from "@/features/keizoku/components/WeekGrid";
+import { formatDay } from "@/features/keizoku/lib/constants";
 import { TIME_OF_DAY_LABELS, scheduleLabel } from "@/features/keizoku/lib/constants";
-import { runUnit } from "@/features/keizoku/lib/streak";
+import {
+	addDays,
+	isScheduled,
+	runUnit,
+	mondayOf as weekStart,
+} from "@/features/keizoku/lib/streak";
 import { pageKey } from "@/lib/capture-shortcut";
 import {
 	Archive01Icon,
@@ -172,6 +173,24 @@ export function HabitPage({ habit, summary, days: saved, journal, today }: Props
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, []);
 
+	// A year of weeks for the map: done is full pigment, a missed due day the empty cell, days
+	// off-schedule or before the habit began quieter still.
+	const yearFrom = addDays(weekStart(today), -52 * 7);
+	const heat = useMemo<HeatDay[]>(() => {
+		const out: HeatDay[] = [];
+		for (let d = yearFrom; d <= today; d = addDays(d, 1)) {
+			const isDone = done.has(d);
+			const counted = d >= summary.start && d <= summary.end;
+			const due = counted && (isScheduled(habit, d) || habit.frequencyType === "times_per_week");
+			out.push({
+				date: d,
+				level: isDone ? 4 : due ? 0 : null,
+				text: `${formatDay(d)} · ${isDone ? "done" : due ? "not done" : d < summary.start ? "before it began" : "not due"}`,
+			});
+		}
+		return out;
+	}, [done, habit, summary.start, summary.end, today, yearFrom]);
+	const heatDone = heat.filter((d) => d.level === 4).length;
 	const { streak } = summary;
 	const weekly = habit.frequencyType === "times_per_week";
 	const target = habit.frequencyTarget ?? 1;
@@ -295,18 +314,20 @@ export function HabitPage({ habit, summary, days: saved, journal, today }: Props
 			<section aria-labelledby="habit-year" className="mt-10 animate-rise" style={rise(5)}>
 				<div className="mb-3 flex items-baseline justify-between gap-3">
 					<h2 id="habit-year" className="text-sm font-medium">
-						Days
+						The last year
 					</h2>
 					<span className="text-xs text-muted-foreground">
 						{archived ? "" : "Tap a day to fill it in"}
 					</span>
 				</div>
-				<HabitCalendar
-					habit={habit}
-					done={done}
+				<Heatmap
+					from={yearFrom}
+					to={today}
+					anchor={today}
 					today={today}
-					start={summary.start}
-					end={summary.end}
+					days={heat}
+					label={`${habit.name}: the last year`}
+					summary={`${heatDone} ${heatDone === 1 ? "check-in" : "check-ins"} in the last year`}
 					onToggle={archived ? undefined : onToggle}
 				/>
 			</section>

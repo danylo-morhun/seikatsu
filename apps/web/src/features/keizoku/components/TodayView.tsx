@@ -10,14 +10,17 @@ import {
 	saveDayNote,
 	uncheckDay,
 } from "@/features/keizoku/actions/logs";
-import {
-	DayNoteDialog,
-	type DayNoteTarget,
-	formatDay,
-} from "@/features/keizoku/components/DayNoteDialog";
+import { DayNoteDialog, type DayNoteTarget } from "@/features/keizoku/components/DayNoteDialog";
 import { FIGURES_ROW, Figure } from "@/features/keizoku/components/Figure";
 import { HabitDialog } from "@/features/keizoku/components/HabitDialog";
-import { HabitRow, ROW_GRID, STRIP, dayLetter } from "@/features/keizoku/components/HabitRow";
+import {
+	HabitRow,
+	ROW_GRID,
+	RUN_COL,
+	STRIP,
+	dayLetter,
+} from "@/features/keizoku/components/HabitRow";
+import { formatDay } from "@/features/keizoku/lib/constants";
 import { neighbourHabit, targetHabit } from "@/features/keizoku/lib/habit-nav";
 import { rate, runUnit, tally } from "@/features/keizoku/lib/streak";
 import { pageKey } from "@/lib/capture-shortcut";
@@ -52,7 +55,16 @@ function localToday(): string {
 }
 
 /** Today: the day at a glance, then each habit with its check and its week. */
-export function TodayView({ habits: saved, today }: { habits: TodayHabit[]; today: string }) {
+export function TodayView({
+	habits: saved,
+	today,
+	heatmap,
+}: {
+	habits: TodayHabit[];
+	today: string;
+	/** The year of every habit, rendered by the page (see its note). */
+	heatmap: React.ReactNode;
+}) {
 	const router = useRouter();
 	const [, startTransition] = useTransition();
 	const [editingId, setEditingId] = useState<{ id: string; instant: boolean } | null>(null);
@@ -288,13 +300,14 @@ export function TodayView({ habits: saved, today }: { habits: TodayHabit[]; toda
 					)
 				}
 			>
-				<div className="mt-10 max-w-4xl animate-rise" style={{ "--i": 3 } as React.CSSProperties}>
+				<div className="mt-10 animate-rise" style={{ "--i": 3 } as React.CSSProperties}>
 					<div
 						aria-hidden
 						className={`${ROW_GRID} items-end gap-y-1 border-b border-rule pb-2 md:-mx-2 md:px-2`}
 					>
 						<span />
 						<h2 className="text-sm font-medium">Habits</h2>
+						<span className={`${RUN_COL} text-[11px] text-muted-foreground`}>Run</span>
 						<span className={STRIP}>
 							{week.map((d) => (
 								<span
@@ -341,6 +354,17 @@ export function TodayView({ habits: saved, today }: { habits: TodayHabit[]; toda
 					)}
 				</div>
 			</ContextArea>
+
+			<section
+				aria-labelledby="keizoku-year"
+				className="mt-12 animate-rise"
+				style={{ "--i": 4 } as React.CSSProperties}
+			>
+				<h2 id="keizoku-year" className="mb-4 text-sm font-medium">
+					The last year
+				</h2>
+				{heatmap}
+			</section>
 
 			<HabitDialog
 				habit={editing}
