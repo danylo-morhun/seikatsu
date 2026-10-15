@@ -1,6 +1,7 @@
 import type { YearDay, YearStats } from "@/features/keizoku/actions/stats";
 import { FIGURES_ROW, Figure } from "@/features/keizoku/components/Figure";
-import { addDays, weekday } from "@/features/keizoku/lib/streak";
+import { WeekGrid } from "@/features/keizoku/components/WeekGrid";
+import { runUnit } from "@/features/keizoku/lib/streak";
 import { BAR_FILL, barClip } from "@/lib/bar";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
@@ -23,7 +24,7 @@ export function YearFigures({ stats }: { stats: YearStats }) {
 				/>
 			</div>
 			<Figure index={1} label="Full days" value={stats.fullDays} note="everything due, done" />
-			<Figure index={2} label="Done of due" value={stats.rate} suffix="%" />
+			<Figure index={2} label="Done of what was due" value={stats.rate} suffix="%" />
 			<div className="col-span-2 md:col-span-1">
 				<Figure
 					index={3}
@@ -61,42 +62,38 @@ export function YearCalendar({
 	today,
 }: { year: number; days: YearDay[]; today: string }) {
 	const byDate = new Map(days.map((d) => [d.date, d]));
-	const first = `${year}-01-01`;
 	const last = `${year}-12-31`;
-	const start = addDays(first, -((weekday(first) + 6) % 7));
 	const end = today < last ? today : last;
-	const cells: string[] = [];
-	for (let d = start; d <= end || cells.length % 7 !== 0; d = addDays(d, 1)) cells.push(d);
+	// From the first day anything was due: a year that began in July starts in July.
+	const from = days.find((d) => d.level != null)?.date ?? `${year}-01-01`;
 	const active = days.filter((d) => d.done > 0).length;
 
 	return (
-		<div className="-mx-4 overflow-x-auto px-4 pb-1 [direction:rtl] [scrollbar-width:thin] sm:mx-0 sm:px-0 sm:[direction:ltr]">
-			<div
-				role="img"
-				aria-label={`${active} ${active === 1 ? "day" : "days"} with check-ins in ${year}`}
-				className="inline-grid grid-flow-col grid-rows-7 gap-[3px] [direction:ltr]"
-			>
-				{cells.map((date) => {
-					const day = byDate.get(date);
-					const inYear = date >= first && date <= end;
-					return (
-						<span
-							key={date}
-							title={
-								inYear && day
-									? `${CELL_DATE.format(new Date(`${date}T00:00:00Z`))} · ${day.due ? `${day.done} of ${day.due}` : "nothing due"}`
-									: undefined
-							}
-							className={cn(
-								"size-[11px] rounded-[3px]",
-								!inYear || day?.level == null ? "bg-transparent" : LEVELS[day.level],
-								date === today && "ring-1 ring-foreground/50",
-							)}
-						/>
-					);
-				})}
-			</div>
-		</div>
+		<WeekGrid
+			from={from}
+			to={end}
+			cellClassName="size-3"
+			label={`${active} ${active === 1 ? "day" : "days"} with check-ins in ${year}`}
+			cell={(date) => {
+				const day = byDate.get(date);
+				const text =
+					day && date >= from
+						? `${CELL_DATE.format(new Date(`${date}T00:00:00Z`))} · ${day.due ? `${day.done} of ${day.due} done` : "nothing due"}`
+						: undefined;
+				return (
+					<span
+						role={text ? "img" : undefined}
+						aria-label={text}
+						title={text}
+						className={cn(
+							"size-3 rounded-[3px]",
+							!day || date < from || day.level == null ? "bg-transparent" : LEVELS[day.level],
+							date === today && "ring-1 ring-foreground/50",
+						)}
+					/>
+				);
+			}}
+		/>
 	);
 }
 
@@ -188,7 +185,10 @@ export function HabitRanking({ stats }: { stats: YearStats }) {
 							<span className="font-figures text-sm font-medium">
 								{h.rate == null ? "—" : `${h.rate}%`}
 							</span>
-							<span className="ml-2 font-figures text-xs text-muted-foreground">{h.done}</span>
+							<span className="ml-2 text-xs text-muted-foreground">
+								<span className="font-figures">{h.done}</span>{" "}
+								{h.done === 1 ? "check-in" : "check-ins"}
+							</span>
 						</span>
 						<span aria-hidden className="col-span-2 h-1 overflow-hidden rounded-full bg-surface-2">
 							<span
