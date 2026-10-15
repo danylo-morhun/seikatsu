@@ -19,9 +19,6 @@ export const TIME_OF_DAY_LABELS: Record<TimeOfDay, string> = {
 	evening: "Evening",
 };
 
-/** The habit page's calendar: a year of weeks, today in the last. */
-export const CALENDAR_WEEKS = 53;
-
 /** Indexed as `frequencyDays` stores them: 0 = Sunday. */
 export const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 /** The week as the picker shows it, Monday first. */
@@ -57,4 +54,21 @@ export function scheduleLabel(habit: HabitSchedule): string {
 		return n === 1 ? "Once a week" : `${n} times a week`;
 	}
 	return "Every day";
+}
+
+const DAY = new Intl.DateTimeFormat("en", {
+	weekday: "short",
+	month: "short",
+	day: "numeric",
+	timeZone: "UTC",
+});
+
+/** "Thu, Oct 15" for a YYYY-MM-DD day. */
+export function formatDay(date: string) {
+	return DAY.format(new Date(`${date}T00:00:00Z`));
+}
+
+/** A day of every habit, as the map reads it out. */
+export function activityText(day: { date: string; done: number; due: number }) {
+	return `${formatDay(day.date)} · ${day.due === 0 ? "nothing due" : `${day.done} of ${day.due} done`}`;
 }

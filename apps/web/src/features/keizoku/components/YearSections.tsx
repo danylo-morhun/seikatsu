@@ -1,6 +1,5 @@
 import type { YearDay, YearStats } from "@/features/keizoku/actions/stats";
 import { FIGURES_ROW, Figure } from "@/features/keizoku/components/Figure";
-import { WeekGrid } from "@/features/keizoku/components/WeekGrid";
 import { runUnit } from "@/features/keizoku/lib/streak";
 import { BAR_FILL, barClip } from "@/lib/bar";
 import { cn } from "@seikatsu/ui";
@@ -41,59 +40,6 @@ export function YearFigures({ stats }: { stats: YearStats }) {
 				/>
 			</div>
 		</section>
-	);
-}
-
-const LEVELS = ["bg-surface-2", "bg-primary/30", "bg-primary/55", "bg-primary/80", "bg-primary"];
-const CELL_DATE = new Intl.DateTimeFormat("en", {
-	weekday: "short",
-	month: "short",
-	day: "numeric",
-	timeZone: "UTC",
-});
-
-/**
- * The year's days, a column per week (Monday on top), shaded by how much of what was due got
- * done. Days with nothing due stay empty.
- */
-export function YearCalendar({
-	year,
-	days,
-	today,
-}: { year: number; days: YearDay[]; today: string }) {
-	const byDate = new Map(days.map((d) => [d.date, d]));
-	const last = `${year}-12-31`;
-	const end = today < last ? today : last;
-	// From the first day anything was due: a year that began in July starts in July.
-	const from = days.find((d) => d.level != null)?.date ?? `${year}-01-01`;
-	const active = days.filter((d) => d.done > 0).length;
-
-	return (
-		<WeekGrid
-			from={from}
-			to={end}
-			cellClassName="size-3"
-			label={`${active} ${active === 1 ? "day" : "days"} with check-ins in ${year}`}
-			cell={(date) => {
-				const day = byDate.get(date);
-				const text =
-					day && date >= from
-						? `${CELL_DATE.format(new Date(`${date}T00:00:00Z`))} · ${day.due ? `${day.done} of ${day.due} done` : "nothing due"}`
-						: undefined;
-				return (
-					<span
-						role={text ? "img" : undefined}
-						aria-label={text}
-						title={text}
-						className={cn(
-							"size-3 rounded-[3px]",
-							!day || date < from || day.level == null ? "bg-transparent" : LEVELS[day.level],
-							date === today && "ring-1 ring-foreground/50",
-						)}
-					/>
-				);
-			}}
-		/>
 	);
 }
 

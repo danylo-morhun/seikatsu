@@ -3,6 +3,7 @@
 import { Spinner } from "@/components/Spinner";
 import { FOOTER } from "@/features/keizoku/components/HabitDialog";
 import { Photo } from "@/features/keizoku/components/Photo";
+import { formatDay } from "@/features/keizoku/lib/constants";
 import { Camera01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -21,17 +22,6 @@ export const FIELD_TEXTAREA =
 	"w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs outline-none transition-colors [field-sizing:content] placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring md:text-sm";
 
 const PHOTO_MAX = 5 * 1024 * 1024;
-const DAY = new Intl.DateTimeFormat("en", {
-	weekday: "short",
-	month: "short",
-	day: "numeric",
-	timeZone: "UTC",
-});
-
-export function formatDay(date: string) {
-	return DAY.format(new Date(`${date}T00:00:00Z`));
-}
-
 export interface DayNoteTarget {
 	habitId: string;
 	habitName: string;

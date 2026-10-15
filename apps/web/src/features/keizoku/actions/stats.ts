@@ -150,27 +150,12 @@ export async function getYearStats(year: number, today: string): Promise<YearSta
 	});
 
 	// The year's days, each against what was due on it.
-	const days: YearDay[] = [];
-	let fullDays = 0;
-	for (let d = yearStart; d <= yearEnd; d = addDays(d, 1)) {
-		let due = 0;
-		let done = 0;
-		for (const w of windows) {
-			if (d < w.start || d > w.end) continue;
-			const checked = w.inYear.has(d);
-			// A weekly target has no fixed day: a check-in counts as one due and done.
-			if (isScheduled(w.habit, d)) {
-				due++;
-				if (checked) done++;
-			} else if (checked && w.habit.frequencyType === "times_per_week") {
-				due++;
-				done++;
-			}
-		}
-		const level = due === 0 ? null : done === 0 ? 0 : Math.max(1, Math.round((done / due) * 4));
-		if (due > 0 && done === due) fullDays++;
-		days.push({ date: d, level, done, due });
-	}
+	const days = dayActivity(
+		windows.map((w) => ({ ...w, checked: w.inYear })),
+		yearStart,
+		yearEnd,
+	);
+	const fullDays = days.filter((d) => d.due > 0 && d.done === d.due).length;
 
 	const sum = (ts: Tally[]): Tally =>
 		ts.reduce((a, t) => ({ done: a.done + t.done, expected: a.expected + t.expected }), {
@@ -234,4 +219,72 @@ export async function getYearStats(year: number, today: string): Promise<YearSta
 		months,
 		habits: perHabit,
 	};
+}
+
+interface ActivityWindow {
+	habit: KeizokuHabit;
+	checked: Set<string>;
+	start: string;
+	end: string;
+}
+
+/** Each day in [from, to] against what was due on it, across every habit's active days. */
+function dayActivity(windows: ActivityWindow[], from: string, to: string): YearDay[] {
+	const days: YearDay[] = [];
+	for (let d = from; d <= to; d = addDays(d, 1)) {
+		let due = 0;
+		let done = 0;
+		for (const w of windows) {
+			if (d < w.start || d > w.end) continue;
+			const checked = w.checked.has(d);
+			// A weekly target has no fixed day: a check-in counts as one due and done.
+			if (isScheduled(w.habit, d)) {
+				due++;
+				if (checked) done++;
+			} else if (checked && w.habit.frequencyType === "times_per_week") {
+				due++;
+				done++;
+			}
+		}
+		const level = due === 0 ? null : done === 0 ? 0 : Math.max(1, Math.round((done / due) * 4));
+		days.push({ date: d, level, done, due });
+	}
+	return days;
+}
+
+/** Every habit's days from `from` to today, for Today's map (archived habits for the days they ran). */
+export async function getActivity(from: string, today: string): Promise<YearDay[]> {
+	const ws = await getCurrentWorkspace();
+	if (!ws) return [];
+	const [habits, zone] = await Promise.all([
+		db.select().from(keizokuHabits).where(eq(keizokuHabits.workspaceId, ws.id)),
+		getUserTimeZone(),
+	]);
+	if (habits.length === 0) return [];
+	const logs = await db
+		.select({ habitId: keizokuHabitLogs.habitId, date: keizokuHabitLogs.date })
+		.from(keizokuHabitLogs)
+		.where(
+			inArray(
+				keizokuHabitLogs.habitId,
+				habits.map((h) => h.id),
+			),
+		);
+	const byHabit = new Map<string, string[]>();
+	for (const l of logs) {
+		if (l.date > today) continue;
+		const list = byHabit.get(l.habitId);
+		if (list) list.push(l.date);
+		else byHabit.set(l.habitId, [l.date]);
+	}
+	const windows = habits.map((h) => {
+		const dates = byHabit.get(h.id) ?? [];
+		return {
+			habit: h,
+			checked: new Set(dates),
+			start: firstDay(dayIn(zone, h.createdAt), dates),
+			end: h.archivedAt ? dayIn(zone, h.archivedAt) : today,
+		};
+	});
+	return dayActivity(windows, from, today);
 }
