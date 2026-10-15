@@ -1,43 +1,25 @@
-import { auth } from "@/auth";
 import { getOwnedHabit } from "@/features/keizoku/actions/guard";
-import { getHabitLogs, getHabitPhotos } from "@/features/keizoku/actions/logs";
-import { getHabitCompletionRate, getHabitStreaks } from "@/features/keizoku/actions/stats";
-import { HabitDetailView } from "@/features/keizoku/components/HabitDetailView";
+import { getHabitDays, getHabitJournal } from "@/features/keizoku/actions/logs";
+import { getHabitSummary } from "@/features/keizoku/actions/stats";
+import { HabitPage } from "@/features/keizoku/components/HabitPage";
+import { CALENDAR_WEEKS } from "@/features/keizoku/lib/constants";
+import { addDays } from "@/features/keizoku/lib/streak";
 import { getUserToday } from "@/lib/timezone";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
-/** `date` (YYYY-MM-DD) minus `days`, as YYYY-MM-DD. Pure calendar math in UTC. */
-function daysBefore(date: string, days: number): string {
-	return new Date(Date.parse(`${date}T00:00:00Z`) - days * 86_400_000).toISOString().slice(0, 10);
-}
-
-export default async function HabitPage({ params }: { params: Promise<{ habitId: string }> }) {
-	const session = await auth();
-	if (!session?.user?.id) redirect("/");
-
-	const { habitId } = await params;
+export default async function KeizokuHabitPage({
+	params,
+}: { params: Promise<{ habitId: string }> }) {
+	const [{ habitId }, today] = await Promise.all([params, getUserToday()]);
 	const habit = await getOwnedHabit(habitId);
 	if (!habit) notFound();
 
-	// The user's day, not the server's UTC one: right after local midnight that differs.
-	const to = await getUserToday();
-	const from30 = daysBefore(to, 29);
-	const fromHeatmap = daysBefore(to, 53 * 7 - 1);
-
-	const [logs, photos, streak, completionRate] = await Promise.all([
-		getHabitLogs(habitId, fromHeatmap, to),
-		getHabitPhotos(habitId),
-		getHabitStreaks(habitId, to),
-		getHabitCompletionRate(habitId, from30, to),
+	const [summary, days, journal] = await Promise.all([
+		getHabitSummary(habit, today),
+		// The calendar's weeks, a week of slack for the Monday it starts on.
+		getHabitDays(habitId, addDays(today, -CALENDAR_WEEKS * 7), today),
+		getHabitJournal(habitId),
 	]);
 
-	return (
-		<HabitDetailView
-			habit={habit}
-			logs={logs}
-			photos={photos}
-			streak={streak ?? { current: 0, best: 0 }}
-			completionRate={completionRate ?? 0}
-		/>
-	);
+	return <HabitPage habit={habit} summary={summary} days={days} journal={journal} today={today} />;
 }
