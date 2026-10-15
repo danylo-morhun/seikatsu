@@ -9,25 +9,47 @@ test.beforeEach(async () => {
 		.values({ workspaceId: wsId, name: "E2E stretch", emoji: "🧘", frequencyType: "daily" });
 });
 
-test("marking a habit done flips the icon at once and updates the count", async ({ page }) => {
+test("marking a habit done flips the check at once and updates the count", async ({ page }) => {
 	await page.goto("/keizoku");
-	const main = page.getByRole("main");
-	await expect(main.getByText("0/1 done")).toBeVisible();
+	const summary = page.getByRole("region", { name: "Today at a glance" });
+	await expect(summary.getByText("to go")).toBeVisible();
 
 	const release = await holdServerActions(page);
-	await page.getByRole("button", { name: "Mark done" }).click();
+	const check = page.getByRole("button", { name: "E2E stretch: mark done today" });
+	await check.click();
 
-	// Optimistic: the check shows while the action is still in flight.
-	const toggle = page.getByRole("button", { name: "Mark not done" });
-	await expect(toggle).toBeVisible();
-	await expect(toggle).toBeDisabled();
-	await expect(main.getByText("0/1 done")).toBeVisible();
+	// Optimistic: the check and the count change while the action is still in flight.
+	const done = page.getByRole("button", { name: "E2E stretch: done today" });
+	await expect(done).toHaveAttribute("aria-pressed", "true");
+	await expect(summary.getByText("All done for today")).toBeVisible();
 
-	// The action's re-render lands: count from the server, button usable again.
 	release();
-	await expect(main.getByText("1/1 done")).toBeVisible();
-	await expect(toggle).toBeEnabled();
+	await expect(page.getByText("1-day run")).toBeVisible();
 
 	await page.reload();
-	await expect(page.getByRole("button", { name: "Mark not done" })).toBeVisible();
+	await expect(page.getByRole("button", { name: "E2E stretch: done today" })).toBeVisible();
+});
+
+test("a missed day can be checked in from the week", async ({ page }) => {
+	await page.goto("/keizoku");
+	const row = page.locator("[data-habit-row]", { hasText: "E2E stretch" });
+	const days = row.getByRole("group").getByRole("button");
+	await expect(days).toHaveCount(7);
+
+	// Yesterday is the strip's sixth day.
+	await days.nth(5).click();
+	await expect(days.nth(5)).toHaveAttribute("aria-pressed", "true");
+	await page.reload();
+	await expect(
+		page
+			.locator("[data-habit-row]", { hasText: "E2E stretch" })
+			.getByRole("group")
+			.getByRole("button")
+			.nth(5),
+	).toHaveAttribute("aria-pressed", "true");
+});
+
+test("a mistyped habit link shows not-found inside the app", async ({ page }) => {
+	await page.goto("/keizoku/not-a-habit");
+	await expect(page.getByText("Nothing here")).toBeVisible();
 });
