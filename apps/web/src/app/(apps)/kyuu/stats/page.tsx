@@ -1,43 +1,18 @@
-import { auth } from "@/auth";
-import { getWorkspace, initializeWorkspace } from "@/features/kuroji/actions/workspace";
-import { getSources } from "@/features/kyuu/actions/applications";
-import { getKyuuStats } from "@/features/kyuu/actions/stats";
-import { StatsDashboard } from "@/features/kyuu/components/StatsDashboard";
-import { parseKyuuFilters } from "@/features/kyuu/lib/search-params";
-import { redirect } from "next/navigation";
+import { getSources, getStats } from "@/features/kyuu/actions/applications";
+import { StatsView } from "@/features/kyuu/components/StatsView";
+import { type RawKyuuSearchParams, parseKyuuFilters } from "@/features/kyuu/lib/search-params";
 
 export default async function KyuuStatsPage({
 	searchParams,
 }: {
-	searchParams: Promise<{
-		status?: string;
-		source?: string;
-		method?: string;
-		stage?: string;
-		from?: string;
-		to?: string;
-		q?: string;
-	}>;
+	searchParams: Promise<RawKyuuSearchParams>;
 }) {
-	const session = await auth();
-	if (!session?.user?.id) redirect("/");
-
-	const workspace =
-		(await getWorkspace(session.user.id)) ?? (await initializeWorkspace(session.user.id));
-
 	const filters = parseKyuuFilters(await searchParams);
-
-	const [stats, sources] = await Promise.all([
-		getKyuuStats(workspace.id, filters),
-		getSources(workspace.id),
-	]);
-	if (!stats) redirect("/kyuu");
+	const [stats, sources] = await Promise.all([getStats(filters), getSources()]);
 
 	return (
-		<main className="flex flex-col pb-28 md:pb-0">
-			<div className="px-4 py-6 sm:px-6">
-				<StatsDashboard stats={stats} sources={sources} />
-			</div>
-		</main>
+		<div className="px-4 pt-6 pb-28 sm:px-8 md:py-8">
+			<StatsView stats={stats} sources={sources.map((s) => s.source)} />
+		</div>
 	);
 }

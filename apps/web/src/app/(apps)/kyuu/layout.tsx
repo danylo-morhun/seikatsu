@@ -1,15 +1,17 @@
-import { auth } from "@/auth";
-import { KyuuNavTabs } from "@/features/kyuu/components/KyuuNavTabs";
+import { getResumeFiles, getSources } from "@/features/kyuu/actions/applications";
+import { KyuuChrome } from "@/features/kyuu/components/KyuuChrome";
+import { getCurrentWorkspace } from "@/lib/session";
 import { redirect } from "next/navigation";
 
 export default async function KyuuLayout({ children }: { children: React.ReactNode }) {
-	const session = await auth();
-	if (!session?.user?.id) redirect("/");
+	const workspace = await getCurrentWorkspace();
+	if (!workspace) redirect("/");
+	const [sources, resumeFiles] = await Promise.all([getSources(), getResumeFiles()]);
 
 	return (
-		<div className="flex flex-col">
-			<KyuuNavTabs />
+		<>
 			{children}
-		</div>
+			<KyuuChrome sources={sources.map((s) => s.source)} resumeFiles={resumeFiles} />
+		</>
 	);
 }
