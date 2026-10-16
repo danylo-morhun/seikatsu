@@ -1,6 +1,7 @@
 "use client";
 
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
+import { startNavigationProgress } from "@/components/NavigationProgress";
 import { pageKey } from "@/lib/capture-shortcut";
 import {
 	Archive01Icon,
@@ -10,7 +11,6 @@ import {
 	Delete01Icon,
 	LinkSquare02Icon,
 	Mail01Icon,
-	PencilEdit01Icon,
 	SentIcon,
 	SidebarRightIcon,
 	UserMultipleIcon,
@@ -27,6 +27,7 @@ import {
 	ContextMenuSubContent,
 	ContextMenuSubTrigger,
 } from "@seikatsu/ui";
+import { useRouter } from "next/navigation";
 import {
 	createContext,
 	useContext,
@@ -39,12 +40,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { followUp, ghostApplications, setArchived, setStatus } from "../actions/progress";
-import {
-	requestDeleteApplication,
-	requestEditApplication,
-	requestLogEvent,
-	requestOpenApplication,
-} from "../lib/events";
+import { requestDeleteApplication } from "../lib/events";
 import { STATUSES, STATUS_CONFIG, type Status } from "../lib/stages";
 import type { ApplicationRow } from "../lib/types";
 import { StatusMark } from "./StatusMark";
@@ -111,6 +107,11 @@ export function ApplicationArea({
 		(state, p) => ({ ...state, [p.id]: { ...state[p.id], ...p.changes } }),
 	);
 	const [menuId, setMenuId] = useState<string | null>(null);
+	const router = useRouter();
+	const go = (href: string) => {
+		startNavigationProgress();
+		router.push(href);
+	};
 
 	const byId = useMemo(() => new Map(rows.map((r) => [r.id, r])), [rows]);
 
@@ -176,17 +177,16 @@ export function ApplicationArea({
 		if (key === "o") {
 			if (!row.jobUrl) return false;
 			window.open(row.jobUrl, "_blank", "noopener,noreferrer");
-		} else if (key === "e") requestEditApplication(id);
-		else if (key === "x" && (row.status === "drafted" || row.status === "sourced"))
+		} else if (key === "x" && (row.status === "drafted" || row.status === "sourced"))
 			actions.setStatus(id, "applied");
-		else if (key === "s") requestLogEvent(id, "screening");
-		else if (key === "i") requestLogEvent(id, "interview");
+		else if (key === "s") go(`/kyuu/${id}?log=screening`);
+		else if (key === "i") go(`/kyuu/${id}?log=interview`);
 		else if (key === "r") actions.setStatus(id, "rejected");
 		else if (key === "g" && row.status === "applied") actions.ghost([id]);
 		else if (key === "f" && row.status === "applied") actions.followUp(id);
 		else if (key === "a") actions.archive(id, !row.archived);
 		else if (key === ".") openContextMenu(el);
-		else if (key === "delete") requestDeleteApplication(id);
+		else if (key === "delete") requestDeleteApplication({ id, company: row.company });
 		else return false;
 		return true;
 	};
@@ -223,7 +223,7 @@ export function ApplicationArea({
 					return byId.has(id);
 				}}
 				onClose={() => setMenuId(null)}
-				menu={menuRow && <RowMenu row={menuRow} actions={actions} />}
+				menu={menuRow && <RowMenu row={menuRow} actions={actions} go={go} />}
 			>
 				{children}
 			</ContextArea>
@@ -232,12 +232,20 @@ export function ApplicationArea({
 }
 
 /** A row's right-click menu (and its ⋯ and "." key): every row action, keys named beside. */
-function RowMenu({ row, actions }: { row: Shown; actions: RowActions }) {
+function RowMenu({
+	row,
+	actions,
+	go,
+}: {
+	row: Shown;
+	actions: RowActions;
+	go: (href: string) => void;
+}) {
 	const id = row.id;
 	const unsent = row.status === "drafted" || row.status === "sourced";
 	return (
 		<>
-			<ContextMenuItem onSelect={() => requestOpenApplication(id)}>
+			<ContextMenuItem onSelect={() => go(`/kyuu/${id}`)}>
 				<HugeiconsIcon icon={SidebarRightIcon} />
 				Open
 				<ContextMenuShortcut>↵</ContextMenuShortcut>
@@ -251,11 +259,6 @@ function RowMenu({ row, actions }: { row: Shown; actions: RowActions }) {
 					</a>
 				</ContextMenuItem>
 			)}
-			<ContextMenuItem onSelect={() => requestEditApplication(id)}>
-				<HugeiconsIcon icon={PencilEdit01Icon} />
-				Edit…
-				<ContextMenuShortcut>E</ContextMenuShortcut>
-			</ContextMenuItem>
 			<ContextMenuSeparator />
 			{unsent && (
 				<ContextMenuItem onSelect={() => actions.setStatus(id, "applied")}>
@@ -264,12 +267,12 @@ function RowMenu({ row, actions }: { row: Shown; actions: RowActions }) {
 					<ContextMenuShortcut>X</ContextMenuShortcut>
 				</ContextMenuItem>
 			)}
-			<ContextMenuItem onSelect={() => requestLogEvent(id, "screening")}>
+			<ContextMenuItem onSelect={() => go(`/kyuu/${id}?log=screening`)}>
 				<HugeiconsIcon icon={UserMultipleIcon} />
 				Book a screening…
 				<ContextMenuShortcut>S</ContextMenuShortcut>
 			</ContextMenuItem>
-			<ContextMenuItem onSelect={() => requestLogEvent(id, "interview")}>
+			<ContextMenuItem onSelect={() => go(`/kyuu/${id}?log=interview`)}>
 				<HugeiconsIcon icon={Calendar03Icon} />
 				Book an interview…
 				<ContextMenuShortcut>I</ContextMenuShortcut>
@@ -302,7 +305,7 @@ function RowMenu({ row, actions }: { row: Shown; actions: RowActions }) {
 					>
 						{STATUSES.map((s) => (
 							<ContextMenuRadioItem key={s} value={s} aria-label={STATUS_CONFIG[s].label}>
-								<StatusMark status={s} className="text-sm" />
+								<StatusMark status={s} />
 							</ContextMenuRadioItem>
 						))}
 					</ContextMenuRadioGroup>
@@ -316,7 +319,7 @@ function RowMenu({ row, actions }: { row: Shown; actions: RowActions }) {
 			</ContextMenuItem>
 			<ContextMenuItem
 				className="text-destructive focus:text-destructive"
-				onSelect={() => requestDeleteApplication(id)}
+				onSelect={() => requestDeleteApplication({ id, company: row.company })}
 			>
 				<HugeiconsIcon icon={Delete01Icon} />
 				Delete…

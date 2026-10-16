@@ -27,7 +27,7 @@ import { extractApplicationFromText } from "../actions/extract";
 import { localToday } from "../lib/format";
 import { type ApplicationFormValues, applicationSchema } from "../lib/kyuu-schemas";
 import { STATUSES, STATUS_CONFIG } from "../lib/stages";
-import type { ApplicationDetail, ResumeFile } from "../lib/types";
+import type { ResumeFile } from "../lib/types";
 import { ResumeUploadField } from "./ResumeUploadField";
 
 export const FIELD_TEXTAREA =
@@ -36,26 +36,24 @@ export const FIELD_TEXTAREA =
 /** A paste this long is a job posting, not a company name. */
 const MIN_PASTE_LENGTH = 200;
 
-function valuesOf(app: ApplicationDetail | null): ApplicationFormValues {
+function blank(): ApplicationFormValues {
 	return {
-		company: app?.company ?? "",
-		role: app?.role ?? "",
-		jobUrl: app?.jobUrl ?? "",
-		source: app?.source ?? "",
-		status: app?.status ?? "applied",
-		dateApplied: app?.dateApplied ?? localToday(),
-		contact: app?.contact ?? "",
-		salary: app?.salary ?? "",
-		location: app?.location ?? "",
-		notes: app?.notes ?? "",
-		resumeFileUrl: app?.resumeFileUrl ?? "",
-		resumeFileName: app?.resumeFileName ?? "",
+		company: "",
+		role: "",
+		jobUrl: "",
+		source: "",
+		status: "applied",
+		dateApplied: localToday(),
+		contact: "",
+		salary: "",
+		location: "",
+		notes: "",
+		resumeFileUrl: "",
+		resumeFileName: "",
 	};
 }
 
 interface Props {
-	/** Null: a new application. */
-	application: ApplicationDetail | null;
 	open: boolean;
 	/** Opened by a key: no zoom in or out. */
 	instant?: boolean;
@@ -66,9 +64,8 @@ interface Props {
 	onSave: (values: ApplicationFormValues) => Promise<string | undefined>;
 }
 
-/** New and Edit application: the posting's facts. Pasting a whole posting fills them in. */
+/** New Application: the posting's facts. Pasting a whole posting fills them in. */
 export function ApplicationDialog({
-	application,
 	open,
 	instant = false,
 	onOpenChange,
@@ -77,7 +74,6 @@ export function ApplicationDialog({
 	onSave,
 }: Props) {
 	const id = useId();
-	const isNew = application == null;
 	const [isExtracting, startExtracting] = useTransition();
 	const [showMore, setShowMore] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -91,23 +87,16 @@ export function ApplicationDialog({
 		formState: { errors, isSubmitting },
 	} = useForm<ApplicationFormValues>({
 		resolver: zodResolver(applicationSchema),
-		defaultValues: valuesOf(application),
+		defaultValues: blank(),
 	});
 
-	// Each opening starts from the application (or blank), never from the last one's leftovers.
+	// Each opening starts blank, never from the last one's leftovers.
 	useEffect(() => {
 		if (!open) return;
-		reset(valuesOf(application));
-		setShowMore(
-			!!(
-				application?.contact ||
-				application?.salary ||
-				application?.location ||
-				application?.resumeFileUrl
-			),
-		);
+		reset(blank());
+		setShowMore(false);
 		setError(null);
-	}, [open, application, reset]);
+	}, [open, reset]);
 
 	const extract = useCallback(
 		(text: string) => {
@@ -130,9 +119,9 @@ export function ApplicationDialog({
 		[setValue],
 	);
 
-	// A long paste anywhere in a new application's dialog is a posting: read it.
+	// A long paste anywhere in the dialog is a posting: read it.
 	useEffect(() => {
-		if (!open || !isNew) return;
+		if (!open) return;
 		function onPaste(e: ClipboardEvent) {
 			const text = e.clipboardData?.getData("text") ?? "";
 			if (text.trim().length < MIN_PASTE_LENGTH) return;
@@ -141,7 +130,7 @@ export function ApplicationDialog({
 		}
 		document.addEventListener("paste", onPaste);
 		return () => document.removeEventListener("paste", onPaste);
-	}, [open, isNew, extract]);
+	}, [open, extract]);
 
 	const busy = isSubmitting || isExtracting;
 	const fieldError = (message?: string, name?: string) =>
@@ -159,22 +148,19 @@ export function ApplicationDialog({
 					instant && "data-[state=closed]:animate-none data-[state=open]:animate-none",
 				)}
 				onOpenAutoFocus={(e) => {
-					// A new one starts at the company; an edit doesn't pull the phone's keyboard up.
 					e.preventDefault();
-					if (isNew) document.getElementById(`${id}-company`)?.focus({ preventScroll: true });
+					document.getElementById(`${id}-company`)?.focus({ preventScroll: true });
 				}}
 			>
 				<DialogHeader>
-					<DialogTitle>{isNew ? "New Application" : "Edit Application"}</DialogTitle>
-					<DialogDescription className={cn(!isNew && "sr-only")}>
+					<DialogTitle>New Application</DialogTitle>
+					<DialogDescription>
 						{isExtracting ? (
 							<span className="inline-flex items-center gap-2">
 								<Spinner /> Reading the posting…
 							</span>
-						) : isNew ? (
-							"Paste a whole job posting to fill this in."
 						) : (
-							"The posting's facts. Notes and the timeline are on the application."
+							"Paste a whole job posting to fill this in."
 						)}
 					</DialogDescription>
 				</DialogHeader>
@@ -309,16 +295,14 @@ export function ApplicationDialog({
 							</QuietAdd>
 						)}
 
-						{isNew && (
-							<div className="space-y-2">
-								<Label htmlFor={`${id}-notes`}>Notes</Label>
-								<textarea
-									id={`${id}-notes`}
-									className={cn(FIELD_TEXTAREA, "min-h-20")}
-									{...register("notes")}
-								/>
-							</div>
-						)}
+						<div className="space-y-2">
+							<Label htmlFor={`${id}-notes`}>Notes</Label>
+							<textarea
+								id={`${id}-notes`}
+								className={cn(FIELD_TEXTAREA, "min-h-20")}
+								{...register("notes")}
+							/>
+						</div>
 					</fieldset>
 
 					{error && (
@@ -339,7 +323,7 @@ export function ApplicationDialog({
 						</Button>
 						<Button type="submit" className="gap-1.5 max-sm:flex-1" disabled={busy}>
 							{isSubmitting && <Spinner />}
-							{isSubmitting ? "Saving…" : isNew ? "Add" : "Save"}
+							{isSubmitting ? "Adding…" : "Add"}
 						</Button>
 					</div>
 				</form>

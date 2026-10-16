@@ -29,7 +29,7 @@ export interface ApplicationRow {
 	waiting: Waiting | null;
 }
 
-/** Everything the sheet shows: the row, the posting, the timeline. */
+/** Everything the application's page shows: the row, the posting, the timeline. */
 export interface ApplicationDetail extends ApplicationRow {
 	contact: string | null;
 	location: string | null;
@@ -44,11 +44,6 @@ export interface ApplicationDetail extends ApplicationRow {
 	createdAt: string;
 	/** Oldest first; unknown days by when they were logged. */
 	events: KyuuEvent[];
-}
-
-/** A booked screen or interview, with whose it is. */
-export interface UpcomingEvent extends KyuuEvent {
-	application: Pick<ApplicationRow, "id" | "company" | "role" | "jobUrl">;
 }
 
 export interface ResumeFile {
