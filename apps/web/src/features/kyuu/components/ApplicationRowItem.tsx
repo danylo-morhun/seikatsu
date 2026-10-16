@@ -82,8 +82,9 @@ export const ApplicationRowItem = memo(function ApplicationRowItem({
 	const row = shown(base);
 	if (row.hidden) return null;
 
+	// The row is its own stacking context: the hover sits under every cell, whatever their order.
 	return (
-		<li data-app-row className={cn(TABLE_GRID, "group/row relative py-1 md:-mx-2 md:px-2")}>
+		<li data-app-row className={cn(TABLE_GRID, "group/row relative isolate py-1 md:-mx-2 md:px-2")}>
 			<span className="relative hidden font-figures text-xs whitespace-nowrap text-muted-foreground sm:block">
 				{formatDay(row.dateApplied, today)}
 			</span>
@@ -92,7 +93,7 @@ export const ApplicationRowItem = memo(function ApplicationRowItem({
 				href={`/kyuu/${row.id}`}
 				prefetch={false}
 				data-app-id={row.id}
-				className="min-w-0 rounded-md py-1.5 outline-none before:absolute before:inset-0 before:rounded-md before:transition-colors hover:before:bg-surface focus-visible:before:ring-2 focus-visible:before:ring-ring"
+				className="min-w-0 rounded-md py-1.5 outline-none before:absolute before:inset-0 before:-z-10 before:rounded-md before:transition-colors group-hover/row:before:bg-surface focus-visible:before:ring-2 focus-visible:before:ring-ring"
 			>
 				<span className="relative block truncate text-sm font-medium">{row.company}</span>
 				<span className="relative block truncate text-xs text-muted-foreground md:hidden">
