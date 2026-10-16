@@ -4,8 +4,18 @@ import { cn } from "@seikatsu/ui";
 import type { CSSProperties } from "react";
 import type { KyuuStats, Rate } from "../lib/stats";
 import { KyuuFilters } from "./KyuuFilters";
+import { STATUS_LOOK } from "./StatusMark";
 
 const rise = (i: number) => ({ "--i": i }) as CSSProperties;
+
+/** The funnel in the statuses' own colours, so a stage reads the same everywhere. */
+const FUNNEL_TONE: Record<string, string> = {
+	Sent: STATUS_LOOK.applied.className,
+	Answered: "text-foreground/60",
+	Screening: STATUS_LOOK.hr_screening.className,
+	Interview: STATUS_LOOK.technical_interview.className,
+	Offer: STATUS_LOOK.offer.className,
+};
 const pct = (rate: number | null) => (rate == null ? null : Math.round(rate * 100));
 const MONTH = new Intl.DateTimeFormat("en", { month: "short", timeZone: "UTC" });
 
@@ -62,6 +72,7 @@ export function StatsView({ stats, sources }: { stats: KyuuStats; sources: strin
 					<Bars
 						rows={stats.funnel.map((f) => ({
 							label: f.label,
+							tone: FUNNEL_TONE[f.label],
 							value: f.count,
 							ratio: stats.sent > 0 ? f.count / stats.sent : 0,
 							note: stats.sent > 0 ? `${Math.round((f.count / stats.sent) * 100)}%` : "—",
@@ -134,7 +145,7 @@ function Block({
 function Bars({
 	rows,
 }: {
-	rows: { label: string; value: number; ratio: number; note?: string }[];
+	rows: { label: string; value: number; ratio: number; note?: string; tone?: string }[];
 }) {
 	return (
 		<ol className="space-y-3">
@@ -143,7 +154,11 @@ function Bars({
 					<span className="truncate text-xs text-muted-foreground">{r.label}</span>
 					<span aria-hidden className="h-1.5 rounded-full bg-surface-2">
 						<span
-							className={cn("block h-full rounded-full bg-primary/80", BAR_FILL)}
+							className={cn(
+								"block h-full rounded-full",
+								r.tone ? cn("bg-current", r.tone) : "bg-primary/80",
+								BAR_FILL,
+							)}
 							style={barClip(r.ratio, i)}
 						/>
 					</span>
