@@ -46,6 +46,10 @@ const STATUS_CONFIG: Record<KyuuFilterStatus, { label: string; className: string
 		label: "Withdrawn",
 		className: "border-muted-foreground/30 bg-muted text-muted-foreground",
 	},
+	ghosted: {
+		label: "Ghosted",
+		className: "border-muted-foreground/30 bg-muted text-muted-foreground",
+	},
 };
 
 export function StatusBadge({ status }: { status: KyuuFilterStatus }) {

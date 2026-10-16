@@ -148,6 +148,13 @@
 			"when": 1792011793706,
 			"tag": "0020_kyuu_apply_method",
 			"breakpoints": true
+		},
+		{
+			"idx": 21,
+			"version": "7",
+			"when": 1792138274693,
+			"tag": "0021_kyuu_events",
+			"breakpoints": true
 		}
 	]
 }
