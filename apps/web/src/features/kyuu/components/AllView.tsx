@@ -149,8 +149,8 @@ export function AllView({
 					</p>
 				) : (
 					<ol className="divide-y divide-rule">
-						{rows.map((row, i) => (
-							<ApplicationRowItem key={row.id} row={row} today={today} index={i} />
+						{rows.map((row) => (
+							<ApplicationRowItem key={row.id} row={row} today={today} />
 						))}
 					</ol>
 				)}

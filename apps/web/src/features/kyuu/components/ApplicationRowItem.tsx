@@ -12,7 +12,7 @@ import {
 	cn,
 } from "@seikatsu/ui";
 import Link from "next/link";
-import { type CSSProperties, memo } from "react";
+import { memo } from "react";
 import { formatAge, formatDay, formatWhen } from "../lib/format";
 import { STATUSES, STATUS_CONFIG, type Status } from "../lib/stages";
 import type { ApplicationRow } from "../lib/types";
@@ -23,10 +23,13 @@ import { StatusMark } from "./StatusMark";
 export const TABLE_GRID =
 	"grid grid-cols-[minmax(0,1fr)_auto_2.5rem] items-center gap-x-4 sm:grid-cols-[5rem_minmax(0,1fr)_auto_2.5rem] md:grid-cols-[5rem_minmax(0,1.1fr)_minmax(0,1fr)_7rem_11rem_2.5rem]";
 
-/** What follows the status: the booked call, or how long it has waited. */
+/** What follows the status: the booked call, or how long it has waited (and a nudge due). */
 export function statusDetail(row: ApplicationRow, today: string): string | undefined {
 	if (row.next?.date) return formatWhen(row.next.date, row.next.time, today);
-	if (row.waiting) return formatAge(row.waiting.days);
+	if (row.waiting)
+		return row.waiting.due === "follow_up"
+			? `${formatAge(row.waiting.days)} · follow up`
+			: formatAge(row.waiting.days);
 	return undefined;
 }
 
@@ -44,17 +47,12 @@ function StatusPicker({ row, today }: { row: ApplicationRow; today: string }) {
 					onPointerDown={(e) => e.stopPropagation()}
 					className="relative -mx-1.5 flex min-w-0 items-center rounded-md px-1.5 py-1 outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring"
 				>
-					<StatusMark status={row.status} detail={statusDetail(row, today)} />
-					{due && (
-						<span
-							className={cn(
-								"ml-1.5 shrink-0 text-[11px]",
-								due === "ghost" ? "text-muted-foreground" : "text-foreground",
-							)}
-						>
-							{due === "ghost" ? "quiet" : "follow up"}
-						</span>
-					)}
+					{/* Quiet for two weeks and more: it fades, so the live ones stand out. */}
+					<StatusMark
+						status={row.status}
+						detail={statusDetail(row, today)}
+						className={cn(due === "ghost" && "opacity-55")}
+					/>
 				</button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-48">
@@ -76,22 +74,16 @@ function StatusPicker({ row, today }: { row: ApplicationRow; today: string }) {
 export const ApplicationRowItem = memo(function ApplicationRowItem({
 	row: base,
 	today,
-	index = 0,
 }: {
 	row: ApplicationRow;
 	today: string;
-	index?: number;
 }) {
 	const { shown } = useApplicationArea();
 	const row = shown(base);
 	if (row.hidden) return null;
 
 	return (
-		<li
-			data-app-row
-			className={cn(TABLE_GRID, "group/row relative animate-rise py-1 md:-mx-2 md:px-2")}
-			style={{ "--i": Math.min(index, 8) } as CSSProperties}
-		>
+		<li data-app-row className={cn(TABLE_GRID, "group/row relative py-1 md:-mx-2 md:px-2")}>
 			<span className="hidden font-figures text-xs whitespace-nowrap text-muted-foreground sm:block">
 				{formatDay(row.dateApplied, today)}
 			</span>
