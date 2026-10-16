@@ -125,7 +125,8 @@ export function KyuuDateRangeFilter() {
 				<Button
 					variant="outline"
 					size="icon"
-					className="h-8 w-8 md:w-auto md:px-3 md:gap-2 font-normal"
+					aria-label="Date range"
+					className="font-normal md:w-auto md:gap-2 md:px-3"
 				>
 					<HugeiconsIcon icon={Calendar01Icon} className="h-4 w-4 shrink-0 opacity-70" />
 					<span className="hidden md:inline">{label}</span>

@@ -10,8 +10,6 @@ export type Result<T = undefined> =
 	| { error: string }
 	| ({ success: true } & (T extends undefined ? object : { data: T }));
 
-export const FAILED = { error: "Couldn't save. Check your connection." } as const;
-
 /** The application's id, workspace and status if it's the current user's, else null. */
 export async function getOwnedApplication(
 	applicationId: string,

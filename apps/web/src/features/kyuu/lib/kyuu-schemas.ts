@@ -1,39 +1,39 @@
 import { z } from "zod";
+import { STATUSES } from "./stages";
 
-export const kyuuStatusValues = [
-	"sourced",
-	"drafted",
-	"applied",
-	"under_review",
-	"video_interview",
-	"hr_screening",
-	"technical_interview",
-	"offer",
-	"rejected",
-	"withdrawn",
-	"ghosted",
-] as const;
+const optionalText = (max: number) => z.string().trim().max(max).optional().or(z.literal(""));
 
+/** The New/Edit dialog. Notes, events and the posting's long text are edited on the sheet. */
 export const applicationSchema = z.object({
-	company: z.string().min(1, "Company required"),
-	role: z.string().min(1, "Role required"),
-	jobUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-	source: z.string().optional(),
+	company: z.string().trim().min(1, "Company required").max(200),
+	role: z.string().trim().min(1, "Role required").max(300),
+	jobUrl: z.string().trim().url("Must be a valid URL").optional().or(z.literal("")),
+	source: optionalText(100),
+	status: z.enum(STATUSES),
+	dateApplied: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date required"),
+	contact: optionalText(500),
+	salary: optionalText(200),
+	location: optionalText(200),
+	notes: optionalText(10_000),
 	resumeFileUrl: z.string().url().optional().or(z.literal("")),
-	resumeFileName: z.string().optional(),
-	status: z.enum(kyuuStatusValues),
-	hrScreening: z.boolean(),
-	technicalInterview: z.boolean(),
-	offer: z.boolean(),
-	dateApplied: z.string().min(1, "Date required"),
-	notes: z.string().optional(),
+	resumeFileName: optionalText(300),
 });
 
 export type ApplicationFormValues = z.infer<typeof applicationSchema>;
-export type KyuuStatus = (typeof kyuuStatusValues)[number];
+
+/** One field at a time from the sheet: notes and contact save as you type. */
+export const applicationPatchSchema = z
+	.object({
+		notes: z.string().max(10_000).nullable(),
+		contact: z.string().trim().max(500).nullable(),
+	})
+	.partial();
+
+export type ApplicationPatch = z.infer<typeof applicationPatchSchema>;
 
 export const kyuuApplyMethodValues = ["manual", "auto"] as const;
 export type KyuuApplyMethod = (typeof kyuuApplyMethodValues)[number];
 
-export const kyuuFilterStatusValues = [...kyuuStatusValues, "ignored"] as const;
-export type KyuuFilterStatus = (typeof kyuuFilterStatusValues)[number];
+/** The All page's views: a status group each, plus the archive. */
+export const KYUU_VIEWS = ["all", "queue", "waiting", "active", "closed", "archived"] as const;
+export type KyuuView = (typeof KYUU_VIEWS)[number];

@@ -1,16 +1,35 @@
 "use server";
 
-import { auth } from "@/auth";
-import { getOwnedWorkspace } from "@/lib/session";
-import { and, asc, count, db, desc, eq, isNotNull, kyuuApplications } from "@seikatsu/db";
-import { revalidatePath } from "next/cache";
-import { type KyuuStatus, applicationSchema, kyuuStatusValues } from "../lib/kyuu-schemas";
-import { APPLICATIONS_PAGE_SIZE } from "../lib/search-params";
-import { type KyuuFilters, buildKyuuConditions } from "./filters";
-
-async function assertWorkspaceOwner(workspaceId: string) {
-	if (!(await getOwnedWorkspace(workspaceId))) throw new Error("Forbidden");
-}
+import { getCurrentWorkspace, requireWorkspace } from "@/lib/session";
+import { getUserToday } from "@/lib/timezone";
+import {
+	and,
+	asc,
+	count,
+	db,
+	desc,
+	eq,
+	gte,
+	inArray,
+	isNotNull,
+	isNull,
+	kyuuApplications,
+	kyuuEvents,
+	notInArray,
+} from "@seikatsu/db";
+import {
+	type ApplicationFormValues,
+	type ApplicationPatch,
+	applicationPatchSchema,
+	applicationSchema,
+} from "../lib/kyuu-schemas";
+import { APPLICATIONS_PAGE_SIZE, type KyuuFilters, type SortField } from "../lib/search-params";
+import { normalizeSource } from "../lib/sources";
+import { ANSWER_KINDS, CLOSED, IN_PROGRESS, toStatus, waiting } from "../lib/stages";
+import { type KyuuStats, computeStats } from "../lib/stats";
+import type { ApplicationDetail, ApplicationRow, KyuuEvent, UpcomingEvent } from "../lib/types";
+import { buildKyuuConditions } from "./filters";
+import { type Result, getOwnedApplication, revalidateKyuu } from "./guard";
 
 const SORT_COLUMNS = {
 	date: kyuuApplications.dateApplied,
@@ -18,325 +37,406 @@ const SORT_COLUMNS = {
 	status: kyuuApplications.status,
 } as const;
 
-// What the table and the edit form show. The whole list goes to the client and is resent
-// after every inline edit, so stage timestamps, archive/update stamps etc. stay behind.
-const tableColumns = {
+// What lists show. The long posting text, cover letter etc. load with the sheet.
+const rowColumns = {
 	id: kyuuApplications.id,
 	company: kyuuApplications.company,
 	role: kyuuApplications.role,
 	jobUrl: kyuuApplications.jobUrl,
 	source: kyuuApplications.source,
-	resumeFileUrl: kyuuApplications.resumeFileUrl,
-	resumeFileName: kyuuApplications.resumeFileName,
 	status: kyuuApplications.status,
 	applyMethod: kyuuApplications.applyMethod,
-	hrScreening: kyuuApplications.hrScreening,
-	technicalInterview: kyuuApplications.technicalInterview,
-	offer: kyuuApplications.offer,
 	dateApplied: kyuuApplications.dateApplied,
 	notes: kyuuApplications.notes,
+	archivedAt: kyuuApplications.archivedAt,
 };
 
-export async function getApplications(
-	workspaceId: string,
-	opts?: KyuuFilters & { sort?: keyof typeof SORT_COLUMNS; dir?: "asc" | "desc"; page?: number },
-) {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Unauthorized");
-	await assertWorkspaceOwner(workspaceId);
+type RawRow = {
+	id: string;
+	company: string;
+	role: string;
+	jobUrl: string | null;
+	source: string | null;
+	status: string;
+	applyMethod: "manual" | "auto";
+	dateApplied: string;
+	notes: string | null;
+	archivedAt: Date | null;
+};
 
-	const where = buildKyuuConditions(workspaceId, opts ?? {});
-	const sortCol = SORT_COLUMNS[opts?.sort ?? "date"];
-	const orderFn = opts?.dir === "asc" ? asc : desc;
+const eventColumns = {
+	id: kyuuEvents.id,
+	applicationId: kyuuEvents.applicationId,
+	kind: kyuuEvents.kind,
+	date: kyuuEvents.date,
+	time: kyuuEvents.time,
+	note: kyuuEvents.note,
+	createdAt: kyuuEvents.createdAt,
+};
 
-	const page = opts?.page ?? 0;
+type RawEvent = {
+	id: string;
+	applicationId: string;
+	kind: KyuuEvent["kind"];
+	date: string | null;
+	time: string | null;
+	note: string | null;
+	createdAt: Date;
+};
+
+const toEvent = (e: RawEvent): KyuuEvent => ({
+	id: e.id,
+	kind: e.kind,
+	date: e.date,
+	time: e.time ? e.time.slice(0, 5) : null,
+	note: e.note,
+});
+
+/** Oldest first; a day-less event sits where it was logged. */
+function byWhen(a: RawEvent, b: RawEvent) {
+	const ad = a.date ?? a.createdAt.toISOString().slice(0, 10);
+	const bd = b.date ?? b.createdAt.toISOString().slice(0, 10);
+	if (ad !== bd) return ad < bd ? -1 : 1;
+	if ((a.time ?? "") !== (b.time ?? "")) return (a.time ?? "") < (b.time ?? "") ? -1 : 1;
+	return a.createdAt.getTime() - b.createdAt.getTime();
+}
+
+async function eventsOf(ids: string[]): Promise<Map<string, RawEvent[]>> {
+	const map = new Map<string, RawEvent[]>();
+	if (ids.length === 0) return map;
+	const rows = await db
+		.select(eventColumns)
+		.from(kyuuEvents)
+		.where(inArray(kyuuEvents.applicationId, ids));
+	for (const e of rows.sort(byWhen)) {
+		const list = map.get(e.applicationId);
+		if (list) list.push(e);
+		else map.set(e.applicationId, [e]);
+	}
+	return map;
+}
+
+function toRow(r: RawRow, events: RawEvent[], today: string): ApplicationRow {
+	const status = toStatus(r.status);
+	const next = events.find(
+		(e) => (e.kind === "screening" || e.kind === "interview") && e.date != null && e.date >= today,
+	);
+	const followedUpOn = events.filter((e) => e.kind === "follow_up" && e.date).at(-1)?.date ?? null;
+	const answered = events.some((e) => ANSWER_KINDS.includes(e.kind));
+	return {
+		id: r.id,
+		company: r.company,
+		role: r.role,
+		jobUrl: r.jobUrl,
+		source: r.source,
+		status,
+		applyMethod: r.applyMethod,
+		dateApplied: r.dateApplied,
+		notes: r.notes,
+		archived: r.archivedAt != null,
+		next: next ? { kind: next.kind, date: next.date, time: next.time?.slice(0, 5) ?? null } : null,
+		waiting: r.archivedAt
+			? null
+			: waiting({ status, dateApplied: r.dateApplied, followedUpOn, answered }, today),
+	};
+}
+
+async function withProgress(rows: RawRow[]): Promise<ApplicationRow[]> {
+	const [events, today] = await Promise.all([eventsOf(rows.map((r) => r.id)), getUserToday()]);
+	return rows.map((r) => toRow(r, events.get(r.id) ?? [], today));
+}
+
+// ── Reads ──
+
+/** One page of the All table. */
+export async function getApplicationsPage(
+	filters: KyuuFilters,
+	opts: { sort: SortField; dir: "asc" | "desc"; page: number },
+): Promise<{ rows: ApplicationRow[]; total: number }> {
+	const ws = await requireWorkspace();
+	const where = buildKyuuConditions(ws.id, filters);
+	const orderFn = opts.dir === "asc" ? asc : desc;
 	const [rows, [counted]] = await Promise.all([
 		db
-			.select(tableColumns)
+			.select(rowColumns)
 			.from(kyuuApplications)
 			.where(where)
-			// id as a tie-breaker keeps rows from jumping between pages on equal dates.
-			.orderBy(orderFn(sortCol), asc(kyuuApplications.id))
+			// Newest first within a day, and id as a tie-breaker keeps rows from jumping pages.
+			.orderBy(
+				orderFn(SORT_COLUMNS[opts.sort]),
+				desc(kyuuApplications.createdAt),
+				asc(kyuuApplications.id),
+			)
 			.limit(APPLICATIONS_PAGE_SIZE)
-			.offset(page * APPLICATIONS_PAGE_SIZE),
+			.offset(opts.page * APPLICATIONS_PAGE_SIZE),
 		db.select({ total: count() }).from(kyuuApplications).where(where),
 	]);
-	return { rows, total: counted?.total ?? 0 };
+	return { rows: await withProgress(rows), total: counted?.total ?? 0 };
 }
 
-export async function getSources(workspaceId: string) {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Unauthorized");
-	await assertWorkspaceOwner(workspaceId);
+export interface NowData {
+	toSend: ApplicationRow[];
+	upcoming: UpcomingEvent[];
+	inProgress: ApplicationRow[];
+	followUp: ApplicationRow[];
+	ghost: ApplicationRow[];
+	/** Sent, answered nothing, nothing due yet. */
+	quiet: number;
+	sourced: number;
+}
 
+/** The Now page: what to send, what's booked, what's moving, who to nudge or let go. */
+export async function getNow(): Promise<NowData> {
+	const ws = await requireWorkspace();
+	const live = and(eq(kyuuApplications.workspaceId, ws.id), isNull(kyuuApplications.archivedAt));
 	const rows = await db
-		.selectDistinct({ source: kyuuApplications.source })
+		.select(rowColumns)
 		.from(kyuuApplications)
-		.where(and(eq(kyuuApplications.workspaceId, workspaceId), isNotNull(kyuuApplications.source)));
+		.where(and(live, notInArray(kyuuApplications.status, [...CLOSED])))
+		.orderBy(desc(kyuuApplications.dateApplied), desc(kyuuApplications.createdAt));
+	const all = await withProgress(rows);
+	const today = await getUserToday();
 
-	return rows.map((r) => r.source).filter((s): s is string => !!s);
+	const upcomingRows = await db
+		.select({
+			...eventColumns,
+			company: kyuuApplications.company,
+			role: kyuuApplications.role,
+			jobUrl: kyuuApplications.jobUrl,
+		})
+		.from(kyuuEvents)
+		.innerJoin(kyuuApplications, eq(kyuuApplications.id, kyuuEvents.applicationId))
+		.where(
+			and(
+				live,
+				notInArray(kyuuApplications.status, [...CLOSED]),
+				inArray(kyuuEvents.kind, ["screening", "interview"]),
+				gte(kyuuEvents.date, today),
+			),
+		);
+
+	const ghost = all.filter((r) => r.waiting?.due === "ghost");
+	return {
+		toSend: all.filter((r) => r.status === "drafted"),
+		upcoming: upcomingRows.sort(byWhen).map((e) => ({
+			...toEvent(e),
+			application: { id: e.applicationId, company: e.company, role: e.role, jobUrl: e.jobUrl },
+		})),
+		inProgress: all
+			.filter((r) => IN_PROGRESS.includes(r.status))
+			.sort((a, b) => (a.next?.date ?? "9999").localeCompare(b.next?.date ?? "9999")),
+		followUp: all.filter((r) => r.waiting?.due === "follow_up"),
+		ghost: ghost.sort((a, b) => (b.waiting?.days ?? 0) - (a.waiting?.days ?? 0)),
+		quiet: all.filter((r) => r.waiting && !r.waiting.due).length,
+		sourced: all.filter((r) => r.status === "sourced").length,
+	};
 }
 
-export interface ResumeFile {
-	fileUrl: string;
-	fileName: string;
+/** Everything about one application, for the sheet. */
+export async function getApplication(applicationId: string): Promise<Result<ApplicationDetail>> {
+	const owned = await getOwnedApplication(applicationId);
+	if (!owned) return { error: "Application not found" };
+	const [row] = await db
+		.select({
+			...rowColumns,
+			contact: kyuuApplications.contact,
+			location: kyuuApplications.location,
+			remote: kyuuApplications.remote,
+			salary: kyuuApplications.salary,
+			fitVerdict: kyuuApplications.fitVerdict,
+			stackTags: kyuuApplications.stackTags,
+			jobDescription: kyuuApplications.jobDescription,
+			coverLetter: kyuuApplications.coverLetter,
+			resumeFileUrl: kyuuApplications.resumeFileUrl,
+			resumeFileName: kyuuApplications.resumeFileName,
+			createdAt: kyuuApplications.createdAt,
+		})
+		.from(kyuuApplications)
+		.where(eq(kyuuApplications.id, owned.id))
+		.limit(1);
+	if (!row) return { error: "Application not found" };
+	const [events, today] = await Promise.all([eventsOf([row.id]), getUserToday()]);
+	const list = events.get(row.id) ?? [];
+	return {
+		success: true,
+		data: {
+			...toRow(row, list, today),
+			contact: row.contact,
+			location: row.location,
+			remote: row.remote,
+			salary: row.salary,
+			fitVerdict: row.fitVerdict,
+			stackTags: row.stackTags,
+			jobDescription: row.jobDescription,
+			coverLetter: row.coverLetter,
+			resumeFileUrl: row.resumeFileUrl,
+			resumeFileName: row.resumeFileName,
+			createdAt: row.createdAt.toISOString(),
+			events: list.map(toEvent),
+		},
+	};
 }
 
-export async function getResumeFiles(workspaceId: string): Promise<ResumeFile[]> {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Unauthorized");
-	await assertWorkspaceOwner(workspaceId);
+/** Every source in use, most used first. */
+export async function getSources(): Promise<{ source: string; count: number }[]> {
+	const ws = await getCurrentWorkspace();
+	if (!ws) return [];
+	const rows = await db
+		.select({ source: kyuuApplications.source, count: count() })
+		.from(kyuuApplications)
+		.where(and(eq(kyuuApplications.workspaceId, ws.id), isNotNull(kyuuApplications.source)))
+		.groupBy(kyuuApplications.source)
+		.orderBy(desc(count()));
+	return rows.filter((r): r is { source: string; count: number } => !!r.source);
+}
 
+/** Résumés already uploaded, to pick one again. */
+export async function getResumeFiles(): Promise<{ fileUrl: string; fileName: string }[]> {
+	const ws = await getCurrentWorkspace();
+	if (!ws) return [];
 	const rows = await db
 		.selectDistinct({
 			fileUrl: kyuuApplications.resumeFileUrl,
 			fileName: kyuuApplications.resumeFileName,
 		})
 		.from(kyuuApplications)
-		.where(
-			and(eq(kyuuApplications.workspaceId, workspaceId), isNotNull(kyuuApplications.resumeFileUrl)),
-		);
-
-	return rows.filter((r): r is ResumeFile => !!r.fileUrl && !!r.fileName);
+		.where(and(eq(kyuuApplications.workspaceId, ws.id), isNotNull(kyuuApplications.resumeFileUrl)));
+	return rows.filter(
+		(r): r is { fileUrl: string; fileName: string } => !!r.fileUrl && !!r.fileName,
+	);
 }
 
-export async function createApplication(workspaceId: string, data: unknown) {
-	const session = await auth();
-	if (!session?.user?.id) return { error: "Unauthorized" };
-	await assertWorkspaceOwner(workspaceId);
-
-	const parsed = applicationSchema.safeParse(data);
-	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid data" };
-
-	const now = new Date();
-	const [application] = await db
-		.insert(kyuuApplications)
-		.values({
-			workspaceId,
-			company: parsed.data.company,
-			role: parsed.data.role,
-			jobUrl: parsed.data.jobUrl || null,
-			source: parsed.data.source || null,
-			resumeFileUrl: parsed.data.resumeFileUrl || null,
-			resumeFileName: parsed.data.resumeFileName || null,
-			status: parsed.data.status,
-			hrScreening: parsed.data.hrScreening,
-			technicalInterview: parsed.data.technicalInterview,
-			offer: parsed.data.offer,
-			dateApplied: parsed.data.dateApplied,
-			notes: parsed.data.notes || null,
-			hrScreeningAt: parsed.data.hrScreening ? now : null,
-			technicalInterviewAt: parsed.data.technicalInterview ? now : null,
-			offerAt: parsed.data.offer ? now : null,
-			rejectedAt: parsed.data.status === "rejected" ? now : null,
-		})
-		.returning();
-
-	revalidatePath("/kyuu");
-	return { success: true as const, data: application };
-}
-
-export async function updateApplication(applicationId: string, data: unknown) {
-	const session = await auth();
-	if (!session?.user?.id) return { error: "Unauthorized" };
-
-	const [existing] = await db
+/** The Stats page's numbers, under the same filters as All. */
+export async function getStats(filters: KyuuFilters): Promise<KyuuStats> {
+	const ws = await requireWorkspace();
+	const where = buildKyuuConditions(ws.id, { ...filters, view: "all" });
+	const apps = await db
 		.select({
-			workspaceId: kyuuApplications.workspaceId,
-			hrScreening: kyuuApplications.hrScreening,
-			technicalInterview: kyuuApplications.technicalInterview,
-			offer: kyuuApplications.offer,
+			id: kyuuApplications.id,
 			status: kyuuApplications.status,
-			hrScreeningAt: kyuuApplications.hrScreeningAt,
-			technicalInterviewAt: kyuuApplications.technicalInterviewAt,
-			offerAt: kyuuApplications.offerAt,
-			rejectedAt: kyuuApplications.rejectedAt,
+			source: kyuuApplications.source,
+			applyMethod: kyuuApplications.applyMethod,
+			dateApplied: kyuuApplications.dateApplied,
 		})
 		.from(kyuuApplications)
-		.where(eq(kyuuApplications.id, applicationId))
-		.limit(1);
-	if (!existing) return { error: "Application not found" };
-	await assertWorkspaceOwner(existing.workspaceId);
+		.where(where);
+	const events = await db
+		.select({
+			applicationId: kyuuEvents.applicationId,
+			kind: kyuuEvents.kind,
+			date: kyuuEvents.date,
+		})
+		.from(kyuuEvents)
+		.innerJoin(kyuuApplications, eq(kyuuApplications.id, kyuuEvents.applicationId))
+		.where(where);
+	return computeStats(
+		apps.map((a) => ({ ...a, status: toStatus(a.status) })),
+		events,
+		await getUserToday(),
+	);
+}
 
+// ── Writes ──
+
+function valuesOf(data: ApplicationFormValues) {
+	return {
+		company: data.company,
+		role: data.role,
+		jobUrl: data.jobUrl || null,
+		source: normalizeSource(data.source),
+		status: data.status,
+		dateApplied: data.dateApplied,
+		contact: data.contact || null,
+		salary: data.salary || null,
+		location: data.location || null,
+		notes: data.notes || null,
+		resumeFileUrl: data.resumeFileUrl || null,
+		resumeFileName: data.resumeFileName || null,
+	};
+}
+
+export async function createApplication(data: unknown): Promise<Result<{ id: string }>> {
+	const ws = await requireWorkspace();
 	const parsed = applicationSchema.safeParse(data);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid data" };
 
-	const now = new Date();
-	// First false→true transition stamps the stage timestamp; later toggles don't overwrite it.
-	const hrScreeningAt =
-		parsed.data.hrScreening && !existing.hrScreening ? now : existing.hrScreeningAt;
-	const technicalInterviewAt =
-		parsed.data.technicalInterview && !existing.technicalInterview
-			? now
-			: existing.technicalInterviewAt;
-	const offerAt = parsed.data.offer && !existing.offer ? now : existing.offerAt;
-	const rejectedAt =
-		parsed.data.status === "rejected" && existing.status !== "rejected" ? now : existing.rejectedAt;
-
-	const [application] = await db
-		.update(kyuuApplications)
-		.set({
-			company: parsed.data.company,
-			role: parsed.data.role,
-			jobUrl: parsed.data.jobUrl || null,
-			source: parsed.data.source || null,
-			resumeFileUrl: parsed.data.resumeFileUrl || null,
-			resumeFileName: parsed.data.resumeFileName || null,
-			status: parsed.data.status,
-			hrScreening: parsed.data.hrScreening,
-			technicalInterview: parsed.data.technicalInterview,
-			offer: parsed.data.offer,
-			dateApplied: parsed.data.dateApplied,
-			notes: parsed.data.notes || null,
-			hrScreeningAt,
-			technicalInterviewAt,
-			offerAt,
-			rejectedAt,
-			updatedAt: now,
-		})
-		.where(eq(kyuuApplications.id, applicationId))
-		.returning();
-
-	revalidatePath("/kyuu");
-	return { success: true as const, data: application };
+	const values = valuesOf(parsed.data);
+	const id = await db.transaction(async (tx) => {
+		const [created] = await tx
+			.insert(kyuuApplications)
+			.values({ workspaceId: ws.id, ...values })
+			.returning({ id: kyuuApplications.id });
+		// Logged at a stage already: say so on its timeline, on the day it went out.
+		const kind = {
+			hr_screening: "screening",
+			technical_interview: "interview",
+			offer: "offer",
+			rejected: "rejected",
+			withdrawn: "withdrawn",
+			ghosted: "ghosted",
+		}[values.status as string] as KyuuEvent["kind"] | undefined;
+		if (kind) await tx.insert(kyuuEvents).values({ applicationId: created.id, kind, date: null });
+		return created.id;
+	});
+	revalidateKyuu();
+	return { success: true, data: { id } };
 }
 
-export async function deleteApplication(
-	applicationId: string,
-): Promise<{ error: string } | { success: true }> {
-	const session = await auth();
-	if (!session?.user?.id) return { error: "Unauthorized" };
+/** The dialog's fields. A status change here doesn't log an event (the sheet's menu does). */
+export async function updateApplication(applicationId: string, data: unknown): Promise<Result> {
+	const owned = await getOwnedApplication(applicationId);
+	if (!owned) return { error: "Application not found" };
+	const parsed = applicationSchema.safeParse(data);
+	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid data" };
 
-	const [existing] = await db
-		.select({ workspaceId: kyuuApplications.workspaceId })
-		.from(kyuuApplications)
-		.where(eq(kyuuApplications.id, applicationId))
-		.limit(1);
-	if (!existing) return { error: "Application not found" };
-	await assertWorkspaceOwner(existing.workspaceId);
-
-	await db.delete(kyuuApplications).where(eq(kyuuApplications.id, applicationId));
-	revalidatePath("/kyuu");
+	await db
+		.update(kyuuApplications)
+		.set({ ...valuesOf(parsed.data), updatedAt: new Date() })
+		.where(eq(kyuuApplications.id, owned.id));
+	revalidateKyuu();
 	return { success: true };
 }
 
-export async function updateApplicationStatus(applicationId: string, status: unknown) {
-	const session = await auth();
-	if (!session?.user?.id) return { error: "Unauthorized" };
-
-	const [existing] = await db
-		.select({
-			workspaceId: kyuuApplications.workspaceId,
-			status: kyuuApplications.status,
-			rejectedAt: kyuuApplications.rejectedAt,
-		})
-		.from(kyuuApplications)
-		.where(eq(kyuuApplications.id, applicationId))
-		.limit(1);
-	if (!existing) return { error: "Application not found" };
-	await assertWorkspaceOwner(existing.workspaceId);
-
-	if (typeof status !== "string" || !(kyuuStatusValues as readonly string[]).includes(status)) {
-		return { error: "Invalid status" };
-	}
-
-	const newStatus = status as KyuuStatus;
-	const now = new Date();
-	const rejectedAt =
-		newStatus === "rejected" && existing.status !== "rejected" ? now : existing.rejectedAt;
-
-	const [application] = await db
-		.update(kyuuApplications)
-		.set({
-			status: newStatus,
-			rejectedAt,
-			updatedAt: now,
-		})
-		.where(eq(kyuuApplications.id, applicationId))
-		.returning();
-
-	revalidatePath("/kyuu");
-	return { success: true as const, data: application };
-}
-
-export type StageField = "hrScreening" | "technicalInterview" | "offer";
-
-export async function updateApplicationStage(
+/** One field from the sheet (notes, contact), saved as it's typed. */
+export async function patchApplication(
 	applicationId: string,
-	stage: StageField,
-	value: boolean,
-) {
-	const session = await auth();
-	if (!session?.user?.id) return { error: "Unauthorized" };
-
-	const [existing] = await db
-		.select({
-			workspaceId: kyuuApplications.workspaceId,
-			hrScreening: kyuuApplications.hrScreening,
-			technicalInterview: kyuuApplications.technicalInterview,
-			offer: kyuuApplications.offer,
-			hrScreeningAt: kyuuApplications.hrScreeningAt,
-			technicalInterviewAt: kyuuApplications.technicalInterviewAt,
-			offerAt: kyuuApplications.offerAt,
-		})
-		.from(kyuuApplications)
-		.where(eq(kyuuApplications.id, applicationId))
-		.limit(1);
-	if (!existing) return { error: "Application not found" };
-	await assertWorkspaceOwner(existing.workspaceId);
-
-	const now = new Date();
-	const updatePayload: Record<string, unknown> = {
-		[stage]: value,
-		updatedAt: now,
-	};
-
-	if (stage === "hrScreening" && value && !existing.hrScreeningAt) {
-		updatePayload.hrScreeningAt = now;
-	} else if (stage === "technicalInterview" && value && !existing.technicalInterviewAt) {
-		updatePayload.technicalInterviewAt = now;
-	} else if (stage === "offer" && value && !existing.offerAt) {
-		updatePayload.offerAt = now;
-	}
-
-	const [application] = await db
+	patch: ApplicationPatch,
+): Promise<Result> {
+	const owned = await getOwnedApplication(applicationId);
+	if (!owned) return { error: "Application not found" };
+	const parsed = applicationPatchSchema.safeParse(patch);
+	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid data" };
+	const set = Object.fromEntries(
+		Object.entries(parsed.data).map(([k, v]) => [k, typeof v === "string" && !v.trim() ? null : v]),
+	);
+	if (Object.keys(set).length === 0) return { success: true };
+	await db
 		.update(kyuuApplications)
-		.set(updatePayload)
-		.where(eq(kyuuApplications.id, applicationId))
-		.returning();
-
-	revalidatePath("/kyuu");
-	return { success: true as const, data: application };
+		.set({ ...set, updatedAt: new Date() })
+		.where(eq(kyuuApplications.id, owned.id));
+	revalidateKyuu();
+	return { success: true };
 }
 
-// Long-form posting data (JD, cover letter, verdict) written by the job-search workflow.
-// Loaded on demand for the details dialog so the table payload stays small.
-export async function getApplicationDetails(applicationId: string) {
-	const session = await auth();
-	if (!session?.user?.id) return { error: "Unauthorized" };
-
-	const [row] = await db
-		.select({
-			workspaceId: kyuuApplications.workspaceId,
-			jobDescription: kyuuApplications.jobDescription,
-			coverLetter: kyuuApplications.coverLetter,
-			location: kyuuApplications.location,
-			remote: kyuuApplications.remote,
-			salary: kyuuApplications.salary,
-			fitVerdict: kyuuApplications.fitVerdict,
-			stackTags: kyuuApplications.stackTags,
-		})
-		.from(kyuuApplications)
-		.where(eq(kyuuApplications.id, applicationId))
-		.limit(1);
-	if (!row) return { error: "Application not found" };
-	await assertWorkspaceOwner(row.workspaceId);
-
-	const { workspaceId: _, ...details } = row;
-	return { success: true as const, data: details };
+export async function deleteApplication(applicationId: string): Promise<Result> {
+	const owned = await getOwnedApplication(applicationId);
+	if (!owned) return { error: "Application not found" };
+	await db.delete(kyuuApplications).where(eq(kyuuApplications.id, owned.id));
+	revalidateKyuu();
+	return { success: true };
 }
 
-export type ApplicationDetails = Extract<
-	Awaited<ReturnType<typeof getApplicationDetails>>,
-	{ success: true }
->["data"];
+/** Settings: every application from one source moves to another (merging two spellings). */
+export async function renameSource(from: string, to: string): Promise<Result<{ count: number }>> {
+	const ws = await requireWorkspace();
+	const target = normalizeSource(to);
+	if (!from || !target) return { error: "Name the source" };
+	if (target === from) return { success: true, data: { count: 0 } };
+	const moved = await db
+		.update(kyuuApplications)
+		.set({ source: target })
+		.where(and(eq(kyuuApplications.workspaceId, ws.id), eq(kyuuApplications.source, from)))
+		.returning({ id: kyuuApplications.id });
+	revalidateKyuu();
+	return { success: true, data: { count: moved.length } };
+}

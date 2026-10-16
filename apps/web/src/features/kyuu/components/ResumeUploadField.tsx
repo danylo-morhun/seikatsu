@@ -14,8 +14,8 @@ import {
 } from "@seikatsu/ui";
 import * as React from "react";
 import { toast } from "sonner";
-import type { ResumeFile } from "../actions/applications";
 import { uploadResumeFile } from "../actions/resume";
+import type { ResumeFile } from "../lib/types";
 
 interface Props {
 	fileUrl: string;
