@@ -21,11 +21,18 @@ export const applicationSchema = z.object({
 
 export type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
-/** One field at a time from the sheet: notes and contact save as you type. */
+/** One field at a time from the application's page, saved as it's edited. */
 export const applicationPatchSchema = z
 	.object({
-		notes: z.string().max(10_000).nullable(),
+		company: z.string().trim().min(1, "Company required").max(200),
+		role: z.string().trim().min(1, "Role required").max(300),
+		jobUrl: z.string().trim().url("Must be a valid URL").or(z.literal("")).nullable(),
+		source: z.string().trim().max(100).nullable(),
+		dateApplied: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date"),
 		contact: z.string().trim().max(500).nullable(),
+		location: z.string().trim().max(200).nullable(),
+		salary: z.string().trim().max(200).nullable(),
+		notes: z.string().max(10_000).nullable(),
 	})
 	.partial();
 
@@ -34,6 +41,6 @@ export type ApplicationPatch = z.infer<typeof applicationPatchSchema>;
 export const kyuuApplyMethodValues = ["manual", "auto"] as const;
 export type KyuuApplyMethod = (typeof kyuuApplyMethodValues)[number];
 
-/** The All page's views: a status group each, plus the archive. */
+/** The table's views: a status group each, plus the archive. */
 export const KYUU_VIEWS = ["all", "queue", "waiting", "active", "closed", "archived"] as const;
 export type KyuuView = (typeof KYUU_VIEWS)[number];

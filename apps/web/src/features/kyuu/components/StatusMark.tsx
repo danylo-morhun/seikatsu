@@ -1,35 +1,53 @@
+import {
+	Call02Icon,
+	Cancel01Icon,
+	DiamondIcon,
+	HourglassIcon,
+	Logout03Icon,
+	Mail01Icon,
+	Search01Icon,
+	SentIcon,
+	StarIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
-import { STATUS_CONFIG, type Status, type Tone } from "../lib/stages";
+import { STATUS_CONFIG, type Status } from "../lib/stages";
 
-const DOT: Record<Tone, string> = {
-	quiet: "shadow-[inset_0_0_0_1.5px_var(--muted-foreground)]",
-	waiting: "bg-muted-foreground/60",
-	active: "bg-primary",
-	won: "bg-positive",
-	lost: "bg-muted-foreground/25",
+/** Each status: its glyph, and a colour by what it means for the search. */
+export const STATUS_LOOK: Record<Status, { icon: typeof SentIcon; className: string }> = {
+	sourced: { icon: Search01Icon, className: "text-muted-foreground" },
+	drafted: { icon: Mail01Icon, className: "text-orange-600 dark:text-orange-300" },
+	applied: { icon: SentIcon, className: "text-sky-600 dark:text-sky-300" },
+	hr_screening: { icon: Call02Icon, className: "text-amber-600 dark:text-amber-300" },
+	technical_interview: { icon: DiamondIcon, className: "text-violet-600 dark:text-violet-300" },
+	offer: { icon: StarIcon, className: "text-emerald-600 dark:text-emerald-300" },
+	rejected: { icon: Cancel01Icon, className: "text-negative" },
+	withdrawn: { icon: Logout03Icon, className: "text-muted-foreground/70" },
+	ghosted: { icon: HourglassIcon, className: "text-muted-foreground/70" },
 };
 
-/** A status as a dot and a word: where the application stands, not a colour per status. */
+/** A status as a glyph and a word in its colour; `detail` follows it ("3d", "Oct 21"). */
 export function StatusMark({
 	status,
+	detail,
 	className,
-	hideLabel = false,
 }: {
 	status: Status;
+	detail?: React.ReactNode;
 	className?: string;
-	hideLabel?: boolean;
 }) {
-	const { label, tone } = STATUS_CONFIG[status];
+	const { icon, className: tone } = STATUS_LOOK[status];
 	return (
 		<span
 			className={cn(
-				"inline-flex items-center gap-1.5 text-xs whitespace-nowrap",
-				tone === "active" || tone === "won" ? "text-foreground" : "text-muted-foreground",
+				"inline-flex min-w-0 items-center gap-1.5 text-xs font-medium whitespace-nowrap",
+				tone,
 				className,
 			)}
 		>
-			<span aria-hidden className={cn("size-2 shrink-0 rounded-full", DOT[tone])} />
-			<span className={cn(hideLabel && "sr-only")}>{label}</span>
+			<HugeiconsIcon icon={icon} className="size-3.5 shrink-0" strokeWidth={2} />
+			<span>{STATUS_CONFIG[status].label}</span>
+			{detail && <span className="truncate font-normal opacity-75">· {detail}</span>}
 		</span>
 	);
 }

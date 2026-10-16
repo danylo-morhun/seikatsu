@@ -1,42 +1,14 @@
-import { getApplicationsPage, getSources } from "@/features/kyuu/actions/applications";
-import { AllView } from "@/features/kyuu/components/AllView";
-import {
-	APPLICATIONS_PAGE_SIZE,
-	type RawKyuuSearchParams,
-	hasActiveKyuuFilters,
-	parseKyuuFilters,
-	parseKyuuSort,
-} from "@/features/kyuu/lib/search-params";
-import { getUserToday } from "@/lib/timezone";
+import { redirect } from "next/navigation";
 
+// v2 kept the table here; it's Kyuu's home now. Old links keep their view and filters.
 export default async function KyuuAllPage({
 	searchParams,
 }: {
-	searchParams: Promise<RawKyuuSearchParams>;
+	searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-	const raw = await searchParams;
-	const filters = parseKyuuFilters(raw);
-	const sort = parseKyuuSort(raw);
-	const [{ rows, total }, sources, today] = await Promise.all([
-		getApplicationsPage(filters, sort),
-		getSources(),
-		getUserToday(),
-	]);
-
-	return (
-		<div className="px-4 pt-2 pb-28 sm:px-8 md:pt-4 md:pb-8">
-			<AllView
-				rows={rows}
-				total={total}
-				view={filters.view}
-				filtered={hasActiveKyuuFilters(filters)}
-				sources={sources.map((s) => s.source)}
-				sort={sort.sort}
-				dir={sort.dir}
-				page={sort.page}
-				pageCount={Math.ceil(total / APPLICATIONS_PAGE_SIZE)}
-				today={today}
-			/>
-		</div>
-	);
+	const params = new URLSearchParams();
+	for (const [key, value] of Object.entries(await searchParams))
+		if (typeof value === "string") params.set(key, value);
+	const qs = params.toString();
+	redirect(qs ? `/kyuu?${qs}` : "/kyuu");
 }

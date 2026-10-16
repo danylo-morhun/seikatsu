@@ -1,20 +1,23 @@
 "use client";
 
+import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { startNavigationProgress } from "@/components/NavigationProgress";
 import { UnderlineTab, UnderlineTabs } from "@/components/UnderlineTabs";
 import { Button, cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import type { KyuuView } from "../lib/kyuu-schemas";
 import type { SortField } from "../lib/search-params";
+import { GHOST_DAYS } from "../lib/stages";
 import type { ApplicationRow } from "../lib/types";
-import { ApplicationArea } from "./ApplicationArea";
+import { ApplicationArea, useApplicationArea } from "./ApplicationArea";
 import { ApplicationRowItem, TABLE_GRID } from "./ApplicationRowItem";
 import { KyuuFilters } from "./KyuuFilters";
 
 const VIEWS: { value: KyuuView; label: string; empty: string }[] = [
-	{ value: "all", label: "All", empty: "No applications yet." },
-	{ value: "queue", label: "To send", empty: "Nothing to send." },
+	{ value: "all", label: "All", empty: "No applications yet. Add one with N." },
+	{ value: "queue", label: "Not sent", empty: "Nothing waiting to be sent." },
 	{ value: "waiting", label: "Waiting", empty: "Nothing waiting for an answer." },
 	{ value: "active", label: "In progress", empty: "Nothing in progress." },
 	{ value: "closed", label: "Closed", empty: "Nothing closed." },
@@ -23,6 +26,9 @@ const VIEWS: { value: KyuuView; label: string; empty: string }[] = [
 
 interface Props {
 	rows: ApplicationRow[];
+	counts: Record<KyuuView, number>;
+	/** Sent, quiet for GHOST_DAYS: closed at once from the Waiting view. */
+	ghostDue: string[];
 	total: number;
 	view: KyuuView;
 	filtered: boolean;
@@ -35,9 +41,11 @@ interface Props {
 	today: string;
 }
 
-/** All: every application, by view, searchable and sortable. */
+/** The applications table: every application by view, searchable, sortable. */
 export function AllView({
 	rows,
+	counts,
+	ghostDue,
 	total,
 	view,
 	filtered,
@@ -91,7 +99,7 @@ export function AllView({
 
 	return (
 		<ApplicationArea rows={rows}>
-			<h1 className="sr-only">Kyuu — all applications</h1>
+			<h1 className="sr-only">Kyuu — applications</h1>
 			<UnderlineTabs label="Views">
 				{VIEWS.map((v) => (
 					<UnderlineTab
@@ -100,6 +108,9 @@ export function AllView({
 						current={view === v.value}
 					>
 						{v.label}
+						<span className="ml-1.5 font-figures text-xs text-muted-foreground">
+							{counts[v.value]}
+						</span>
 					</UnderlineTab>
 				))}
 			</UnderlineTabs>
@@ -114,6 +125,8 @@ export function AllView({
 				</p>
 			</div>
 
+			{view === "waiting" && ghostDue.length > 0 && <GhostBar ids={ghostDue} />}
+
 			<div className="mt-6">
 				<div
 					className={cn(
@@ -123,9 +136,9 @@ export function AllView({
 				>
 					{header("date", "Sent", "max-sm:hidden")}
 					{header("company", "Company")}
-					<span className="max-sm:hidden">Source</span>
+					<span className="max-md:hidden">Role</span>
+					<span className="max-md:hidden">Source</span>
 					{header("status", "Status", "justify-end sm:justify-start")}
-					<span className="max-lg:hidden">Next</span>
 					<span />
 				</div>
 				{rows.length === 0 ? (
@@ -137,7 +150,7 @@ export function AllView({
 				) : (
 					<ol className="divide-y divide-rule">
 						{rows.map((row, i) => (
-							<ApplicationRowItem key={row.id} row={row} today={today} table index={i} />
+							<ApplicationRowItem key={row.id} row={row} today={today} index={i} />
 						))}
 					</ol>
 				)}
@@ -173,5 +186,32 @@ function PageLink({ href, children }: { href: string | null; children: React.Rea
 				{children}
 			</Link>
 		</Button>
+	);
+}
+
+/** Waiting: the ones quiet for GHOST_DAYS, closed as ghosted in one go. */
+function GhostBar({ ids }: { ids: string[] }) {
+	const { actions } = useApplicationArea();
+	const [confirming, setConfirming] = useState(false);
+	return (
+		<div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface px-4 py-3">
+			<p className="text-sm">
+				<span className="font-figures font-medium">{ids.length}</span>{" "}
+				<span className="text-muted-foreground">
+					{ids.length === 1 ? "has" : "have"} had no answer for {GHOST_DAYS}+ days.
+				</span>
+			</p>
+			<Button variant="outline" onClick={() => setConfirming(true)}>
+				Close as ghosted
+			</Button>
+			<ConfirmDelete
+				open={confirming}
+				onOpenChange={setConfirming}
+				confirmLabel={`Close ${ids.length}`}
+				title={`Close ${ids.length} as ghosted?`}
+				description={`Each was sent ${GHOST_DAYS}+ days ago with no answer. They move to Closed, logged today; any can be reopened if the company comes back.`}
+				onConfirm={async () => actions.ghost(ids)}
+			/>
+		</div>
 	);
 }

@@ -9,17 +9,16 @@ import {
 	db,
 	desc,
 	eq,
-	gte,
 	inArray,
 	isNotNull,
 	isNull,
 	kyuuApplications,
 	kyuuEvents,
-	notInArray,
 } from "@seikatsu/db";
 import {
 	type ApplicationFormValues,
 	type ApplicationPatch,
+	type KyuuView,
 	applicationPatchSchema,
 	applicationSchema,
 } from "../lib/kyuu-schemas";
@@ -27,7 +26,7 @@ import { APPLICATIONS_PAGE_SIZE, type KyuuFilters, type SortField } from "../lib
 import { normalizeSource } from "../lib/sources";
 import { ANSWER_KINDS, CLOSED, IN_PROGRESS, toStatus, waiting } from "../lib/stages";
 import { type KyuuStats, computeStats } from "../lib/stats";
-import type { ApplicationDetail, ApplicationRow, KyuuEvent, UpcomingEvent } from "../lib/types";
+import type { ApplicationDetail, ApplicationRow, KyuuEvent } from "../lib/types";
 import { buildKyuuConditions } from "./filters";
 import { type Result, getOwnedApplication, revalidateKyuu } from "./guard";
 
@@ -174,65 +173,58 @@ export async function getApplicationsPage(
 	return { rows: await withProgress(rows), total: counted?.total ?? 0 };
 }
 
-export interface NowData {
-	toSend: ApplicationRow[];
-	upcoming: UpcomingEvent[];
-	inProgress: ApplicationRow[];
-	followUp: ApplicationRow[];
-	ghost: ApplicationRow[];
-	/** Sent, answered nothing, nothing due yet. */
-	quiet: number;
-	sourced: number;
+/** How many applications each view of the table holds. */
+export async function getViewCounts(): Promise<Record<KyuuView, number>> {
+	const ws = await requireWorkspace();
+	const rows = await db
+		.select({
+			status: kyuuApplications.status,
+			archived: isNotNull(kyuuApplications.archivedAt),
+			count: count(),
+		})
+		.from(kyuuApplications)
+		.where(eq(kyuuApplications.workspaceId, ws.id))
+		.groupBy(kyuuApplications.status, isNotNull(kyuuApplications.archivedAt));
+	const counts: Record<KyuuView, number> = {
+		all: 0,
+		queue: 0,
+		waiting: 0,
+		active: 0,
+		closed: 0,
+		archived: 0,
+	};
+	for (const r of rows) {
+		if (r.archived) {
+			counts.archived += r.count;
+			continue;
+		}
+		const status = toStatus(r.status);
+		counts.all += r.count;
+		if (status === "sourced" || status === "drafted") counts.queue += r.count;
+		else if (status === "applied") counts.waiting += r.count;
+		else if (IN_PROGRESS.includes(status)) counts.active += r.count;
+		else if (CLOSED.includes(status)) counts.closed += r.count;
+	}
+	return counts;
 }
 
-/** The Now page: what to send, what's booked, what's moving, who to nudge or let go. */
-export async function getNow(): Promise<NowData> {
+/** Sent applications nobody has answered for GHOST_DAYS: the Waiting view closes them at once. */
+export async function getGhostDue(): Promise<string[]> {
 	const ws = await requireWorkspace();
-	const live = and(eq(kyuuApplications.workspaceId, ws.id), isNull(kyuuApplications.archivedAt));
 	const rows = await db
 		.select(rowColumns)
 		.from(kyuuApplications)
-		.where(and(live, notInArray(kyuuApplications.status, [...CLOSED])))
-		.orderBy(desc(kyuuApplications.dateApplied), desc(kyuuApplications.createdAt));
-	const all = await withProgress(rows);
-	const today = await getUserToday();
-
-	const upcomingRows = await db
-		.select({
-			...eventColumns,
-			company: kyuuApplications.company,
-			role: kyuuApplications.role,
-			jobUrl: kyuuApplications.jobUrl,
-		})
-		.from(kyuuEvents)
-		.innerJoin(kyuuApplications, eq(kyuuApplications.id, kyuuEvents.applicationId))
 		.where(
 			and(
-				live,
-				notInArray(kyuuApplications.status, [...CLOSED]),
-				inArray(kyuuEvents.kind, ["screening", "interview"]),
-				gte(kyuuEvents.date, today),
+				eq(kyuuApplications.workspaceId, ws.id),
+				isNull(kyuuApplications.archivedAt),
+				eq(kyuuApplications.status, "applied"),
 			),
 		);
-
-	const ghost = all.filter((r) => r.waiting?.due === "ghost");
-	return {
-		toSend: all.filter((r) => r.status === "drafted"),
-		upcoming: upcomingRows.sort(byWhen).map((e) => ({
-			...toEvent(e),
-			application: { id: e.applicationId, company: e.company, role: e.role, jobUrl: e.jobUrl },
-		})),
-		inProgress: all
-			.filter((r) => IN_PROGRESS.includes(r.status))
-			.sort((a, b) => (a.next?.date ?? "9999").localeCompare(b.next?.date ?? "9999")),
-		followUp: all.filter((r) => r.waiting?.due === "follow_up"),
-		ghost: ghost.sort((a, b) => (b.waiting?.days ?? 0) - (a.waiting?.days ?? 0)),
-		quiet: all.filter((r) => r.waiting && !r.waiting.due).length,
-		sourced: all.filter((r) => r.status === "sourced").length,
-	};
+	return (await withProgress(rows)).filter((r) => r.waiting?.due === "ghost").map((r) => r.id);
 }
 
-/** Everything about one application, for the sheet. */
+/** Everything about one application, for its page. */
 export async function getApplication(applicationId: string): Promise<Result<ApplicationDetail>> {
 	const owned = await getOwnedApplication(applicationId);
 	if (!owned) return { error: "Application not found" };
@@ -382,22 +374,7 @@ export async function createApplication(data: unknown): Promise<Result<{ id: str
 	return { success: true, data: { id } };
 }
 
-/** The dialog's fields. A status change here doesn't log an event (the sheet's menu does). */
-export async function updateApplication(applicationId: string, data: unknown): Promise<Result> {
-	const owned = await getOwnedApplication(applicationId);
-	if (!owned) return { error: "Application not found" };
-	const parsed = applicationSchema.safeParse(data);
-	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid data" };
-
-	await db
-		.update(kyuuApplications)
-		.set({ ...valuesOf(parsed.data), updatedAt: new Date() })
-		.where(eq(kyuuApplications.id, owned.id));
-	revalidateKyuu();
-	return { success: true };
-}
-
-/** One field from the sheet (notes, contact), saved as it's typed. */
+/** One field from the application's page, saved as it's edited. */
 export async function patchApplication(
 	applicationId: string,
 	patch: ApplicationPatch,
@@ -406,9 +383,12 @@ export async function patchApplication(
 	if (!owned) return { error: "Application not found" };
 	const parsed = applicationPatchSchema.safeParse(patch);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid data" };
-	const set = Object.fromEntries(
-		Object.entries(parsed.data).map(([k, v]) => [k, typeof v === "string" && !v.trim() ? null : v]),
-	);
+	const set: Record<string, unknown> = {};
+	for (const [key, value] of Object.entries(parsed.data)) {
+		// Blank optional text is no value; a source gets its one spelling.
+		const blank = typeof value === "string" && !value.trim();
+		set[key] = key === "source" ? normalizeSource(value as string | null) : blank ? null : value;
+	}
 	if (Object.keys(set).length === 0) return { success: true };
 	await db
 		.update(kyuuApplications)
