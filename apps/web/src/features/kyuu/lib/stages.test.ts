@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, daysBetween, statusAfterEvent, toStatus, waiting } from "./stages";
+import { addDays, daysBetween, statusAfterEvent, waiting } from "./stages";
 
 describe("statusAfterEvent", () => {
 	it("moves forward on a screen or interview", () => {
@@ -24,14 +24,6 @@ describe("statusAfterEvent", () => {
 
 	it("leaves the status alone on a follow-up", () => {
 		expect(statusAfterEvent("applied", "follow_up")).toBe("applied");
-	});
-});
-
-describe("toStatus", () => {
-	it("reads retired statuses as their v2 meaning", () => {
-		expect(toStatus("under_review")).toBe("applied");
-		expect(toStatus("video_interview")).toBe("hr_screening");
-		expect(toStatus("offer")).toBe("offer");
 	});
 });
 

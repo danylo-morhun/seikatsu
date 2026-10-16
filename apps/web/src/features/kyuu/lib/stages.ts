@@ -103,10 +103,8 @@ export function statusAfterEvent(current: Status, kind: EventKind): Status {
 	return RANK[next] > RANK[current] || CLOSED.includes(current) ? next : current;
 }
 
-/** Statuses from before v2 still in the enum until it's narrowed; read as their v2 meaning. */
+/** A status as the database returns it (a plain string in raw selects). */
 export function toStatus(value: string): Status {
-	if (value === "under_review") return "applied";
-	if (value === "video_interview") return "hr_screening";
 	return (STATUSES as readonly string[]).includes(value) ? (value as Status) : "applied";
 }
 
