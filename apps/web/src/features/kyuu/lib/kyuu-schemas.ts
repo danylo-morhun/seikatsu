@@ -11,6 +11,7 @@ export const kyuuStatusValues = [
 	"offer",
 	"rejected",
 	"withdrawn",
+	"ghosted",
 ] as const;
 
 export const applicationSchema = z.object({
