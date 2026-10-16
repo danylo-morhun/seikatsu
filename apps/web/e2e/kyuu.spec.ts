@@ -3,6 +3,14 @@ import { expect, holdServerActions, test, workspaceId } from "./fixtures";
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
 
+async function statusOf(company: string) {
+	const [app] = await db
+		.select({ id: kyuuApplications.id, status: kyuuApplications.status })
+		.from(kyuuApplications)
+		.where(eq(kyuuApplications.company, company));
+	return app;
+}
+
 test.beforeEach(async () => {
 	const wsId = await workspaceId();
 	await db.delete(kyuuApplications).where(eq(kyuuApplications.workspaceId, wsId));
@@ -25,47 +33,33 @@ test.beforeEach(async () => {
 	]);
 });
 
-test("Now: a drafted application is marked sent with a key", async ({ page }) => {
+test("the table marks a drafted application sent with a key", async ({ page }) => {
 	await page.goto("/kyuu");
-	const toSend = page.getByRole("region", { name: /To send/ });
-	const row = toSend.locator("[data-app-row]", { hasText: "E2E Draft Corp" });
-	await expect(row).toContainText("captcha on the form.");
+	const row = page.locator("[data-app-row]", { hasText: "E2E Draft Corp" });
+	await expect(row).toContainText("To send");
 
 	const release = await holdServerActions(page);
 	await row.hover();
 	await page.keyboard.press("x");
-	// Optimistic: marked sent while the action is in flight; it leaves To send once it lands.
+	// Optimistic: the status changes while the action is still in flight.
 	await expect(row).toContainText("Applied");
 	release();
-	await expect(toSend).toHaveCount(0);
 
+	await expect.poll(async () => (await statusOf("E2E Draft Corp")).status).toBe("applied");
 	await page.reload();
-	await expect(page.getByRole("region", { name: /To send/ })).toHaveCount(0);
-	const [saved] = await db
-		.select({ status: kyuuApplications.status })
-		.from(kyuuApplications)
-		.where(eq(kyuuApplications.company, "E2E Draft Corp"));
-	expect(saved.status).toBe("applied");
+	await expect(page.locator("[data-app-row]", { hasText: "E2E Draft Corp" })).toContainText(
+		"Applied",
+	);
 });
 
-test("Now: a long-quiet application closes as ghosted", async ({ page }) => {
-	await page.goto("/kyuu");
-	const ghost = page.getByRole("region", { name: /No answer for/ });
-	const row = ghost.locator("[data-app-row]", { hasText: "E2E Quiet Corp" });
-	const release = await holdServerActions(page);
-	await row.hover();
-	await page.keyboard.press("g");
-	// Optimistic: closed at once; it leaves Now when the action lands.
-	await expect(row).toContainText("Ghosted");
-	release();
-	await expect(ghost).toHaveCount(0);
+test("Waiting closes long-quiet applications as ghosted", async ({ page }) => {
+	await page.goto("/kyuu?view=waiting");
+	await page.getByRole("button", { name: "Close as ghosted" }).click();
+	await page.getByRole("button", { name: "Close 1" }).click();
 
 	await expect
 		.poll(async () => {
-			const [app] = await db
-				.select({ id: kyuuApplications.id, status: kyuuApplications.status })
-				.from(kyuuApplications)
-				.where(eq(kyuuApplications.company, "E2E Quiet Corp"));
+			const app = await statusOf("E2E Quiet Corp");
 			const events = await db
 				.select({ kind: kyuuEvents.kind })
 				.from(kyuuEvents)
@@ -73,21 +67,20 @@ test("Now: a long-quiet application closes as ghosted", async ({ page }) => {
 			return `${app.status}:${events.length}`;
 		})
 		.toBe("ghosted:1");
+	// It leaves Waiting once the page re-renders.
+	await expect(page.locator("[data-app-row]", { hasText: "E2E Quiet Corp" })).toHaveCount(0);
 });
 
-test("the sheet books a screening onto the timeline", async ({ page }) => {
-	await page.goto("/kyuu/all");
+test("an application's page books a screening onto its timeline", async ({ page }) => {
+	await page.goto("/kyuu");
 	await page.locator("[data-app-id]", { hasText: "E2E Quiet Corp" }).click();
+	await expect(page.getByRole("textbox", { name: "Company" })).toHaveValue("E2E Quiet Corp");
 
-	const sheet = page.getByRole("dialog", { name: "E2E Quiet Corp" });
-	await expect(sheet.getByRole("heading", { name: "Timeline" })).toBeVisible();
-	await sheet.getByRole("button", { name: "Book a screening" }).click();
+	await page.getByRole("button", { name: "Book a screening" }).click();
+	await page.getByLabel("Time", { exact: true }).fill("10:30");
+	await page.getByRole("button", { name: "Log it" }).click();
 
-	const dialog = page.getByRole("dialog", { name: "Book a screening" });
-	await dialog.getByLabel("Time").fill("10:30");
-	await dialog.getByRole("button", { name: "Save" }).click();
-	await expect(dialog).toBeHidden();
-
-	await expect(sheet.getByRole("button", { name: /^Screening/ })).toBeVisible();
-	await expect(sheet.getByRole("combobox", { name: "Status" })).toContainText("Screening");
+	const timeline = page.getByRole("region", { name: "Timeline" });
+	await expect(timeline.getByRole("button", { name: /Screening/ })).toBeVisible();
+	await expect.poll(async () => (await statusOf("E2E Quiet Corp")).status).toBe("hr_screening");
 });
