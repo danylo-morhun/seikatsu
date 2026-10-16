@@ -82,6 +82,37 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 			],
 		},
 	],
+	"/kyuu": [
+		{
+			title: "Kyuu",
+			items: [
+				{ keys: ["N"], label: "New application" },
+				{ keys: ["1"], label: "Now" },
+				{ keys: ["2"], label: "All" },
+				{ keys: ["3"], label: "Stats" },
+				{ keys: ["/"], label: "Search (All, Stats)" },
+				{ keys: [","], label: "Settings" },
+			],
+		},
+		{
+			title: "Application in focus or under the pointer",
+			items: [
+				{ keys: ["↑", "↓"], label: "Move focus between applications" },
+				{ keys: ["Enter"], label: "Open" },
+				{ keys: ["O"], label: "Open the posting" },
+				{ keys: ["E"], label: "Edit" },
+				{ keys: ["X"], label: "Mark sent (to send)" },
+				{ keys: ["S"], label: "Book a screening" },
+				{ keys: ["I"], label: "Book an interview" },
+				{ keys: ["F"], label: "Followed up (waiting)" },
+				{ keys: ["G"], label: "No answer, close as ghosted (waiting)" },
+				{ keys: ["R"], label: "Rejected" },
+				{ keys: ["A"], label: "Archive or restore" },
+				{ keys: ["."], label: "Open its menu" },
+				{ keys: ["⌫"], label: "Delete" },
+			],
+		},
+	],
 	"/seiryu": [
 		{
 			title: "Board",

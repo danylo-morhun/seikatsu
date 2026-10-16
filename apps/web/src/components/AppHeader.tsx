@@ -5,6 +5,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { TravelUnderline } from "@/components/TravelUnderline";
 import { requestNewHabit } from "@/features/keizoku/lib/events";
 import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
+import { requestNewApplication } from "@/features/kyuu/lib/events";
+import { CARRY_PARAMS } from "@/features/kyuu/lib/search-params";
 import { requestNewCard } from "@/features/seiryu/lib/events";
 import { requestNewBook } from "@/features/tsundoku/lib/events";
 import { useIndicator } from "@/hooks/useIndicator";
@@ -40,6 +42,12 @@ const KEIZOKU_TABS = [
 	{ value: "/keizoku/archive", label: "Archive" },
 ] as const;
 
+const KYUU_TABS = [
+	{ value: "/kyuu", label: "Now" },
+	{ value: "/kyuu/all", label: "All" },
+	{ value: "/kyuu/stats", label: "Stats" },
+] as const;
+
 const KUROJI_TABS: { value: KurojiTab; label: string }[] = [
 	{ value: "expense", label: "Expenses" },
 	{ value: "accounts", label: "Accounts" },
@@ -66,7 +74,10 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 	// Keizoku's three pages carry their tabs; New Habit sits in the header on every Keizoku page.
 	const isKeizokuHome = KEIZOKU_TABS.some((t) => t.value === pathname);
 	const isKeizoku = pathname === "/keizoku" || pathname.startsWith("/keizoku/");
-	const isSectionHome = isTsundokuHome || isKeizokuHome;
+	// Kyuu's three pages carry their tabs, and New Application, like Keizoku's.
+	const isKyuuHome = KYUU_TABS.some((t) => t.value === pathname);
+	const isKyuu = pathname === "/kyuu" || pathname.startsWith("/kyuu/");
+	const isSectionHome = isTsundokuHome || isKeizokuHome || isKyuuHome;
 	// Seiryu's project list names what's open; "· Projects" beside it says nothing new.
 	const showPurpose = !isKurojiHome && !isSectionHome && !pathname.startsWith("/seiryu");
 	const activeTab = isSectionHome ? pathname : (searchParams.get("tab") as KurojiTab) || "expense";
@@ -96,7 +107,21 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 			? TSUNDOKU_TABS.map(({ value, label }) => ({ value, label, href: value }))
 			: isKeizokuHome
 				? KEIZOKU_TABS.map(({ value, label }) => ({ value, label, href: value }))
-				: [];
+				: isKyuuHome
+					? KYUU_TABS.map(({ value, label }) => ({ value, label, href: kyuuTabHref(value) }))
+					: [];
+
+	// All and Stats share their filters; Now has none.
+	function kyuuTabHref(href: string) {
+		if (href === "/kyuu") return href;
+		const params = new URLSearchParams();
+		for (const key of CARRY_PARAMS) {
+			const value = searchParams.get(key);
+			if (value) params.set(key, value);
+		}
+		const qs = params.toString();
+		return qs ? `${href}?${qs}` : href;
+	}
 
 	return (
 		<header className="flex h-14 shrink-0 items-center gap-1 border-b border-border px-2">
@@ -198,6 +223,20 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 							>
 								<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
 								<span className="hidden lg:inline">New Habit</span>
+							</Button>
+						</span>
+					)}
+					{isKyuu && (
+						<span className="hidden md:contents">
+							<Button
+								size="icon"
+								className="lg:w-auto lg:gap-2 lg:px-3"
+								aria-label="New application"
+								aria-keyshortcuts="N"
+								onClick={requestNewApplication}
+							>
+								<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
+								<span className="hidden lg:inline">New Application</span>
 							</Button>
 						</span>
 					)}
