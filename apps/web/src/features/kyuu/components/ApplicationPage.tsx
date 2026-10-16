@@ -478,6 +478,14 @@ function Notes({ value, onSave }: { value: string | null; onSave: (next: string)
 	);
 }
 
+/**
+ * Pipeline text arrives hard-wrapped at ~80 columns: single line breaks join into spaces,
+ * blank lines stay paragraphs (and list lines stay lines).
+ */
+function reflow(text: string): string {
+	return text.replace(/([^\n])\n(?![\n\-•*\d])/g, "$1 ");
+}
+
 function LongText({ text, copy }: { text: string | null; copy?: string }) {
 	if (!text) return null;
 	return (
@@ -499,7 +507,7 @@ function LongText({ text, copy }: { text: string | null; copy?: string }) {
 				</Button>
 			)}
 			<div className="max-h-[70vh] overflow-y-auto rounded-lg bg-surface p-4 pr-20 text-sm leading-relaxed whitespace-pre-wrap [scrollbar-width:thin]">
-				{text}
+				{reflow(text)}
 			</div>
 		</div>
 	);
