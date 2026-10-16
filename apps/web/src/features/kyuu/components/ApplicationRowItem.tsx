@@ -84,7 +84,7 @@ export const ApplicationRowItem = memo(function ApplicationRowItem({
 
 	return (
 		<li data-app-row className={cn(TABLE_GRID, "group/row relative py-1 md:-mx-2 md:px-2")}>
-			<span className="hidden font-figures text-xs whitespace-nowrap text-muted-foreground sm:block">
+			<span className="relative hidden font-figures text-xs whitespace-nowrap text-muted-foreground sm:block">
 				{formatDay(row.dateApplied, today)}
 			</span>
 			{/* The whole row opens the application; the controls above it stay their own. */}
