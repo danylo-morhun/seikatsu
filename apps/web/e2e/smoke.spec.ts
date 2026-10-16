@@ -15,6 +15,8 @@ const ROUTES = [
 	"/keizoku/year",
 	"/keizoku/archive",
 	"/kyuu",
+	"/kyuu/all",
+	"/kyuu/all?view=archived",
 	"/kyuu/stats",
 	"/aisha",
 	"/settings",
@@ -25,6 +27,7 @@ const ROUTES = [
 	"/settings/seiryu?section=archive",
 	"/settings/tsundoku",
 	"/settings/keizoku",
+	"/settings/kyuu",
 ];
 
 // Every page renders on the prod build with no console errors (the fixture fails on any).
