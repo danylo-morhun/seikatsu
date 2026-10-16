@@ -43,8 +43,7 @@ const KEIZOKU_TABS = [
 ] as const;
 
 const KYUU_TABS = [
-	{ value: "/kyuu", label: "Now" },
-	{ value: "/kyuu/all", label: "All" },
+	{ value: "/kyuu", label: "Applications" },
 	{ value: "/kyuu/stats", label: "Stats" },
 ] as const;
 
@@ -74,7 +73,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 	// Keizoku's three pages carry their tabs; New Habit sits in the header on every Keizoku page.
 	const isKeizokuHome = KEIZOKU_TABS.some((t) => t.value === pathname);
 	const isKeizoku = pathname === "/keizoku" || pathname.startsWith("/keizoku/");
-	// Kyuu's three pages carry their tabs, and New Application, like Keizoku's.
+	// Kyuu's table and stats carry their tabs; New Application sits on every Kyuu page.
 	const isKyuuHome = KYUU_TABS.some((t) => t.value === pathname);
 	const isKyuu = pathname === "/kyuu" || pathname.startsWith("/kyuu/");
 	const isSectionHome = isTsundokuHome || isKeizokuHome || isKyuuHome;
@@ -111,9 +110,8 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 					? KYUU_TABS.map(({ value, label }) => ({ value, label, href: kyuuTabHref(value) }))
 					: [];
 
-	// All and Stats share their filters; Now has none.
+	// The table and Stats share their filters.
 	function kyuuTabHref(href: string) {
-		if (href === "/kyuu") return href;
 		const params = new URLSearchParams();
 		for (const key of CARRY_PARAMS) {
 			const value = searchParams.get(key);
