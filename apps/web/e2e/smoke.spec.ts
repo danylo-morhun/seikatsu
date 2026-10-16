@@ -1,4 +1,4 @@
-import { accounts, and, db, eq, keizokuHabits } from "@seikatsu/db";
+import { accounts, and, db, eq, keizokuHabits, kyuuApplications } from "@seikatsu/db";
 import { expect, test, workspaceId } from "./fixtures";
 
 const ROUTES = [
@@ -15,8 +15,8 @@ const ROUTES = [
 	"/keizoku/year",
 	"/keizoku/archive",
 	"/kyuu",
-	"/kyuu/all",
-	"/kyuu/all?view=archived",
+	"/kyuu?view=waiting",
+	"/kyuu?view=archived",
 	"/kyuu/stats",
 	"/aisha",
 	"/settings",
@@ -50,7 +50,21 @@ test("renders detail pages", async ({ page }) => {
 		.values({ workspaceId: wsId, name: "E2E detail", emoji: "📖", frequencyType: "daily" })
 		.returning({ id: keizokuHabits.id });
 
-	for (const path of [`/kuroji/accounts/${wallet.id}`, `/keizoku/${habit.id}`]) {
+	const [application] = await db
+		.insert(kyuuApplications)
+		.values({
+			workspaceId: wsId,
+			company: "E2E detail",
+			role: "Engineer",
+			dateApplied: "2026-01-05",
+		})
+		.returning({ id: kyuuApplications.id });
+
+	for (const path of [
+		`/kuroji/accounts/${wallet.id}`,
+		`/keizoku/${habit.id}`,
+		`/kyuu/${application.id}`,
+	]) {
 		const res = await page.goto(path);
 		expect(res?.status(), path).toBeLessThan(400);
 		await expect(page.getByRole("main").first()).toBeVisible();
