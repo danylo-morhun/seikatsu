@@ -53,13 +53,9 @@ export function Timeline({
 	const [editing, setEditing] = useState<string | null>(null);
 
 	return (
-		<section aria-labelledby="kyuu-timeline" className="space-y-3">
-			<h2 id="kyuu-timeline" className="text-sm font-medium">
-				Timeline
-			</h2>
+		<div className="space-y-3">
 			<ol className="relative space-y-1 border-l border-rule pl-5">
 				<Entry
-					icon={SentIcon}
 					tone={STATUS_LOOK.applied.className}
 					label="Sent"
 					when={formatDay(dateApplied, today)}
@@ -82,8 +78,6 @@ export function Timeline({
 								className="-mx-2 block w-[calc(100%+1rem)] rounded-md px-2 py-1.5 text-left outline-none transition-colors hover:bg-surface focus-visible:ring-2 focus-visible:ring-ring"
 							>
 								<EntryBody
-									icon={lookOf(e.kind).icon}
-									tone={lookOf(e.kind).className}
 									label={EVENT_LABELS[e.kind]}
 									when={
 										e.date
@@ -120,7 +114,7 @@ export function Timeline({
 					Log an update
 				</QuietAdd>
 			)}
-		</section>
+		</div>
 	);
 }
 
@@ -136,25 +130,21 @@ function Dot({ className }: { className: string }) {
 	);
 }
 
-function Entry(props: { icon: typeof SentIcon; tone: string; label: string; when: string }) {
+function Entry({ tone, label, when }: { tone: string; label: string; when: string }) {
 	return (
 		<li className="relative py-1.5">
-			<Dot className={props.tone} />
-			<EntryBody {...props} ahead={false} note={null} />
+			<Dot className={tone} />
+			<EntryBody label={label} when={when} ahead={false} note={null} />
 		</li>
 	);
 }
 
 function EntryBody({
-	icon,
-	tone,
 	label,
 	when,
 	ahead,
 	note,
 }: {
-	icon: typeof SentIcon;
-	tone: string;
 	label: string;
 	when: string;
 	ahead: boolean;
@@ -163,8 +153,7 @@ function EntryBody({
 	return (
 		<>
 			<span className="flex items-baseline justify-between gap-3">
-				<span className={cn("inline-flex items-center gap-1.5 text-sm font-medium", tone)}>
-					<HugeiconsIcon icon={icon} className="size-3.5 self-center" strokeWidth={2} />
+				<span className="inline-flex items-center gap-1.5 text-sm">
 					{label}
 					{ahead && <span className="text-xs font-normal text-primary">booked</span>}
 				</span>
