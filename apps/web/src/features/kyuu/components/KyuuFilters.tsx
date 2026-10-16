@@ -96,7 +96,8 @@ export function KyuuFilters({ sources }: { sources: string[] }) {
 			{sources.length > 0 && (
 				<Select value={source} onValueChange={(v) => setParam("source", v === "all" ? null : v)}>
 					<SelectTrigger aria-label="Source" className="w-36">
-						<SelectValue />
+						{/* Named here too: the server renders no item to read the label from. */}
+						<SelectValue>{source === "all" ? "Any source" : source}</SelectValue>
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="all">Any source</SelectItem>
@@ -111,7 +112,13 @@ export function KyuuFilters({ sources }: { sources: string[] }) {
 
 			<Select value={method} onValueChange={(v) => setParam("method", v === "all" ? null : v)}>
 				<SelectTrigger aria-label="How it was sent" className="w-36">
-					<SelectValue />
+					<SelectValue>
+						{method === "auto"
+							? "By the pipeline"
+							: method === "manual"
+								? "By hand"
+								: "Sent any way"}
+					</SelectValue>
 				</SelectTrigger>
 				<SelectContent>
 					<SelectItem value="all">Sent any way</SelectItem>
