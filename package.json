@@ -13,8 +13,8 @@
 		"@biomejs/biome": "^1.9.4",
 		"@commitlint/cli": "^21.2.3",
 		"@commitlint/config-conventional": "^21.2.3",
-		"lefthook": "^2.1.17",
-		"turbo": "^2.3.3",
+		"lefthook": "^2.2.2",
+		"turbo": "^2.11.8",
 		"typescript": "^5.7.2"
 	},
 	"packageManager": "pnpm@10.33.2",
