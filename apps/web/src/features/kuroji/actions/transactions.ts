@@ -200,7 +200,9 @@ async function prepareEntries(
 export async function createTransaction({
 	workspaceId,
 	...input
-}: TransactionInput & { workspaceId: string }): Promise<{ error: string } | { success: true }> {
+}: TransactionInput & { workspaceId: string }): Promise<
+	{ error: string } | { success: true; data: { id: string } }
+> {
 	try {
 		const session = await auth();
 		if (!session?.user?.id) return { error: "Unauthorized" };
@@ -212,7 +214,7 @@ export async function createTransaction({
 		if ("error" in prepared) return prepared;
 		const { description, date, tagIds } = input;
 
-		await db.transaction(async (tx) => {
+		const id = await db.transaction(async (tx) => {
 			const [txn] = await tx
 				.insert(transactions)
 				.values({ workspaceId, date, description: description ?? null })
@@ -228,10 +230,11 @@ export async function createTransaction({
 					.insert(transactionTags)
 					.values(tagIds.map((tagId) => ({ transactionId: txn.id, tagId })));
 			}
+			return txn.id;
 		});
 
 		revalidatePath("/kuroji");
-		return { success: true };
+		return { success: true, data: { id } };
 	} catch (e) {
 		const msg = e instanceof Error ? e.message : "Unknown error";
 		return { error: msg };
