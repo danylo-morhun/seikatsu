@@ -5,7 +5,14 @@ import { APPS_CONFIG } from "@/lib/app-themes";
 import { usePathname } from "next/navigation";
 
 // Only apps that have a settings page (app/(apps)/settings/<app>); others would 404.
-const APPS_WITH_SETTINGS = new Set(["/kuroji", "/seiryu", "/tsundoku", "/keizoku", "/kyuu"]);
+const APPS_WITH_SETTINGS = new Set([
+	"/kuroji",
+	"/seiryu",
+	"/tsundoku",
+	"/keizoku",
+	"/kyuu",
+	"/aisha",
+]);
 
 /** Settings is one column: the account and each app are tabs across the top. */
 export function SettingsNav() {
