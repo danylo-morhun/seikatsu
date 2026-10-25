@@ -8,6 +8,7 @@ import { requestNewHabit } from "@/features/keizoku/lib/events";
 import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
 import { requestNewApplication } from "@/features/kyuu/lib/events";
 import { CARRY_PARAMS } from "@/features/kyuu/lib/search-params";
+import { OfflinePill } from "@/features/pwa/components/OfflinePill";
 import { requestNewCard } from "@/features/seiryu/lib/events";
 import { requestNewBook } from "@/features/tsundoku/lib/events";
 import { useIndicator } from "@/hooks/useIndicator";
@@ -183,6 +184,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 
 			{(app || pathname === "/") && (
 				<div className="ml-auto flex min-w-0 items-center gap-1.5">
+					<OfflinePill />
 					{isKuroji && workspaceId && baseCurrency && (
 						<>
 							<DateRangePicker />
