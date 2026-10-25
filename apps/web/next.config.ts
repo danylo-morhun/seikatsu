@@ -16,6 +16,25 @@ const nextConfig: NextConfig = {
 			bodySizeLimit: "6mb",
 		},
 	},
+	env: {
+		// Versions the service worker URL (features/pwa/lib/sw-client.ts): one worker per deploy.
+		NEXT_PUBLIC_BUILD_ID: (
+			process.env.VERCEL_GIT_COMMIT_SHA ??
+			process.env.GITHUB_SHA ??
+			"dev"
+		).slice(0, 12),
+	},
+	async headers() {
+		return [
+			{
+				source: "/sw.js",
+				headers: [
+					{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+					{ key: "Service-Worker-Allowed", value: "/" },
+				],
+			},
+		];
+	},
 	async rewrites() {
 		return [{ source: "/favicon.ico", destination: "/icons/favicon.svg" }];
 	},
