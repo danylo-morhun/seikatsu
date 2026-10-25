@@ -35,7 +35,7 @@ describe("getExchangeRate", () => {
 
 	it("routes UAH pairs to PrivatBank/NBU and never calls Frankfurter", async () => {
 		fetchMock.mockImplementation(async (url: string) => {
-			if (url.includes("frankfurter.app")) {
+			if (url.includes("frankfurter.dev")) {
 				throw new Error("Frankfurter has no UAH — should not be called for this pair");
 			}
 			if (url.includes("privatbank.ua")) {
@@ -59,7 +59,7 @@ describe("getExchangeRate", () => {
 
 	it("uses Frankfurter for non-UAH pairs", async () => {
 		fetchMock.mockImplementation(async (url: string) => {
-			if (url.includes("frankfurter.app")) {
+			if (url.includes("frankfurter.dev")) {
 				return { ok: true, json: async () => ({ rates: { EUR: 0.92 } }) };
 			}
 			throw new Error(`Unexpected fetch: ${url}`);
@@ -70,6 +70,22 @@ describe("getExchangeRate", () => {
 
 		expect(rate).toBe(0.92);
 		expect(fetchMock).toHaveBeenCalledTimes(1);
-		expect(fetchMock.mock.calls[0][0]).toContain("frankfurter.app");
+		expect(fetchMock.mock.calls[0][0]).toContain("frankfurter.dev");
+	});
+
+	it("falls back to the previous day when PrivatBank has no rates yet", async () => {
+		fetchMock.mockImplementation(async (url: string) => {
+			const rates = url.includes("date=25.10.2026")
+				? []
+				: [{ currency: "EUR", saleRateNB: 48.2, purchaseRateNB: 48.2 }];
+			return { ok: true, json: async () => ({ exchangeRate: rates }) };
+		});
+
+		const { getExchangeRate } = await import("./exchange-rates");
+		const rate = await getExchangeRate("EUR", "UAH", "2026-10-25");
+
+		expect(rate).toBe(48.2);
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+		expect(fetchMock.mock.calls[1][0]).toContain("date=24.10.2026");
 	});
 });
