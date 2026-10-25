@@ -18,9 +18,12 @@ async function fetchFrankfurter(
 	const t = withTimeout(5000);
 	let res: Response;
 	try {
-		res = await fetch(`https://api.frankfurter.app/${date}?from=${fromCurrency}&to=${toCurrency}`, {
-			signal: t.signal,
-		});
+		res = await fetch(
+			`https://api.frankfurter.dev/v1/${date}?from=${fromCurrency}&to=${toCurrency}`,
+			{
+				signal: t.signal,
+			},
+		);
 	} finally {
 		t.done();
 	}
@@ -42,11 +45,7 @@ type PrivatRate = {
 // PrivatBank's public rate archive covers UAH against major currencies (NBU
 // official rates). Used for any pair involving UAH, which Frankfurter lacks.
 // Rates are quoted as UAH per 1 unit of the listed currency.
-async function fetchPrivatBankRate(
-	fromCurrency: string,
-	toCurrency: string,
-	date: string,
-): Promise<number> {
+async function fetchPrivatBankList(date: string): Promise<PrivatRate[]> {
 	// PrivatBank wants DD.MM.YYYY.
 	const [y, m, d] = date.split("-");
 	const t = withTimeout(5000);
@@ -60,23 +59,37 @@ async function fetchPrivatBankRate(
 	}
 	if (!res.ok) throw new Error(`Exchange rate fetch failed: ${res.status}`);
 	const data = (await res.json()) as { exchangeRate?: PrivatRate[] };
-	const list = data.exchangeRate ?? [];
+	return data.exchangeRate ?? [];
+}
 
-	// UAH per 1 unit of `cur`. UAH itself is 1.
-	const uahPer = (cur: string): number | null => {
-		if (cur === "UAH") return 1;
-		const e = list.find((r) => r.currency === cur);
-		const rate = e?.saleRateNB ?? e?.purchaseRateNB ?? e?.saleRate ?? e?.purchaseRate;
-		return rate != null && Number.isFinite(rate) && rate > 0 ? rate : null;
-	};
+// The archive for today (and some weekends/holidays) comes back empty until
+// it is published, so walk back to the latest day that has the rate.
+const PRIVAT_LOOKBACK_DAYS = 7;
 
-	const fromUah = uahPer(fromCurrency);
-	const toUah = uahPer(toCurrency);
-	if (fromUah == null || toUah == null) {
-		throw new Error(`No PrivatBank rate for ${fromCurrency}→${toCurrency} on ${date}`);
+async function fetchPrivatBankRate(
+	fromCurrency: string,
+	toCurrency: string,
+	date: string,
+): Promise<number> {
+	const day = new Date(`${date}T00:00:00Z`);
+	for (let i = 0; i <= PRIVAT_LOOKBACK_DAYS; i++) {
+		const list = await fetchPrivatBankList(day.toISOString().slice(0, 10));
+
+		// UAH per 1 unit of `cur`. UAH itself is 1.
+		const uahPer = (cur: string): number | null => {
+			if (cur === "UAH") return 1;
+			const e = list.find((r) => r.currency === cur);
+			const rate = e?.saleRateNB ?? e?.purchaseRateNB ?? e?.saleRate ?? e?.purchaseRate;
+			return rate != null && Number.isFinite(rate) && rate > 0 ? rate : null;
+		};
+
+		const fromUah = uahPer(fromCurrency);
+		const toUah = uahPer(toCurrency);
+		// 1 from = fromUah UAH; 1 to = toUah UAH → 1 from = fromUah/toUah to.
+		if (fromUah != null && toUah != null) return fromUah / toUah;
+		day.setUTCDate(day.getUTCDate() - 1);
 	}
-	// 1 from = fromUah UAH; 1 to = toUah UAH → 1 from = fromUah/toUah to.
-	return fromUah / toUah;
+	throw new Error(`No PrivatBank rate for ${fromCurrency}→${toCurrency} on ${date}`);
 }
 
 export async function getExchangeRate(
