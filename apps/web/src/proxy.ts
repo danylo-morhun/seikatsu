@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
-const PUBLIC_EXACT = ["/", "/privacy", "/terms"];
+const PUBLIC_EXACT = ["/", "/privacy", "/terms", "/offline"];
 const PUBLIC_PREFIXES = ["/auth/"];
 
 export default auth((req) => {
