@@ -25,6 +25,8 @@ export type VehicleFormValues = z.input<typeof vehicleFormSchema>;
 export const createVehicleSchema = vehicleFormSchema.extend({
 	currentKm: km,
 	today: isoDate,
+	/** Count every item as done now: the car was serviced when it was bought. */
+	servicedNow: z.boolean(),
 });
 export type CreateVehicleValues = z.input<typeof createVehicleSchema>;
 
@@ -37,10 +39,17 @@ export const itemFormSchema = z
 		intervalKm: interval,
 		intervalMonths: interval,
 		note: optionalText,
+		/** Last done before Aisha knew: both, or neither. */
+		baselineDate: isoDate.nullable(),
+		baselineKm: km.nullable(),
 	})
 	.refine((v) => v.intervalKm != null || v.intervalMonths != null, {
 		message: "Set a km or a month interval",
 		path: ["intervalKm"],
+	})
+	.refine((v) => (v.baselineDate == null) === (v.baselineKm == null), {
+		message: "Give both the date and the mileage it was last done",
+		path: ["baselineKm"],
 	});
 export type ItemFormValues = z.input<typeof itemFormSchema>;
 
@@ -51,6 +60,8 @@ export const serviceFormSchema = z.object({
 	cost: z.number().min(0).max(1_000_000).nullable(),
 	shop: optionalText,
 	note: optionalText,
+	/** Also record the cost as a Kuroji expense, paid from `walletId` into `categoryId`. */
+	kuroji: z.object({ walletId: z.string().uuid(), categoryId: z.string().uuid() }).nullable(),
 });
 export type ServiceFormValues = z.input<typeof serviceFormSchema>;
 

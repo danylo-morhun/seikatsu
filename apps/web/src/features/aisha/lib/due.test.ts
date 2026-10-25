@@ -59,12 +59,12 @@ describe("maintenanceDue", () => {
 });
 
 describe("kmPerDay", () => {
-	it("needs at least two readings a week apart", () => {
+	it("needs at least two readings two weeks apart", () => {
 		expect(kmPerDay([{ date: "2026-01-01", km: 1000 }])).toBeNull();
 		expect(
 			kmPerDay([
 				{ date: "2026-01-01", km: 1000 },
-				{ date: "2026-01-03", km: 1200 },
+				{ date: "2026-01-11", km: 1500 },
 			]),
 		).toBeNull();
 	});
@@ -72,7 +72,7 @@ describe("kmPerDay", () => {
 	it("averages over the span regardless of input order", () => {
 		expect(
 			kmPerDay([
-				{ date: "2026-01-11", km: 1500 },
+				{ date: "2026-01-21", km: 2000 },
 				{ date: "2026-01-01", km: 1000 },
 			]),
 		).toBe(50);
@@ -83,7 +83,7 @@ describe("kmPerDay", () => {
 			[
 				{ date: "2024-01-01", km: 0 },
 				{ date: "2026-01-01", km: 10_000 },
-				{ date: "2026-01-11", km: 10_500 },
+				{ date: "2026-01-21", km: 11_000 },
 			],
 			30,
 		);

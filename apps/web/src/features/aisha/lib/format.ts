@@ -1,7 +1,12 @@
 import { type MaintenanceDue, daysBetween } from "./due";
 
+/** "170 100": narrow no-break spaces between thousands, as an odometer reads. */
+export function formatNumber(n: number): string {
+	return Math.round(n).toLocaleString("en-US").replace(/,/g, "\u202f");
+}
+
 export function formatKm(km: number): string {
-	return `${km.toLocaleString("en-US").replace(/,/g, " ")} km`;
+	return `${formatNumber(km)} km`;
 }
 
 export function formatDate(iso: string): string {
@@ -41,4 +46,34 @@ export function intervalSummary(intervalKm: number | null, intervalMonths: numbe
 		parts.push(intervalMonths % 12 === 0 ? `${intervalMonths / 12} yr` : `${intervalMonths} mo`);
 	}
 	return parts.join(" / ");
+}
+
+/** "in 3 months", "today", "12 days ago": how far `iso` is from today. */
+export function fromToday(iso: string, today: string): string {
+	return formatDays(daysBetween(today, iso));
+}
+
+/** A km count with its sign, for a change: "+3 100 km". */
+export function formatKmDelta(km: number): string {
+	return `${km > 0 ? "+" : km < 0 ? "−" : ""}${formatKm(Math.abs(km))}`;
+}
+
+/** Money in the service's currency: "1 250,00 zł". */
+export function formatMoney(amount: number, currency: string): string {
+	return new Intl.NumberFormat("pl-PL", {
+		style: "currency",
+		currency,
+		currencyDisplay: "narrowSymbol",
+		useGrouping: "always",
+		maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
+		minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+	}).format(amount);
+}
+
+/** A typed number with spaces or a decimal comma ("167 000", "450,50"); blank or unreadable → null. */
+export function parseNumber(text: string): number | null {
+	const clean = text.replace(/[\s ']/g, "").replace(",", ".");
+	if (clean === "") return null;
+	const n = Number(clean);
+	return Number.isFinite(n) ? n : null;
 }

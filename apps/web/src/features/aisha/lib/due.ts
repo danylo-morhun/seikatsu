@@ -45,7 +45,7 @@ export interface Reading {
 /**
  * Average km per day from odometer readings. Uses the span from the oldest reading
  * within `windowDays` of the newest one, so old idle periods don't drag it down.
- * Returns null when there isn't at least a week of data to go on.
+ * Returns null when there isn't at least two weeks of data — a single week swings too much to go on.
  */
 export function kmPerDay(readings: Reading[], windowDays = 180): number | null {
 	if (readings.length < 2) return null;
@@ -53,7 +53,7 @@ export function kmPerDay(readings: Reading[], windowDays = 180): number | null {
 	const last = sorted[sorted.length - 1];
 	const first = sorted.find((r) => daysBetween(r.date, last.date) <= windowDays) ?? sorted[0];
 	const days = daysBetween(first.date, last.date);
-	if (days < 7) return null;
+	if (days < 14) return null;
 	const km = last.km - first.km;
 	return km > 0 ? km / days : null;
 }
