@@ -11,7 +11,7 @@ import {
 	timestamp,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { workspaces } from "./kuroji";
+import { accounts, transactions, workspaces } from "./kuroji";
 
 export const aishaFuelTypeEnum = pgEnum("aisha_fuel_type", [
 	"petrol",
@@ -49,6 +49,13 @@ export const aishaVehicles = pgTable(
 		transmission: aishaTransmissionEnum("transmission").notNull().default("unknown"),
 		plate: text("plate"),
 		vin: text("vin"),
+		/** Where "Record in Kuroji" posts a service's cost: the wallet it's paid from, the expense category. */
+		kurojiWalletId: uuid("kuroji_wallet_id").references(() => accounts.id, {
+			onDelete: "set null",
+		}),
+		kurojiCategoryId: uuid("kuroji_category_id").references(() => accounts.id, {
+			onDelete: "set null",
+		}),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
 	(t) => [index("aisha_vehicles_workspace_id_idx").on(t.workspaceId)],
@@ -63,9 +70,16 @@ export const aishaOdometerReadings = pgTable(
 			.references(() => aishaVehicles.id, { onDelete: "cascade" }),
 		date: date("date").notNull(),
 		km: integer("km").notNull(),
+		/** The service visit this reading came from; it moves and goes with that record. */
+		serviceRecordId: uuid("service_record_id").references(() => aishaServiceRecords.id, {
+			onDelete: "cascade",
+		}),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
-	(t) => [index("aisha_odometer_readings_vehicle_id_idx").on(t.vehicleId)],
+	(t) => [
+		index("aisha_odometer_readings_vehicle_id_idx").on(t.vehicleId),
+		index("aisha_odometer_readings_service_record_id_idx").on(t.serviceRecordId),
+	],
 );
 
 /** A recurring maintenance task. Due when either interval runs out, whichever comes first. */
@@ -80,6 +94,9 @@ export const aishaMaintenanceItems = pgTable(
 		intervalKm: integer("interval_km"),
 		intervalMonths: integer("interval_months"),
 		note: text("note"),
+		/** When it was last done before Aisha knew (e.g. at purchase). A logged service supersedes it. */
+		baselineDate: date("baseline_date"),
+		baselineKm: integer("baseline_km"),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
 	(t) => [index("aisha_maintenance_items_vehicle_id_idx").on(t.vehicleId)],
@@ -99,6 +116,10 @@ export const aishaServiceRecords = pgTable(
 		currency: text("currency").notNull().default("PLN"),
 		shop: text("shop"),
 		note: text("note"),
+		/** The Kuroji expense this visit was recorded as, if any. */
+		kurojiTransactionId: uuid("kuroji_transaction_id").references(() => transactions.id, {
+			onDelete: "set null",
+		}),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
 	(t) => [index("aisha_service_records_vehicle_id_idx").on(t.vehicleId)],

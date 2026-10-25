@@ -176,6 +176,13 @@
 			"when": 1792955079903,
 			"tag": "0024_kyuu_mail",
 			"breakpoints": true
+		},
+		{
+			"idx": 25,
+			"version": "7",
+			"when": 1793002470165,
+			"tag": "0025_aisha_v2",
+			"breakpoints": true
 		}
 	]
 }
