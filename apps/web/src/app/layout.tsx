@@ -2,9 +2,11 @@ import { AppToaster } from "@/components/AppToaster";
 import { NavigationProgress } from "@/components/NavigationProgress";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { TimezoneSync } from "@/components/TimezoneSync";
+import { ServiceWorker } from "@/features/pwa/components/ServiceWorker";
+import splashScreens from "@/features/pwa/lib/splash-screens.json";
 import { TooltipProvider } from "@seikatsu/ui";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
@@ -22,11 +24,21 @@ export const metadata: Metadata = {
 		capable: true,
 		statusBarStyle: "black-translucent",
 		title: "seikatsu",
+		startupImage: splashScreens.map(({ width, height, ratio }) => ({
+			url: `/icons/splash/${width}x${height}@${ratio}.png`,
+			media: `(device-width: ${width}px) and (device-height: ${height}px) and (-webkit-device-pixel-ratio: ${ratio}) and (orientation: portrait)`,
+		})),
 	},
 	icons: {
 		icon: { url: "/icons/favicon.svg", type: "image/svg+xml" },
 		apple: "/icons/apple-touch-icon.png",
 	},
+};
+
+export const viewport: Viewport = {
+	// Content runs under the notch and home bar; the bottom navs pad by the safe-area insets.
+	viewportFit: "cover",
+	themeColor: "#0a0a0a",
 };
 
 export default function RootLayout({
@@ -46,6 +58,7 @@ export default function RootLayout({
 				</ThemeProvider>
 				<SpeedInsights />
 				<TimezoneSync />
+				<ServiceWorker />
 			</body>
 		</html>
 	);
