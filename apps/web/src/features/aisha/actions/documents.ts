@@ -25,7 +25,8 @@ export async function createDocument(
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
 	await db.insert(aishaDocuments).values({ vehicleId, ...parsed.data });
-	revalidatePath("/aisha");
+	revalidatePath("/aisha", "layout");
+	revalidatePath("/");
 	return { success: true };
 }
 
@@ -42,7 +43,8 @@ export async function updateDocument(
 		.update(aishaDocuments)
 		.set({ ...parsed.data, note: parsed.data.note ?? null })
 		.where(eq(aishaDocuments.id, documentId));
-	revalidatePath("/aisha");
+	revalidatePath("/aisha", "layout");
+	revalidatePath("/");
 	return { success: true };
 }
 
@@ -51,6 +53,7 @@ export async function deleteDocument(
 ): Promise<{ error: string } | { success: true }> {
 	if (!(await getOwnedDocument(documentId))) return { error: "Document not found" };
 	await db.delete(aishaDocuments).where(eq(aishaDocuments.id, documentId));
-	revalidatePath("/aisha");
+	revalidatePath("/aisha", "layout");
+	revalidatePath("/");
 	return { success: true };
 }

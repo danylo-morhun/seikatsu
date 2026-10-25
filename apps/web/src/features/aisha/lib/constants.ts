@@ -1,5 +1,3 @@
-import type { DueStatus } from "./due";
-
 export const FUEL_TYPES = ["petrol", "diesel", "lpg", "hybrid", "electric"] as const;
 export type FuelType = (typeof FUEL_TYPES)[number];
 
@@ -26,15 +24,15 @@ export type DocumentType = (typeof DOCUMENT_TYPES)[number];
 
 export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
 	insurance: "Insurance",
-	inspection: "Technical inspection",
+	inspection: "Inspection",
 	other: "Other",
 };
 
-export const STATUS_LABELS: Record<DueStatus, string> = {
-	overdue: "Overdue",
-	soon: "Due soon",
-	ok: "OK",
-	unknown: "No record",
+/** A new document's name until one is typed. */
+export const DOCUMENT_NAMES: Record<DocumentType, string> = {
+	insurance: "OC insurance",
+	inspection: "Technical inspection",
+	other: "",
 };
 
 export interface MaintenancePreset {
