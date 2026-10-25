@@ -111,6 +111,29 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 			],
 		},
 	],
+	"/aisha": [
+		{
+			title: "Aisha",
+			items: [
+				{ keys: ["N"], label: "Log a service" },
+				{ keys: ["M"], label: "Update mileage" },
+				{ keys: ["1"], label: "Next" },
+				{ keys: ["2"], label: "History" },
+				{ keys: ["3"], label: "Year" },
+				{ keys: [","], label: "Settings" },
+			],
+		},
+		{
+			title: "Row in focus or under the pointer",
+			items: [
+				{ keys: ["↑", "↓"], label: "Move focus between rows" },
+				{ keys: ["Enter", "E"], label: "Edit" },
+				{ keys: ["X"], label: "Log as done, or renew a document (Next)" },
+				{ keys: ["."], label: "Open its menu" },
+				{ keys: ["⌫"], label: "Delete" },
+			],
+		},
+	],
 	"/seiryu": [
 		{
 			title: "Board",

@@ -1,3 +1,4 @@
+import { AishaHomeWidget } from "@/features/aisha/components/AishaHomeWidget";
 import { signOutAction } from "@/features/auth/actions/auth";
 import { KeizokuHomeWidget } from "@/features/keizoku/components/KeizokuHomeWidget";
 import { APPS_CONFIG } from "@/lib/app-themes";
@@ -135,6 +136,7 @@ export function HomeGrid({ user }: Props) {
 										{app.description}
 									</p>
 									{href === "/keizoku" && <KeizokuHomeWidget />}
+									{href === "/aisha" && <AishaHomeWidget />}
 								</div>
 							</div>
 						))}

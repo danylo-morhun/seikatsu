@@ -1,41 +1,46 @@
-import { auth } from "@/auth";
-import { getDashboard } from "@/features/aisha/actions/data";
-import { getVehicles } from "@/features/aisha/actions/vehicles";
-import { AishaDashboard } from "@/features/aisha/components/AishaDashboard";
-import { VehicleSetup } from "@/features/aisha/components/VehicleSetup";
-import { getWorkspace, initializeWorkspace } from "@/features/kuroji/actions/workspace";
+import { getCar, getCurrentVehicle } from "@/features/aisha/actions/data";
+import { AishaWelcome } from "@/features/aisha/components/AishaWelcome";
+import { NextView } from "@/features/aisha/components/NextView";
+import { CURRENCY } from "@/features/aisha/lib/constants";
+import { getCurrentWorkspace } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
 import { redirect } from "next/navigation";
 
-// Every save re-renders the page and resends the dashboard; the full history is one click away.
-const RECENT_SERVICES = 30;
+export default async function AishaPage() {
+	const workspace = await getCurrentWorkspace();
+	if (!workspace) redirect("/");
 
-export default async function AishaPage({
-	searchParams,
-}: {
-	searchParams: Promise<{ history?: string }>;
-}) {
-	const session = await auth();
-	if (!session?.user?.id) redirect("/");
-
-	const workspace =
-		(await getWorkspace(session.user.id)) ?? (await initializeWorkspace(session.user.id));
-
-	// One car for now; the schema already allows more.
-	const [vehicle] = await getVehicles(workspace.id);
-	if (!vehicle) return <VehicleSetup workspaceId={workspace.id} />;
+	const vehicle = await getCurrentVehicle();
+	if (!vehicle) {
+		return (
+			<div className="px-4 pt-6 pb-28 sm:px-8 md:py-8">
+				<AishaWelcome workspaceId={workspace.id} />
+			</div>
+		);
+	}
 
 	const today = await getUserToday();
-	const data = await getDashboard(vehicle, today);
-
-	const showAll = (await searchParams).history === "all";
-	const services = showAll ? data.services : data.services.slice(0, RECENT_SERVICES);
+	const car = await getCar(vehicle, today);
+	const thisYear = car.services.filter((s) => s.date.startsWith(today.slice(0, 4)));
 
 	return (
-		<AishaDashboard
-			data={{ ...data, services }}
-			serviceCount={data.services.length}
-			today={today}
-		/>
+		<div className="px-4 pt-6 pb-28 sm:px-8 md:py-8">
+			<NextView
+				car={{
+					vehicle: car.vehicle,
+					queue: car.queue,
+					firstReading: car.firstReading,
+					currentKm: car.currentKm,
+					kmPerDay: car.kmPerDay,
+					documentCount: car.documents.length,
+				}}
+				today={today}
+				spent={{
+					amount: thisYear.reduce((n, s) => n + (s.cost != null ? Number(s.cost) : 0), 0),
+					services: thisYear.length,
+					currency: thisYear[0]?.currency ?? CURRENCY,
+				}}
+			/>
+		</div>
 	);
 }
