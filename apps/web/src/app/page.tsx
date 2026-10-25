@@ -4,6 +4,7 @@ import { PageLoader } from "@/components/PageLoader";
 import { SignInCard } from "@/features/auth/components/SignInCard";
 import { TodayView } from "@/features/home/components/TodayView";
 import { getToday } from "@/features/home/lib/today";
+import { ForgetOfflinePages } from "@/features/pwa/components/ForgetOfflinePages";
 import { getCurrentWorkspace } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
 import { Suspense } from "react";
@@ -15,6 +16,7 @@ export default async function HomePage() {
 		return (
 			<main className="flex min-h-screen items-center justify-center p-4">
 				<SignInCard />
+				<ForgetOfflinePages />
 			</main>
 		);
 	}
