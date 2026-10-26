@@ -56,6 +56,8 @@ export type UpdateBookValues = z.input<typeof updateBookSchema>;
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date");
 
 export const logSessionSchema = z.object({
+	/** Made on the device, so a replayed (offline) log lands once. */
+	id: z.string().uuid().optional(),
 	date: day,
 	pagesRead: z.number().int().positive("Pages must be positive").max(MAX_PAGES),
 });
@@ -67,6 +69,8 @@ export const startedAtSchema = day.nullable();
 
 export const setProgressSchema = z.object({
 	currentPage: z.number().int().min(0).max(MAX_PAGES),
+	/** The day it was read, when the change arrives later (made offline). Never after today. */
+	asOf: day.optional(),
 });
 
 export const shelfSchema = z.object({
