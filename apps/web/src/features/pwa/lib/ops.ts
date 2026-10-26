@@ -5,6 +5,7 @@
 // creates with a client-made id), because a lost response gets it sent again.
 
 import type { HabitPatch } from "@/features/keizoku/lib/keizoku-schemas";
+import type { TransactionInput } from "@/features/kuroji/actions/transactions";
 
 export interface OfflineOps {
 	"keizoku.checkDay": { habitId: string; date: string };
@@ -13,6 +14,10 @@ export interface OfflineOps {
 	"keizoku.updateHabit": { habitId: string; patch: HabitPatch };
 	"keizoku.archiveHabit": { habitId: string };
 	"keizoku.unarchiveHabit": { habitId: string };
+	/** `id` is made on the device, so later edits of an offline capture can point at it. */
+	"kuroji.createTransaction": TransactionInput & { workspaceId: string; id: string };
+	"kuroji.updateTransaction": TransactionInput & { transactionId: string };
+	"kuroji.deleteTransaction": { transactionId: string };
 }
 
 export type OpName = keyof OfflineOps;

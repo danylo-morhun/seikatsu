@@ -4,6 +4,7 @@ import type { RecentTransaction } from "@/features/kuroji/actions/transactions";
 import { TransactionFlow } from "@/features/kuroji/components/TransactionFlow";
 import { formatShortDate, localToday } from "@/features/kuroji/lib/dates";
 import { formatCurrency } from "@/features/kuroji/lib/format";
+import type { ShownTransaction } from "@/features/kuroji/lib/overlay";
 import { categoryEnd } from "@/features/kuroji/lib/quick-categorize";
 import {
 	Delete01Icon,
@@ -52,7 +53,7 @@ export type RowEvent =
 	| { type: "categorize"; anchor: HTMLElement };
 
 interface Props {
-	txn: RecentTransaction;
+	txn: ShownTransaction;
 	currency: string;
 	selected: boolean;
 	/** Phones show checkboxes, and a tap selects instead of opening the row. */
@@ -98,7 +99,7 @@ const legsKey = (t: RecentTransaction) =>
 	t.legs.map((l) => `${l.accountId}:${l.amount}:${l.currency}:${l.baseAmount}`).join();
 const tagsKey = (t: RecentTransaction) => t.tags.map((g) => `${g.id}:${g.name}`).join();
 
-function sameTxn(a: RecentTransaction, b: RecentTransaction) {
+function sameTxn(a: ShownTransaction, b: ShownTransaction) {
 	return (
 		a.id === b.id &&
 		a.date === b.date &&
@@ -112,6 +113,7 @@ function sameTxn(a: RecentTransaction, b: RecentTransaction) {
 		a.currency === b.currency &&
 		a.splitCount === b.splitCount &&
 		a.imported === b.imported &&
+		a.pending === b.pending &&
 		legsKey(a) === legsKey(b) &&
 		tagsKey(a) === tagsKey(b)
 	);
@@ -166,6 +168,9 @@ export const TransactionRow = memo(
 					>
 						<span className="block truncate text-sm font-medium">
 							{txn.description ?? "No description"}
+							{txn.pending && (
+								<span className="ml-2 text-xs font-normal text-muted-foreground">Not synced</span>
+							)}
 						</span>
 						{!byDay && (
 							<span className="mt-0.5 hidden text-xs text-muted-foreground md:block">
