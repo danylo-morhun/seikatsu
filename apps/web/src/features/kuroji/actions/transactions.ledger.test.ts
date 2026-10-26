@@ -87,7 +87,7 @@ describe("createTransaction — double-entry ledger invariant", () => {
 			date: "2026-06-01",
 		});
 
-		expect(result).toEqual({ success: true });
+		expect(result).toMatchObject({ success: true, data: { id: expect.any(String) } });
 
 		const [txn] = await testDb.select().from(schema.transactions);
 		expect(await sumBaseAmount(txn.id)).toBe(0);
@@ -111,7 +111,7 @@ describe("createTransaction — double-entry ledger invariant", () => {
 			],
 		});
 
-		expect(result).toEqual({ success: true });
+		expect(result).toMatchObject({ success: true, data: { id: expect.any(String) } });
 
 		const [txn] = await testDb.select().from(schema.transactions);
 		const entries = await testDb
@@ -142,7 +142,7 @@ describe("createTransaction — double-entry ledger invariant", () => {
 			date: "2026-06-03",
 		});
 
-		expect(result).toEqual({ success: true });
+		expect(result).toMatchObject({ success: true, data: { id: expect.any(String) } });
 		const entries = await testDb.select().from(schema.transactionEntries);
 		const from = entries.find((e) => e.accountId === eur.id);
 		const to = entries.find((e) => e.accountId === checking.id);
