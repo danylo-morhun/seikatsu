@@ -1,6 +1,9 @@
 // Server-only: how /api/outbox replays each queued operation. Every entry calls the same
 // server action the online path calls, so ownership checks and revalidation live in one place.
 
+import { addReading } from "@/features/aisha/actions/readings";
+import { logService } from "@/features/aisha/actions/services";
+import { serviceFormSchema } from "@/features/aisha/lib/aisha-schemas";
 import { archiveHabit, unarchiveHabit, updateHabit } from "@/features/keizoku/actions/habits";
 import { checkDay, saveDayNote, uncheckDay } from "@/features/keizoku/actions/logs";
 import { habitPatchSchema } from "@/features/keizoku/lib/keizoku-schemas";
@@ -9,6 +12,8 @@ import {
 	deleteTransaction,
 	updateTransaction,
 } from "@/features/kuroji/actions/transactions";
+import { followUp, logEvent, setArchived, setStatus } from "@/features/kyuu/actions/progress";
+import { EVENT_KINDS, STATUSES } from "@/features/kyuu/lib/stages";
 import type { OfflineOps, OpName, OpResult } from "@/features/pwa/lib/ops";
 import {
 	archiveCard,
@@ -33,6 +38,9 @@ import {
 	updateCardSchema,
 	updateChecklistItemSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
+import { setProgress, updateRating, updateStatus } from "@/features/tsundoku/actions/books";
+import { logSession } from "@/features/tsundoku/actions/sessions";
+import { bookStatusSchema } from "@/features/tsundoku/lib/tsundoku-schemas";
 import { z } from "zod";
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -159,6 +167,71 @@ export const REGISTRY: { [N in OpName]: Entry<N> } = {
 			const result = await deleteChecklistItem(args);
 			return "error" in result && result.error === "Item not found" ? { success: true } : result;
 		},
+	},
+	// Tsundoku, Kyuu and Aisha actions validate their own values; these check the shape and ids.
+	"tsundoku.setProgress": {
+		schema: z.object({ bookId: z.uuid(), currentPage: z.number().int().min(0), asOf: day }),
+		run: ({ bookId, ...input }) => setProgress(bookId, input),
+	},
+	"tsundoku.updateStatus": {
+		schema: z.object({ bookId: z.uuid(), status: bookStatusSchema }),
+		run: ({ bookId, status }) => updateStatus(bookId, status),
+	},
+	"tsundoku.updateRating": {
+		schema: z.object({ bookId: z.uuid(), rating: z.number().int().min(1).max(10).nullable() }),
+		run: ({ bookId, rating }) => updateRating(bookId, rating),
+	},
+	"tsundoku.logSession": {
+		schema: z.object({
+			bookId: z.uuid(),
+			id: z.uuid(),
+			date: day,
+			pagesRead: z.number().int().positive(),
+		}),
+		run: ({ bookId, ...input }) => logSession(bookId, input),
+	},
+	"kyuu.setStatus": {
+		schema: z.object({ applicationId: z.uuid(), status: z.enum(STATUSES) }),
+		run: async ({ applicationId, status }) => {
+			const result = await setStatus(applicationId, status);
+			return "error" in result ? result : { success: true };
+		},
+	},
+	"kyuu.logEvent": {
+		schema: z.object({
+			applicationId: z.uuid(),
+			// The action checks dates and lengths; this is its event's shape.
+			event: z.object({
+				id: z.uuid(),
+				kind: z.enum(EVENT_KINDS),
+				date: z.string().nullable(),
+				time: z.string().nullable(),
+				note: z.string().nullable(),
+			}),
+		}),
+		run: async ({ applicationId, event }) => {
+			const result = await logEvent(applicationId, event);
+			return "error" in result ? result : { success: true };
+		},
+	},
+	"kyuu.followUp": {
+		schema: z.object({ applicationId: z.uuid(), id: z.uuid(), date: day }),
+		run: ({ applicationId, ...options }) => followUp(applicationId, options),
+	},
+	"kyuu.setArchived": {
+		schema: z.object({ applicationId: z.uuid(), archived: z.boolean() }),
+		run: ({ applicationId, archived }) => setArchived(applicationId, archived),
+	},
+	"aisha.addReading": {
+		schema: z.object({ vehicleId: z.uuid(), id: z.uuid(), date: day, km: z.number() }),
+		run: ({ vehicleId, ...values }) => addReading(vehicleId, values),
+	},
+	"aisha.logService": {
+		schema: z.object({
+			vehicleId: z.uuid(),
+			values: serviceFormSchema.extend({ id: z.uuid() }),
+		}) as z.ZodType<OfflineOps["aisha.logService"]>,
+		run: ({ vehicleId, values }) => logService(vehicleId, values),
 	},
 };
 
