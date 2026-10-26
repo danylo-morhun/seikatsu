@@ -12,9 +12,7 @@ import { saveProgress as sendProgress } from "@/features/tsundoku/lib/offline";
 import { APPS_CONFIG } from "@/lib/app-themes";
 import { pageKey } from "@/lib/capture-shortcut";
 import type { Workspace } from "@/lib/session";
-import { Add01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { cn } from "@seikatsu/ui";
+import { Button, cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -110,7 +108,7 @@ function Tile({
 					</span>
 					<span className="truncate">{app.label}</span>
 				</Link>
-				{action && <div className="relative z-10 -my-2.5 ml-auto shrink-0 md:-my-2">{action}</div>}
+				{action && <div className="relative z-10 -my-2 ml-auto shrink-0">{action}</div>}
 			</div>
 			<p
 				className={cn(
@@ -131,25 +129,14 @@ function Tile({
 	);
 }
 
-/** The tile's one capture: a round seal in the app's pigment, like the bottom nav's. */
-const tileAction =
-	"flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground outline-none transition-[opacity,transform] duration-150 ease-out hover:opacity-90 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface md:size-8";
-
+/** The tile's one capture, the same outline button the apps use for a row's quick update. */
 function TileAction({
 	label,
 	keys,
-	onClick,
-}: { label: string; keys: string; onClick?: () => void }) {
+	...props
+}: { label: string; keys: string } & React.ComponentProps<typeof Button>) {
 	return (
-		<button
-			type="button"
-			className={tileAction}
-			aria-label={label}
-			aria-keyshortcuts={keys}
-			onClick={onClick}
-		>
-			<HugeiconsIcon icon={Add01Icon} className="size-4" strokeWidth={2} />
-		</button>
+		<Button variant="outline" size="sm" aria-label={label} aria-keyshortcuts={keys} {...props} />
 	);
 }
 
@@ -309,14 +296,9 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 							baseCurrency={workspace.baseCurrency}
 							shortcut
 							trigger={
-								<button
-									type="button"
-									className={tileAction}
-									aria-label="Add transaction"
-									aria-keyshortcuts="N"
-								>
-									<HugeiconsIcon icon={Add01Icon} className="size-4" strokeWidth={2} />
-								</button>
+								<TileAction label="Add transaction" keys="N">
+									Add
+								</TileAction>
 							}
 						/>
 					}
@@ -346,7 +328,9 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 					alert={next?.status === "overdue"}
 					action={
 						data.car && (
-							<TileAction label="Log mileage" keys="M" onClick={() => setMileageOpen(true)} />
+							<TileAction label="Log mileage" keys="M" onClick={() => setMileageOpen(true)}>
+								Log
+							</TileAction>
 						)
 					}
 				/>
@@ -416,7 +400,11 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 							: "No book on the go"
 					}
 					action={
-						book && <TileAction label="Log pages" keys="P" onClick={() => setProgressBook(book)} />
+						book && (
+							<TileAction label="Log pages" keys="P" onClick={() => setProgressBook(book)}>
+								Log
+							</TileAction>
+						)
 					}
 				>
 					{book && (
