@@ -61,6 +61,8 @@ test("count as done at purchase, then undo", async ({ page }) => {
 });
 
 test("log a service from the queue, into Kuroji, then edit its date", async ({ page }) => {
+	// Kuroji fetches the day's exchange rate for the expense, twice.
+	test.slow();
 	const vehicle = await seedCar();
 	await page.goto("/aisha");
 
