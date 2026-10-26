@@ -51,6 +51,8 @@ export const kyuuApplications = pgTable(
 		jobDescription: text("job_description"),
 		coverLetter: text("cover_letter"),
 		location: text("location"),
+		// ISO 3166-1 alpha-2 of where the job is (or the company, for remote roles); null if unknown.
+		country: text("country"),
 		remote: boolean("remote"),
 		salary: text("salary"),
 		fitVerdict: text("fit_verdict"),
