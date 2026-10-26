@@ -39,6 +39,15 @@ export function ConfirmDelete({
 	confirmLabel = "Delete",
 }: Props) {
 	const [isPending, startTransition] = useTransition();
+	const pendingLabel = confirmLabel.startsWith("Delete")
+		? "Deleting…"
+		: confirmLabel.startsWith("Clear")
+			? "Clearing…"
+			: confirmLabel.startsWith("Turn off")
+				? "Turning off…"
+				: confirmLabel.startsWith("Close")
+					? "Closing…"
+					: `${confirmLabel}…`;
 
 	function handleConfirm(e: React.MouseEvent) {
 		e.preventDefault();
@@ -67,7 +76,7 @@ export function ConfirmDelete({
 						onClick={handleConfirm}
 					>
 						{isPending ? <Spinner /> : <HugeiconsIcon icon={Delete01Icon} className="h-4 w-4" />}
-						{isPending ? `${confirmLabel === "Delete" ? "Deleting" : "Clearing"}…` : confirmLabel}
+						{isPending ? pendingLabel : confirmLabel}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>
