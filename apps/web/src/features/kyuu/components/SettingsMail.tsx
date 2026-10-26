@@ -1,9 +1,10 @@
 "use client";
 
 import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { SettingsSection } from "@/components/SettingsSection";
 import { Spinner } from "@/components/Spinner";
 import { Button } from "@seikatsu/ui";
-import { useId, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { type MailKeyStatus, createMailKey, deleteMailKey } from "../actions/mail";
 import { mailScript } from "../lib/mail-script";
@@ -24,7 +25,6 @@ function ago(iso: string): string {
  * user's own Google account and posts new mail here every 30 minutes.
  */
 export function SettingsMail({ status }: { status: MailKeyStatus | null }) {
-	const id = useId();
 	const [script, setScript] = useState<string | null>(null);
 	const [confirming, setConfirming] = useState(false);
 	const [isPending, startTransition] = useTransition();
@@ -41,26 +41,18 @@ export function SettingsMail({ status }: { status: MailKeyStatus | null }) {
 	}
 
 	return (
-		<section aria-labelledby={`${id}-title`} className="mt-10">
-			<div className="mb-3 flex items-baseline justify-between gap-3">
-				<h2 id={`${id}-title`} className="text-sm font-medium">
-					Mail
-				</h2>
-				<span className="text-xs text-muted-foreground">
-					{status
-						? status.lastSyncAt
-							? `Synced ${ago(status.lastSyncAt)}`
-							: "Waiting for the first sync"
-						: "Off"}
-				</span>
-			</div>
-			<div className="space-y-3 border-y border-rule py-3">
-				<p className="max-w-xl text-sm text-muted-foreground">
-					A Google Apps Script in your Gmail sends Kyuu the last three days of mail every 30
-					minutes. Gemini reads only mail that names a company you applied to (or comes from a
-					hiring platform): clear answers move the application on their own, unsure ones wait above
-					the table.
-				</p>
+		<SettingsSection
+			title="Mail"
+			description="A Google Apps Script in your Gmail sends Kyuu the last three days of mail every 30 minutes. Gemini reads only mail that names a company you applied to, or comes from a hiring platform: clear answers move the application on their own, unsure ones wait above the table."
+			meta={
+				status
+					? status.lastSyncAt
+						? `Synced ${ago(status.lastSyncAt)}`
+						: "Waiting for the first sync"
+					: "Off"
+			}
+		>
+			<div className="space-y-3">
 				<div className="flex flex-wrap gap-2">
 					<Button variant="outline" className="gap-1.5" disabled={isPending} onClick={newKey}>
 						{isPending && <Spinner />}
@@ -136,6 +128,6 @@ export function SettingsMail({ status }: { status: MailKeyStatus | null }) {
 					else setScript(null);
 				}}
 			/>
-		</section>
+		</SettingsSection>
 	);
 }
