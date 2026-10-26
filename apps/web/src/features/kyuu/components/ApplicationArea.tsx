@@ -2,6 +2,7 @@
 
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
 import { startNavigationProgress } from "@/components/NavigationProgress";
+import { usePendingOps } from "@/features/pwa/lib/use-outbox";
 import { pageKey } from "@/lib/capture-shortcut";
 import {
 	Archive01Icon,
@@ -39,8 +40,9 @@ import {
 	useTransition,
 } from "react";
 import { toast } from "sonner";
-import { followUp, ghostApplications, setArchived, setStatus } from "../actions/progress";
+import { ghostApplications } from "../actions/progress";
 import { requestDeleteApplication } from "../lib/events";
+import { archiveApplication, changeStatus, logFollowUp, queuedPatches } from "../lib/offline";
 import { STATUSES, STATUS_CONFIG, type Status } from "../lib/stages";
 import type { ApplicationRow } from "../lib/types";
 import { StatusMark } from "./StatusMark";
@@ -114,6 +116,9 @@ export function ApplicationArea({
 	};
 
 	const byId = useMemo(() => new Map(rows.map((r) => [r.id, r])), [rows]);
+	// Changes queued offline show until the server has them.
+	const pending = usePendingOps("kyuu.");
+	const queued = useMemo(() => queuedPatches(pending), [pending]);
 
 	function run(
 		patch: Patch | Patch[],
@@ -128,10 +133,12 @@ export function ApplicationArea({
 
 	const actions: RowActions = {
 		setStatus: (id, status) =>
-			run({ id, changes: { status, waiting: null } }, () => setStatus(id, status)),
+			run({ id, changes: { status, waiting: null } }, () =>
+				changeStatus(byId.get(id) ?? { id, company: "Application" }, status),
+			),
 		followUp: (id) =>
 			run({ id, changes: { waiting: null } }, async () => {
-				const result = await followUp(id);
+				const result = await logFollowUp(byId.get(id) ?? { id, company: "Application" });
 				if ("success" in result) toast("Follow-up logged: the clock restarts");
 				return result;
 			}),
@@ -147,14 +154,16 @@ export function ApplicationArea({
 			),
 		archive: (id, archived) =>
 			run({ id, changes: { hidden: true } }, async () => {
-				const result = await setArchived(id, archived);
 				const row = byId.get(id);
+				const result = await archiveApplication(row ?? { id, company: "Application" }, archived);
 				if ("success" in result && row)
 					toast(archived ? `“${row.company}” archived` : `“${row.company}” restored`, {
 						action: {
 							label: "Undo",
 							onClick: () =>
-								void setArchived(id, !archived).then((r) => "error" in r && toast.error(r.error)),
+								void archiveApplication(row ?? { id, company: "Application" }, !archived).then(
+									(r) => "error" in r && toast.error(r.error),
+								),
 						},
 					});
 				return result;
@@ -162,8 +171,9 @@ export function ApplicationArea({
 	};
 
 	const shown = (row: ApplicationRow): Shown => {
+		const q = queued[row.id];
 		const p = patches[row.id];
-		return p ? { ...row, ...p } : row;
+		return q || p ? { ...row, ...q, ...p } : row;
 	};
 
 	// ── Keys: on the row in focus or under the pointer ──
