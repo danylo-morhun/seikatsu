@@ -251,6 +251,19 @@
 	--ring: oklch(0.72 0.12 318);
 }
 
+/* Hoshii — nadeshiko (pink) */
+.theme-hoshii {
+	--app-kanji: "欲";
+	--primary: oklch(0.52 0.15 355);
+	--primary-foreground: oklch(0.98 0.01 355);
+	--ring: oklch(0.52 0.15 355);
+}
+.dark .theme-hoshii {
+	--primary: oklch(0.76 0.11 355);
+	--primary-foreground: oklch(0.16 0.02 355);
+	--ring: oklch(0.76 0.11 355);
+}
+
 /* ── Urushi signatures ─────────────────────────────────────────────────────── */
 
 /* Raised surfaces are flat lacquer with a deep shadow beneath. */

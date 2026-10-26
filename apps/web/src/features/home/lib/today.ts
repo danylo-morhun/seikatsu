@@ -3,6 +3,7 @@
 // the rest of the day readable.
 
 import { getCar as getAishaCar, getCurrentVehicle } from "@/features/aisha/actions/data";
+import { getHoshii } from "@/features/hoshii/actions/data";
 import { getHabits as getAllHabits } from "@/features/keizoku/actions/habits";
 import { getDueToday } from "@/features/keizoku/actions/logs";
 import { getBalances } from "@/features/kuroji/actions/balances";
@@ -188,12 +189,36 @@ async function getCar(today: string): Promise<CarToday | null> {
 	};
 }
 
+export type WantsToday = {
+	decide: number;
+	canBuy: number;
+	/** The first want in the Plan the piggy fully covers. */
+	nextBuy: string | null;
+	plan: number;
+	cooling: number;
+	total: number;
+};
+
+/** What Hoshii waits on: cooled wants to decide, and what the piggy can already buy. */
+async function getWants(ws: Workspace, today: string): Promise<WantsToday> {
+	const { queue, items, piggy } = await getHoshii(ws, today);
+	const ready = piggy ? queue.plan.filter((p) => p.share != null && p.share >= 1) : [];
+	return {
+		decide: queue.decide.length,
+		canBuy: ready.length,
+		nextBuy: ready[0]?.item.title ?? null,
+		plan: queue.plan.length,
+		cooling: queue.cooling.length,
+		total: items.length,
+	};
+}
+
 /** Whether each app holds anything yet; null when that couldn't be read. An empty app waits
  * on the home's start list instead of showing a tile of dashes. */
 export type Started = Record<keyof typeof APPS_CONFIG, boolean | null>;
 
 export async function getToday(ws: Workspace, today: string) {
-	const [money, habits, books, jobs, cards, car, hasMoney, hasHabits, hasProjects, hasCar] =
+	const [money, habits, books, jobs, cards, car, hasMoney, hasHabits, hasProjects, hasCar, wants] =
 		await Promise.all([
 			safely(() => getMoney(ws, today)),
 			safely(getHabits),
@@ -205,6 +230,7 @@ export async function getToday(ws: Workspace, today: string) {
 			safely(() => getAllHabits().then((list) => list.length > 0)),
 			safely(() => getProjects().then((list) => list.length > 0)),
 			safely(() => getCurrentVehicle().then(Boolean)),
+			safely(() => getWants(ws, today)),
 		]);
 	const started: Started = {
 		"/kuroji": hasMoney,
@@ -213,8 +239,9 @@ export async function getToday(ws: Workspace, today: string) {
 		"/keizoku": hasHabits,
 		"/kyuu": jobs && jobs.total > 0,
 		"/aisha": hasCar,
+		"/hoshii": wants && wants.total > 0,
 	};
-	return { money, habits, reading: books && readingNow(books), jobs, cards, car, started };
+	return { money, habits, reading: books && readingNow(books), jobs, cards, car, wants, started };
 }
 
 export type Today = Awaited<ReturnType<typeof getToday>>;

@@ -56,6 +56,15 @@ export const APPS_CONFIG = {
 		pitch: "The car's service plan, mileage and papers: what's due next.",
 		first: "Add your car",
 	},
+	"/hoshii": {
+		theme: "theme-hoshii",
+		name: "Hoshii",
+		label: "Wants",
+		kanji: "欲",
+		description: "Wishlist. Wants cool down first; the keepers are ranked and saved for in order.",
+		pitch: "What you want to buy, given time to cool, then saved for in order.",
+		first: "Add a want",
+	},
 } satisfies Record<
 	string,
 	{
