@@ -273,7 +273,9 @@ export async function setProgress(bookId: string, input: unknown): Promise<Resul
 	const book = await getOwnedBook(bookId, workspace.id);
 	if (!book) return { error: "Book not found" };
 
-	const today = await getUserToday();
+	const serverToday = await getUserToday();
+	const { asOf } = parsed.data;
+	const today = asOf && asOf < serverToday ? asOf : serverToday;
 	const patch = progressPatch(book, parsed.data.currentPage, today);
 	const delta = (patch.currentPage ?? book.currentPage) - book.currentPage;
 

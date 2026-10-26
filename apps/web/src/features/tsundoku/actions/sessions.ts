@@ -43,9 +43,11 @@ export async function logSession(bookId: string, input: unknown): Promise<Result
 	const book = await getOwnedBook(bookId, workspace.id);
 	if (!book) return { error: "Book not found" };
 
-	const { date } = parsed.data;
+	const { id, date } = parsed.data;
 	const today = await getUserToday();
 	if (date > today) return { error: "Can't log a future day" };
+	// Sent again (offline replay, lost response): the first one stands.
+	if (id && (await getOwnedSession(id, workspace.id))) return { success: true };
 	// The log never holds more pages than the book, so deleting a session takes back what it added.
 	const pagesRead = pagesLeft(book.pageCount, await loggedPages(bookId), parsed.data.pagesRead);
 	if (pagesRead === 0) return { error: "Every page is already logged" };
@@ -56,7 +58,7 @@ export async function logSession(bookId: string, input: unknown): Promise<Result
 	if (patch.finishedAt) patch.finishedAt = date;
 
 	await db.transaction(async (tx) => {
-		await tx.insert(tsundokuSessions).values({ bookId, date, pagesRead });
+		await tx.insert(tsundokuSessions).values({ id, bookId, date, pagesRead });
 		await tx.update(tsundokuBooks).set(patch).where(eq(tsundokuBooks.id, bookId));
 	});
 
