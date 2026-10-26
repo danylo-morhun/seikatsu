@@ -1,12 +1,17 @@
 "use client";
 
-import { ProjectDialog } from "@/features/seiryu/components/ProjectDialog";
-import { Button } from "@seikatsu/ui";
-import { useState } from "react";
+import { AppWelcome } from "@/components/AppWelcome";
+import { Spinner } from "@/components/Spinner";
+import { createProject } from "@/features/seiryu/actions/projects";
+import { LABEL_COLORS } from "@/lib/pigments";
+import { Button, Input } from "@seikatsu/ui";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
 
 const STEPS = [
 	{
-		title: "Make a project",
+		title: "Name a project",
 		body: "One board per project, starting with Todo, In Progress and Done.",
 	},
 	{
@@ -19,43 +24,63 @@ const STEPS = [
 	},
 ];
 
-/** First run: no projects yet. Lead with making one, and say how the board works. */
-export function SeiryuWelcome() {
-	const [open, setOpen] = useState(false);
-	return (
-		<section
-			aria-labelledby="seiryu-welcome"
-			className="max-w-2xl px-4 py-10 pb-28 sm:px-8 md:py-14"
-		>
-			<h1 id="seiryu-welcome" className="animate-rise text-2xl font-semibold md:text-3xl">
-				Your boards start here.
-			</h1>
-			<p
-				className="animate-rise mt-3 max-w-prose text-muted-foreground"
-				style={{ "--i": 1 } as React.CSSProperties}
-			>
-				Seiryu keeps each project on its own kanban board: columns for stages, cards for the work,
-				moved along as it gets done.
-			</p>
-			<div className="animate-rise mt-6" style={{ "--i": 2 } as React.CSSProperties}>
-				<Button onClick={() => setOpen(true)}>Create your first project</Button>
-			</div>
+const IDEAS = ["Home", "Work", "Side project", "Trip"];
 
-			<ol
-				className="animate-rise mt-12 divide-y divide-rule border-y border-rule"
-				style={{ "--i": 3 } as React.CSSProperties}
+/** First run: no projects yet. Name the first one right here; its board opens next. */
+export function SeiryuWelcome() {
+	const router = useRouter();
+	const [name, setName] = useState("");
+	const [isSaving, startSave] = useTransition();
+
+	function handleSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		const trimmed = name.trim();
+		if (!trimmed) return;
+		startSave(async () => {
+			const result = await createProject({ name: trimmed, color: LABEL_COLORS[0]?.hex });
+			if ("error" in result) {
+				toast.error(result.error);
+				return;
+			}
+			router.push(`/seiryu/${result.data.id}`);
+		});
+	}
+
+	return (
+		<div className="px-4 pt-6 pb-28 sm:px-8 md:py-8">
+			<AppWelcome
+				app="/seiryu"
+				title="Your boards start here."
+				lead="Seiryu keeps each project on its own kanban board: columns for stages, cards for the work, moved along as it gets done."
+				steps={STEPS}
 			>
-				{STEPS.map((step, i) => (
-					<li key={step.title} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 py-4">
-						<span className="font-figures text-sm text-muted-foreground">{i + 1}</span>
-						<span>
-							<span className="block text-sm font-medium">{step.title}</span>
-							<span className="mt-0.5 block text-sm text-muted-foreground">{step.body}</span>
-						</span>
-					</li>
-				))}
-			</ol>
-			<ProjectDialog open={open} onOpenChange={setOpen} />
-		</section>
+				<form onSubmit={handleSubmit} className="flex max-w-md gap-2">
+					<Input
+						value={name}
+						onChange={(e) => setName(e.target.value)}
+						placeholder="Name your first project"
+						aria-label="Project name"
+						maxLength={100}
+					/>
+					<Button type="submit" disabled={isSaving || !name.trim()} className="gap-1.5">
+						{isSaving && <Spinner />}
+						{isSaving ? "Creating…" : "Create"}
+					</Button>
+				</form>
+				<div className="mt-3 flex flex-wrap gap-1.5">
+					{IDEAS.map((idea) => (
+						<Button
+							key={idea}
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => setName(idea)}
+						>
+							{idea}
+						</Button>
+					))}
+				</div>
+			</AppWelcome>
+		</div>
 	);
 }
