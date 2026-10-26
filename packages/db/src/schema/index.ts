@@ -3,6 +3,7 @@ export * from "./auth";
 export * from "./keizoku";
 export * from "./kuroji";
 export * from "./kuroji-bank";
+export * from "./kuroji-capture";
 export * from "./kyuu";
 export * from "./notifications";
 export * from "./offline";
