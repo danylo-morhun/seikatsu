@@ -1,6 +1,7 @@
 "use client";
 
 import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { SettingsSection } from "@/components/SettingsSection";
 import {
 	type ArchivedHabit,
 	type KeizokuHabit,
@@ -62,15 +63,17 @@ export function SettingsHabits({ habits: saved }: { habits: KeizokuHabit[] }) {
 	}
 
 	return (
-		<section aria-labelledby="settings-habits">
-			<div className="mb-3 flex items-baseline justify-between gap-3">
-				<h2 id="settings-habits" className="text-sm font-medium">
-					Habits
-				</h2>
-				<span className="font-figures text-xs text-muted-foreground">{habits.length}</span>
-			</div>
+		<SettingsSection
+			title="Habits"
+			description="Edit one to change its schedule or time of day; archiving keeps its history."
+			action={
+				<Button variant="outline" onClick={requestNewHabit} aria-keyshortcuts="N">
+					New Habit
+				</Button>
+			}
+		>
 			{habits.length === 0 ? (
-				<p className="border-y border-rule py-6 text-sm text-muted-foreground">
+				<p className="border-y border-rule py-4 text-sm text-muted-foreground">
 					No habits yet.{" "}
 					<button
 						type="button"
@@ -134,7 +137,7 @@ export function SettingsHabits({ habits: saved }: { habits: KeizokuHabit[] }) {
 					return "error" in result ? result.error : undefined;
 				}}
 			/>
-		</section>
+		</SettingsSection>
 	);
 }
 
@@ -154,7 +157,7 @@ export function ArchivedHabits({ habits: saved }: { habits: ArchivedHabit[] }) {
 
 	if (habits.length === 0) {
 		return (
-			<p className="border-y border-rule py-6 text-sm text-muted-foreground">
+			<p className="border-y border-rule py-4 text-sm text-muted-foreground">
 				Nothing archived. Archiving a habit takes it off Today and keeps its history.
 			</p>
 		);
