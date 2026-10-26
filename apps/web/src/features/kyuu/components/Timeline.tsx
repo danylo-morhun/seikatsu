@@ -6,8 +6,9 @@ import { Mail01Icon, SentIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Input, Label, cn } from "@seikatsu/ui";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
-import { deleteEvent, logEvent, updateEvent } from "../actions/progress";
+import { deleteEvent, updateEvent } from "../actions/progress";
 import { formatDay, formatWhen, localToday } from "../lib/format";
+import { addEvent } from "../lib/offline";
 import { EVENT_LABELS, type EventKind, STATUS_OF_EVENT } from "../lib/stages";
 import type { KyuuEvent } from "../lib/types";
 import { FIELD_TEXTAREA } from "./ApplicationDialog";
@@ -211,7 +212,7 @@ function EventForm({
 			};
 			const result = await (event
 				? updateEvent(event.id, input)
-				: logEvent(applicationId, { kind, ...input })
+				: addEvent(applicationId, `${EVENT_LABELS[kind]} logged`, { kind, ...input })
 			).catch(() => FAILED);
 			if ("error" in result) setError(result.error);
 			else onDone();
