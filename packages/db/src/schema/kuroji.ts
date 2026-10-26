@@ -26,6 +26,8 @@ export const workspaces = pgTable(
 		userId: text("user_id").notNull(),
 		name: text("name").notNull(),
 		baseCurrency: text("base_currency").notNull().default("USD"),
+		/** App routes (e.g. "/kyuu") the user has set aside: off the sidebar and the home. */
+		hiddenApps: text("hidden_apps").array().notNull().default([]),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 	},
