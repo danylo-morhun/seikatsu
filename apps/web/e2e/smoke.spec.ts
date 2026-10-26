@@ -21,6 +21,7 @@ const ROUTES = [
 	"/aisha",
 	"/settings",
 	"/settings/account",
+	"/settings/notifications",
 	"/settings/kuroji",
 	"/settings/seiryu",
 	"/settings/seiryu?section=labels",
