@@ -27,8 +27,9 @@ function label(input: TransactionInput) {
 export function captureTransaction(
 	workspaceId: string,
 	input: TransactionInput,
+	captureId?: string,
 ): Promise<RunResult> {
-	const args = { ...input, workspaceId, id: crypto.randomUUID() };
+	const args = { ...input, workspaceId, id: crypto.randomUUID(), captureId };
 	return runOrQueue("kuroji.createTransaction", args, label(input), () => createTransaction(args));
 }
 

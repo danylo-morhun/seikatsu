@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { CAPTURE_EXTERNAL_PREFIX } from "@/features/kuroji/lib/capture-intake";
 import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
 import type { Leg } from "@/features/kuroji/lib/transaction-edit";
 import {
@@ -17,6 +18,7 @@ import {
 	db,
 	eq,
 	inArray,
+	kurojiCaptures,
 	tags,
 	transactionEntries,
 	transactionTags,
@@ -202,12 +204,14 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /**
  * `id` comes from the client when the capture may be replayed (made offline, or sent again
  * after a lost response): a second create with the same id is a no-op that still succeeds.
+ * `captureId` saves an Apple Pay payment from the inbox; the bank import later claims it.
  */
 export async function createTransaction({
 	workspaceId,
 	id,
+	captureId,
 	...input
-}: TransactionInput & { workspaceId: string; id?: string }): Promise<
+}: TransactionInput & { workspaceId: string; id?: string; captureId?: string }): Promise<
 	{ error: string } | { success: true; data: { id: string } }
 > {
 	try {
@@ -217,6 +221,7 @@ export async function createTransaction({
 		const ws = await getOwnedWorkspace(workspaceId);
 		if (!ws) return { error: "Forbidden" };
 		if (id !== undefined && !UUID.test(id)) return { error: "Invalid transaction id" };
+		if (captureId !== undefined && !UUID.test(captureId)) return { error: "Invalid payment id" };
 
 		if (id) {
 			const [existing] = await db
@@ -238,8 +243,29 @@ export async function createTransaction({
 		const created = await db.transaction(async (tx) => {
 			const [txn] = await tx
 				.insert(transactions)
-				.values({ id, workspaceId, date, description: description ?? null })
+				.values({
+					id,
+					workspaceId,
+					date,
+					description: description ?? null,
+					externalId: captureId ? `${CAPTURE_EXTERNAL_PREFIX}${captureId}` : null,
+				})
 				.returning();
+
+			if (captureId) {
+				const [taken] = await tx
+					.update(kurojiCaptures)
+					.set({ state: "added", transactionId: txn.id })
+					.where(
+						and(
+							eq(kurojiCaptures.id, captureId),
+							eq(kurojiCaptures.workspaceId, workspaceId),
+							eq(kurojiCaptures.state, "pending"),
+						),
+					)
+					.returning({ id: kurojiCaptures.id });
+				if (!taken) throw new Error(CAPTURE_GONE);
+			}
 
 			await tx
 				.insert(transactionEntries)
@@ -255,6 +281,8 @@ export async function createTransaction({
 		});
 
 		revalidatePath("/kuroji");
+		// The Apple Pay inbox sits in Kuroji's layout.
+		if (captureId) revalidatePath("/kuroji", "layout");
 		// The home's Today figures read the same ledger.
 		revalidatePath("/");
 		return { success: true, data: { id: created } };
@@ -263,6 +291,8 @@ export async function createTransaction({
 		return { error: msg };
 	}
 }
+
+const CAPTURE_GONE = "This payment is already in Kuroji.";
 
 export async function deleteTransaction(
 	transactionId: string,
