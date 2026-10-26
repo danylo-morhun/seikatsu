@@ -152,16 +152,23 @@ describe("syncMail", () => {
 		expect(await eventsOf(acme.id)).toHaveLength(1);
 	});
 
-	it("leaves the rest for the next run when Gemini fails", async () => {
+	it("leaves what needs Gemini for the next run when it fails, and puts the rest away", async () => {
 		const { workspace } = await seed();
 		askGemini.mockRejectedValue(new Error("503"));
 		const result = await syncMail(
 			workspace.id,
-			[mail({ id: "a", subject: "Acme" }), mail({ id: "b", subject: "Globex" })],
+			[
+				mail({ id: "a", subject: "Acme", date: "2026-10-20T09:00:00Z" }),
+				mail({ id: "b", subject: "Globex", date: "2026-10-20T10:00:00Z" }),
+				mail({ id: "c", subject: "Newsletter", date: "2026-10-20T11:00:00Z" }),
+			],
 			null,
 		);
-		expect(result.deferred).toBe(2);
-		expect(await testDb.select().from(schema.kyuuMail)).toEqual([]);
+		expect(result).toMatchObject({ read: 0, deferred: 2 });
+		// Gemini isn't asked again once it's down.
+		expect(askGemini).toHaveBeenCalledTimes(1);
+		const rows = await testDb.select().from(schema.kyuuMail);
+		expect(rows.map((r) => [r.messageId, r.state])).toEqual([["c", "skipped"]]);
 	});
 
 	it("asks only about the applications the mail names", async () => {

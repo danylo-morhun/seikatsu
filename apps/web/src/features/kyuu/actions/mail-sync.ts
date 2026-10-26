@@ -186,15 +186,18 @@ export async function syncMail(
 			.values({ workspaceId, messageId: m.id, state: "skipped" })
 			.onConflictDoNothing();
 
-	for (const [i, mail] of fresh.entries()) {
+	// Out of quota or down: the rest that needs Gemini waits for the next run; mail that
+	// doesn't is still put away now.
+	let geminiDown = false;
+	for (const mail of fresh) {
 		const named = mailCandidates(mail, apps);
 		if (named.length === 0 && !fromHiringPlatform(mail.from)) {
 			await skip(mail);
 			continue;
 		}
-		if (result.read >= MAX_READS) {
-			result.deferred = fresh.length - i;
-			break;
+		if (geminiDown || result.read >= MAX_READS) {
+			result.deferred++;
+			continue;
 		}
 
 		const candidates = named.length > 0 ? named : apps.slice(0, PLATFORM_CANDIDATES);
@@ -202,9 +205,9 @@ export async function syncMail(
 		try {
 			raw = await askGemini(verdictPrompt(mail, candidates), verdictSchema(candidates.length));
 		} catch {
-			// Out of quota or down: everything left is read on the next run.
-			result.deferred = fresh.length - i;
-			break;
+			geminiDown = true;
+			result.deferred++;
+			continue;
 		}
 		result.read++;
 
