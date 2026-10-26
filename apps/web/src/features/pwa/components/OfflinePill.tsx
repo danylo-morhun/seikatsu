@@ -1,6 +1,6 @@
 "use client";
 
-import { removeOp, updateOp } from "@/features/pwa/lib/outbox";
+import { OUTBOX_EVENT, removeOp, updateOp } from "@/features/pwa/lib/outbox";
 import { useOnline } from "@/features/pwa/lib/use-online";
 import { useOutbox } from "@/features/pwa/lib/use-outbox";
 import { Alert02Icon, WifiDisconnected01Icon } from "@hugeicons/core-free-icons";
@@ -44,7 +44,7 @@ export function OfflinePill() {
 									variant="ghost"
 									onClick={() => {
 										updateOp(op.opId, { status: "pending", error: undefined });
-										window.dispatchEvent(new Event("online"));
+										window.dispatchEvent(new Event(OUTBOX_EVENT));
 									}}
 								>
 									Retry

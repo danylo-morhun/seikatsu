@@ -7,6 +7,8 @@ import type { OfflineOps, Op, OpName } from "@/features/pwa/lib/ops";
 const DB_NAME = "seikatsu-outbox";
 const STORE = "ops";
 const CHANNEL = "seikatsu-outbox";
+/** Fired on window when a change is queued (OutboxSync tries to send it). */
+export const OUTBOX_EVENT = "seikatsu:outbox";
 
 let ops: Op[] = [];
 let loaded: Promise<void> | null = null;
@@ -93,13 +95,18 @@ export async function enqueue<N extends OpName>(
 		createdAt: Date.now(),
 		status: "pending",
 	};
-	ops = [...ops, op];
-	emit();
+	// Stored first: the app can be swiped away a moment after the tap. The screen already
+	// shows the change (each view's optimistic state), so this adds no visible delay.
 	try {
 		await tx("readwrite", (s) => s.put(op));
 	} catch {
 		// No IndexedDB: the change lives until the page closes — better than dropping it now.
 	}
+	ops = [...ops, op];
+	emit();
+	// Queued after a failed send while still "online", or just as the connection came back:
+	// nudge the sync rather than wait for the next online/foreground event.
+	window.dispatchEvent(new Event(OUTBOX_EVENT));
 	return op;
 }
 
