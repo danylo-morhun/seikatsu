@@ -22,6 +22,7 @@ export default {
 				"keizoku",
 				"kyuu",
 				"aisha",
+				"hoshii",
 				"config",
 				"deps",
 				"ci",
