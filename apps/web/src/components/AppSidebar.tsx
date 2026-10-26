@@ -44,10 +44,12 @@ interface User {
 
 interface Props {
 	workspaceName: string;
+	/** Apps set aside from the home; the one open stays listed. */
+	hiddenApps: string[];
 	user?: User | null;
 }
 
-export function AppSidebar({ workspaceName, user }: Props) {
+export function AppSidebar({ workspaceName, hiddenApps, user }: Props) {
 	const pathname = usePathname();
 	const [entryHrefs, setEntryHrefs] = useState<Record<string, string>>({});
 
@@ -99,6 +101,7 @@ export function AppSidebar({ workspaceName, user }: Props) {
 						<SidebarMenu>
 							{Object.entries(APPS_CONFIG).map(([href, { name, label, kanji, theme }]) => {
 								const isActive = pathname.startsWith(href);
+								if (hiddenApps.includes(href) && !isActive) return null;
 								return (
 									<SidebarMenuItem key={href}>
 										<SidebarMenuButton

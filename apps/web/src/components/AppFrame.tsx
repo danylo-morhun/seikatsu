@@ -15,6 +15,7 @@ export async function AppFrame({ children }: { children: React.ReactNode }) {
 	return (
 		<AppShell
 			workspaceName={workspace?.name ?? "My Workspace"}
+			hiddenApps={workspace?.hiddenApps ?? []}
 			workspaceId={workspace?.id}
 			baseCurrency={workspace?.baseCurrency}
 			sidebarDefaultOpen={defaultOpen}
