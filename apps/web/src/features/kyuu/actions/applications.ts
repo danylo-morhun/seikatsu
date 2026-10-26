@@ -15,6 +15,7 @@ import {
 	kyuuApplications,
 	kyuuEvents,
 } from "@seikatsu/db";
+import { toCountryCode } from "../lib/country";
 import {
 	type ApplicationFormValues,
 	type ApplicationPatch,
@@ -43,6 +44,7 @@ const rowColumns = {
 	role: kyuuApplications.role,
 	jobUrl: kyuuApplications.jobUrl,
 	source: kyuuApplications.source,
+	country: kyuuApplications.country,
 	status: kyuuApplications.status,
 	applyMethod: kyuuApplications.applyMethod,
 	dateApplied: kyuuApplications.dateApplied,
@@ -56,6 +58,7 @@ type RawRow = {
 	role: string;
 	jobUrl: string | null;
 	source: string | null;
+	country: string | null;
 	status: string;
 	applyMethod: "manual" | "auto";
 	dateApplied: string;
@@ -128,6 +131,7 @@ function toRow(r: RawRow, events: RawEvent[], today: string): ApplicationRow {
 		role: r.role,
 		jobUrl: r.jobUrl,
 		source: r.source,
+		country: r.country,
 		status,
 		applyMethod: r.applyMethod,
 		dateApplied: r.dateApplied,
@@ -387,6 +391,12 @@ export async function patchApplication(
 	for (const [key, value] of Object.entries(parsed.data)) {
 		// Blank optional text is no value; a source gets its one spelling.
 		const blank = typeof value === "string" && !value.trim();
+		if (key === "country") {
+			const code = blank || value == null ? null : toCountryCode(value);
+			if (!blank && value != null && !code) return { error: "Unknown country" };
+			set.country = code;
+			continue;
+		}
 		set[key] = key === "source" ? normalizeSource(value as string | null) : blank ? null : value;
 	}
 	if (Object.keys(set).length === 0) return { success: true };

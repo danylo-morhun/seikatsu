@@ -31,6 +31,8 @@ export const applicationPatchSchema = z
 		dateApplied: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date"),
 		contact: z.string().trim().max(500).nullable(),
 		location: z.string().trim().max(200).nullable(),
+		/** ISO 3166-1 alpha-2. */
+		country: z.string().trim().max(2).nullable(),
 		salary: z.string().trim().max(200).nullable(),
 		notes: z.string().max(10_000).nullable(),
 	})

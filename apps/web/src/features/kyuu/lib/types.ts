@@ -18,6 +18,8 @@ export interface ApplicationRow {
 	role: string;
 	jobUrl: string | null;
 	source: string | null;
+	/** ISO 3166-1 alpha-2, or null when unknown. */
+	country: string | null;
 	status: Status;
 	applyMethod: KyuuApplyMethod;
 	dateApplied: string;

@@ -28,6 +28,7 @@ import { type CSSProperties, useId, useOptimistic, useState, useTransition } fro
 import { toast } from "sonner";
 import { patchApplication } from "../actions/applications";
 import { followUp, setArchived, setStatus } from "../actions/progress";
+import { COUNTRY_CODES, countryName, parseCountry } from "../lib/country";
 import { requestDeleteApplication } from "../lib/events";
 import { formatAge } from "../lib/format";
 import type { ApplicationPatch } from "../lib/kyuu-schemas";
@@ -43,6 +44,8 @@ const rise = (i: number) => ({ "--i": i }) as CSSProperties;
 type Step = { label: string; status?: Status; kind?: EventKind };
 
 /** The one next step for where it stands; the rest live in the status menu and ⋯. */
+const COUNTRY_LIST_ID = "kyuu-countries";
+
 function nextStep(status: Status): Step | null {
 	switch (status) {
 		case "sourced":
@@ -265,6 +268,17 @@ export function ApplicationPage({
 						value={app.location}
 						onSave={(location) => patch({ location })}
 					/>
+					<Detail
+						label="Country"
+						value={app.country ? countryName(app.country) : null}
+						list={COUNTRY_LIST_ID}
+						onSave={(text) => {
+							if (!text) return patch({ country: null });
+							const country = parseCountry(text);
+							if (country) patch({ country });
+							else toast.error(`No country called “${text}”`);
+						}}
+					/>
 					<Detail label="Salary" value={app.salary} onSave={(salary) => patch({ salary })} />
 					<Detail label="Source" value={app.source} onSave={(source) => patch({ source })} />
 					<Detail
@@ -309,6 +323,11 @@ export function ApplicationPage({
 						</Row>
 					)}
 				</dl>
+				<datalist id={COUNTRY_LIST_ID}>
+					{COUNTRY_CODES.map((code) => (
+						<option key={code} value={countryName(code)} />
+					))}
+				</datalist>
 			</Section>
 
 			{(app.jobDescription || app.coverLetter) && (
@@ -415,12 +434,15 @@ function Detail({
 	onSave,
 	type = "text",
 	placeholder = "—",
+	list,
 }: {
 	label: string;
 	value: string | null;
 	onSave: (next: string | null) => void;
 	type?: "text" | "url" | "date";
 	placeholder?: string;
+	/** A datalist to suggest from. */
+	list?: string;
 }) {
 	const id = useId();
 	const draft = useDraft(value ?? "", (next) => {
@@ -438,6 +460,7 @@ function Detail({
 				<input
 					id={id}
 					type={type}
+					list={list}
 					value={draft.draft}
 					placeholder={placeholder}
 					autoComplete="off"
