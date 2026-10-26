@@ -4,6 +4,7 @@ import { ShortcutsButton } from "@/components/KeyboardShortcuts";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TravelUnderline } from "@/components/TravelUnderline";
 import { requestLogService } from "@/features/aisha/lib/events";
+import { requestAdd } from "@/features/hoshii/lib/events";
 import { requestNewHabit } from "@/features/keizoku/lib/events";
 import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
 import { requestNewApplication } from "@/features/kyuu/lib/events";
@@ -55,6 +56,12 @@ const AISHA_TABS = [
 	{ value: "/aisha/year", label: "Year" },
 ] as const;
 
+const HOSHII_TABS = [
+	{ value: "/hoshii", label: "Now" },
+	{ value: "/hoshii/lists", label: "Lists" },
+	{ value: "/hoshii/summary", label: "Summary" },
+] as const;
+
 const KUROJI_TABS: { value: KurojiTab; label: string }[] = [
 	{ value: "expense", label: "Expenses" },
 	{ value: "accounts", label: "Accounts" },
@@ -88,7 +95,11 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 	// Aisha's three pages carry their tabs; Log Service sits on every Aisha page.
 	const isAishaHome = AISHA_TABS.some((t) => t.value === pathname);
 	const isAisha = pathname === "/aisha" || pathname.startsWith("/aisha/");
-	const isSectionHome = isTsundokuHome || isKeizokuHome || isKyuuHome || isAishaHome;
+	// Hoshii's three pages carry their tabs; Add a Want sits on every Hoshii page.
+	const isHoshiiHome = HOSHII_TABS.some((t) => t.value === pathname);
+	const isHoshii = pathname === "/hoshii" || pathname.startsWith("/hoshii/");
+	const isSectionHome =
+		isTsundokuHome || isKeizokuHome || isKyuuHome || isAishaHome || isHoshiiHome;
 	// Seiryu's project list names what's open; "· Projects" beside it says nothing new.
 	const showPurpose = !isKurojiHome && !isSectionHome && !pathname.startsWith("/seiryu");
 	const activeTab = isSectionHome ? pathname : (searchParams.get("tab") as KurojiTab) || "expense";
@@ -122,7 +133,9 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 					? KYUU_TABS.map(({ value, label }) => ({ value, label, href: kyuuTabHref(value) }))
 					: isAishaHome
 						? AISHA_TABS.map(({ value, label }) => ({ value, label, href: value }))
-						: [];
+						: isHoshiiHome
+							? HOSHII_TABS.map(({ value, label }) => ({ value, label, href: value }))
+							: [];
 
 	// The table and Stats share their filters.
 	function kyuuTabHref(href: string) {
@@ -264,6 +277,20 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 							>
 								<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
 								<span className="hidden lg:inline">Log Service</span>
+							</Button>
+						</span>
+					)}
+					{isHoshii && (
+						<span className="hidden md:contents">
+							<Button
+								size="icon"
+								className="lg:w-auto lg:gap-2 lg:px-3"
+								aria-label="Add a want"
+								aria-keyshortcuts="N"
+								onClick={() => requestAdd()}
+							>
+								<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
+								<span className="hidden lg:inline">Add a Want</span>
 							</Button>
 						</span>
 					)}
