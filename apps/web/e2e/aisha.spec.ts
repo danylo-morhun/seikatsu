@@ -111,8 +111,12 @@ test("update the mileage with M, then fix the reading in History", async ({ page
 	await page.goto("/aisha");
 	await expect(page.getByText("Odometer · Skoda Octavia")).toBeVisible();
 
-	await page.keyboard.press("m");
 	const dialog = page.getByRole("dialog", { name: "Update Mileage" });
+	// The key listener attaches on hydration; a press before it does nothing, so press again.
+	await expect(async () => {
+		await page.keyboard.press("m");
+		await expect(dialog).toBeVisible({ timeout: 1000 });
+	}).toPass();
 	await dialog.getByLabel("Odometer, km").fill("100 900");
 	await dialog.getByRole("button", { name: "Save" }).click();
 	await expect(dialog).toBeHidden();
