@@ -2,24 +2,18 @@
 
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { QuietAdd } from "@/components/QuietAdd";
+import { usePendingOps } from "@/features/pwa/lib/use-outbox";
 import {
 	type SeriesBook,
 	type TsundokuBook,
 	deleteBook,
 	setBookShelves,
 	setFinishedAt,
-	setProgress,
 	setStartedAt,
 	updateBook,
-	updateRating,
-	updateStatus,
 } from "@/features/tsundoku/actions/books";
 import type { TsundokuQuote } from "@/features/tsundoku/actions/quotes";
-import {
-	type TsundokuSession,
-	logSession,
-	updateSession,
-} from "@/features/tsundoku/actions/sessions";
+import { type TsundokuSession, updateSession } from "@/features/tsundoku/actions/sessions";
 import type { TsundokuShelf } from "@/features/tsundoku/actions/shelves";
 import { BookCover } from "@/features/tsundoku/components/BookCover";
 import {
@@ -37,6 +31,13 @@ import { ProgressField } from "@/features/tsundoku/components/ProgressField";
 import { ProgressMeter } from "@/features/tsundoku/components/ProgressMeter";
 import { StarRating } from "@/features/tsundoku/components/StarRating";
 import { BOOK_STATUSES, type BookStatus, STATUS_CONFIG } from "@/features/tsundoku/lib/constants";
+import {
+	logDay,
+	overlayBooks,
+	rateBook,
+	saveProgress as sendProgress,
+	setBookStatus,
+} from "@/features/tsundoku/lib/offline";
 import { computePace } from "@/features/tsundoku/lib/pace";
 import { finishDatePatch, progressPatch, statusPatch } from "@/features/tsundoku/lib/progress";
 import { daysBetween } from "@/features/tsundoku/lib/streak";
@@ -69,7 +70,7 @@ import {
 	cn,
 } from "@seikatsu/ui";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface Props {
@@ -92,8 +93,11 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
  * One book: who wrote it and where you are in it, then what stayed with you — notes, quotes —
  * and the record. Every field saves itself; nothing waits for a Save button.
  */
-export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks, today }: Props) {
+export function BookPage({ book: server, sessions, quotes, shelves, seriesBooks, today }: Props) {
 	const id = useId();
+	// Changes queued offline show until the server has them.
+	const pending = usePendingOps("tsundoku.");
+	const initial = useMemo(() => overlayBooks([server], pending)[0] ?? server, [server, pending]);
 	const [book, setBook] = useState(initial);
 	const [editing, setEditing] = useState<{ open: boolean; instant: boolean }>({
 		open: false,
@@ -127,9 +131,8 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 
 	const setStatus = (status: BookStatus) =>
 		status !== book.status &&
-		persist(statusPatch(book, status, today), () => updateStatus(book.id, status));
-	const setRating = (rating: number | null) =>
-		persist({ rating }, () => updateRating(book.id, rating));
+		persist(statusPatch(book, status, today), () => setBookStatus(book, status));
+	const setRating = (rating: number | null) => persist({ rating }, () => rateBook(book, rating));
 	// Null clears a date: neither is known for a book read before it was tracked.
 	// A year typed digit by digit passes through "0002-…": wait for a real one.
 	const validDay = (date: string, max: string) => DATE.test(date) && date >= "1900" && date <= max;
@@ -142,7 +145,7 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 		(date === null || validDay(date, book.finishedAt ?? today)) &&
 		persist({ startedAt: date }, () => setStartedAt(book.id, date));
 	const saveProgress = (page: number) =>
-		persist(progressPatch(book, page, today), () => setProgress(book.id, { currentPage: page }));
+		persist(progressPatch(book, page, today), () => sendProgress(book, page));
 
 	const title = useDraft(book.title, (next) => {
 		const trimmed = next.trim();
@@ -478,7 +481,7 @@ export function BookPage({ book: initial, sessions, quotes, shelves, seriesBooks
 					const { session } = dayDialog;
 					const result = await (session
 						? updateSession(session.id, values)
-						: logSession(book.id, values)
+						: logDay(book, values)
 					).catch(offline);
 					return "error" in result ? result.error : undefined;
 				}}

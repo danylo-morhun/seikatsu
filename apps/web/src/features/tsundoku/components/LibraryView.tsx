@@ -3,14 +3,8 @@
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
 import { startNavigationProgress } from "@/components/NavigationProgress";
-import {
-	type LibraryBook,
-	deleteBook,
-	setBookShelves,
-	setProgress,
-	updateRating,
-	updateStatus,
-} from "@/features/tsundoku/actions/books";
+import { usePendingOps } from "@/features/pwa/lib/use-outbox";
+import { type LibraryBook, deleteBook, setBookShelves } from "@/features/tsundoku/actions/books";
 import type { TsundokuShelf } from "@/features/tsundoku/actions/shelves";
 import { BookRow, BookTile, ReadingRow } from "@/features/tsundoku/components/BookItems";
 import { type BookActions, BookMenuItems } from "@/features/tsundoku/components/BookMenu";
@@ -39,6 +33,12 @@ import {
 	segmentOf,
 	writeFilters,
 } from "@/features/tsundoku/lib/filters";
+import {
+	overlayBooks,
+	rateBook,
+	saveProgress as sendProgress,
+	setBookStatus,
+} from "@/features/tsundoku/lib/offline";
 import { progressPatch, statusPatch } from "@/features/tsundoku/lib/progress";
 import { pageKey } from "@/lib/capture-shortcut";
 import { Button, cn } from "@seikatsu/ui";
@@ -74,7 +74,7 @@ const GRID =
 	"grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7";
 
 /** The library: three piles at a glance, or one pile, filtered and sorted from the URL. */
-export function LibraryView({ books: saved, shelves, today }: Props) {
+export function LibraryView({ books: server, shelves, today }: Props) {
 	const params = useSearchParams();
 	const pathname = usePathname();
 	const router = useRouter();
@@ -89,6 +89,9 @@ export function LibraryView({ books: saved, shelves, today }: Props) {
 	const [, startTransition] = useTransition();
 	const searchRef = useRef<HTMLInputElement>(null);
 
+	// Changes queued offline show until the server has them.
+	const pending = usePendingOps("tsundoku.");
+	const saved = useMemo(() => overlayBooks(server, pending), [server, pending]);
 	const [books, applyPatch] = useOptimistic(saved, (list, p: Patch) =>
 		"remove" in p
 			? list.filter((b) => b.id !== p.id)
@@ -151,9 +154,12 @@ export function LibraryView({ books: saved, shelves, today }: Props) {
 		setStatus: (id, status) => {
 			const book = find(id);
 			if (!book || book.status === status) return;
-			run({ id, patch: statusPatch(book, status, today) }, () => updateStatus(id, status));
+			run({ id, patch: statusPatch(book, status, today) }, () => setBookStatus(book, status));
 		},
-		setRating: (id, rating) => run({ id, patch: { rating } }, () => updateRating(id, rating)),
+		setRating: (id, rating) => {
+			const book = find(id);
+			if (book) run({ id, patch: { rating } }, () => rateBook(book, rating));
+		},
 		setShelves: (id, shelfIds) =>
 			run({ id, patch: { shelfIds } }, () => setBookShelves(id, shelfIds)),
 		copyLink: (id) => {
@@ -168,9 +174,7 @@ export function LibraryView({ books: saved, shelves, today }: Props) {
 	function saveProgress(id: string, page: number) {
 		const book = find(id);
 		if (!book) return;
-		run({ id, patch: progressPatch(book, page, today) }, () =>
-			setProgress(id, { currentPage: page }),
-		);
+		run({ id, patch: progressPatch(book, page, today) }, () => sendProgress(book, page));
 	}
 
 	// ── Keys: / search, F filter; on the book in focus or under the pointer, the book keys ──
