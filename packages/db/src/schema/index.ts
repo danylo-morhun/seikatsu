@@ -5,5 +5,6 @@ export * from "./kuroji";
 export * from "./kuroji-bank";
 export * from "./kyuu";
 export * from "./notifications";
+export * from "./offline";
 export * from "./seiryu";
 export * from "./tsundoku";
