@@ -1,0 +1,1 @@
+ALTER TABLE "workspaces" ADD COLUMN "hidden_apps" text[] DEFAULT '{}' NOT NULL;

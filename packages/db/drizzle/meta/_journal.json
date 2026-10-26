@@ -211,6 +211,13 @@
 			"when": 1793039342456,
 			"tag": "0029_kuroji_captures",
 			"breakpoints": true
+		},
+		{
+			"idx": 30,
+			"version": "7",
+			"when": 1793042343402,
+			"tag": "0030_workspace_hidden_apps",
+			"breakpoints": true
 		}
 	]
 }
