@@ -8,6 +8,8 @@ export const APPS_CONFIG = {
 		kanji: "黒",
 		description:
 			"Finance tracker. Double-entry accounting, multi-currency, recurring transactions.",
+		pitch: "Where the money comes from and where it goes.",
+		first: "Record a transaction",
 	},
 	"/seiryu": {
 		theme: "theme-seiryu",
@@ -15,6 +17,8 @@ export const APPS_CONFIG = {
 		label: "Projects",
 		kanji: "清",
 		description: "Kanban board. Projects, columns, cards, checklists, and labels.",
+		pitch: "A board per project, cards moved along as work gets done.",
+		first: "Make a board",
 	},
 	"/tsundoku": {
 		theme: "theme-tsundoku",
@@ -22,6 +26,8 @@ export const APPS_CONFIG = {
 		label: "Books",
 		kanji: "積",
 		description: "Books tracker. Library, reading progress, ratings, sessions, and stats.",
+		pitch: "The books to read, the one you're in, and what you thought.",
+		first: "Add a book",
 	},
 	"/keizoku": {
 		theme: "theme-keizoku",
@@ -29,6 +35,8 @@ export const APPS_CONFIG = {
 		label: "Habits",
 		kanji: "継",
 		description: "Habit tracker. Streaks, completion rate, and daily check-ins.",
+		pitch: "Habits kept a day at a time, forgotten days filled in.",
+		first: "Pick habits",
 	},
 	"/kyuu": {
 		theme: "theme-kyuu",
@@ -36,6 +44,8 @@ export const APPS_CONFIG = {
 		label: "Job Search",
 		kanji: "求",
 		description: "Job application tracker. Pipeline stages, sources, and status.",
+		pitch: "Every job application, from first look to the answer.",
+		first: "Add an application",
 	},
 	"/aisha": {
 		theme: "theme-aisha",
@@ -43,10 +53,22 @@ export const APPS_CONFIG = {
 		label: "Car Care",
 		kanji: "愛",
 		description: "Car care. Maintenance schedule, mileage, service history, and documents.",
+		pitch: "The car's service plan, mileage and papers: what's due next.",
+		first: "Add your car",
 	},
 } satisfies Record<
 	string,
-	{ theme: string; name: string; label: string; kanji: string; description: string }
+	{
+		theme: string;
+		name: string;
+		label: string;
+		kanji: string;
+		description: string;
+		/** What the app is for, in a line, for someone who has never opened it. */
+		pitch: string;
+		/** The first thing its welcome asks for. */
+		first: string;
+	}
 >;
 
 export const APP_THEMES = Object.fromEntries(
