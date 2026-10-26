@@ -62,4 +62,4 @@ export async function POST(req: NextRequest) {
 }
 
 // Reading a run's mail with Gemini takes a while.
-export const maxDuration = 120;
+export const maxDuration = 300;
