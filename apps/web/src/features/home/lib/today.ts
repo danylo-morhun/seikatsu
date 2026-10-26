@@ -3,11 +3,15 @@
 // the rest of the day readable.
 
 import { getCar as getAishaCar, getCurrentVehicle } from "@/features/aisha/actions/data";
+import { getHabits as getAllHabits } from "@/features/keizoku/actions/habits";
 import { getDueToday } from "@/features/keizoku/actions/logs";
 import { getBalances } from "@/features/kuroji/actions/balances";
+import { hasAnyTransactions } from "@/features/kuroji/actions/transactions";
 import { displayBalance, rollupRoots } from "@/features/kuroji/lib/balance";
 import { getGhostDue, getViewCounts } from "@/features/kyuu/actions/applications";
+import { getProjects } from "@/features/seiryu/actions/projects";
 import { getBooks } from "@/features/tsundoku/actions/books";
+import type { APPS_CONFIG } from "@/lib/app-themes";
 import type { Workspace } from "@/lib/session";
 import {
 	and,
@@ -76,8 +80,7 @@ export type BookToday = {
 };
 
 /** Books being read, the one read most recently started first. */
-async function getReading(): Promise<BookToday[]> {
-	const books = await getBooks();
+function readingNow(books: Awaited<ReturnType<typeof getBooks>>): BookToday[] {
 	return books
 		.filter((b) => b.status === "reading")
 		.sort((a, b) => (b.startedAt ?? "").localeCompare(a.startedAt ?? ""))
@@ -91,7 +94,13 @@ async function getReading(): Promise<BookToday[]> {
 		}));
 }
 
-export type JobsToday = { toSend: number; waiting: number; ghostDue: number; active: number };
+export type JobsToday = {
+	toSend: number;
+	waiting: number;
+	ghostDue: number;
+	active: number;
+	total: number;
+};
 
 async function getJobs(): Promise<JobsToday> {
 	const [counts, ghost] = await Promise.all([getViewCounts(), getGhostDue()]);
@@ -100,6 +109,7 @@ async function getJobs(): Promise<JobsToday> {
 		waiting: counts.waiting,
 		ghostDue: ghost.length,
 		active: counts.active,
+		total: counts.all + counts.archived,
 	};
 }
 
@@ -178,16 +188,33 @@ async function getCar(today: string): Promise<CarToday | null> {
 	};
 }
 
+/** Whether each app holds anything yet; null when that couldn't be read. An empty app waits
+ * on the home's start list instead of showing a tile of dashes. */
+export type Started = Record<keyof typeof APPS_CONFIG, boolean | null>;
+
 export async function getToday(ws: Workspace, today: string) {
-	const [money, habits, reading, jobs, cards, car] = await Promise.all([
-		safely(() => getMoney(ws, today)),
-		safely(getHabits),
-		safely(getReading),
-		safely(getJobs),
-		safely(() => getCardsDue(ws, today)),
-		safely(() => getCar(today)),
-	]);
-	return { money, habits, reading, jobs, cards, car };
+	const [money, habits, books, jobs, cards, car, hasMoney, hasHabits, hasProjects, hasCar] =
+		await Promise.all([
+			safely(() => getMoney(ws, today)),
+			safely(getHabits),
+			safely(getBooks),
+			safely(getJobs),
+			safely(() => getCardsDue(ws, today)),
+			safely(() => getCar(today)),
+			safely(() => hasAnyTransactions(ws.id)),
+			safely(() => getAllHabits().then((list) => list.length > 0)),
+			safely(() => getProjects().then((list) => list.length > 0)),
+			safely(() => getCurrentVehicle().then(Boolean)),
+		]);
+	const started: Started = {
+		"/kuroji": hasMoney,
+		"/seiryu": hasProjects,
+		"/tsundoku": books && books.length > 0,
+		"/keizoku": hasHabits,
+		"/kyuu": jobs && jobs.total > 0,
+		"/aisha": hasCar,
+	};
+	return { money, habits, reading: books && readingNow(books), jobs, cards, car, started };
 }
 
 export type Today = Awaited<ReturnType<typeof getToday>>;
