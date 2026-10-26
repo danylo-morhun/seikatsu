@@ -97,7 +97,7 @@ function Tile({
 			)}
 			style={{ "--i": index } as CSSProperties}
 		>
-			<div className="flex items-center gap-2">
+			<div className={cn("flex items-center gap-2", action && "sm:pr-16")}>
 				<Link
 					href={href}
 					prefetch
@@ -108,7 +108,6 @@ function Tile({
 					</span>
 					<span className="truncate">{app.label}</span>
 				</Link>
-				{action && <div className="relative z-10 -my-2 ml-auto shrink-0">{action}</div>}
 			</div>
 			<p
 				className={cn(
@@ -125,18 +124,36 @@ function Tile({
 				</p>
 			)}
 			{children && <div className="relative z-10 mt-3">{children}</div>}
+			{/* A phone's half tile has no room beside the name: the action takes the tile's foot. */}
+			{action && (
+				<div className="relative z-10 mt-auto pt-3 sm:absolute sm:top-2 sm:right-4 sm:pt-0">
+					{action}
+				</div>
+			)}
 		</section>
 	);
 }
 
-/** The tile's one capture, the same outline button the apps use for a row's quick update. */
+/** The tile's one capture, the same outline button the apps use for a row's quick update:
+ * the full verb across a phone's tile, the short one in a wider tile's corner. */
 function TileAction({
 	label,
 	keys,
+	children,
 	...props
 }: { label: string; keys: string } & React.ComponentProps<typeof Button>) {
 	return (
-		<Button variant="outline" size="sm" aria-label={label} aria-keyshortcuts={keys} {...props} />
+		<Button
+			variant="outline"
+			size="sm"
+			className="w-full sm:w-auto"
+			aria-label={label}
+			aria-keyshortcuts={keys}
+			{...props}
+		>
+			<span className="sm:hidden">{label}</span>
+			<span className="max-sm:hidden">{children}</span>
+		</Button>
 	);
 }
 
