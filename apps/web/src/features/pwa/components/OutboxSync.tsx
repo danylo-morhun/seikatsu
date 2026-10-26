@@ -1,7 +1,7 @@
 "use client";
 
 import type { OpResult } from "@/features/pwa/lib/ops";
-import { getOps, loadOutbox, removeOp, updateOp } from "@/features/pwa/lib/outbox";
+import { OUTBOX_EVENT, getOps, loadOutbox, removeOp, updateOp } from "@/features/pwa/lib/outbox";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useTransition } from "react";
 
@@ -36,11 +36,17 @@ export function OutboxSync() {
 	const router = useRouter();
 	const [refreshing, startRefresh] = useTransition();
 	const draining = useRef(false);
+	const again = useRef(false);
 	const awaitingRefresh = useRef(false);
 
 	useEffect(() => {
 		async function drain() {
-			if (draining.current || !navigator.onLine) return;
+			if (!navigator.onLine) return;
+			// A change queued mid-drain gets its own pass once this one ends.
+			if (draining.current) {
+				again.current = true;
+				return;
+			}
 			draining.current = true;
 			try {
 				await loadOutbox();
@@ -56,14 +62,20 @@ export function OutboxSync() {
 			} finally {
 				draining.current = false;
 			}
+			if (again.current) {
+				again.current = false;
+				drain();
+			}
 		}
 
 		const onVisible = () => document.visibilityState === "visible" && drain();
 		drain();
 		window.addEventListener("online", drain);
+		window.addEventListener(OUTBOX_EVENT, drain);
 		document.addEventListener("visibilitychange", onVisible);
 		return () => {
 			window.removeEventListener("online", drain);
+			window.removeEventListener(OUTBOX_EVENT, drain);
 			document.removeEventListener("visibilitychange", onVisible);
 		};
 	}, [router]);
