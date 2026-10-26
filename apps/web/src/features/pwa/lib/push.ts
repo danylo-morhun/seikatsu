@@ -71,6 +71,39 @@ export async function sendToWorkspace(workspaceId: string, payload: PushPayload)
 }
 
 /**
+ * Like `sendOnce` for several things in one notification: only the entries whose key wasn't
+ * sent before make it in (a document reaching "7 days left" tells once, not every morning).
+ */
+export async function sendNew<T extends { key: string }>(
+	workspaceId: string,
+	entries: T[],
+	build: (fresh: T[]) => PushPayload,
+): Promise<boolean> {
+	if (entries.length === 0) return false;
+	const claimed = await db
+		.insert(notificationLog)
+		.values(entries.map((e) => ({ workspaceId, key: e.key })))
+		.onConflictDoNothing()
+		.returning({ key: notificationLog.key });
+	if (claimed.length === 0) return false;
+
+	const keys = new Set(claimed.map((c) => c.key));
+	const delivered = await sendToWorkspace(
+		workspaceId,
+		build(entries.filter((e) => keys.has(e.key))),
+	).catch(() => 0);
+	if (delivered === 0) {
+		await db
+			.delete(notificationLog)
+			.where(
+				and(eq(notificationLog.workspaceId, workspaceId), inArray(notificationLog.key, [...keys])),
+			);
+		return false;
+	}
+	return true;
+}
+
+/**
  * Sends `payload` unless `key` was already sent for this workspace. The log row is claimed
  * first, so two overlapping cron runs can't both send; if no device took it, the claim is
  * released and the next run retries.
