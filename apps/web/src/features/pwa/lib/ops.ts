@@ -6,6 +6,7 @@
 
 import type { HabitPatch } from "@/features/keizoku/lib/keizoku-schemas";
 import type { TransactionInput } from "@/features/kuroji/actions/transactions";
+import type { CardFieldUpdates } from "@/features/seiryu/lib/types";
 
 export interface OfflineOps {
 	"keizoku.checkDay": { habitId: string; date: string };
@@ -18,6 +19,16 @@ export interface OfflineOps {
 	"kuroji.createTransaction": TransactionInput & { workspaceId: string; id: string };
 	"kuroji.updateTransaction": TransactionInput & { transactionId: string };
 	"kuroji.deleteTransaction": { transactionId: string };
+	"seiryu.createCard": { id: string; columnId: string; projectId: string; title: string };
+	"seiryu.updateCard": { cardId: string } & CardFieldUpdates;
+	"seiryu.moveCard": { cardId: string; newColumnId: string; newPosition?: string };
+	"seiryu.reorderCards": { cardId: string; newPosition: string };
+	"seiryu.archiveCard": { cardId: string };
+	"seiryu.createChecklistItem": { id: string; cardId: string; title: string };
+	/** Always the state to set: a flip replayed twice would undo itself. */
+	"seiryu.toggleChecklistItem": { itemId: string; isCompleted: boolean };
+	"seiryu.updateChecklistItem": { itemId: string; title: string };
+	"seiryu.deleteChecklistItem": { itemId: string };
 }
 
 export type OpName = keyof OfflineOps;

@@ -1,13 +1,15 @@
 "use client";
 
 import { QuietAdd } from "@/components/QuietAdd";
+import { usePendingOps } from "@/features/pwa/lib/use-outbox";
+import { reorderChecklistItems } from "@/features/seiryu/actions/checklist";
 import {
-	createChecklistItem,
-	deleteChecklistItem,
-	reorderChecklistItems,
-	toggleChecklistItem,
-	updateChecklistItem,
-} from "@/features/seiryu/actions/checklist";
+	addChecklistItem,
+	removeChecklistItem,
+	renameChecklistItem,
+	setChecklistItem,
+} from "@/features/seiryu/lib/offline";
+import { overlayChecklist } from "@/features/seiryu/lib/overlay";
 import { type ChecklistItemData, isTempId } from "@/features/seiryu/lib/types";
 import { useDraft } from "@/hooks/useDraft";
 import { BAR_FILL, barClip } from "@/lib/bar";
@@ -67,9 +69,15 @@ export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
 	);
 
-	const sorted = useMemo(() => [...items].sort(byPosition), [items]);
-	const done = items.filter((i) => i.isCompleted).length;
-	const total = items.length;
+	// Item changes queued offline show until the server has them; re-applying the ones made
+	// here is a no-op (lib/overlay.ts).
+	const pending = usePendingOps("seiryu.");
+	const shown = useMemo(() => overlayChecklist(cardId, items, pending), [cardId, items, pending]);
+	// Handlers read the shown list, so an item restored from the queue can be ticked too.
+	itemsRef.current = shown;
+	const sorted = useMemo(() => [...shown].sort(byPosition), [shown]);
+	const done = shown.filter((i) => i.isCompleted).length;
+	const total = shown.length;
 
 	function update(next: ChecklistItemData[]) {
 		itemsRef.current = next;
@@ -96,7 +104,9 @@ export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 		setNewTitle("");
 
 		const last = [...itemsRef.current].sort(byPosition).at(-1);
-		const tempId = `temp-${crypto.randomUUID()}`;
+		// The id is made here: an item queued offline can be ticked and renamed at once.
+		const id = crypto.randomUUID();
+		const tempId = `temp-${id}`;
 		update([
 			...itemsRef.current,
 			{
@@ -108,13 +118,13 @@ export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 			},
 		]);
 
-		createChecklistItem({ cardId, title }).then((result) => {
+		addChecklistItem(id, cardId, title).then((result) => {
 			if ("error" in result) {
 				toast.error(result.error);
 				update(itemsRef.current.filter((i) => i.id !== tempId));
 				return;
 			}
-			patch(tempId, { id: result.data.id, position: result.data.position });
+			patch(tempId, { id });
 		});
 	}
 
@@ -122,20 +132,23 @@ export function ChecklistSection({ cardId, initialItems, onChange }: Props) {
 		const item = itemsRef.current.find((i) => i.id === itemId);
 		if (!item) return;
 		patch(itemId, { isCompleted: !item.isCompleted });
-		run(toggleChecklistItem({ itemId }), () => patch(itemId, { isCompleted: item.isCompleted }));
+		run(setChecklistItem(itemId, item.title, !item.isCompleted), () =>
+			patch(itemId, { isCompleted: item.isCompleted }),
+		);
 	}
 
 	function handleRename(itemId: string, title: string) {
 		const item = itemsRef.current.find((i) => i.id === itemId);
 		if (!item || title === item.title) return;
 		patch(itemId, { title });
-		run(updateChecklistItem({ itemId, title }), () => patch(itemId, { title: item.title }));
+		run(renameChecklistItem(itemId, title), () => patch(itemId, { title: item.title }));
 	}
 
 	function handleDelete(itemId: string) {
 		const before = itemsRef.current;
+		const title = before.find((i) => i.id === itemId)?.title ?? "item";
 		update(before.filter((i) => i.id !== itemId));
-		run(deleteChecklistItem({ itemId }), () => update(before));
+		run(removeChecklistItem(itemId, title), () => update(before));
 	}
 
 	function handleDragEnd({ active, over }: DragEndEvent) {

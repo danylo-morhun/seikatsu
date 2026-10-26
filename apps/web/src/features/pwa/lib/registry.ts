@@ -10,6 +10,29 @@ import {
 	updateTransaction,
 } from "@/features/kuroji/actions/transactions";
 import type { OfflineOps, OpName, OpResult } from "@/features/pwa/lib/ops";
+import {
+	archiveCard,
+	createCard,
+	moveCard,
+	reorderCards,
+	updateCard,
+} from "@/features/seiryu/actions/cards";
+import {
+	createChecklistItem,
+	deleteChecklistItem,
+	toggleChecklistItem,
+	updateChecklistItem,
+} from "@/features/seiryu/actions/checklist";
+import {
+	archiveCardSchema,
+	createCardSchema,
+	createChecklistItemSchema,
+	deleteChecklistItemSchema,
+	moveCardSchema,
+	reorderCardSchema,
+	updateCardSchema,
+	updateChecklistItemSchema,
+} from "@/features/seiryu/lib/seiryu-schemas";
 import { z } from "zod";
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -91,6 +114,50 @@ export const REGISTRY: { [N in OpName]: Entry<N> } = {
 			return "error" in result && result.error === "Transaction not found"
 				? { success: true }
 				: result;
+		},
+	},
+	// Seiryu's actions parse their own input; these schemas are the same ones, ids required.
+	"seiryu.createCard": {
+		schema: createCardSchema.extend({ id: z.uuid() }),
+		run: async (args) => {
+			const result = await createCard(args);
+			return "error" in result ? result : { success: true };
+		},
+	},
+	"seiryu.updateCard": {
+		schema: updateCardSchema as z.ZodType<OfflineOps["seiryu.updateCard"]>,
+		run: (args) => updateCard(args),
+	},
+	"seiryu.moveCard": {
+		schema: moveCardSchema,
+		run: async (args) => {
+			const result = await moveCard(args);
+			return "error" in result ? result : { success: true };
+		},
+	},
+	"seiryu.reorderCards": { schema: reorderCardSchema, run: (args) => reorderCards(args) },
+	"seiryu.archiveCard": { schema: archiveCardSchema, run: (args) => archiveCard(args) },
+	"seiryu.createChecklistItem": {
+		schema: createChecklistItemSchema.extend({ id: z.uuid() }),
+		run: async (args) => {
+			const result = await createChecklistItem(args);
+			return "error" in result ? result : { success: true };
+		},
+	},
+	"seiryu.toggleChecklistItem": {
+		schema: z.object({ itemId: z.uuid(), isCompleted: z.boolean() }),
+		run: (args) => toggleChecklistItem(args),
+	},
+	"seiryu.updateChecklistItem": {
+		schema: updateChecklistItemSchema,
+		run: (args) => updateChecklistItem(args),
+	},
+	"seiryu.deleteChecklistItem": {
+		schema: deleteChecklistItemSchema,
+		run: async (args) => {
+			// Already gone is what was asked for.
+			const result = await deleteChecklistItem(args);
+			return "error" in result && result.error === "Item not found" ? { success: true } : result;
 		},
 	},
 };
