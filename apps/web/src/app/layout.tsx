@@ -2,6 +2,7 @@ import { AppToaster } from "@/components/AppToaster";
 import { NavigationProgress } from "@/components/NavigationProgress";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { TimezoneSync } from "@/components/TimezoneSync";
+import { OutboxSync } from "@/features/pwa/components/OutboxSync";
 import { ServiceWorker } from "@/features/pwa/components/ServiceWorker";
 import splashScreens from "@/features/pwa/lib/splash-screens.json";
 import { TooltipProvider } from "@seikatsu/ui";
@@ -59,6 +60,7 @@ export default function RootLayout({
 				<SpeedInsights />
 				<TimezoneSync />
 				<ServiceWorker />
+				<OutboxSync />
 			</body>
 		</html>
 	);
