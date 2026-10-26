@@ -156,7 +156,7 @@ async function buildEntries(
 	}));
 }
 
-type TransactionInput = {
+export type TransactionInput = {
 	fromAccountId?: string;
 	toAccountId?: string;
 	amount?: number;
@@ -197,10 +197,17 @@ async function prepareEntries(
 	return { entries };
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * `id` comes from the client when the capture may be replayed (made offline, or sent again
+ * after a lost response): a second create with the same id is a no-op that still succeeds.
+ */
 export async function createTransaction({
 	workspaceId,
+	id,
 	...input
-}: TransactionInput & { workspaceId: string }): Promise<
+}: TransactionInput & { workspaceId: string; id?: string }): Promise<
 	{ error: string } | { success: true; data: { id: string } }
 > {
 	try {
@@ -209,15 +216,29 @@ export async function createTransaction({
 
 		const ws = await getOwnedWorkspace(workspaceId);
 		if (!ws) return { error: "Forbidden" };
+		if (id !== undefined && !UUID.test(id)) return { error: "Invalid transaction id" };
+
+		if (id) {
+			const [existing] = await db
+				.select({ workspaceId: transactions.workspaceId })
+				.from(transactions)
+				.where(eq(transactions.id, id))
+				.limit(1);
+			if (existing) {
+				return existing.workspaceId === workspaceId
+					? { success: true, data: { id } }
+					: { error: "Forbidden" };
+			}
+		}
 
 		const prepared = await prepareEntries(ws, input);
 		if ("error" in prepared) return prepared;
 		const { description, date, tagIds } = input;
 
-		const id = await db.transaction(async (tx) => {
+		const created = await db.transaction(async (tx) => {
 			const [txn] = await tx
 				.insert(transactions)
-				.values({ workspaceId, date, description: description ?? null })
+				.values({ id, workspaceId, date, description: description ?? null })
 				.returning();
 
 			await tx
@@ -236,7 +257,7 @@ export async function createTransaction({
 		revalidatePath("/kuroji");
 		// The home's Today figures read the same ledger.
 		revalidatePath("/");
-		return { success: true, data: { id } };
+		return { success: true, data: { id: created } };
 	} catch (e) {
 		const msg = e instanceof Error ? e.message : "Unknown error";
 		return { error: msg };

@@ -93,6 +93,28 @@ describe("createTransaction — double-entry ledger invariant", () => {
 		expect(await sumBaseAmount(txn.id)).toBe(0);
 	});
 
+	it("a replayed capture with the same client id is recorded once", async () => {
+		const { workspace, checking, groceries } = await seedWorkspaceWithAccounts("USD");
+		const { createTransaction } = await import("./transactions");
+		const capture = {
+			workspaceId: workspace.id,
+			id: "0b6f2c1e-8a4d-4e7f-9b3c-2d1e0f9a8b7c",
+			fromAccountId: checking.id,
+			toAccountId: groceries.id,
+			amount: 12,
+			currency: "USD",
+			date: "2026-06-01",
+		};
+
+		expect(await createTransaction(capture)).toEqual({ success: true, data: { id: capture.id } });
+		expect(await createTransaction(capture)).toEqual({ success: true, data: { id: capture.id } });
+		const rows = await testDb.select().from(schema.transactions);
+		expect(rows.map((r) => r.id)).toEqual([capture.id]);
+		expect(await createTransaction({ ...capture, id: "not-a-uuid" })).toEqual({
+			error: "Invalid transaction id",
+		});
+	});
+
 	it("a split transaction with floating-point amounts sums to zero — drift absorbed by the last credit entry", async () => {
 		const { workspace, checking, groceries, dining } = await seedWorkspaceWithAccounts("USD");
 		const { createTransaction } = await import("./transactions");
