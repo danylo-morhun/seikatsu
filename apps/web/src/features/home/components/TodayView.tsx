@@ -2,9 +2,10 @@
 
 import { ReadingDialog } from "@/features/aisha/components/ReadingDialog";
 import type { Today } from "@/features/home/lib/today";
-import { checkDay, uncheckDay } from "@/features/keizoku/actions/logs";
 import { CheckButton } from "@/features/keizoku/components/HabitRow";
+import { tickDay } from "@/features/keizoku/lib/offline";
 import { AddTransactionModal } from "@/features/kuroji/components/AddTransactionModal";
+import { usePendingOps } from "@/features/pwa/lib/use-outbox";
 import { setProgress } from "@/features/tsundoku/actions/books";
 import { ProgressDialog, type ProgressTarget } from "@/features/tsundoku/components/ProgressDialog";
 import { ProgressMeter } from "@/features/tsundoku/components/ProgressMeter";
@@ -16,7 +17,14 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type CSSProperties, useEffect, useOptimistic, useState, useTransition } from "react";
+import {
+	type CSSProperties,
+	useEffect,
+	useMemo,
+	useOptimistic,
+	useState,
+	useTransition,
+} from "react";
 import { toast } from "sonner";
 
 type AppHref = keyof typeof APPS_CONFIG;
@@ -257,10 +265,26 @@ function SectionTitle({ children, href }: { children: React.ReactNode; href?: st
 }
 
 function Habits({
-	habits: saved,
+	habits: server,
 	today,
 }: { habits: NonNullable<Today["habits"]>["habits"]; today: string }) {
 	const [, startTransition] = useTransition();
+	// Today's ticks queued offline show until the server has them.
+	const pending = usePendingOps("keizoku.");
+	const saved = useMemo(
+		() =>
+			server.map((h) => {
+				let done = h.done;
+				for (const op of pending) {
+					const args = op.args as { habitId?: string; date?: string };
+					if (args.habitId !== h.id || args.date !== today) continue;
+					if (op.name === "keizoku.checkDay") done = true;
+					if (op.name === "keizoku.uncheckDay") done = false;
+				}
+				return { ...h, done };
+			}),
+		[server, pending, today],
+	);
 	const [habits, setDone] = useOptimistic(saved, (list, p: { id: string; done: boolean }) =>
 		list.map((h) => (h.id === p.id ? { ...h, done: p.done } : h)),
 	);
@@ -268,7 +292,7 @@ function Habits({
 	function toggle(h: (typeof habits)[number]) {
 		startTransition(async () => {
 			setDone({ id: h.id, done: !h.done });
-			const result = await (h.done ? uncheckDay(h.id, today) : checkDay(h.id, today)).catch(() => ({
+			const result = await tickDay(h, today, !h.done).catch(() => ({
 				error: "Couldn't save. Check your connection.",
 			}));
 			if ("error" in result) toast.error(result.error);

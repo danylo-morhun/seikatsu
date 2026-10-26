@@ -4,14 +4,12 @@ import { ConfirmDelete } from "@/components/ConfirmDelete";
 import {
 	type ArchivedHabit,
 	type KeizokuHabit,
-	archiveHabit,
 	deleteHabit,
-	unarchiveHabit,
-	updateHabit,
 } from "@/features/keizoku/actions/habits";
 import { HabitDialog } from "@/features/keizoku/components/HabitDialog";
 import { TIME_OF_DAY_LABELS, scheduleLabel } from "@/features/keizoku/lib/constants";
 import { requestNewHabit } from "@/features/keizoku/lib/events";
+import { editHabit, setArchived } from "@/features/keizoku/lib/offline";
 import {
 	Archive01Icon,
 	ArchiveArrowUpIcon,
@@ -50,14 +48,14 @@ export function SettingsHabits({ habits: saved }: { habits: KeizokuHabit[] }) {
 	function archive(habit: KeizokuHabit) {
 		startTransition(async () => {
 			remove(habit.id);
-			const result = await archiveHabit(habit.id).catch(() => FAILED);
+			const result = await setArchived(habit, true).catch(() => FAILED);
 			if ("error" in result) toast.error(result.error);
 			else
 				toast(`“${habit.name}” archived`, {
 					action: {
 						label: "Undo",
 						onClick: () =>
-							void unarchiveHabit(habit.id).then((r) => "error" in r && toast.error(r.error)),
+							void setArchived(habit, false).then((r) => "error" in r && toast.error(r.error)),
 					},
 				});
 		});
@@ -132,7 +130,7 @@ export function SettingsHabits({ habits: saved }: { habits: KeizokuHabit[] }) {
 				onOpenChange={(open) => !open && setEditing(null)}
 				onSave={async (values) => {
 					if (!editing) return;
-					const result = await updateHabit(editing.id, values).catch(() => FAILED);
+					const result = await editHabit(editing, values).catch(() => FAILED);
 					return "error" in result ? result.error : undefined;
 				}}
 			/>
@@ -149,7 +147,7 @@ export function ArchivedHabits({ habits: saved }: { habits: ArchivedHabit[] }) {
 	function restore(habit: ArchivedHabit) {
 		startTransition(async () => {
 			remove(habit.id);
-			const result = await unarchiveHabit(habit.id).catch(() => FAILED);
+			const result = await setArchived(habit, false).catch(() => FAILED);
 			if ("error" in result) toast.error(result.error);
 		});
 	}
