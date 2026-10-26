@@ -37,7 +37,9 @@ export function SeiryuWelcome() {
 		const trimmed = name.trim();
 		if (!trimmed) return;
 		startSave(async () => {
-			const result = await createProject({ name: trimmed, color: LABEL_COLORS[0]?.hex });
+			const result = await createProject({ name: trimmed, color: LABEL_COLORS[0]?.hex }).catch(
+				() => ({ error: "Couldn't save. Check your connection." }),
+			);
 			if ("error" in result) {
 				toast.error(result.error);
 				return;
