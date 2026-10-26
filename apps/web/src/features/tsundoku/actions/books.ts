@@ -74,9 +74,10 @@ function invalid(error: z.ZodError) {
 	return { error: error.issues[0]?.message ?? "Invalid input" };
 }
 
-/** Every page that shows books: library, book pages, year. */
+/** Every page that shows books: library, book pages, year, and the home's Reading now. */
 function revalidate() {
 	revalidatePath("/tsundoku", "layout");
+	revalidatePath("/");
 }
 
 export async function getBooks(): Promise<LibraryBook[]> {

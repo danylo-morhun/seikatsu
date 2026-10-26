@@ -234,6 +234,8 @@ export async function createTransaction({
 		});
 
 		revalidatePath("/kuroji");
+		// The home's Today figures read the same ledger.
+		revalidatePath("/");
 		return { success: true, data: { id } };
 	} catch (e) {
 		const msg = e instanceof Error ? e.message : "Unknown error";
