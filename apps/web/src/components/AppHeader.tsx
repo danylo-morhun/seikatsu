@@ -71,6 +71,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 	const searchParams = useSearchParams();
 	const app = getAppForPath(pathname);
 
+	const isSettings = pathname.startsWith("/settings");
 	const isKurojiHome = pathname === "/kuroji";
 	const isKuroji = pathname.startsWith("/kuroji");
 	// A Seiryu board (not a card page): its capture action sits where Kuroji's does.
@@ -140,12 +141,12 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 			<div aria-hidden className="h-4 w-px shrink-0 bg-border" />
 
 			<Link
-				href={app?.href ?? "/"}
+				href={app?.href ?? (isSettings ? "/settings" : "/")}
 				className="ml-2 flex shrink-0 items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
 			>
 				{app && <span className="text-primary">{app.kanji}</span>}
 				<span className={cn("truncate", tabs.length > 0 && "md:max-lg:sr-only")}>
-					{app ? app.name : "seikatsu"}
+					{app ? app.name : isSettings ? "Settings" : "seikatsu"}
 					{/* The sidebar already names the app's purpose; on a phone or beside tabs the label is noise. */}
 					{app && showPurpose && <span className="hidden md:inline"> · {app.label}</span>}
 				</span>
