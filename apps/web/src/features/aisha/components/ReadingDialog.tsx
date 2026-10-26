@@ -2,9 +2,10 @@
 
 import { Spinner } from "@/components/Spinner";
 import type { AishaReading } from "@/features/aisha/actions/data";
-import { addReading, updateReading } from "@/features/aisha/actions/readings";
+import { updateReading } from "@/features/aisha/actions/readings";
 import { FOOTER, FieldError, instantClass } from "@/features/aisha/components/DialogParts";
 import { formatKm, parseNumber } from "@/features/aisha/lib/format";
+import { QUEUED_TOAST, saveReading } from "@/features/aisha/lib/offline";
 import { localToday } from "@/features/aisha/lib/today";
 import {
 	Button,
@@ -18,6 +19,7 @@ import {
 	cn,
 } from "@seikatsu/ui";
 import { useEffect, useId, useState, useTransition } from "react";
+import { toast } from "sonner";
 
 /** The odometer today (a new reading, opened on the km), or an older reading's date and km. */
 export function ReadingDialog({
@@ -62,10 +64,14 @@ export function ReadingDialog({
 			const values = { date, km: value };
 			const result = await (reading
 				? updateReading(reading.id, values)
-				: addReading(vehicleId, values)
+				: saveReading(vehicleId, values)
 			).catch(() => ({ error: "Couldn't save. Check your connection." }));
-			if ("error" in result) setError(result.error);
-			else onOpenChange(false);
+			if ("error" in result) {
+				setError(result.error);
+				return;
+			}
+			if ("queued" in result) toast(QUEUED_TOAST);
+			onOpenChange(false);
 		});
 	}
 
