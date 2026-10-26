@@ -107,7 +107,11 @@ export const REGISTRY: { [N in OpName]: Entry<N> } = {
 		run: ({ habitId }) => unarchiveHabit(habitId),
 	},
 	"kuroji.createTransaction": {
-		schema: transactionInput.extend({ workspaceId: z.uuid(), id: z.uuid() }),
+		schema: transactionInput.extend({
+			workspaceId: z.uuid(),
+			id: z.uuid(),
+			captureId: z.uuid().optional(),
+		}),
 		run: (args) => createTransaction(args),
 	},
 	"kuroji.updateTransaction": {

@@ -20,7 +20,11 @@ export interface OfflineOps {
 	"keizoku.archiveHabit": { habitId: string };
 	"keizoku.unarchiveHabit": { habitId: string };
 	/** `id` is made on the device, so later edits of an offline capture can point at it. */
-	"kuroji.createTransaction": TransactionInput & { workspaceId: string; id: string };
+	"kuroji.createTransaction": TransactionInput & {
+		workspaceId: string;
+		id: string;
+		captureId?: string;
+	};
 	"kuroji.updateTransaction": TransactionInput & { transactionId: string };
 	"kuroji.deleteTransaction": { transactionId: string };
 	"seiryu.createCard": { id: string; columnId: string; projectId: string; title: string };
