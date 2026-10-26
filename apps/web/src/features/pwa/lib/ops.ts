@@ -4,9 +4,13 @@
 // Rule for adding one: replaying it twice must land the same state (set-style updates,
 // creates with a client-made id), because a lost response gets it sent again.
 
+import type { ServiceFormValues } from "@/features/aisha/lib/aisha-schemas";
 import type { HabitPatch } from "@/features/keizoku/lib/keizoku-schemas";
 import type { TransactionInput } from "@/features/kuroji/actions/transactions";
+import type { EventInput } from "@/features/kyuu/actions/progress";
+import type { Status } from "@/features/kyuu/lib/stages";
 import type { CardFieldUpdates } from "@/features/seiryu/lib/types";
+import type { BookStatus } from "@/features/tsundoku/lib/constants";
 
 export interface OfflineOps {
 	"keizoku.checkDay": { habitId: string; date: string };
@@ -29,6 +33,17 @@ export interface OfflineOps {
 	"seiryu.toggleChecklistItem": { itemId: string; isCompleted: boolean };
 	"seiryu.updateChecklistItem": { itemId: string; title: string };
 	"seiryu.deleteChecklistItem": { itemId: string };
+	/** `asOf`: the day it was read, so a late sync logs the pages on the right day. */
+	"tsundoku.setProgress": { bookId: string; currentPage: number; asOf: string };
+	"tsundoku.updateStatus": { bookId: string; status: BookStatus };
+	"tsundoku.updateRating": { bookId: string; rating: number | null };
+	"tsundoku.logSession": { bookId: string; id: string; date: string; pagesRead: number };
+	"kyuu.setStatus": { applicationId: string; status: Status };
+	"kyuu.logEvent": { applicationId: string; event: EventInput & { id: string } };
+	"kyuu.followUp": { applicationId: string; id: string; date: string };
+	"kyuu.setArchived": { applicationId: string; archived: boolean };
+	"aisha.addReading": { vehicleId: string; id: string; date: string; km: number };
+	"aisha.logService": { vehicleId: string; values: ServiceFormValues & { id: string } };
 }
 
 export type OpName = keyof OfflineOps;
