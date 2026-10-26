@@ -12,6 +12,7 @@ const APPS_WITH_SETTINGS = new Set([
 	"/keizoku",
 	"/kyuu",
 	"/aisha",
+	"/hoshii",
 ]);
 
 /** Settings is one column: the account and each app are tabs across the top. */
