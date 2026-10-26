@@ -25,8 +25,8 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 				{ keys: ["P"], label: "Log pages of the book you're reading" },
 				{ keys: ["M"], label: "Update the car's mileage" },
 				{
-					keys: ["1", "2", "3", "4", "5", "6"],
-					label: "Open Kuroji, Seiryu, Tsundoku, Keizoku, Kyuu, Aisha",
+					keys: ["1", "2", "3", "4", "5", "6", "7"],
+					label: "Open Kuroji, Seiryu, Tsundoku, Keizoku, Kyuu, Aisha, Hoshii",
 				},
 			],
 		},
@@ -143,6 +143,31 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 				{ keys: ["↑", "↓"], label: "Move focus between rows" },
 				{ keys: ["Enter", "E"], label: "Edit" },
 				{ keys: ["X"], label: "Log as done, or renew a document (Next)" },
+				{ keys: ["."], label: "Open its menu" },
+				{ keys: ["⌫"], label: "Delete" },
+			],
+		},
+	],
+	"/hoshii": [
+		{
+			title: "Hoshii",
+			items: [
+				{ keys: ["N"], label: "Add a want" },
+				{ keys: ["1"], label: "Now" },
+				{ keys: ["2"], label: "Lists" },
+				{ keys: ["3"], label: "Summary" },
+				{ keys: [","], label: "Settings" },
+			],
+		},
+		{
+			title: "Want in focus or under the pointer",
+			items: [
+				{ keys: ["↑", "↓"], label: "Move focus between wants" },
+				{ keys: ["Enter"], label: "Open" },
+				{ keys: ["E"], label: "Edit" },
+				{ keys: ["K"], label: "Keep: into the Plan" },
+				{ keys: ["L"], label: "Let go" },
+				{ keys: ["B"], label: "Bought it" },
 				{ keys: ["."], label: "Open its menu" },
 				{ keys: ["⌫"], label: "Delete" },
 			],
