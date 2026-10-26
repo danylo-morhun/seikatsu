@@ -72,6 +72,8 @@ export type UpdateColumnInput = z.infer<typeof updateColumnSchema>;
 // ─── Cards ───────────────────────────────────────────────────────────────────
 
 export const createCardSchema = z.object({
+	/** Made on the device, so a replayed (offline) create lands once. */
+	id: z.string().uuid().optional(),
 	columnId: z.string().uuid(),
 	projectId: z.string().uuid(),
 	title: z.string().min(1, "Title is required").max(500),
@@ -107,6 +109,8 @@ export type UpdateCardInput = z.infer<typeof updateCardSchema>;
 // ─── Checklist ────────────────────────────────────────────────────────────────
 
 export const createChecklistItemSchema = z.object({
+	/** Made on the device, so a replayed (offline) create lands once. */
+	id: z.string().uuid().optional(),
 	cardId: z.string().uuid(),
 	title: z.string().min(1, "Title is required").max(500),
 });
@@ -118,6 +122,8 @@ export const updateChecklistItemSchema = z.object({
 
 export const toggleChecklistItemSchema = z.object({
 	itemId: z.string().uuid(),
+	/** The state to set. Omitted flips it — not safe to replay, so offline sends it. */
+	isCompleted: z.boolean().optional(),
 });
 
 export const deleteChecklistItemSchema = z.object({
