@@ -20,13 +20,12 @@ const SHELL_URLS = [
 	"/icons/favicon.svg",
 ];
 const NAV_TIMEOUT_MS = 2500;
-const STATIC_LIMIT = 600;
+// Several builds' worth: pages cached under an older build still find their chunks.
+const STATIC_LIMIT = 800;
 
 self.addEventListener("install", (event) => {
 	event.waitUntil(
-		caches
-			.open(SHELL)
-			.then((cache) => cache.addAll(SHELL_URLS))
+		Promise.all([caches.open(SHELL).then((cache) => cache.addAll(SHELL_URLS)), precacheBuild()])
 			// The first install has no page to disrupt; later ones wait for the update toast.
 			.then(() => (self.registration.active ? undefined : self.skipWaiting())),
 	);
@@ -73,7 +72,8 @@ self.addEventListener("fetch", (event) => {
 	}
 	if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/_next/")) return;
 
-	if (request.headers.get("RSC") === "1") {
+	// Prefetches may carry only the _rsc cache-buster, not the RSC header.
+	if (request.headers.get("RSC") === "1" || url.searchParams.has("_rsc")) {
 		event.respondWith(rsc(request));
 		return;
 	}
@@ -158,11 +158,38 @@ async function warm(urls) {
 		try {
 			const response = await fetch(url, { credentials: "same-origin", redirect: "manual" });
 			if (!response.ok || !isHtml(response)) continue;
-			await cache.put(pageKey(new URL(url, self.location.origin)), response.clone());
-			await warmAssets(await response.text());
+			// Assets first: a page in the cache means it works offline, scripts included.
+			await warmAssets(await response.clone().text());
+			await cache.put(pageKey(new URL(url, self.location.origin)), response);
 		} catch {
 			return; // offline again — try next time
 		}
+	}
+}
+
+/**
+ * Every script, style and font of this build (listed by scripts/sw-assets.mjs), so routes and
+ * dialogs never opened online still load offline. Best effort: a missing list or file only
+ * means that part loads from the network later.
+ */
+async function precacheBuild() {
+	try {
+		const res = await fetch(`/_next/static/sw-assets-${VERSION}.json`);
+		if (!res.ok) return;
+		const cache = await caches.open(STATIC);
+		const cached = new Set((await cache.keys()).map((r) => new URL(r.url).pathname));
+		const missing = (await res.json()).filter((path) => !cached.has(path));
+		// A few at a time: the install shouldn't hog a phone's connection.
+		for (let i = 0; i < missing.length; i += 6) {
+			await Promise.all(
+				missing.slice(i, i + 6).map(async (path) => {
+					const response = await fetch(path).catch(() => null);
+					if (response?.ok) await cache.put(path, response);
+				}),
+			);
+		}
+	} catch {
+		// offline or no list — the runtime cache fills in as pages load
 	}
 }
 
