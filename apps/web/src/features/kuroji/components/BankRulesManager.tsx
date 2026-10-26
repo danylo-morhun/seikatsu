@@ -31,17 +31,15 @@ export function BankRulesManager({
 	const categories = accounts.filter((a) => a.type === "INCOME" || a.type === "EXPENSE");
 	const accountName = (id: string) => accounts.find((a) => a.id === id)?.name ?? "—";
 
+	const ready = matchText.trim() !== "" && accountId !== "";
+
 	function handleAdd() {
-		if (!matchText.trim() || !accountId) {
-			toast.error("Enter a keyword and pick a category.");
-			return;
-		}
+		if (!ready) return;
 		startTransition(async () => {
 			const result = await createBankRule(workspaceId, matchText, accountId);
 			if ("error" in result) {
 				toast.error(result.error);
 			} else {
-				toast.success("Rule added.");
 				setMatchText("");
 				setAccountId("");
 			}
@@ -59,14 +57,15 @@ export function BankRulesManager({
 
 	return (
 		<div className="space-y-4">
-			<p className="text-sm text-muted-foreground">
-				When an imported transaction&apos;s description contains a keyword, it&apos;s filed under
-				the matching category. Unmatched transactions go to Uncategorized.
-			</p>
-
-			<div className="flex flex-col gap-2 sm:flex-row">
+			<form
+				className="flex flex-col gap-2 sm:flex-row"
+				onSubmit={(e) => {
+					e.preventDefault();
+					handleAdd();
+				}}
+			>
 				<Input
-					placeholder="Keyword (e.g. Biedronka)"
+					placeholder="Keyword, e.g. Biedronka"
 					aria-label="Keyword"
 					value={matchText}
 					onChange={(e) => setMatchText(e.target.value)}
@@ -80,16 +79,21 @@ export function BankRulesManager({
 					aria-label="Category"
 					className="sm:w-56"
 				/>
-				<Button onClick={handleAdd} disabled={isPending} className="gap-1.5">
+				<Button
+					type="submit"
+					variant={ready ? "default" : "outline"}
+					disabled={isPending || !ready}
+					className="gap-1.5"
+				>
 					{isPending && !deletingId && <Spinner />}
 					Add rule
 				</Button>
-			</div>
+			</form>
 
 			{rules.length > 0 && (
 				<div className="divide-y divide-rule border-y border-rule">
 					{rules.map((r) => (
-						<div key={r.id} className="flex items-center justify-between gap-3 py-2.5">
+						<div key={r.id} className="flex items-center justify-between gap-3 py-1.5">
 							<div className="flex min-w-0 items-center gap-2 text-sm">
 								<span className="truncate font-medium">{r.matchText}</span>
 								<HugeiconsIcon
@@ -105,7 +109,7 @@ export function BankRulesManager({
 								variant="ghost"
 								onClick={() => handleDelete(r.id)}
 								disabled={isPending && deletingId === r.id}
-								className="size-8 shrink-0"
+								className="size-10 shrink-0 text-muted-foreground hover:text-foreground md:size-8"
 								aria-label={`Delete rule ${r.matchText}`}
 							>
 								{isPending && deletingId === r.id ? (
