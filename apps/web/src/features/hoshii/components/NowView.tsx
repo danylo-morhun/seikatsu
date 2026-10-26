@@ -354,12 +354,12 @@ function Section({
 	return (
 		<section aria-labelledby={id} className="animate-rise" style={rise(index)}>
 			<div className="flex items-baseline justify-between gap-3 border-b border-rule pb-2">
-				<h2 id={id} className="min-w-0 truncate text-sm font-medium">
-					{title}
-					{hint && (
-						<span className="ml-2 font-normal text-muted-foreground max-sm:hidden">{hint}</span>
-					)}
-				</h2>
+				<div className="min-w-0 truncate text-sm">
+					<h2 id={id} className="inline font-medium">
+						{title}
+					</h2>
+					{hint && <span className="ml-2 text-muted-foreground max-sm:hidden">{hint}</span>}
+				</div>
 				<span className="font-figures text-xs text-muted-foreground">{count}</span>
 			</div>
 			{count > 0 ? (
