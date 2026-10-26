@@ -137,6 +137,7 @@ export function AllView({
 					{header("date", "Sent", "max-sm:hidden")}
 					{header("company", "Company")}
 					<span className="max-md:hidden">Role</span>
+					<span className="max-md:hidden">Country</span>
 					<span className="max-md:hidden">Source</span>
 					{header("status", "Status", "justify-end sm:justify-start")}
 					<span />
