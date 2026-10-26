@@ -106,8 +106,9 @@ export function ApplePaySection({
 					</p>
 					<ol className="list-decimal space-y-1.5 pl-5 text-sm">
 						<li>
-							On the iPhone, open Shortcuts → Automation → New Automation → <b>Transaction</b>. Pick
-							your cards, choose <b>Run Immediately</b>, then New Blank Automation.
+							On the iPhone, open Shortcuts → Automation → New Automation → Apps → <b>Wallet</b>{" "}
+							(“When I tap a Wallet card or pass”; <b>Transaction</b> before iOS 26). Pick your
+							cards, choose <b>Run Immediately</b>, then New Blank Automation.
 						</li>
 						<li>
 							Add <b>Get Contents of URL</b> with the URL above. Under Show More: Method <b>POST</b>
@@ -117,7 +118,8 @@ export function ApplePaySection({
 							Request Body <b>JSON</b>, three Text fields:{" "}
 							<code className="font-mono text-xs">amount</code> → Shortcut Input · Amount,{" "}
 							<code className="font-mono text-xs">merchant</code> → Merchant,{" "}
-							<code className="font-mono text-xs">card</code> → Card or Pass.
+							<code className="font-mono text-xs">card</code> → Card or Pass. Tap Shortcut Input to
+							pick each one.
 						</li>
 						<li>
 							Turn on{" "}
