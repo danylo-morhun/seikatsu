@@ -1,0 +1,95 @@
+"use client";
+
+import { type PushDevice, removeDevice } from "@/features/pwa/actions/push";
+import { currentSubscription } from "@/features/pwa/lib/push-client";
+import { Delete02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Button } from "@seikatsu/ui";
+import { formatDistanceToNow } from "date-fns";
+import { useEffect, useOptimistic, useState, useTransition } from "react";
+import { toast } from "sonner";
+
+/** "iPhone · Safari" from a user agent — enough to tell devices apart. */
+function deviceName(ua: string | null): string {
+	if (!ua) return "Unknown device";
+	const os = /iPhone/.test(ua)
+		? "iPhone"
+		: /iPad/.test(ua)
+			? "iPad"
+			: /Android/.test(ua)
+				? "Android"
+				: /Mac OS X/.test(ua)
+					? "Mac"
+					: /Windows/.test(ua)
+						? "Windows"
+						: /Linux/.test(ua)
+							? "Linux"
+							: "Device";
+	const browser = /Edg\//.test(ua)
+		? "Edge"
+		: /Firefox\//.test(ua)
+			? "Firefox"
+			: /Chrome\//.test(ua)
+				? "Chrome"
+				: /Safari\//.test(ua)
+					? "Safari"
+					: null;
+	return browser ? `${os} · ${browser}` : os;
+}
+
+/** Every device that receives push; the current one is marked. */
+export function DeviceList({ devices }: { devices: PushDevice[] }) {
+	const [mine, setMine] = useState<string | null>(null);
+	const [shown, removeShown] = useOptimistic(devices, (list, id: string) =>
+		list.filter((d) => d.id !== id),
+	);
+	const [, startTransition] = useTransition();
+
+	useEffect(() => {
+		currentSubscription()
+			.then((sub) => setMine(sub?.endpoint ?? null))
+			.catch(() => undefined);
+	}, []);
+
+	if (shown.length === 0) {
+		return <p className="text-sm text-muted-foreground">No devices yet.</p>;
+	}
+
+	return (
+		<ul className="divide-y divide-rule">
+			{shown.map((device) => (
+				<li key={device.id} className="flex items-center gap-3 py-3 first:pt-0">
+					<div className="min-w-0 flex-1">
+						<p className="text-sm">
+							{deviceName(device.userAgent)}
+							{device.endpoint === mine && (
+								<span className="ml-2 text-xs text-muted-foreground">this device</span>
+							)}
+						</p>
+						<p className="text-xs text-muted-foreground">
+							{device.lastSuccessAt
+								? `Last delivered ${formatDistanceToNow(device.lastSuccessAt, { addSuffix: true })}`
+								: `Added ${formatDistanceToNow(device.createdAt, { addSuffix: true })}`}
+						</p>
+					</div>
+					<Button
+						variant="ghost"
+						size="icon"
+						aria-label="Remove device"
+						onClick={() =>
+							startTransition(async () => {
+								removeShown(device.id);
+								const result = await removeDevice(device.id).catch(() => ({
+									error: "Couldn't remove. Check your connection.",
+								}));
+								if ("error" in result) toast.error(result.error);
+							})
+						}
+					>
+						<HugeiconsIcon icon={Delete02Icon} className="size-4" />
+					</Button>
+				</li>
+			))}
+		</ul>
+	);
+}

@@ -20,6 +20,7 @@ export function SettingsNav() {
 
 	const links = [
 		{ href: "/settings/account", label: "Account" },
+		{ href: "/settings/notifications", label: "Notifications" },
 		...Object.entries(APPS_CONFIG)
 			.filter(([appHref]) => APPS_WITH_SETTINGS.has(appHref))
 			.map(([appHref, { name }]) => ({ href: `/settings${appHref}`, label: name })),
