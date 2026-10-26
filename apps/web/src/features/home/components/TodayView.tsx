@@ -255,13 +255,13 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 		[workspace.hiddenApps],
 	);
 
-	// 1–6 open the apps in sidebar order (set-aside ones skipped); P logs pages of the book being read, M the
+	// 1–7 open the apps in sidebar order (set-aside ones skipped); P logs pages of the book being read, M the
 	// odometer (N is the transaction dialog's).
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
 			const key = pageKey(e);
 			if (!key) return;
-			const app = /^[1-6]$/.test(key) ? listed[Number(key) - 1] : undefined;
+			const app = /^[1-7]$/.test(key) ? listed[Number(key) - 1] : undefined;
 			if (app) {
 				e.preventDefault();
 				router.push(app);
@@ -292,10 +292,12 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 		overdue > 0 && `${plural(overdue, "card")} overdue`,
 		data.car?.next?.status === "overdue" && "car service overdue",
 		(data.jobs?.toSend ?? 0) > 0 && `${data.jobs?.toSend} to send`,
+		(data.wants?.decide ?? 0) > 0 && `${plural(data.wants?.decide ?? 0, "want")} to decide`,
 	].filter(Boolean);
 
 	const m = data.money;
 	const jobs = data.jobs;
+	const wants = data.wants;
 	const next = data.car?.next;
 	// Undone first: the tile shows what's left, then what's ticked.
 	const habitList = [...habits].sort((a, b) => Number(a.done) - Number(b.done)).slice(0, 4);
@@ -303,7 +305,7 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 	const fresh = listed.filter((href) => data.started[href] === false);
 	const isNew = APP_HREFS.every((href) => data.started[href] === false);
 	const shows = (href: AppHref) => listed.includes(href) && !fresh.includes(href);
-	const smalls = (["/kuroji", "/aisha", "/seiryu", "/kyuu"] as const).filter(shows);
+	const smalls = (["/kuroji", "/aisha", "/seiryu", "/kyuu", "/hoshii"] as const).filter(shows);
 	const fill = smalls.length % 2 === 1 ? smalls.at(-1) : undefined;
 	let tile = 0;
 
@@ -315,9 +317,10 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 						{firstName ? `Welcome, ${firstName}.` : "Welcome."}
 					</h1>
 					<p className="mt-2 text-sm text-muted-foreground md:text-base">
-						生活 — everyday life. Six small apps for money, projects, books, habits, the job search
-						and the car, under one sign-in. Start with whichever you need; the rest wait here until
-						you do, and each one shows up on this page once it has something in it.
+						生活 — everyday life. Seven small apps for money, projects, books, habits, the job
+						search, the car and the things you want, under one sign-in. Start with whichever you
+						need; the rest wait here until you do, and each one shows up on this page once it has
+						something in it.
 					</p>
 				</header>
 			) : (
@@ -418,6 +421,34 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 										? `to send · ${jobs.ghostDue} to close`
 										: `to send · ${jobs.waiting} waiting`
 									: null
+							}
+						/>
+					)}
+
+					{shows("/hoshii") && (
+						<Tile
+							index={tile++}
+							href="/hoshii"
+							fill={fill === "/hoshii"}
+							value={
+								wants
+									? String(
+											wants.decide > 0
+												? wants.decide
+												: wants.canBuy > 0
+													? wants.canBuy
+													: wants.cooling,
+										)
+									: null
+							}
+							note={
+								!wants
+									? null
+									: wants.decide > 0
+										? `to decide${wants.canBuy > 0 ? ` · ${wants.canBuy} can buy` : ""}`
+										: wants.canBuy > 0
+											? `can buy · ${wants.nextBuy}`
+											: `cooling · ${wants.plan} in the Plan`
 							}
 						/>
 					)}
