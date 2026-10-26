@@ -12,25 +12,24 @@ export function isMailKind(value: unknown): value is MailKind {
 
 export function verdictSchema(candidates: number) {
 	return {
-		type: "OBJECT",
+		type: "object",
 		properties: {
 			match: {
-				type: "STRING",
+				type: "string",
 				enum: ["none", ...Array.from({ length: candidates }, (_, i) => String(i))],
 				description: "Which application the mail is about, by its number, or none",
 			},
-			kind: { type: "STRING", enum: ["none", ...MAIL_KINDS] },
+			kind: { type: "string", enum: ["none", ...MAIL_KINDS] },
 			confident: {
-				type: "BOOLEAN",
+				type: "boolean",
 				description: "True only when both the application and the kind are clear",
 			},
 			date: {
-				type: "STRING",
-				nullable: true,
+				type: ["string", "null"],
 				description: "YYYY-MM-DD of a booked screening or interview, if the mail gives one",
 			},
-			time: { type: "STRING", nullable: true, description: "HH:MM of that booking, 24h" },
-			summary: { type: "STRING", description: "One short line: who wrote and what they want" },
+			time: { type: ["string", "null"], description: "HH:MM of that booking, 24h" },
+			summary: { type: "string", description: "One short line: who wrote and what they want" },
 		},
 		required: ["match", "kind", "confident", "date", "time", "summary"],
 	};
