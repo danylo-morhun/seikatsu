@@ -2,15 +2,8 @@
 
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
-import {
-	archiveCard,
-	createCard,
-	deleteCard,
-	moveCard,
-	reorderCards,
-	restoreCard,
-	updateCard,
-} from "@/features/seiryu/actions/cards";
+import { usePendingOps } from "@/features/pwa/lib/use-outbox";
+import { deleteCard, restoreCard } from "@/features/seiryu/actions/cards";
 import { deleteColumn, reorderColumns, updateColumn } from "@/features/seiryu/actions/columns";
 import { setCardLabels } from "@/features/seiryu/actions/labels";
 import { AddColumnButton } from "@/features/seiryu/components/AddColumnButton";
@@ -31,6 +24,8 @@ import {
 	readFilters,
 	writeFilters,
 } from "@/features/seiryu/lib/filters";
+import { addCard, placeCard, saveCard, shelveCard } from "@/features/seiryu/lib/offline";
+import { overlayCards } from "@/features/seiryu/lib/overlay";
 import { useServerState } from "@/features/seiryu/lib/server-state";
 import {
 	type CardData,
@@ -116,6 +111,12 @@ export function KanbanBoard({
 	archived,
 }: Props) {
 	const projectId = project.id;
+	// Changes queued offline show until the server has them (lib/overlay.ts).
+	const pending = usePendingOps("seiryu.");
+	const boardCards = useMemo(
+		() => overlayCards(serverCards, pending, projectId),
+		[serverCards, pending, projectId],
+	);
 	// Local copies change optimistically; fresh props from each action's re-render replace
 	// them once nothing is in flight (see useServerState).
 	const {
@@ -130,7 +131,7 @@ export function KanbanBoard({
 		hold: holdCards,
 		track: trackCards,
 		reset: resetCards,
-	} = useServerState(serverCards);
+	} = useServerState(boardCards);
 	const { state: projectLabels, setState: setProjectLabels } = useServerState(serverLabels);
 
 	const [activeId, setActiveId] = useState<string | null>(null);
@@ -257,7 +258,9 @@ export function KanbanBoard({
 				.filter((c) => c.columnId === columnId)
 				.sort(byPosition)
 				.at(-1);
-			const tempId = `temp-${crypto.randomUUID()}`;
+			// The id is made here: a card queued offline is real (openable) at once.
+			const id = crypto.randomUUID();
+			const tempId = `temp-${id}`;
 			freshCards.add(tempId);
 			const temp: CardData = {
 				id: tempId,
@@ -274,17 +277,13 @@ export function KanbanBoard({
 			};
 			setCards((prev) => [...prev, temp]);
 
-			trackCards(createCard({ columnId, projectId, title })).then((result) => {
+			trackCards(addCard(id, columnId, projectId, title)).then((result) => {
 				if ("error" in result) {
 					toast.error(result.error);
 					setCards((prev) => prev.filter((c) => c.id !== tempId));
 					return;
 				}
-				setCards((prev) =>
-					prev.map((c) =>
-						c.id === tempId ? { ...c, id: result.data.id, position: result.data.position } : c,
-					),
-				);
+				setCards((prev) => prev.map((c) => (c.id === tempId ? { ...c, id } : c)));
 			});
 		},
 		[projectId, setCards, trackCards],
@@ -331,8 +330,9 @@ export function KanbanBoard({
 	);
 
 	function handleCardSave(cardId: string, updates: CardFieldUpdates) {
+		const title = cardsRef.current.find((c) => c.id === cardId)?.title ?? "card";
 		setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, ...updates } : c)));
-		trackCards(updateCard({ cardId, ...updates })).then((result) => {
+		trackCards(saveCard(cardId, updates.title ?? title, updates)).then((result) => {
 			if ("error" in result) {
 				toast.error(result.error);
 				resetCards();
@@ -350,7 +350,8 @@ export function KanbanBoard({
 		setCards((prev) =>
 			prev.map((c) => (c.id === cardId ? { ...c, columnId, position: newPosition } : c)),
 		);
-		trackCards(moveCard({ cardId, newColumnId: columnId, newPosition })).then((result) => {
+		const title = cardsRef.current.find((c) => c.id === cardId)?.title ?? "card";
+		trackCards(placeCard(cardId, title, { columnId, position: newPosition })).then((result) => {
 			if ("error" in result) {
 				toast.error(result.error);
 				resetCards();
@@ -377,7 +378,7 @@ export function KanbanBoard({
 		const card = cardsRef.current.find((c) => c.id === cardId);
 		setCards((prev) => prev.filter((c) => c.id !== cardId));
 		setSheetOpen(false);
-		trackCards(archiveCard({ cardId })).then((result) => {
+		trackCards(shelveCard(cardId, card?.title ?? "card")).then((result) => {
 			if ("error" in result) {
 				toast.error(result.error);
 				resetCards();
@@ -681,9 +682,11 @@ export function KanbanBoard({
 			return;
 		}
 
-		const save = moved
-			? moveCard({ cardId: card.id, newColumnId: card.columnId, newPosition: position })
-			: reorderCards({ cardId: card.id, newPosition: position });
+		const save = placeCard(card.id, card.title, {
+			columnId: card.columnId,
+			position,
+			sameColumn: !moved,
+		});
 		trackCards(save).then((result) => {
 			if ("error" in result) {
 				toast.error(result.error);

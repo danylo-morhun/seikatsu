@@ -2,14 +2,11 @@
 
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { Spinner } from "@/components/Spinner";
-import {
-	archiveCard,
-	deleteCard,
-	moveCard,
-	restoreCard,
-	updateCard,
-} from "@/features/seiryu/actions/cards";
+import { usePendingOps } from "@/features/pwa/lib/use-outbox";
+import { deleteCard, restoreCard } from "@/features/seiryu/actions/cards";
 import { CardDetail } from "@/features/seiryu/components/CardDetail";
+import { placeCard, saveCard, shelveCard } from "@/features/seiryu/lib/offline";
+import { overlayCards } from "@/features/seiryu/lib/overlay";
 import type {
 	ActionResult,
 	CardData,
@@ -33,7 +30,7 @@ import {
 } from "@seikatsu/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 interface Props {
@@ -46,14 +43,21 @@ interface Props {
 
 /** A card on its own page (deep link, new tab): the sheet's body, under a back link. */
 export function CardPage({
-	card: initial,
+	card: server,
 	projectName,
 	columns,
 	projectLabels: initialLabels,
 	today,
 }: Props) {
 	const router = useRouter();
-	const [card, setCard] = useState(initial);
+	const [local, setCard] = useState(server);
+	// Changes queued offline show until the server has them (re-applying one this page just
+	// made is a no-op); an archive waits for the board.
+	const pending = usePendingOps("seiryu.");
+	const card = useMemo(() => {
+		const queued = pending.filter((o) => o.name !== "seiryu.archiveCard");
+		return { ...local, ...overlayCards([local], queued, local.projectId)[0] };
+	}, [local, pending]);
 	const [projectLabels, setProjectLabels] = useState(initialLabels);
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const [isRestoring, startRestore] = useTransition();
@@ -71,15 +75,15 @@ export function CardPage({
 	}
 
 	function handleSave(updates: CardFieldUpdates) {
-		persist(updates, updateCard({ cardId: card.id, ...updates }));
+		persist(updates, saveCard(card.id, updates.title ?? card.title, updates));
 	}
 
 	function handleMove(columnId: string) {
-		persist({ columnId }, moveCard({ cardId: card.id, newColumnId: columnId }));
+		persist({ columnId }, placeCard(card.id, card.title, { columnId }));
 	}
 
 	async function handleArchive() {
-		const result = await archiveCard({ cardId: card.id });
+		const result = await shelveCard(card.id, card.title);
 		if ("error" in result) {
 			toast.error(result.error);
 			return;
