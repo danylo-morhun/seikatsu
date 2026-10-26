@@ -4,6 +4,8 @@
 import { addReading } from "@/features/aisha/actions/readings";
 import { logService } from "@/features/aisha/actions/services";
 import { serviceFormSchema } from "@/features/aisha/lib/aisha-schemas";
+import { createItem, moveItem, reorderPlan } from "@/features/hoshii/actions/items";
+import { itemFormSchema, moveSchema } from "@/features/hoshii/lib/hoshii-schemas";
 import { archiveHabit, unarchiveHabit, updateHabit } from "@/features/keizoku/actions/habits";
 import { checkDay, saveDayNote, uncheckDay } from "@/features/keizoku/actions/logs";
 import { habitPatchSchema } from "@/features/keizoku/lib/keizoku-schemas";
@@ -236,6 +238,23 @@ export const REGISTRY: { [N in OpName]: Entry<N> } = {
 			values: serviceFormSchema.extend({ id: z.uuid() }),
 		}) as z.ZodType<OfflineOps["aisha.logService"]>,
 		run: ({ vehicleId, values }) => logService(vehicleId, values),
+	},
+	"hoshii.createItem": {
+		schema: itemFormSchema.extend({ id: z.uuid() }) as unknown as z.ZodType<
+			OfflineOps["hoshii.createItem"]
+		>,
+		run: async (args) => {
+			const result = await createItem(args);
+			return "error" in result ? result : { success: true };
+		},
+	},
+	"hoshii.moveItem": {
+		schema: moveSchema,
+		run: ({ itemId, to, on }) => moveItem(itemId, to, on),
+	},
+	"hoshii.reorderPlan": {
+		schema: z.object({ itemId: z.uuid(), position: z.string().max(64) }),
+		run: ({ itemId, position }) => reorderPlan(itemId, position),
 	},
 };
 
