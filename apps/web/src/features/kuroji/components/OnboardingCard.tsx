@@ -1,8 +1,8 @@
 "use client";
 
+import { AppWelcome } from "@/components/AppWelcome";
 import { AddTransactionModal } from "@/features/kuroji/components/AddTransactionModal";
 import { Button } from "@seikatsu/ui";
-import Link from "next/link";
 
 interface Props {
 	workspaceId: string;
@@ -34,40 +34,17 @@ const STEPS = [
  */
 export function OnboardingCard({ workspaceId, baseCurrency }: Props) {
 	return (
-		<section aria-labelledby="welcome-title" className="max-w-2xl py-4 md:py-10">
-			<h1 id="welcome-title" className="text-2xl font-semibold md:text-3xl">
-				Your ledger is ready.
-			</h1>
-			<p className="mt-3 max-w-prose text-muted-foreground">
-				Every entry moves money from one account to another, so balances always add up. We set up a
-				wallet, a bank account, savings and a few everyday categories to start with.
-			</p>
-			<div className="mt-6">
-				<AddTransactionModal
-					workspaceId={workspaceId}
-					baseCurrency={baseCurrency}
-					trigger={<Button>Record your first transaction</Button>}
-				/>
-			</div>
-
-			<ol className="mt-12 divide-y divide-rule border-y border-rule">
-				{STEPS.map((step, i) => (
-					<li key={step.title} className="grid grid-cols-[2rem_minmax(0,1fr)_auto] gap-x-3 py-4">
-						<span className="font-figures text-sm text-muted-foreground">{i + 1}</span>
-						<span>
-							<span className="block text-sm font-medium">{step.title}</span>
-							<span className="mt-0.5 block text-sm text-muted-foreground">{step.body}</span>
-						</span>
-						{step.href && (
-							<Button asChild variant="ghost" size="sm" className="self-center">
-								<Link href={step.href} prefetch>
-									{step.cta}
-								</Link>
-							</Button>
-						)}
-					</li>
-				))}
-			</ol>
-		</section>
+		<AppWelcome
+			app="/kuroji"
+			title="Your ledger is ready."
+			lead={`Where the money comes from and where it goes, in ${baseCurrency} or any other currency. Every entry moves money from one account to another, so balances always add up. A wallet, a bank account, savings and a few everyday categories are already set up.`}
+			steps={STEPS}
+		>
+			<AddTransactionModal
+				workspaceId={workspaceId}
+				baseCurrency={baseCurrency}
+				trigger={<Button aria-keyshortcuts="N">Record your first transaction</Button>}
+			/>
+		</AppWelcome>
 	);
 }
