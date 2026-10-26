@@ -123,14 +123,20 @@ export async function createCard(
 	const parsed = createCardSchema.safeParse(input);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
-	const { columnId, projectId, title } = parsed.data;
+	const { id, columnId, projectId, title } = parsed.data;
 
 	const column = await getOwnedColumn(columnId, workspace.id);
 	if (column?.projectId !== projectId) return { error: "Invalid column" };
 
+	if (id) {
+		// Sent again (offline replay, lost response): the first one stands.
+		const existing = await getOwnedCard(id, workspace.id);
+		if (existing) return { success: true, data: { id, position: existing.position } };
+	}
+
 	const [card] = await db
 		.insert(seiryuCards)
-		.values({ columnId, projectId, title, position: await endOfColumn(columnId) })
+		.values({ id, columnId, projectId, title, position: await endOfColumn(columnId) })
 		.returning({ id: seiryuCards.id, position: seiryuCards.position });
 
 	if (!card) return { error: "Failed to create card" };

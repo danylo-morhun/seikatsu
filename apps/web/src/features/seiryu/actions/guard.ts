@@ -30,7 +30,11 @@ export const isOwnedProject = cache(async (projectId: string, workspaceId: strin
 /** The card's project and column if it belongs to the workspace — one query. */
 export async function getOwnedCard(cardId: string, workspaceId: string) {
 	const [card] = await db
-		.select({ projectId: seiryuCards.projectId, columnId: seiryuCards.columnId })
+		.select({
+			projectId: seiryuCards.projectId,
+			columnId: seiryuCards.columnId,
+			position: seiryuCards.position,
+		})
 		.from(seiryuCards)
 		.innerJoin(seiryuProjects, eq(seiryuProjects.id, seiryuCards.projectId))
 		.where(and(eq(seiryuCards.id, cardId), eq(seiryuProjects.workspaceId, workspaceId)))
@@ -55,6 +59,7 @@ export async function getOwnedChecklistItem(itemId: string, workspaceId: string)
 		.select({
 			cardId: seiryuChecklistItems.cardId,
 			isCompleted: seiryuChecklistItems.isCompleted,
+			position: seiryuChecklistItems.position,
 			projectId: seiryuCards.projectId,
 		})
 		.from(seiryuChecklistItems)
