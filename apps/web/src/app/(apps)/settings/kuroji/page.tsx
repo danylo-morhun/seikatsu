@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { SettingsPage, SettingsSection } from "@/components/SettingsSection";
 import { UnderlineTab, UnderlineTabs } from "@/components/UnderlineTabs";
 import { getAccounts } from "@/features/kuroji/actions/accounts";
 import { getBalances } from "@/features/kuroji/actions/balances";
@@ -11,7 +12,10 @@ import { AddAccountModal } from "@/features/kuroji/components/AddAccountModal";
 import { AddRecurringModal } from "@/features/kuroji/components/AddRecurringModal";
 import { ApplePaySection } from "@/features/kuroji/components/ApplePaySection";
 import { ArchivedAccountsList } from "@/features/kuroji/components/ArchivedAccountsList";
-import { BankConnectionsSection } from "@/features/kuroji/components/BankConnectionsSection";
+import {
+	BankConnectionsSection,
+	ConnectBankButton,
+} from "@/features/kuroji/components/BankConnectionsSection";
 import { BankRulesManager } from "@/features/kuroji/components/BankRulesManager";
 import { Privat24ImportSection } from "@/features/kuroji/components/Privat24ImportSection";
 import { RecurringTransactionsList } from "@/features/kuroji/components/RecurringTransactionsList";
@@ -25,26 +29,6 @@ const SECTIONS = [
 	{ id: "banks", label: "Banks & import" },
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["id"];
-
-function SectionHeader({
-	title,
-	description,
-	action,
-}: {
-	title: string;
-	description: string;
-	action?: React.ReactNode;
-}) {
-	return (
-		<div className="mb-4 flex items-start justify-between gap-4">
-			<div className="min-w-0">
-				<h2 className="text-sm font-medium">{title}</h2>
-				<p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
-			</div>
-			{action}
-		</div>
-	);
-}
 
 export default async function KurojiSettingsPage({
 	searchParams,
@@ -67,54 +51,51 @@ export default async function KurojiSettingsPage({
 	let body: React.ReactNode;
 	if (section === "general") {
 		body = (
-			<section>
-				<SectionHeader
-					title="Workspace"
-					description="Name and the base currency every balance is converted to."
-				/>
+			<SettingsSection
+				title="Workspace"
+				description="Its name, and the currency every balance is converted to."
+			>
 				<WorkspaceSettingsForm
 					workspaceId={workspace.id}
 					initialName={workspace.name}
 					baseCurrency={workspace.baseCurrency}
 				/>
-			</section>
+			</SettingsSection>
 		);
 	} else if (section === "accounts") {
 		const balances = await getBalances(workspace.id, undefined, undefined);
 		body = (
-			<section>
-				<SectionHeader
-					title="Accounts"
+			<>
+				<SettingsSection
 					description="What you own and owe, and the categories money comes from and goes to."
 					action={
 						<AddAccountModal workspaceId={workspace.id} baseCurrency={workspace.baseCurrency} />
 					}
-				/>
-				<AccountsOverview
-					balances={balances}
-					accounts={accounts}
-					currency={workspace.baseCurrency}
-					workspaceId={workspace.id}
-					periodLabel="All time"
-					hideHeader
-					listMode
-				/>
+				>
+					<AccountsOverview
+						balances={balances}
+						accounts={accounts}
+						currency={workspace.baseCurrency}
+						workspaceId={workspace.id}
+						periodLabel="All time"
+						hideHeader
+						listMode
+					/>
+				</SettingsSection>
 				<ArchivedAccountsList accounts={allAccounts.filter((a) => a.archivedAt !== null)} />
-			</section>
+			</>
 		);
 	} else if (section === "recurring") {
 		const recurringItems = await getRecurringTransactions(workspace.id);
 		body = (
-			<section>
-				<SectionHeader
-					title="Recurring"
-					description="Recorded automatically on their dates, every morning."
-					action={
-						<AddRecurringModal workspaceId={workspace.id} baseCurrency={workspace.baseCurrency} />
-					}
-				/>
+			<SettingsSection
+				description="Subscriptions, rent, salary: recorded on their dates, every morning."
+				action={
+					<AddRecurringModal workspaceId={workspace.id} baseCurrency={workspace.baseCurrency} />
+				}
+			>
 				<RecurringTransactionsList items={recurringItems} currency={workspace.baseCurrency} />
-			</section>
+			</SettingsSection>
 		);
 	} else {
 		const [bankConnections, bankRules, captureKey] = await Promise.all([
@@ -123,47 +104,45 @@ export default async function KurojiSettingsPage({
 			getCaptureKeyStatus(workspace.id),
 		]);
 		body = (
-			<div className="space-y-12">
-				<section>
-					<SectionHeader
-						title="Bank connections"
-						description="Open Banking imports, synced daily."
-					/>
+			<>
+				<SettingsSection
+					title="Bank connections"
+					description="Polish banks over Open Banking; new transactions arrive daily."
+					action={<ConnectBankButton workspaceId={workspace.id} />}
+				>
 					<BankConnectionsSection
 						workspaceId={workspace.id}
 						connections={bankConnections}
 						accounts={accounts}
 					/>
-				</section>
-				<section>
-					<SectionHeader
-						title="Apple Pay"
-						description="An iPhone Shortcut sends each payment here; tap its notification to add it. The bank import later matches it instead of adding it twice."
-					/>
+				</SettingsSection>
+				<SettingsSection
+					title="Apple Pay"
+					description="An iPhone Shortcut sends each payment here; tap its notification to add it. The bank import later matches it instead of adding it twice."
+				>
 					<ApplePaySection workspaceId={workspace.id} status={captureKey} />
-				</section>
-				<section>
-					<SectionHeader
-						title="Privat24 statement"
-						description="PrivatBank has no API for personal cards; import the .xlsx the Privat24 app exports."
-					/>
+				</SettingsSection>
+				<SettingsSection
+					title="Privat24 statement"
+					description="PrivatBank has no API for personal cards, so import the .xlsx the Privat24 app exports."
+				>
 					<Privat24ImportSection workspaceId={workspace.id} accounts={accounts} />
-				</section>
-				<section>
-					<SectionHeader
-						title="Import rules"
-						description="Categorize imported transactions by keyword."
-					/>
+				</SettingsSection>
+				<SettingsSection
+					title="Import rules"
+					description="An imported transaction whose description has a keyword goes to its category; the rest go to Uncategorized."
+				>
 					<BankRulesManager workspaceId={workspace.id} rules={bankRules} accounts={accounts} />
-				</section>
-			</div>
+				</SettingsSection>
+			</>
 		);
 	}
 
 	return (
-		<div className="max-w-3xl px-4 pt-6 pb-28 sm:px-8 md:pt-8 md:pb-8">
-			<h1 className="text-xl font-semibold">黒 Kuroji</h1>
-			<div className="mt-4 mb-8">
+		<SettingsPage
+			title="黒 Kuroji"
+			appNav
+			tabs={
 				<UnderlineTabs label="Kuroji settings">
 					{SECTIONS.map((s) => (
 						<UnderlineTab
@@ -175,8 +154,9 @@ export default async function KurojiSettingsPage({
 						</UnderlineTab>
 					))}
 				</UnderlineTabs>
-			</div>
+			}
+		>
 			{body}
-		</div>
+		</SettingsPage>
 	);
 }

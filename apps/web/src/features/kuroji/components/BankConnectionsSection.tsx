@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { Spinner } from "@/components/Spinner";
 import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import type { getBankConnections } from "@/features/kuroji/actions/bank";
@@ -12,6 +13,8 @@ import {
 	syncBankConnection,
 } from "@/features/kuroji/actions/bank";
 import { formatDateTime } from "@/features/kuroji/lib/dates";
+import { Delete01Icon, MoreHorizontalIcon, RefreshIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
 	Dialog,
@@ -20,6 +23,11 @@ import {
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
 	Input,
 	Label,
 	Select,
@@ -40,9 +48,11 @@ const NONE = "__none__";
 const STATUS_LABEL: Record<string, { text: string; cls: string }> = {
 	CREATED: { text: "Awaiting authorization", cls: "text-muted-foreground" },
 	LINKED: { text: "Connected", cls: "text-muted-foreground" },
-	EXPIRED: { text: "Access expired — reconnect", cls: "text-destructive" },
-	ERROR: { text: "Sync error", cls: "text-destructive" },
+	EXPIRED: { text: "Access expired. Connect the bank again to resume.", cls: "text-destructive" },
+	ERROR: { text: "Last sync failed", cls: "text-destructive" },
 };
+
+const transactions = (n: number) => `${n} ${n === 1 ? "transaction" : "transactions"}`;
 
 export function BankConnectionsSection({
 	workspaceId,
@@ -56,10 +66,11 @@ export function BankConnectionsSection({
 	const linkTargets = accounts.filter((a) => a.type === "ASSET" || a.type === "LIABILITY");
 
 	return (
-		<div className="space-y-4">
+		<>
 			{connections.length === 0 ? (
-				<p className="text-sm text-muted-foreground">
-					No banks connected. Connect your bank to import transactions automatically.
+				<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+					None yet. A connected bank sends its transactions here every day, filed by your import
+					rules.
 				</p>
 			) : (
 				<div className="divide-y divide-rule border-y border-rule">
@@ -73,8 +84,7 @@ export function BankConnectionsSection({
 					))}
 				</div>
 			)}
-			<ConnectBankDialog workspaceId={workspaceId} />
-		</div>
+		</>
 	);
 }
 
@@ -89,6 +99,7 @@ function ConnectionCard({
 }) {
 	const [isPending, startTransition] = useTransition();
 	const [action, setAction] = useState<"sync" | "delete" | "reset" | null>(null);
+	const [confirming, setConfirming] = useState<"delete" | "reset" | null>(null);
 	const status = STATUS_LABEL[connection.status] ?? { text: connection.status, cls: "" };
 
 	function handleSync() {
@@ -96,54 +107,38 @@ function ConnectionCard({
 		startTransition(async () => {
 			const result = await syncBankConnection(connection.id);
 			if ("error" in result) toast.error(result.error);
-			else toast.success(`Imported ${result.imported} transaction(s).`);
+			else
+				toast.success(
+					result.imported ? `${transactions(result.imported)} imported` : "Nothing new to import",
+				);
 			setAction(null);
 		});
 	}
 
-	function handleReset() {
-		if (
-			!confirm(
-				`Delete all transactions for the account(s) linked to ${connection.displayName} and re-import from scratch? Other accounts are untouched.`,
-			)
-		) {
-			return;
-		}
-		setAction("reset");
-		startTransition(async () => {
-			const result = await resetAndResync(connection.id);
-			if ("error" in result) toast.error(result.error);
-			else toast.success(`Re-imported ${result.imported} transaction(s).`);
-			setAction(null);
-		});
+	async function handleReset() {
+		const result = await resetAndResync(connection.id);
+		if ("error" in result) toast.error(result.error);
+		else toast.success(`${transactions(result.imported)} imported again`);
 	}
 
-	function handleDelete() {
-		if (!confirm(`Disconnect ${connection.displayName}? Imported transactions are kept.`)) {
-			return;
-		}
-		setAction("delete");
-		startTransition(async () => {
-			const result = await deleteBankConnection(connection.id);
-			if ("error" in result) toast.error(result.error);
-			else toast.success("Bank disconnected.");
-			setAction(null);
-		});
+	async function handleDelete() {
+		const result = await deleteBankConnection(connection.id);
+		if ("error" in result) toast.error(result.error);
+		else toast.success(`${connection.displayName} disconnected`);
 	}
 
 	function handleLink(accountUid: string, value: string) {
 		startTransition(async () => {
 			const result = await linkBankAccount(workspaceId, accountUid, value === NONE ? null : value);
 			if ("error" in result) toast.error(result.error);
-			else toast.success("Account link updated.");
 		});
 	}
 
 	return (
-		<div className="py-4">
-			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+		<div className="py-3">
+			<div className="flex items-start justify-between gap-3">
 				<div className="min-w-0">
-					<p className="font-medium">{connection.displayName}</p>
+					<p className="text-sm font-medium">{connection.displayName}</p>
 					<p className={`text-xs ${status.cls}`}>{status.text}</p>
 					{connection.lastSyncedAt && (
 						<p className="text-xs text-muted-foreground">
@@ -161,9 +156,10 @@ function ConnectionCard({
 						<p className="mt-1 text-xs text-destructive">{connection.lastError}</p>
 					)}
 				</div>
-				<div className="flex shrink-0 flex-wrap gap-2">
+				<div className="flex shrink-0 items-center gap-1">
 					<Button
 						variant="outline"
+						size="sm"
 						onClick={handleSync}
 						disabled={isPending || connection.status === "CREATED"}
 						className="gap-1.5"
@@ -171,22 +167,35 @@ function ConnectionCard({
 						{isPending && action === "sync" && <Spinner />}
 						{isPending && action === "sync" ? "Syncing…" : "Sync now"}
 					</Button>
-					<Button
-						variant="outline"
-						onClick={handleReset}
-						disabled={isPending || connection.status === "CREATED"}
-						className="gap-1.5"
-					>
-						{isPending && action === "reset" ? "Resetting…" : "Reset & re-import"}
-					</Button>
-					<Button
-						variant="ghost"
-						onClick={handleDelete}
-						disabled={isPending}
-						className="gap-1.5 text-destructive"
-					>
-						{isPending && action === "delete" ? "Removing…" : "Disconnect"}
-					</Button>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="size-10 text-muted-foreground hover:text-foreground md:size-8"
+								aria-label={`More for ${connection.displayName}`}
+							>
+								<HugeiconsIcon icon={MoreHorizontalIcon} className="size-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end" className="w-52">
+							<DropdownMenuItem
+								disabled={connection.status === "CREATED"}
+								onClick={() => setConfirming("reset")}
+							>
+								<HugeiconsIcon icon={RefreshIcon} className="mr-2 size-4" />
+								Import again from scratch…
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								className="text-destructive focus:text-destructive"
+								onClick={() => setConfirming("delete")}
+							>
+								<HugeiconsIcon icon={Delete01Icon} className="mr-2 size-4" />
+								Disconnect…
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
 				</div>
 			</div>
 
@@ -226,11 +235,29 @@ function ConnectionCard({
 					))}
 				</div>
 			)}
+
+			<ConfirmDelete
+				open={confirming === "reset"}
+				onOpenChange={(open) => !open && setConfirming(null)}
+				title={`Import ${connection.displayName} again?`}
+				description="Its linked accounts lose every transaction and get them again from the bank. Other accounts are untouched."
+				confirmLabel="Delete and import"
+				onConfirm={handleReset}
+			/>
+			<ConfirmDelete
+				open={confirming === "delete"}
+				onOpenChange={(open) => !open && setConfirming(null)}
+				title={`Disconnect ${connection.displayName}?`}
+				description="Imports stop. The transactions already imported stay."
+				confirmLabel="Disconnect"
+				onConfirm={handleDelete}
+			/>
 		</div>
 	);
 }
 
-function ConnectBankDialog({ workspaceId }: { workspaceId: string }) {
+/** The bank connections section's action: pick a Polish bank, then authorize at the bank. */
+export function ConnectBankButton({ workspaceId }: { workspaceId: string }) {
 	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [query, setQuery] = useState("");
@@ -273,7 +300,7 @@ function ConnectBankDialog({ workspaceId }: { workspaceId: string }) {
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogTrigger asChild>
-				<Button>Connect a bank</Button>
+				<Button variant="outline">Connect Bank</Button>
 			</DialogTrigger>
 			<DialogContent className="max-h-[80vh] overflow-hidden">
 				<DialogHeader>
@@ -317,7 +344,7 @@ function ConnectBankDialog({ workspaceId }: { workspaceId: string }) {
 								type="button"
 								onClick={() => handleConnect(inst)}
 								disabled={connectingId !== null}
-								className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-accent disabled:opacity-50"
+								className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-surface disabled:opacity-50"
 							>
 								{inst.logo ? (
 									<img src={inst.logo} alt="" className="h-6 w-6 rounded" />
