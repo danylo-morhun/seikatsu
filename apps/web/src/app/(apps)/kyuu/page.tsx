@@ -4,7 +4,9 @@ import {
 	getSources,
 	getViewCounts,
 } from "@/features/kyuu/actions/applications";
+import { getMailInbox } from "@/features/kyuu/actions/mail";
 import { AllView } from "@/features/kyuu/components/AllView";
+import { MailInbox } from "@/features/kyuu/components/MailInbox";
 import {
 	APPLICATIONS_PAGE_SIZE,
 	type RawKyuuSearchParams,
@@ -22,16 +24,18 @@ export default async function KyuuPage({
 	const raw = await searchParams;
 	const filters = parseKyuuFilters(raw);
 	const sort = parseKyuuSort(raw);
-	const [{ rows, total }, counts, ghostDue, sources, today] = await Promise.all([
+	const [{ rows, total }, counts, ghostDue, sources, today, mail] = await Promise.all([
 		getApplicationsPage(filters, sort),
 		getViewCounts(),
 		filters.view === "waiting" ? getGhostDue() : Promise.resolve([]),
 		getSources(),
 		getUserToday(),
+		getMailInbox(),
 	]);
 
 	return (
 		<div className="px-4 pt-2 pb-28 sm:px-8 md:pt-4 md:pb-8">
+			<MailInbox items={mail.items} choices={mail.choices} today={today} />
 			<AllView
 				rows={rows}
 				counts={counts}
