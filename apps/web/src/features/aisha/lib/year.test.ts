@@ -33,10 +33,25 @@ describe("carYear", () => {
 			2026,
 		);
 		expect(year.driven).toBe(1_000);
+		expect(year.trackedDays).toBe(10);
 		expect(year.months[9]).toEqual({ km: 1_000, spent: 450, services: 2 });
 		expect(year.months[8].km).toBe(0);
 		expect(year.spent).toBe(450);
 		expect(year.services).toBe(2);
+	});
+});
+
+describe("carYear's tracked days", () => {
+	it("are clipped to the year", () => {
+		const year = carYear(
+			[
+				{ date: "2025-12-01", km: 10_000 },
+				{ date: "2026-01-31", km: 12_000 },
+			],
+			[],
+			2026,
+		);
+		expect(year.trackedDays).toBe(30);
 	});
 });
 
