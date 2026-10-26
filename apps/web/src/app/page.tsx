@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { AppFrame } from "@/components/AppFrame";
 import { PageLoader } from "@/components/PageLoader";
 import { SignInCard } from "@/features/auth/components/SignInCard";
+import { SignInIntro } from "@/features/auth/components/SignInIntro";
 import { TodayView } from "@/features/home/components/TodayView";
 import { getToday } from "@/features/home/lib/today";
 import { ForgetOfflinePages } from "@/features/pwa/components/ForgetOfflinePages";
@@ -14,7 +15,8 @@ export default async function HomePage() {
 
 	if (!session) {
 		return (
-			<main className="flex min-h-screen items-center justify-center p-4">
+			<main className="flex min-h-screen flex-col items-center justify-center gap-10 px-4 py-10 lg:flex-row lg:gap-20">
+				<SignInIntro />
 				<SignInCard />
 				<ForgetOfflinePages />
 			</main>
