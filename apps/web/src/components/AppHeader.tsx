@@ -135,7 +135,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 	}
 
 	return (
-		<header className="flex h-14 shrink-0 items-center gap-1 border-b border-border px-2">
+		<header className="box-content flex h-14 shrink-0 items-center gap-1 border-b border-border px-2 pt-[env(safe-area-inset-top)]">
 			<SidebarTrigger className="size-10 max-md:-ml-2 md:size-8 [&>svg]:h-4 [&>svg]:w-4" />
 			<div aria-hidden className="h-4 w-px shrink-0 bg-border" />
 
