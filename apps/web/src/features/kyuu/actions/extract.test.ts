@@ -8,7 +8,10 @@ function geminiResponse(parsed: Record<string, unknown>) {
 	return {
 		ok: true,
 		json: async () => ({
-			candidates: [{ content: { parts: [{ text: JSON.stringify(parsed) }] } }],
+			steps: [
+				{ type: "thought" },
+				{ type: "model_output", content: [{ type: "text", text: JSON.stringify(parsed) }] },
+			],
 		}),
 	};
 }
