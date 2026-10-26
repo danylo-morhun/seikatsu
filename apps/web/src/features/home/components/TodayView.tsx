@@ -70,6 +70,8 @@ interface TileProps {
 	negative?: boolean;
 	/** Carries a list: the full row on a phone, half of it on a desktop. */
 	wide?: boolean;
+	/** The odd one out among the small tiles: takes two columns so the row has no hole. */
+	fill?: boolean;
 	action?: React.ReactNode;
 	children?: React.ReactNode;
 	index: number;
@@ -83,6 +85,7 @@ function Tile({
 	alert = false,
 	negative = false,
 	wide = false,
+	fill = false,
 	action,
 	children,
 	index,
@@ -95,6 +98,7 @@ function Tile({
 				"relative flex min-w-0 animate-rise flex-col rounded-xl bg-surface p-4 transition-colors duration-150 has-[>div>a:hover]:bg-surface-2/60",
 				// A list sets its own height; its neighbour keeps its own.
 				wide && "col-span-2 lg:self-start",
+				fill && "col-span-2",
 			)}
 			style={{ "--i": index } as CSSProperties}
 		>
@@ -245,14 +249,19 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 	const book = data.reading?.[0];
 	const cards = data.cards ?? [];
 	const overdue = cards.filter((c) => c.dueDate < today).length;
+	const hidden = APP_HREFS.filter((href) => workspace.hiddenApps.includes(href));
+	const listed = useMemo(
+		() => APP_HREFS.filter((href) => !workspace.hiddenApps.includes(href)),
+		[workspace.hiddenApps],
+	);
 
-	// 1–6 open the apps in sidebar order; P logs pages of the book being read, M the
+	// 1–6 open the apps in sidebar order (set-aside ones skipped); P logs pages of the book being read, M the
 	// odometer (N is the transaction dialog's).
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
 			const key = pageKey(e);
 			if (!key) return;
-			const app = /^[1-6]$/.test(key) ? APP_HREFS[Number(key) - 1] : undefined;
+			const app = /^[1-6]$/.test(key) ? listed[Number(key) - 1] : undefined;
 			if (app) {
 				e.preventDefault();
 				router.push(app);
@@ -266,7 +275,7 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 		}
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [router, book, hasCar]);
+	}, [router, book, hasCar, listed]);
 
 	function saveProgress(bookId: string, page: number) {
 		startTransition(async () => {
@@ -291,9 +300,11 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 	// Undone first: the tile shows what's left, then what's ticked.
 	const habitList = [...habits].sort((a, b) => Number(a.done) - Number(b.done)).slice(0, 4);
 	// An app with nothing in it yet waits on the start list, not as a tile of dashes.
-	const fresh = APP_HREFS.filter((href) => data.started[href] === false);
-	const isNew = fresh.length === APP_HREFS.length;
-	const shows = (href: AppHref) => !fresh.includes(href);
+	const fresh = listed.filter((href) => data.started[href] === false);
+	const isNew = APP_HREFS.every((href) => data.started[href] === false);
+	const shows = (href: AppHref) => listed.includes(href) && !fresh.includes(href);
+	const smalls = (["/kuroji", "/aisha", "/seiryu", "/kyuu"] as const).filter(shows);
+	const fill = smalls.length % 2 === 1 ? smalls.at(-1) : undefined;
 	let tile = 0;
 
 	return (
@@ -325,6 +336,7 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 						<Tile
 							index={tile++}
 							href="/kuroji"
+							fill={fill === "/kuroji"}
 							negative={(m?.netWorth ?? 0) < 0}
 							value={m ? money(m.netWorth, m.currency) : null}
 							note={m ? `Net worth · ${money(m.spentThisMonth, m.currency)} spent` : "Not set up"}
@@ -347,6 +359,7 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 						<Tile
 							index={tile++}
 							href="/aisha"
+							fill={fill === "/aisha"}
 							value={
 								next?.kmLeft != null
 									? km(next.kmLeft)
@@ -380,6 +393,7 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 						<Tile
 							index={tile++}
 							href="/seiryu"
+							fill={fill === "/seiryu"}
 							value={String(cards.length)}
 							note={
 								overdue > 0
@@ -396,6 +410,7 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 						<Tile
 							index={tile++}
 							href="/kyuu"
+							fill={fill === "/kyuu"}
 							value={jobs ? String(jobs.toSend) : null}
 							note={
 								jobs
@@ -470,7 +485,9 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 				</div>
 			)}
 
-			{fresh.length > 0 && <StartHere apps={fresh} all={isNew} offset={isNew ? 1 : tile} />}
+			{(fresh.length > 0 || hidden.length > 0) && (
+				<StartHere apps={fresh} hidden={hidden} all={isNew} offset={isNew ? 1 : tile} />
+			)}
 
 			{data.car && (
 				<ReadingDialog

@@ -20,6 +20,7 @@ interface User {
 
 interface Props {
 	workspaceName: string;
+	hiddenApps?: string[];
 	workspaceId?: string;
 	baseCurrency?: string;
 	sidebarDefaultOpen?: boolean;
@@ -29,6 +30,7 @@ interface Props {
 
 export function AppShell({
 	workspaceName,
+	hiddenApps = [],
 	workspaceId,
 	baseCurrency,
 	sidebarDefaultOpen = true,
@@ -49,7 +51,7 @@ export function AppShell({
 
 	return (
 		<SidebarProvider defaultOpen={sidebarDefaultOpen} className={theme}>
-			<AppSidebar workspaceName={workspaceName} user={user} />
+			<AppSidebar workspaceName={workspaceName} hiddenApps={hiddenApps} user={user} />
 			<SidebarInset className="min-w-0">
 				<AppHeader workspaceId={workspaceId} baseCurrency={baseCurrency} />
 				{children}
