@@ -52,13 +52,17 @@ export function DeviceList({ devices }: { devices: PushDevice[] }) {
 	}, []);
 
 	if (shown.length === 0) {
-		return <p className="text-sm text-muted-foreground">No devices yet.</p>;
+		return (
+			<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+				None yet. Turn notifications on above, on each phone or computer you want them on.
+			</p>
+		);
 	}
 
 	return (
-		<ul className="divide-y divide-rule">
+		<ul className="divide-y divide-rule border-y border-rule">
 			{shown.map((device) => (
-				<li key={device.id} className="flex items-center gap-3 py-3 first:pt-0">
+				<li key={device.id} className="flex items-center gap-3 py-2.5">
 					<div className="min-w-0 flex-1">
 						<p className="text-sm">
 							{deviceName(device.userAgent)}
@@ -75,7 +79,8 @@ export function DeviceList({ devices }: { devices: PushDevice[] }) {
 					<Button
 						variant="ghost"
 						size="icon"
-						aria-label="Remove device"
+						aria-label={`Remove ${deviceName(device.userAgent)}`}
+						className="shrink-0 text-muted-foreground hover:text-foreground"
 						onClick={() =>
 							startTransition(async () => {
 								removeShown(device.id);

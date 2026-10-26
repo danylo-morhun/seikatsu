@@ -70,7 +70,7 @@ export function ThisDevice({ configured }: { configured: boolean }) {
 		});
 	}
 
-	if (support === null) return <div className="h-9" />;
+	if (support === null) return <div className="h-10" />;
 
 	if (!configured) {
 		return (
