@@ -57,6 +57,9 @@ import { toast } from "sonner";
 type Account = Awaited<ReturnType<typeof getAccounts>>[number];
 type SplitField = SplitItem & { id: string };
 
+/** An amount as the field shows it: "12,50". */
+const decimalText = (amount: number) => amount.toFixed(2).replace(".", ",");
+
 /** The amount field's text for a set of form values: blank while split across categories. */
 function amountTextOf(values: AddTransactionFormValues | undefined) {
 	if (!values) return "";
@@ -70,6 +73,7 @@ export function AddTransactionModal({
 	trigger,
 	shortcut = false,
 	editing,
+	prefill,
 	open: openProp,
 	onOpenChange: onOpenChangeProp,
 }: {
@@ -80,6 +84,14 @@ export function AddTransactionModal({
 	shortcut?: boolean;
 	/** Edit this saved transaction instead of recording a new one. */
 	editing?: { transactionId: string; values: AddTransactionFormValues; tagIds: string[] };
+	/** Record an Apple Pay payment from the inbox: the form starts from what the Wallet said. */
+	prefill?: {
+		captureId: string;
+		values: AddTransactionFormValues;
+		paid: { amount: number; currency: string; merchant: string };
+		/** One unit of the paid currency in other wallet currencies. */
+		rates: Record<string, number>;
+	};
 	open?: boolean;
 	onOpenChange?: (open: boolean) => void;
 }) {
@@ -95,7 +107,9 @@ export function AddTransactionModal({
 	const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>(editing?.tagIds ?? []);
 	const [txType, setTxType] = React.useState<TxType>(initialType);
 	// Text as typed ("12,50"); the form holds the parsed number.
-	const [amountText, setAmountText] = React.useState(() => amountTextOf(editing?.values));
+	const [amountText, setAmountText] = React.useState(() =>
+		prefill ? decimalText(prefill.paid.amount) : amountTextOf(editing?.values),
+	);
 	const [tagsOpen, setTagsOpen] = React.useState(false);
 
 	const defaultCurrency = toCurrency(baseCurrency);
@@ -116,6 +130,7 @@ export function AddTransactionModal({
 		resolver: zodResolver(addTransactionFormSchema),
 		defaultValues:
 			editing?.values ??
+			prefill?.values ??
 			({
 				txType: "expense",
 				description: "",
@@ -145,14 +160,35 @@ export function AddTransactionModal({
 	const { accounts, tags: workspaceTags, categoryUsage } = useFormOptions(workspaceId, open);
 
 	// Default the amount's currency to the paying account's, so entries land in its currency.
+	// A Wallet payment keeps the currency it was paid in.
 	const watchWalletId = watch("walletId" as never) as unknown as string | undefined;
 	const watchFromId = watch("fromWalletId" as never) as unknown as string | undefined;
 	const watchToId = watch("toWalletId" as never) as unknown as string | undefined;
 	const currencyOf = (id: string | undefined) => accounts.find((a) => a.id === id)?.currency;
 	const sourceCurrency = currencyOf(txType === "transfer" ? watchFromId : watchWalletId);
 	React.useEffect(() => {
-		if (sourceCurrency) setValue("currency", toCurrency(sourceCurrency));
-	}, [sourceCurrency, setValue]);
+		if (sourceCurrency && !prefill) setValue("currency", toCurrency(sourceCurrency));
+	}, [sourceCurrency, setValue, prefill]);
+
+	// A Wallet payment goes in the paying account's currency, as the card was charged: a UAH
+	// card paying in PLN is converted at the day's rate (plus what its bank charged on top
+	// before) and keeps the shop's amount in the description.
+	React.useEffect(() => {
+		if (!prefill || !sourceCurrency) return;
+		const { paid, rates } = prefill;
+		const rate = sourceCurrency === paid.currency ? 1 : rates[sourceCurrency];
+		const splits = getValues("splits" as never) as unknown as SplitItem[] | undefined;
+		if (rate === undefined || splits?.length !== 1) return;
+		const amount = Math.round(paid.amount * rate * 100) / 100;
+		setValue("currency", toCurrency(sourceCurrency));
+		setValue("splits.0.amount" as never, amount as never);
+		setAmountText(decimalText(amount));
+		const withOriginal = `${paid.merchant} (${formatCurrency(paid.amount, paid.currency)})`;
+		const description = getValues("description");
+		if (description === paid.merchant || description === withOriginal) {
+			setValue("description", rate === 1 ? paid.merchant : withOriginal);
+		}
+	}, [prefill, sourceCurrency, setValue, getValues]);
 	const toCurrencyCode = currencyOf(watchToId);
 	const showReceived =
 		txType === "transfer" && !!toCurrencyCode && toCurrencyCode !== watchCurrency;
@@ -262,7 +298,7 @@ export function AddTransactionModal({
 						};
 		const result = editing
 			? await editTransaction(editing.transactionId, { ...common, ...legs })
-			: await captureTransaction(workspaceId, { ...common, ...legs });
+			: await captureTransaction(workspaceId, { ...common, ...legs }, prefill?.captureId);
 
 		if ("error" in result) {
 			toast.error(result.error);
@@ -493,7 +529,7 @@ export function AddTransactionModal({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			{!editing && (
+			{!editing && !prefill && (
 				<DialogTrigger asChild>
 					{trigger ?? (
 						<Button size="icon" className="lg:w-auto lg:gap-2 lg:px-3" aria-label="New transaction">
