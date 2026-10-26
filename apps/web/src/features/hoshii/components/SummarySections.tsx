@@ -83,7 +83,7 @@ export function SummaryMonths({
 					return (
 						<li
 							key={m}
-							className="grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-x-3 py-2.5"
+							className="grid grid-cols-[3.25rem_minmax(0,1fr)_7.5rem] items-center gap-x-3 py-2.5"
 						>
 							<span className="text-xs text-muted-foreground">{monthName(year, m)}</span>
 							<span aria-hidden className="space-y-1">
