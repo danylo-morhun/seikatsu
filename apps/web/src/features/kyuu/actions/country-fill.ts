@@ -9,19 +9,24 @@ const BATCH = 15;
 const POSTING_CHARS = 1_500;
 
 const SCHEMA = {
-	type: "ARRAY",
-	items: {
-		type: "OBJECT",
-		properties: {
-			i: { type: "INTEGER" },
-			country: {
-				type: "STRING",
-				nullable: true,
-				description: "ISO 3166-1 alpha-2 code, or null when unclear",
+	type: "object",
+	properties: {
+		jobs: {
+			type: "array",
+			items: {
+				type: "object",
+				properties: {
+					i: { type: "integer" },
+					country: {
+						type: ["string", "null"],
+						description: "ISO 3166-1 alpha-2 code, or null when unclear",
+					},
+				},
+				required: ["i", "country"],
 			},
 		},
-		required: ["i", "country"],
 	},
+	required: ["jobs"],
 };
 
 const PROMPT = `For each job application below, give the country the job is in as an ISO 3166-1
@@ -85,7 +90,8 @@ export async function fillCountries(
 			.join("\n\n");
 		const answer = await askGemini(`${PROMPT}\n\n${listed}`, SCHEMA, 40_000);
 		const found = new Map<string, string>();
-		for (const item of Array.isArray(answer) ? answer : []) {
+		const jobs = (answer as { jobs?: unknown } | null)?.jobs;
+		for (const item of Array.isArray(jobs) ? jobs : []) {
 			const row = batch[(item as { i?: unknown }).i as number];
 			const code = toCountryCode((item as { country?: unknown }).country);
 			if (row && code) found.set(row.id, code);
