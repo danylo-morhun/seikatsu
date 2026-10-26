@@ -1,5 +1,6 @@
 export * from "./aisha";
 export * from "./auth";
+export * from "./hoshii";
 export * from "./keizoku";
 export * from "./kuroji";
 export * from "./kuroji-bank";

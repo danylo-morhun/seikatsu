@@ -218,6 +218,13 @@
 			"when": 1793042343402,
 			"tag": "0030_workspace_hidden_apps",
 			"breakpoints": true
+		},
+		{
+			"idx": 31,
+			"version": "7",
+			"when": 1793051046193,
+			"tag": "0031_hoshii",
+			"breakpoints": true
 		}
 	]
 }
