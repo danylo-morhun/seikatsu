@@ -6,6 +6,7 @@ import {
 } from "@/features/kyuu/actions/applications";
 import { getMailInbox } from "@/features/kyuu/actions/mail";
 import { AllView } from "@/features/kyuu/components/AllView";
+import { KyuuWelcome } from "@/features/kyuu/components/KyuuWelcome";
 import { MailInbox } from "@/features/kyuu/components/MailInbox";
 import {
 	APPLICATIONS_PAGE_SIZE,
@@ -32,6 +33,14 @@ export default async function KyuuPage({
 		getUserToday(),
 		getMailInbox(),
 	]);
+
+	if (counts.all + counts.archived === 0 && mail.items.length === 0) {
+		return (
+			<div className="px-4 pt-6 pb-28 sm:px-8 md:py-8">
+				<KyuuWelcome />
+			</div>
+		);
+	}
 
 	return (
 		<div className="px-4 pt-2 pb-28 sm:px-8 md:pt-4 md:pb-8">
