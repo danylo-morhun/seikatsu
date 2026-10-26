@@ -2,6 +2,7 @@
 
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { QuietAdd } from "@/components/QuietAdd";
+import { SettingsSection } from "@/components/SettingsSection";
 import type { AishaDocument, ItemWithDue } from "@/features/aisha/actions/data";
 import { deleteDocument } from "@/features/aisha/actions/documents";
 import { deleteItem } from "@/features/aisha/actions/items";
@@ -21,15 +22,8 @@ import { toast } from "sonner";
 
 const FAILED = { error: "Couldn't save. Check your connection." };
 const ROW =
-	"group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 rounded-md transition-colors duration-150 hover:bg-surface md:-mx-2 md:px-2";
-
-function SectionTitle({ id, children }: { id: string; children: React.ReactNode }) {
-	return (
-		<h2 id={id} className="border-b border-rule pb-2 text-sm font-medium">
-			{children}
-		</h2>
-	);
-}
+	"group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 transition-colors duration-150 hover:bg-surface";
+const LIST = "divide-y divide-rule border-y border-rule";
 
 /** /settings/aisha: the car, its maintenance plan, its paperwork, and where costs go in Kuroji. */
 export function SettingsAisha({
@@ -54,25 +48,26 @@ export function SettingsAisha({
 	>(null);
 
 	return (
-		<div className="space-y-12">
-			<section aria-labelledby="aisha-car" className="space-y-4">
-				<SectionTitle id="aisha-car">Car</SectionTitle>
+		<>
+			<SettingsSection
+				title="Car"
+				description="What it is; the plan's defaults were picked from this."
+			>
 				<VehicleForm workspaceId={vehicle.workspaceId} vehicle={vehicle} />
-			</section>
+			</SettingsSection>
 
-			<section aria-labelledby="aisha-plan">
-				<SectionTitle id="aisha-plan">Maintenance plan</SectionTitle>
-				<p className="mt-3 text-xs text-muted-foreground">
-					Each item is due at whichever comes first, its km or its months. The intervals are
-					cautious defaults: the car's manual wins.
-				</p>
-				<ol className="mt-2 divide-y divide-rule">
+			<SettingsSection
+				title="Maintenance plan"
+				description="Each item is due at its km or its months, whichever comes first. The intervals are cautious defaults; the car's manual wins."
+				meta={items.length}
+			>
+				<ol className={LIST}>
 					{items.map((item) => (
 						<li key={item.id} className={ROW}>
 							<button
 								type="button"
 								onClick={() => setEditing({ kind: "item", item })}
-								className="min-w-0 rounded-md py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+								className="min-w-0 rounded-sm py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
 							>
 								<span className="block truncate text-sm">{item.name}</span>
 								<span className="block truncate text-xs text-muted-foreground">
@@ -97,23 +92,25 @@ export function SettingsAisha({
 				<QuietAdd className="mt-2" onClick={() => setEditing({ kind: "item", item: null })}>
 					Add an item
 				</QuietAdd>
-			</section>
+			</SettingsSection>
 
-			<section aria-labelledby="aisha-docs">
-				<SectionTitle id="aisha-docs">Documents</SectionTitle>
+			<SettingsSection
+				title="Documents"
+				description="Insurance, inspection and the like; Aisha reminds you a month before each runs out."
+				meta={documents.length || undefined}
+			>
 				{documents.length === 0 ? (
-					<p className="py-4 text-sm text-muted-foreground">
-						None yet. Add the insurance and the inspection, and Aisha reminds you a month before
-						they run out.
+					<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+						None yet. Add the insurance and the inspection first.
 					</p>
 				) : (
-					<ol className="divide-y divide-rule">
+					<ol className={LIST}>
 						{documents.map((doc) => (
 							<li key={doc.id} className={ROW}>
 								<button
 									type="button"
 									onClick={() => setEditing({ kind: "document", doc })}
-									className="min-w-0 rounded-md py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+									className="min-w-0 rounded-sm py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
 								>
 									<span className="block truncate text-sm">{doc.name}</span>
 									<span className="block truncate text-xs text-muted-foreground">
@@ -136,7 +133,7 @@ export function SettingsAisha({
 				<QuietAdd className="mt-2" onClick={() => setEditing({ kind: "document", doc: null })}>
 					Add a document
 				</QuietAdd>
-			</section>
+			</SettingsSection>
 
 			<KurojiDefaults vehicle={vehicle} accounts={accounts} />
 
@@ -170,7 +167,7 @@ export function SettingsAisha({
 					if ("error" in result) toast.error(result.error);
 				}}
 			/>
-		</div>
+		</>
 	);
 }
 
@@ -195,28 +192,32 @@ function KurojiDefaults({ vehicle, accounts }: { vehicle: AishaVehicle; accounts
 	}
 
 	return (
-		<section aria-labelledby="aisha-kuroji">
-			<SectionTitle id="aisha-kuroji">Kuroji</SectionTitle>
-			<p className="mt-3 text-xs text-muted-foreground">
-				A service's cost can go to Kuroji as an expense. It's paid from here, into this category,
-				unless you pick others when logging.
-			</p>
-			<div className="mt-4 grid max-w-lg grid-cols-2 gap-3">
-				<AccountPicker
-					aria-label="Paid from"
-					placeholder="Paid from"
-					accounts={accounts.filter((a) => a.type === "ASSET" || a.type === "LIABILITY")}
-					value={saved.walletId}
-					onValueChange={(walletId) => save({ walletId })}
-				/>
-				<AccountPicker
-					aria-label="Expense category"
-					placeholder="Category"
-					accounts={accounts.filter((a) => a.type === "EXPENSE")}
-					value={saved.categoryId}
-					onValueChange={(categoryId) => save({ categoryId })}
-				/>
+		<SettingsSection
+			title="Kuroji"
+			description="A service's cost can go to Kuroji as an expense: paid from this account, into this category, unless you pick others when logging it."
+		>
+			<div className="grid max-w-lg gap-4 sm:grid-cols-2">
+				<div className="space-y-2">
+					<p className="text-sm font-medium leading-none">Paid from</p>
+					<AccountPicker
+						aria-label="Paid from"
+						placeholder="Pick an account"
+						accounts={accounts.filter((a) => a.type === "ASSET" || a.type === "LIABILITY")}
+						value={saved.walletId}
+						onValueChange={(walletId) => save({ walletId })}
+					/>
+				</div>
+				<div className="space-y-2">
+					<p className="text-sm font-medium leading-none">Category</p>
+					<AccountPicker
+						aria-label="Expense category"
+						placeholder="Pick a category"
+						accounts={accounts.filter((a) => a.type === "EXPENSE")}
+						value={saved.categoryId}
+						onValueChange={(categoryId) => save({ categoryId })}
+					/>
+				</div>
 			</div>
-		</section>
+		</SettingsSection>
 	);
 }

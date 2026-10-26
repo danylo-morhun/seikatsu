@@ -1,3 +1,4 @@
+import { NOTE_LINK, SettingsPage } from "@/components/SettingsSection";
 import { getCar, getCurrentVehicle } from "@/features/aisha/actions/data";
 import { SettingsAisha } from "@/features/aisha/components/SettingsAisha";
 import { getAccounts } from "@/features/kuroji/actions/accounts";
@@ -12,24 +13,19 @@ export default async function AishaSettingsPage() {
 	const vehicle = await getCurrentVehicle();
 
 	return (
-		<div className="max-w-3xl px-4 pt-6 pb-28 sm:px-8 md:pt-8 md:pb-8">
-			<h1 className="mb-8 text-xl font-semibold">愛 Aisha</h1>
+		<SettingsPage title="愛 Aisha" appNav>
 			{vehicle ? (
 				<Settings vehicle={vehicle} />
 			) : (
-				<p className="text-sm text-muted-foreground">
+				<p className="border-y border-rule py-4 text-sm text-muted-foreground">
 					No car yet.{" "}
-					<Link
-						href="/aisha"
-						prefetch
-						className="text-foreground underline-offset-2 hover:underline"
-					>
+					<Link href="/aisha" prefetch className={NOTE_LINK}>
 						Add it in Aisha
 					</Link>
 					, then its plan and paperwork show here.
 				</p>
 			)}
-		</div>
+		</SettingsPage>
 	);
 }
 
