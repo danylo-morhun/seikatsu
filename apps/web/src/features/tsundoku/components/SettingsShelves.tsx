@@ -2,6 +2,7 @@
 
 import { ColorSwatches } from "@/components/ColorSwatches";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { SettingsSection } from "@/components/SettingsSection";
 import { Spinner } from "@/components/Spinner";
 import {
 	type ShelfWithCount,
@@ -10,12 +11,7 @@ import {
 	updateShelf,
 } from "@/features/tsundoku/actions/shelves";
 import { LABEL_COLORS } from "@/lib/pigments";
-import {
-	Add01Icon,
-	Delete01Icon,
-	MoreHorizontalIcon,
-	PencilEdit01Icon,
-} from "@hugeicons/core-free-icons";
+import { Delete01Icon, MoreHorizontalIcon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
@@ -47,30 +43,18 @@ export function SettingsShelves({ shelves }: { shelves: ShelfWithCount[] }) {
 	const [deleting, setDeleting] = useState<ShelfWithCount | null>(null);
 
 	return (
-		<section>
-			<div className="mb-4 flex items-start justify-between gap-4">
-				<div className="min-w-0">
-					<h2 className="text-sm font-medium">Shelves</h2>
-					<p className="mt-0.5 text-sm text-muted-foreground">
-						Your own collections — a book can sit on several. Put books on them from the book's
-						page.
-					</p>
-				</div>
-				<Button
-					size="icon"
-					className="shrink-0 sm:w-auto sm:gap-2 sm:px-3"
-					aria-label="New shelf"
-					onClick={() => setEditing({ shelf: null })}
-				>
-					<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
-					<span className="hidden sm:inline">New Shelf</span>
+		<SettingsSection
+			title="Shelves"
+			description="Your own collections; a book can sit on several. Shelve a book from its page."
+			action={
+				<Button variant="outline" onClick={() => setEditing({ shelf: null })}>
+					New Shelf
 				</Button>
-			</div>
-
+			}
+		>
 			{shelves.length === 0 ? (
 				<p className="border-y border-rule py-4 text-sm text-muted-foreground">
-					No shelves yet. Make one for a series of picks — “Favourites”, “To lend”, “2026
-					challenge”.
+					None yet. Make one for a series of picks — “Favourites”, “To lend”, “2026 challenge”.
 				</p>
 			) : (
 				<ul className="animate-rise divide-y divide-rule border-y border-rule">
@@ -144,7 +128,7 @@ export function SettingsShelves({ shelves }: { shelves: ShelfWithCount[] }) {
 					if ("error" in result) toast.error(result.error);
 				}}
 			/>
-		</section>
+		</SettingsSection>
 	);
 }
 
