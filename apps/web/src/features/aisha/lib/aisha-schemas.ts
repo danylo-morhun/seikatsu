@@ -30,7 +30,10 @@ export const createVehicleSchema = vehicleFormSchema.extend({
 });
 export type CreateVehicleValues = z.input<typeof createVehicleSchema>;
 
-export const readingSchema = z.object({ date: isoDate, km });
+/** `id` is made on the device, so a replayed (offline) save lands once. */
+const clientId = z.string().uuid().optional();
+
+export const readingSchema = z.object({ id: clientId, date: isoDate, km });
 export type ReadingValues = z.input<typeof readingSchema>;
 
 export const itemFormSchema = z
@@ -54,6 +57,7 @@ export const itemFormSchema = z
 export type ItemFormValues = z.input<typeof itemFormSchema>;
 
 export const serviceFormSchema = z.object({
+	id: clientId,
 	date: isoDate,
 	km,
 	itemIds: z.array(z.string().uuid()).min(1, "Pick at least one item"),

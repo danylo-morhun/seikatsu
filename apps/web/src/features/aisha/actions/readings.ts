@@ -30,11 +30,19 @@ export async function addReading(vehicleId: string, values: ReadingValues): Prom
 
 	const parsed = readingSchema.safeParse(values);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+	const { id, ...reading } = parsed.data;
 
-	const conflict = readingConflict(await getReadings(vehicleId), parsed.data);
+	if (id) {
+		// Sent again (offline replay, lost response): the first one stands.
+		const existing = await getOwnedReading(id);
+		if (existing)
+			return existing.vehicleId === vehicleId ? { success: true } : { error: "Conflict" };
+	}
+
+	const conflict = readingConflict(await getReadings(vehicleId), reading);
 	if (conflict) return { error: conflict };
 
-	await db.insert(aishaOdometerReadings).values({ vehicleId, ...parsed.data });
+	await db.insert(aishaOdometerReadings).values({ id, vehicleId, ...reading });
 	revalidate();
 	return { success: true };
 }
@@ -47,15 +55,13 @@ export async function updateReading(readingId: string, values: ReadingValues): P
 
 	const parsed = readingSchema.safeParse(values);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+	const { id: _, ...next } = parsed.data;
 
 	const others = (await getReadings(reading.vehicleId)).filter((r) => r.id !== readingId);
-	const conflict = readingConflict(others, parsed.data);
+	const conflict = readingConflict(others, next);
 	if (conflict) return { error: conflict };
 
-	await db
-		.update(aishaOdometerReadings)
-		.set(parsed.data)
-		.where(eq(aishaOdometerReadings.id, readingId));
+	await db.update(aishaOdometerReadings).set(next).where(eq(aishaOdometerReadings.id, readingId));
 	revalidate();
 	return { success: true };
 }

@@ -85,7 +85,15 @@ export async function logService(vehicleId: string, values: ServiceFormValues): 
 
 	const parsed = serviceFormSchema.safeParse(values);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
-	const { itemIds, cost, kuroji, ...v } = parsed.data;
+	const { id, itemIds, cost, kuroji, ...v } = parsed.data;
+
+	if (id) {
+		// Sent again (offline replay, lost response): the first one stands, its expense too.
+		const existing = await getOwnedRecord(id);
+		if (existing) {
+			return existing.vehicle.id === vehicleId ? { success: true } : { error: "Conflict" };
+		}
+	}
 
 	const valid = await validItems(vehicleId, itemIds);
 	if (!valid) return { error: "Unknown maintenance item" };
@@ -101,6 +109,7 @@ export async function logService(vehicleId: string, values: ServiceFormValues): 
 		const [record] = await tx
 			.insert(aishaServiceRecords)
 			.values({
+				id,
 				vehicleId,
 				...v,
 				cost: cost != null ? cost.toFixed(2) : null,
@@ -170,7 +179,7 @@ export async function updateService(recordId: string, values: ServiceFormValues)
 
 	const parsed = serviceFormSchema.safeParse(values);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
-	const { itemIds, cost, kuroji, ...v } = parsed.data;
+	const { id: _, itemIds, cost, kuroji, ...v } = parsed.data;
 
 	const valid = await validItems(vehicle.id, itemIds);
 	if (!valid) return { error: "Unknown maintenance item" };
