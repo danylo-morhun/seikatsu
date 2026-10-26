@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsSection } from "@/components/SettingsSection";
 import { unarchiveAccount } from "@/features/kuroji/actions/accounts";
 import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import { Archive01Icon } from "@hugeicons/core-free-icons";
@@ -24,25 +25,27 @@ export function ArchivedAccountsList({ accounts }: { accounts: Account[] }) {
 			if ("error" in result) {
 				toast.error(result.error);
 			} else {
-				toast.success(`"${name}" restored`);
+				toast.success(`“${name}” restored`);
 			}
 			setLoadingId(null);
 		});
 	}
 
 	return (
-		<section className="mt-8">
-			<h2 className="mb-1 text-sm font-medium">Archived accounts</h2>
-			<p className="mb-4 text-sm text-muted-foreground">
-				These accounts are hidden from the dashboard but their history is preserved.
-			</p>
+		<SettingsSection
+			title="Archived"
+			description="Off the overview and out of totals; their transactions stay."
+			meta={accounts.length}
+		>
 			<div className="divide-y divide-rule border-y border-rule">
 				{accounts.map((a) => (
-					<div key={a.id} className="flex items-center justify-between gap-3 py-2.5">
+					<div key={a.id} className="flex items-center justify-between gap-3 py-1.5">
 						<div className="flex items-center gap-2 text-sm text-muted-foreground">
 							<HugeiconsIcon icon={Archive01Icon} className="h-4 w-4 shrink-0" />
-							<span>{a.name}</span>
-							<span className="text-xs">({a.type.charAt(0) + a.type.slice(1).toLowerCase()})</span>
+							<span className="truncate text-foreground">{a.name}</span>
+							<span className="shrink-0 text-xs">
+								{a.type.charAt(0) + a.type.slice(1).toLowerCase()}
+							</span>
 						</div>
 						<Button
 							size="sm"
@@ -55,6 +58,6 @@ export function ArchivedAccountsList({ accounts }: { accounts: Account[] }) {
 					</div>
 				))}
 			</div>
-		</section>
+		</SettingsSection>
 	);
 }
