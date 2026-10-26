@@ -29,6 +29,36 @@ const ROWS: Row[] = [
 		detail: "The habits still open today. Nothing if they're all done.",
 		time: "keizokuTime",
 	},
+	{
+		key: "kyuuEnabled",
+		app: "求 Kyuu",
+		label: "Morning brief",
+		detail: "Calls today and tomorrow, follow-ups due, applications gone quiet.",
+	},
+	{
+		key: "aishaEnabled",
+		app: "愛 Aisha",
+		label: "Maintenance and papers",
+		detail: "Service coming due, documents 30, 7 and 1 days before they expire.",
+	},
+	{
+		key: "kurojiRecurring",
+		app: "黒 Kuroji",
+		label: "Recurring posted",
+		detail: "Which subscriptions and bills went out today.",
+	},
+	{
+		key: "kurojiBudget",
+		app: "黒 Kuroji",
+		label: "Budget alerts",
+		detail: "When a category passes 80% and 100% of its monthly budget. Daytime only.",
+	},
+	{
+		key: "kurojiWeekly",
+		app: "黒 Kuroji",
+		label: "Weekly summary",
+		detail: "Monday morning: last week's spending, income and net.",
+	},
 ];
 
 const DEFAULTS: PrefsInput = {
@@ -72,10 +102,33 @@ export function NotificationPrefsForm({ prefs }: { prefs: NotificationPrefs | nu
 		saved.current = withZone;
 	}
 
+	const timeInput = (key: TimeKey, label: string, disabled = false) => (
+		<Input
+			type="time"
+			aria-label={label}
+			value={values[key]}
+			disabled={disabled}
+			onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
+			onBlur={() => {
+				if (values[key] && values[key] !== saved.current[key]) save(values);
+			}}
+			className="w-28 shrink-0"
+		/>
+	);
+
 	return (
 		<ul className="divide-y divide-rule">
+			<li className="flex items-center gap-3 pb-4">
+				<div className="min-w-0 flex-1">
+					<p className="text-sm font-medium">Morning time</p>
+					<p className="mt-0.5 text-sm text-muted-foreground">
+						When the morning ones below go out, together.
+					</p>
+				</div>
+				{timeInput("morningTime", "Morning time")}
+			</li>
 			{ROWS.map((row) => (
-				<li key={row.key} className="flex items-start gap-3 py-4 first:pt-0">
+				<li key={row.key} className="flex items-start gap-3 py-4">
 					<Checkbox
 						id={`${id}-${row.key}`}
 						checked={values[row.key]}
@@ -88,24 +141,7 @@ export function NotificationPrefsForm({ prefs }: { prefs: NotificationPrefs | nu
 						</Label>
 						<p className="mt-0.5 text-sm text-muted-foreground">{row.detail}</p>
 					</div>
-					{row.time && (
-						<Input
-							type="time"
-							aria-label={`${row.label} time`}
-							value={values[row.time]}
-							disabled={!values[row.key]}
-							onChange={(e) => {
-								const time = row.time;
-								if (time) setValues((v) => ({ ...v, [time]: e.target.value }));
-							}}
-							onBlur={() => {
-								if (row.time && values[row.time] !== saved.current[row.time] && values[row.time]) {
-									save(values);
-								}
-							}}
-							className="w-28 shrink-0"
-						/>
-					)}
+					{row.time && timeInput(row.time, `${row.label} time`, !values[row.key])}
 				</li>
 			))}
 		</ul>
