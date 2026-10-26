@@ -6,49 +6,58 @@ import type { SettingsState } from "@/features/auth/actions/settings";
 import { Button } from "@seikatsu/ui/button";
 import { Input } from "@seikatsu/ui/input";
 import { Label } from "@seikatsu/ui/label";
-import { useActionState } from "react";
+import { useActionState, useId, useState } from "react";
 
 interface Props {
-	currentEmail: string | null;
 	pendingEmail: string | null;
 }
 
-export function ChangeEmailForm({ currentEmail, pendingEmail }: Props) {
+export function ChangeEmailForm({ pendingEmail }: Props) {
+	const id = useId();
+	const [email, setEmail] = useState("");
 	const [state, action, pending] = useActionState<SettingsState, FormData>(
 		requestEmailChange,
 		null,
 	);
-
-	if (state && "success" in state) {
-		return (
-			<p className="py-2 text-sm text-muted-foreground">
-				Verification link sent to your new email. Click it to confirm the change.
-			</p>
-		);
-	}
+	const sentTo = state && "success" in state ? email.trim() : pendingEmail;
+	const ready = email.trim().length > 0;
 
 	return (
 		<form action={action} className="space-y-4">
-			{pendingEmail && (
+			{sentTo && (
 				<p className="text-sm text-muted-foreground">
-					Pending change to <span className="font-medium text-foreground">{pendingEmail}</span> —
-					check that inbox for a verification link.
+					Waiting on <span className="text-foreground">{sentTo}</span>: open the link sent there to
+					switch.
 				</p>
 			)}
-			<div className="space-y-1.5">
-				<Label htmlFor="newEmail">New email address</Label>
+			<div className="max-w-sm space-y-2">
+				<Label htmlFor={`${id}-email`}>New email</Label>
 				<Input
-					id="newEmail"
+					id={`${id}-email`}
 					name="newEmail"
 					type="email"
-					placeholder={currentEmail ?? "you@example.com"}
+					inputMode="email"
+					autoComplete="email"
+					placeholder="new@example.com"
+					value={email}
+					onChange={(e) => setEmail(e.target.value)}
+					aria-invalid={(state && "error" in state) || undefined}
 					required
 				/>
+				{state && "error" in state && (
+					<p role="alert" className="text-[0.8rem] text-destructive">
+						{state.error}
+					</p>
+				)}
 			</div>
-			{state && "error" in state && <p className="text-sm text-destructive">{state.error}</p>}
-			<Button type="submit" disabled={pending} className="gap-1.5">
+			<Button
+				type="submit"
+				variant={ready ? "default" : "outline"}
+				disabled={pending || !ready}
+				className="gap-1.5"
+			>
 				{pending && <Spinner />}
-				{pending ? "Sending…" : "Send verification link"}
+				{pending ? "Sending…" : "Send link"}
 			</Button>
 		</form>
 	);
