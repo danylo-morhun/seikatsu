@@ -1,3 +1,4 @@
+import { SettingsPage, SettingsSection } from "@/components/SettingsSection";
 import { UnderlineTab, UnderlineTabs } from "@/components/UnderlineTabs";
 import { getWorkspaceArchivedCards } from "@/features/seiryu/actions/cards";
 import { getWorkspaceLabels } from "@/features/seiryu/actions/labels";
@@ -17,26 +18,6 @@ const SECTIONS = [
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["id"];
 
-function SectionHeader({
-	title,
-	description,
-	action,
-}: {
-	title: string;
-	description: string;
-	action?: React.ReactNode;
-}) {
-	return (
-		<div className="mb-4 flex items-start justify-between gap-4">
-			<div className="min-w-0">
-				<h2 className="text-sm font-medium">{title}</h2>
-				<p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
-			</div>
-			{action}
-		</div>
-	);
-}
-
 export default async function SeiryuSettingsPage({
 	searchParams,
 }: {
@@ -55,12 +36,10 @@ export default async function SeiryuSettingsPage({
 	if (section === "projects") {
 		const [projects, counts] = await Promise.all([getProjects(), getOpenCardCounts()]);
 		body = (
-			<section>
-				<SectionHeader
-					title="Projects"
-					description="One board each. Reorder them by dragging in the board's project list."
-					action={<NewProjectButton count={projects.length} />}
-				/>
+			<SettingsSection
+				description="One board each. Drag them into order in the board's project list."
+				action={<NewProjectButton count={projects.length} />}
+			>
 				<SettingsProjects
 					projects={projects.map(({ id, name, color }) => ({
 						id,
@@ -69,18 +48,14 @@ export default async function SeiryuSettingsPage({
 						openCards: counts[id] ?? 0,
 					}))}
 				/>
-			</section>
+			</SettingsSection>
 		);
 	} else if (section === "labels") {
 		const labels = await getWorkspaceLabels();
 		body = (
-			<section>
-				<SectionHeader
-					title="Labels"
-					description="Each project has its own. Rename, recolour or remove them here."
-				/>
+			<SettingsSection description="Each project has its own. Rename, recolour or remove them here.">
 				<SettingsLabels labels={labels} />
-			</section>
+			</SettingsSection>
 		);
 	} else {
 		const [cards, timeZone, today] = await Promise.all([
@@ -89,20 +64,17 @@ export default async function SeiryuSettingsPage({
 			getUserToday(),
 		]);
 		body = (
-			<section>
-				<SectionHeader
-					title="Archive"
-					description="Cards cleared off their boards. Restore one to put it back at the end of its column."
-				/>
+			<SettingsSection description="Cards cleared off their boards. A restored card goes back to the end of its column.">
 				<SettingsArchive today={today} cards={toArchivedRows(cards, timeZone)} />
-			</section>
+			</SettingsSection>
 		);
 	}
 
 	return (
-		<div className="max-w-3xl px-4 pt-6 pb-28 sm:px-8 md:pt-8 md:pb-8">
-			<h1 className="text-xl font-semibold">清 Seiryu</h1>
-			<div className="mt-4 mb-8">
+		<SettingsPage
+			title="清 Seiryu"
+			appNav
+			tabs={
 				<UnderlineTabs label="Seiryu settings">
 					{SECTIONS.map((s) => (
 						<UnderlineTab
@@ -114,8 +86,9 @@ export default async function SeiryuSettingsPage({
 						</UnderlineTab>
 					))}
 				</UnderlineTabs>
-			</div>
+			}
+		>
 			{body}
-		</div>
+		</SettingsPage>
 	);
 }

@@ -28,7 +28,7 @@ export function SettingsArchive({ cards, today, grouped = true }: Props) {
 
 	if (cards.length === 0) {
 		return (
-			<p className="py-8 text-sm text-muted-foreground">
+			<p className="border-y border-rule py-4 text-sm text-muted-foreground">
 				Nothing archived{grouped ? "" : " in this project"}. Archive a card from its menu to clear
 				it off the board without losing it.
 			</p>

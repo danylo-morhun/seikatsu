@@ -37,7 +37,9 @@ export function SettingsProjects({ projects }: { projects: Row[] }) {
 	const [deleting, setDeleting] = useState<ProjectSummary | null>(null);
 
 	if (projects.length === 0) {
-		return <p className="py-8 text-sm text-muted-foreground">No projects yet.</p>;
+		return (
+			<p className="border-y border-rule py-4 text-sm text-muted-foreground">No projects yet.</p>
+		);
 	}
 
 	return (

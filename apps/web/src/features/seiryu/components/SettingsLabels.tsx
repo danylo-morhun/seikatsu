@@ -40,7 +40,7 @@ export function SettingsLabels({ labels }: { labels: Row[] }) {
 
 	if (labels.length === 0) {
 		return (
-			<p className="py-8 text-sm text-muted-foreground">
+			<p className="border-y border-rule py-4 text-sm text-muted-foreground">
 				No labels yet. Make them from a card, under Labels.
 			</p>
 		);
