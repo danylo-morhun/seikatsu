@@ -1,0 +1,28 @@
+# Push notifications scheduler. Vercel Hobby crons run at most once a day, so GitHub calls the
+# notify cron every 15 minutes; each notifier checks the user's local time itself and the
+# notification log stops a late or doubled run from sending twice.
+name: Notify
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: notify
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call /api/cron/notify
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error --max-time 120 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            https://seikatsu.danylomorhun.com/api/cron/notify
