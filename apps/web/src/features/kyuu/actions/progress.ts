@@ -16,6 +16,8 @@ import { type Result, getOwnedApplication, getOwnedEvent, isDay, revalidateKyuu 
 const statusSchema = z.enum(STATUSES);
 
 const eventSchema = z.object({
+	/** Made on the device, so a replayed (offline) log lands once. */
+	id: z.string().uuid().optional(),
 	kind: z.enum(EVENT_KINDS),
 	date: z.string().refine(isDay, "Pick a date").nullable(),
 	time: z
@@ -69,6 +71,10 @@ export async function logEvent(
 	const app = await getOwnedApplication(applicationId);
 	if (!app) return { error: "Application not found" };
 
+	if (parsed.data.id && (await getOwnedEvent(parsed.data.id))) {
+		// Sent again (offline replay, lost response): the first one stands.
+		return { success: true, data: { status: app.status } };
+	}
 	const status = statusAfterEvent(app.status, parsed.data.kind);
 	await db.transaction(async (tx) => {
 		await tx.insert(kyuuEvents).values({ applicationId: app.id, ...parsed.data });
@@ -104,13 +110,31 @@ export async function deleteEvent(eventId: string): Promise<Result> {
 	return { success: true };
 }
 
-/** "Followed up" today: restarts the waiting clock. */
-export async function followUp(applicationId: string): Promise<Result> {
+const followUpSchema = z.object({
+	/** Made on the device, so a replayed (offline) follow-up lands once. */
+	id: z.string().uuid().optional(),
+	/** The day it was sent, when it arrives later (made offline). Never after today. */
+	date: z.string().refine(isDay).optional(),
+});
+
+/** "Followed up" today (or on the offline day it was sent): restarts the waiting clock. */
+export async function followUp(
+	applicationId: string,
+	options: z.input<typeof followUpSchema> = {},
+): Promise<Result> {
+	const parsed = followUpSchema.safeParse(options);
+	if (!parsed.success) return { error: "Invalid follow-up" };
 	const app = await getOwnedApplication(applicationId);
 	if (!app) return { error: "Application not found" };
-	await db
-		.insert(kyuuEvents)
-		.values({ applicationId: app.id, kind: "follow_up", date: await getUserToday() });
+	const { id, date } = parsed.data;
+	if (id && (await getOwnedEvent(id))) return { success: true };
+	const today = await getUserToday();
+	await db.insert(kyuuEvents).values({
+		id,
+		applicationId: app.id,
+		kind: "follow_up",
+		date: date && date < today ? date : today,
+	});
 	revalidateKyuu();
 	return { success: true };
 }
