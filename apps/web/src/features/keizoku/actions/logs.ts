@@ -6,6 +6,7 @@ import {
 	isLoggableDay,
 	isOwnedHabit,
 } from "@/features/keizoku/actions/guard";
+import { listDueToday } from "@/features/keizoku/lib/due-today";
 import { dayNoteSchema } from "@/features/keizoku/lib/keizoku-schemas";
 import {
 	type StreakResult,
@@ -151,28 +152,7 @@ export async function getDueToday(): Promise<
 > {
 	const ws = await getCurrentWorkspace();
 	if (!ws) return [];
-	const today = await getUserToday();
-	const habits = await db
-		.select()
-		.from(keizokuHabits)
-		.where(and(eq(keizokuHabits.workspaceId, ws.id), isNull(keizokuHabits.archivedAt)))
-		.orderBy(asc(keizokuHabits.timeOfDay), asc(keizokuHabits.createdAt));
-	const due = habits.filter((h) => isDue(h, today));
-	if (due.length === 0) return [];
-	const done = await db
-		.select({ habitId: keizokuHabitLogs.habitId })
-		.from(keizokuHabitLogs)
-		.where(
-			and(
-				inArray(
-					keizokuHabitLogs.habitId,
-					due.map((h) => h.id),
-				),
-				eq(keizokuHabitLogs.date, today),
-			),
-		);
-	const doneIds = new Set(done.map((d) => d.habitId));
-	return due.map((habit) => ({ habit, done: doneIds.has(habit.id), today }));
+	return listDueToday(ws.id, await getUserToday());
 }
 
 /** Marks a day done — today or any day before it. Checking a done day again changes nothing. */
