@@ -13,16 +13,16 @@ import {
 } from "@seikatsu/ui";
 import Link from "next/link";
 import { memo } from "react";
-import { countryLabel, countryName } from "../lib/country";
 import { formatAge, formatDay, formatWhen } from "../lib/format";
 import { STATUSES, STATUS_CONFIG, type Status } from "../lib/stages";
 import type { ApplicationRow } from "../lib/types";
 import { useApplicationArea } from "./ApplicationArea";
+import { CountryFlag } from "./CountryFlag";
 import { StatusMark } from "./StatusMark";
 
 /** The table's columns: sent · company · role · country · source · status · menu. */
 export const TABLE_GRID =
-	"grid grid-cols-[minmax(0,1fr)_auto_2.5rem] items-center gap-x-4 sm:grid-cols-[5rem_minmax(0,1fr)_auto_2.5rem] md:grid-cols-[5rem_minmax(0,1.1fr)_minmax(0,1fr)_6.5rem_7rem_11rem_2.5rem]";
+	"grid grid-cols-[minmax(0,1fr)_auto_2.5rem] items-center gap-x-4 sm:grid-cols-[5rem_minmax(0,1fr)_auto_2.5rem] md:grid-cols-[5rem_minmax(0,1.1fr)_minmax(0,1fr)_3.5rem_7rem_11rem_2.5rem]";
 
 /** What follows the status: the booked call, or how long it has waited (and a nudge due). */
 export function statusDetail(row: ApplicationRow, today: string): string | undefined {
@@ -117,11 +117,8 @@ export const ApplicationRowItem = memo(function ApplicationRowItem({
 					row.role
 				)}
 			</span>
-			<span
-				className="relative hidden truncate text-xs text-muted-foreground md:block"
-				title={row.country ? countryName(row.country) : undefined}
-			>
-				{row.country ? countryLabel(row.country) : "—"}
+			<span className="relative hidden items-center text-xs text-muted-foreground md:flex">
+				{row.country ? <CountryFlag code={row.country} /> : "—"}
 			</span>
 			<span className="relative hidden truncate text-xs text-muted-foreground md:block">
 				{row.source ?? "—"}
