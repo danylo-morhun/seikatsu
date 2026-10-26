@@ -12,6 +12,8 @@ import { saveProgress as sendProgress } from "@/features/tsundoku/lib/offline";
 import { APPS_CONFIG } from "@/lib/app-themes";
 import { pageKey } from "@/lib/capture-shortcut";
 import type { Workspace } from "@/lib/session";
+import { Add01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -108,6 +110,7 @@ function Tile({
 					</span>
 					<span className="truncate">{app.label}</span>
 				</Link>
+				{action && <div className="relative z-10 -my-2.5 ml-auto shrink-0 md:-my-2">{action}</div>}
 			</div>
 			<p
 				className={cn(
@@ -124,25 +127,28 @@ function Tile({
 				</p>
 			)}
 			{children && <div className="relative z-10 mt-3">{children}</div>}
-			{action && <div className="relative z-10 -mx-4 mt-auto -mb-4 pt-4">{action}</div>}
 		</section>
 	);
 }
 
-/** The tile's one capture, named by its verb across the tile's foot. */
+/** The tile's one capture: a round seal in the app's pigment, like the bottom nav's. */
 const tileAction =
-	"flex h-11 w-full items-center gap-2 rounded-b-xl border-t border-rule px-4 text-left text-sm text-muted-foreground outline-none transition-colors duration-150 hover:bg-surface-2/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset md:h-10";
+	"flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground outline-none transition-[opacity,transform] duration-150 ease-out hover:opacity-90 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface md:size-8";
 
 function TileAction({
 	label,
 	keys,
-	hint,
 	onClick,
-}: { label: string; keys: string; hint?: string; onClick?: () => void }) {
+}: { label: string; keys: string; onClick?: () => void }) {
 	return (
-		<button type="button" className={tileAction} aria-keyshortcuts={keys} onClick={onClick}>
-			<span className="min-w-0 flex-1 truncate">{label}</span>
-			{hint && <span className="shrink-0 font-figures text-xs max-sm:hidden">{hint}</span>}
+		<button
+			type="button"
+			className={tileAction}
+			aria-label={label}
+			aria-keyshortcuts={keys}
+			onClick={onClick}
+		>
+			<HugeiconsIcon icon={Add01Icon} className="size-4" strokeWidth={2} />
 		</button>
 	);
 }
@@ -303,8 +309,13 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 							baseCurrency={workspace.baseCurrency}
 							shortcut
 							trigger={
-								<button type="button" className={tileAction} aria-keyshortcuts="N">
-									Add transaction
+								<button
+									type="button"
+									className={tileAction}
+									aria-label="Add transaction"
+									aria-keyshortcuts="N"
+								>
+									<HugeiconsIcon icon={Add01Icon} className="size-4" strokeWidth={2} />
 								</button>
 							}
 						/>
@@ -335,12 +346,7 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 					alert={next?.status === "overdue"}
 					action={
 						data.car && (
-							<TileAction
-								label="Log mileage"
-								keys="M"
-								hint={km(data.car.currentKm)}
-								onClick={() => setMileageOpen(true)}
-							/>
+							<TileAction label="Log mileage" keys="M" onClick={() => setMileageOpen(true)} />
 						)
 					}
 				/>
