@@ -169,6 +169,13 @@
 			"when": 1792954767608,
 			"tag": "0023_kyuu_country",
 			"breakpoints": true
+		},
+		{
+			"idx": 24,
+			"version": "7",
+			"when": 1792955079903,
+			"tag": "0024_kyuu_mail",
+			"breakpoints": true
 		}
 	]
 }
