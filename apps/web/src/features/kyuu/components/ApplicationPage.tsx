@@ -35,6 +35,7 @@ import type { ApplicationPatch } from "../lib/kyuu-schemas";
 import { type EventKind, STATUSES, type Status } from "../lib/stages";
 import type { ApplicationDetail } from "../lib/types";
 import { FIELD_TEXTAREA } from "./ApplicationDialog";
+import { CountryFlag } from "./CountryFlag";
 import { StatusMark } from "./StatusMark";
 import { Timeline } from "./Timeline";
 
@@ -272,6 +273,7 @@ export function ApplicationPage({
 						label="Country"
 						value={app.country ? countryName(app.country) : null}
 						list={COUNTRY_LIST_ID}
+						leading={app.country ? <CountryFlag code={app.country} /> : undefined}
 						onSave={(text) => {
 							if (!text) return patch({ country: null });
 							const country = parseCountry(text);
@@ -435,6 +437,7 @@ function Detail({
 	type = "text",
 	placeholder = "—",
 	list,
+	leading,
 }: {
 	label: string;
 	value: string | null;
@@ -443,6 +446,8 @@ function Detail({
 	placeholder?: string;
 	/** A datalist to suggest from. */
 	list?: string;
+	/** Shown inside the field, before the value (a flag). */
+	leading?: React.ReactNode;
 }) {
 	const id = useId();
 	const draft = useDraft(value ?? "", (next) => {
@@ -456,7 +461,12 @@ function Detail({
 					{label}
 				</label>
 			</dt>
-			<dd className="min-w-0">
+			<dd className="relative min-w-0">
+				{leading && (
+					<span className="pointer-events-none absolute top-1/2 left-0 flex -translate-y-1/2">
+						{leading}
+					</span>
+				)}
 				<input
 					id={id}
 					type={type}
@@ -469,7 +479,10 @@ function Detail({
 					onKeyDown={(e) => {
 						if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
 					}}
-					className="-mx-2 h-8 w-[calc(100%+1rem)] truncate rounded-md bg-transparent px-2 text-sm outline-none transition-colors placeholder:text-muted-foreground/50 hover:bg-surface focus-visible:bg-surface focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-calendar-picker-indicator]:opacity-40"
+					className={cn(
+						"-mx-2 h-8 w-[calc(100%+1rem)] truncate rounded-md bg-transparent px-2 text-sm outline-none transition-colors placeholder:text-muted-foreground/50 hover:bg-surface focus-visible:bg-surface focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-calendar-picker-indicator]:opacity-40",
+						leading && "pl-9",
+					)}
 				/>
 			</dd>
 		</div>
