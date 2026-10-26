@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsSection } from "@/components/SettingsSection";
 import { Spinner } from "@/components/Spinner";
 import { FOOTER } from "@/features/keizoku/components/HabitDialog";
 import {
@@ -35,15 +36,13 @@ export function SettingsSources({ sources }: { sources: { source: string; count:
 	const merging = name.trim() !== renaming && sources.some((s) => s.source === name.trim());
 
 	return (
-		<section aria-labelledby={`${id}-title`}>
-			<div className="mb-3 flex items-baseline justify-between gap-3">
-				<h2 id={`${id}-title`} className="text-sm font-medium">
-					Sources
-				</h2>
-				<span className="font-figures text-xs text-muted-foreground">{sources.length}</span>
-			</div>
+		<SettingsSection
+			title="Sources"
+			description="Where applications came from. Rename one to fix a spelling, or to merge it into another."
+			meta={sources.length}
+		>
 			{sources.length === 0 ? (
-				<p className="border-y border-rule py-6 text-sm text-muted-foreground">
+				<p className="border-y border-rule py-4 text-sm text-muted-foreground">
 					No sources yet. They come from each application's Source field.
 				</p>
 			) : (
@@ -51,7 +50,7 @@ export function SettingsSources({ sources }: { sources: { source: string; count:
 					{sources.map((s, i) => (
 						<li
 							key={s.source}
-							className="flex animate-rise items-center gap-3 py-2"
+							className="flex animate-rise items-center gap-3 py-1.5"
 							style={rise(i)}
 						>
 							<Link
@@ -62,7 +61,13 @@ export function SettingsSources({ sources }: { sources: { source: string; count:
 								{s.source}
 							</Link>
 							<span className="font-figures text-xs text-muted-foreground">{s.count}</span>
-							<Button variant="ghost" size="sm" onClick={() => setRenaming(s.source)}>
+							<Button
+								variant="ghost"
+								size="sm"
+								className="text-muted-foreground hover:text-foreground"
+								aria-label={`Rename ${s.source}`}
+								onClick={() => setRenaming(s.source)}
+							>
 								Rename…
 							</Button>
 						</li>
@@ -145,6 +150,6 @@ export function SettingsSources({ sources }: { sources: { source: string; count:
 					</form>
 				</DialogContent>
 			</Dialog>
-		</section>
+		</SettingsSection>
 	);
 }

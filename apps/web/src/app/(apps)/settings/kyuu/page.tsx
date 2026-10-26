@@ -1,3 +1,4 @@
+import { NOTE_LINK, SettingsNote, SettingsPage } from "@/components/SettingsSection";
 import { getSources } from "@/features/kyuu/actions/applications";
 import { countMissingCountries } from "@/features/kyuu/actions/countries";
 import { getMailKeyStatus } from "@/features/kyuu/actions/mail";
@@ -18,22 +19,17 @@ export default async function KyuuSettingsPage() {
 	]);
 
 	return (
-		<div className="max-w-3xl px-4 pt-6 pb-28 sm:px-8 md:pt-8 md:pb-8">
-			<h1 className="mb-8 text-xl font-semibold">求 Kyuu</h1>
+		<SettingsPage title="求 Kyuu" appNav>
 			<SettingsSources sources={sources} />
 			<SettingsMail status={mailKey} />
 			<SettingsCountries missing={missingCountries} />
-			<p className="mt-10 text-sm text-muted-foreground">
+			<SettingsNote>
 				Archived applications live under{" "}
-				<Link
-					href="/kyuu/all?view=archived"
-					prefetch
-					className="text-foreground underline-offset-2 hover:underline"
-				>
+				<Link href="/kyuu/all?view=archived" prefetch className={NOTE_LINK}>
 					All · Archived
 				</Link>
 				, where they can be restored or deleted.
-			</p>
-		</div>
+			</SettingsNote>
+		</SettingsPage>
 	);
 }
