@@ -1,6 +1,7 @@
 "use client";
 
 import { ReadingDialog } from "@/features/aisha/components/ReadingDialog";
+import { StartHere } from "@/features/home/components/StartHere";
 import type { Today } from "@/features/home/lib/today";
 import { CheckButton } from "@/features/keizoku/components/HabitRow";
 import { tickDay } from "@/features/keizoku/lib/offline";
@@ -289,151 +290,187 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 	const next = data.car?.next;
 	// Undone first: the tile shows what's left, then what's ticked.
 	const habitList = [...habits].sort((a, b) => Number(a.done) - Number(b.done)).slice(0, 4);
+	// An app with nothing in it yet waits on the start list, not as a tile of dashes.
+	const fresh = APP_HREFS.filter((href) => data.started[href] === false);
+	const isNew = fresh.length === APP_HREFS.length;
+	const shows = (href: AppHref) => !fresh.includes(href);
+	let tile = 0;
 
 	return (
 		<div className="space-y-6 px-4 pt-5 pb-16 sm:px-8 md:space-y-8 md:py-8">
-			<header className="animate-rise">
-				<h1 className="text-xl font-semibold tracking-tight md:text-3xl">{longDate(today)}</h1>
-				<p className="mt-1 text-sm text-muted-foreground">
-					{hour != null && firstName ? `${greeting(hour)}, ${firstName}. ` : ""}
-					{attention.length > 0 ? `${attention.join(", ")}.` : "Nothing waiting on you today."}
-				</p>
-			</header>
+			{isNew ? (
+				<header className="max-w-2xl animate-rise">
+					<h1 className="text-xl font-semibold tracking-tight md:text-3xl">
+						{firstName ? `Welcome, ${firstName}.` : "Welcome."}
+					</h1>
+					<p className="mt-2 text-sm text-muted-foreground md:text-base">
+						生活 — everyday life. Six small apps for money, projects, books, habits, the job search
+						and the car, under one sign-in. Start with whichever you need; the rest wait here until
+						you do, and each one shows up on this page once it has something in it.
+					</p>
+				</header>
+			) : (
+				<header className="animate-rise">
+					<h1 className="text-xl font-semibold tracking-tight md:text-3xl">{longDate(today)}</h1>
+					<p className="mt-1 text-sm text-muted-foreground">
+						{hour != null && firstName ? `${greeting(hour)}, ${firstName}. ` : ""}
+						{attention.length > 0 ? `${attention.join(", ")}.` : "Nothing waiting on you today."}
+					</p>
+				</header>
+			)}
 
-			<div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-				<Tile
-					index={0}
-					href="/kuroji"
-					negative={(m?.netWorth ?? 0) < 0}
-					value={m ? money(m.netWorth, m.currency) : null}
-					note={m ? `Net worth · ${money(m.spentThisMonth, m.currency)} spent` : "Not set up"}
-					action={
-						<AddTransactionModal
-							workspaceId={workspace.id}
-							baseCurrency={workspace.baseCurrency}
-							shortcut
-							trigger={
-								<TileAction label="Add transaction" keys="N">
-									Add
-								</TileAction>
+			{!isNew && (
+				<div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+					{shows("/kuroji") && (
+						<Tile
+							index={tile++}
+							href="/kuroji"
+							negative={(m?.netWorth ?? 0) < 0}
+							value={m ? money(m.netWorth, m.currency) : null}
+							note={m ? `Net worth · ${money(m.spentThisMonth, m.currency)} spent` : "Not set up"}
+							action={
+								<AddTransactionModal
+									workspaceId={workspace.id}
+									baseCurrency={workspace.baseCurrency}
+									shortcut
+									trigger={
+										<TileAction label="Add transaction" keys="N">
+											Add
+										</TileAction>
+									}
+								/>
 							}
 						/>
-					}
-				/>
-
-				<Tile
-					index={1}
-					href="/aisha"
-					value={
-						next?.kmLeft != null
-							? km(next.kmLeft)
-							: next?.daysLeft != null
-								? plural(Math.abs(next.daysLeft), "day")
-								: data.car
-									? km(data.car.currentKm)
-									: null
-					}
-					note={
-						!data.car
-							? "Not set up"
-							: !next
-								? "on the odometer"
-								: next.status === "overdue"
-									? `${next.name} overdue`
-									: `to ${next.name}`
-					}
-					alert={next?.status === "overdue"}
-					action={
-						data.car && (
-							<TileAction label="Log mileage" keys="M" onClick={() => setMileageOpen(true)}>
-								Log
-							</TileAction>
-						)
-					}
-				/>
-
-				<Tile
-					index={2}
-					href="/seiryu"
-					value={String(cards.length)}
-					note={
-						overdue > 0
-							? `${plural(overdue, "card")} overdue`
-							: cards.length > 0
-								? "cards due today"
-								: "No cards due"
-					}
-					alert={overdue > 0}
-				/>
-
-				<Tile
-					index={3}
-					href="/kyuu"
-					value={jobs ? String(jobs.toSend) : null}
-					note={
-						jobs
-							? jobs.ghostDue > 0
-								? `to send · ${jobs.ghostDue} to close`
-								: `to send · ${jobs.waiting} waiting`
-							: null
-					}
-				/>
-
-				<Tile
-					wide
-					index={4}
-					href="/keizoku"
-					value={habits.length > 0 ? `${habits.length - left} / ${habits.length}` : null}
-					note={
-						habits.length === 0
-							? "Nothing due today"
-							: left === 0
-								? "All done today"
-								: `${left} left today`
-					}
-				>
-					{habitList.length > 0 && (
-						<Habits habits={habitList} today={data.habits?.today ?? today} />
 					)}
-					{habits.length > habitList.length && (
-						<Link
-							href="/keizoku"
-							prefetch
-							className="mt-1 inline-block text-xs text-muted-foreground transition-colors hover:text-foreground"
-						>
-							{habits.length - habitList.length} more
-						</Link>
-					)}
-				</Tile>
 
-				<Tile
-					wide
-					index={5}
-					href="/tsundoku"
-					value={book ? `p. ${book.currentPage}` : null}
-					note={
-						book
-							? [book.title, book.pageCount && `of ${book.pageCount}`].filter(Boolean).join(" · ")
-							: "No book on the go"
-					}
-					action={
-						book && (
-							<TileAction label="Log pages" keys="P" onClick={() => setProgressBook(book)}>
-								Log
-							</TileAction>
-						)
-					}
-				>
-					{book && (
-						<ProgressMeter
-							compact
-							currentPage={book.currentPage}
-							pageCount={book.pageCount}
-							daysToFinish={book.daysToFinish}
+					{shows("/aisha") && (
+						<Tile
+							index={tile++}
+							href="/aisha"
+							value={
+								next?.kmLeft != null
+									? km(next.kmLeft)
+									: next?.daysLeft != null
+										? plural(Math.abs(next.daysLeft), "day")
+										: data.car
+											? km(data.car.currentKm)
+											: null
+							}
+							note={
+								!data.car
+									? "Not set up"
+									: !next
+										? "on the odometer"
+										: next.status === "overdue"
+											? `${next.name} overdue`
+											: `to ${next.name}`
+							}
+							alert={next?.status === "overdue"}
+							action={
+								data.car && (
+									<TileAction label="Log mileage" keys="M" onClick={() => setMileageOpen(true)}>
+										Log
+									</TileAction>
+								)
+							}
 						/>
 					)}
-				</Tile>
-			</div>
+
+					{shows("/seiryu") && (
+						<Tile
+							index={tile++}
+							href="/seiryu"
+							value={String(cards.length)}
+							note={
+								overdue > 0
+									? `${plural(overdue, "card")} overdue`
+									: cards.length > 0
+										? "cards due today"
+										: "No cards due"
+							}
+							alert={overdue > 0}
+						/>
+					)}
+
+					{shows("/kyuu") && (
+						<Tile
+							index={tile++}
+							href="/kyuu"
+							value={jobs ? String(jobs.toSend) : null}
+							note={
+								jobs
+									? jobs.ghostDue > 0
+										? `to send · ${jobs.ghostDue} to close`
+										: `to send · ${jobs.waiting} waiting`
+									: null
+							}
+						/>
+					)}
+
+					{shows("/keizoku") && (
+						<Tile
+							wide
+							index={tile++}
+							href="/keizoku"
+							value={habits.length > 0 ? `${habits.length - left} / ${habits.length}` : null}
+							note={
+								habits.length === 0
+									? "Nothing due today"
+									: left === 0
+										? "All done today"
+										: `${left} left today`
+							}
+						>
+							{habitList.length > 0 && (
+								<Habits habits={habitList} today={data.habits?.today ?? today} />
+							)}
+							{habits.length > habitList.length && (
+								<Link
+									href="/keizoku"
+									prefetch
+									className="mt-1 inline-block text-xs text-muted-foreground transition-colors hover:text-foreground"
+								>
+									{habits.length - habitList.length} more
+								</Link>
+							)}
+						</Tile>
+					)}
+
+					{shows("/tsundoku") && (
+						<Tile
+							wide
+							index={tile++}
+							href="/tsundoku"
+							value={book ? `p. ${book.currentPage}` : null}
+							note={
+								book
+									? [book.title, book.pageCount && `of ${book.pageCount}`]
+											.filter(Boolean)
+											.join(" · ")
+									: "No book on the go"
+							}
+							action={
+								book && (
+									<TileAction label="Log pages" keys="P" onClick={() => setProgressBook(book)}>
+										Log
+									</TileAction>
+								)
+							}
+						>
+							{book && (
+								<ProgressMeter
+									compact
+									currentPage={book.currentPage}
+									pageCount={book.pageCount}
+									daysToFinish={book.daysToFinish}
+								/>
+							)}
+						</Tile>
+					)}
+				</div>
+			)}
+
+			{fresh.length > 0 && <StartHere apps={fresh} all={isNew} offset={isNew ? 1 : tile} />}
 
 			{data.car && (
 				<ReadingDialog
