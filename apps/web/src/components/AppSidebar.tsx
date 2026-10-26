@@ -66,17 +66,28 @@ export function AppSidebar({ workspaceName, user }: Props) {
 			<SidebarHeader>
 				<SidebarMenu>
 					<SidebarMenuItem>
-						<SidebarMenuButton size="lg" className="cursor-default">
-							{/* A bare ink mark, so the shell's logo never reads as one of the app tiles. */}
-							<div className="flex size-8 shrink-0 items-center justify-center">
-								<span className="text-[24px] font-bold leading-none text-sidebar-foreground">
-									生
-								</span>
-							</div>
-							<div className="flex min-w-0 flex-col text-left leading-none">
-								<span className="text-sm font-bold">seikatsu</span>
-								<span className="truncate text-xs text-muted-foreground">{workspaceName}</span>
-							</div>
+						{/* The mark opens Today, the home: every app's state on one page. */}
+						<SidebarMenuButton
+							asChild
+							size="lg"
+							isActive={pathname === "/"}
+							tooltip="Today"
+							className="data-active:bg-sidebar-accent"
+						>
+							<Link href="/" prefetch aria-label="Today">
+								{/* A bare ink mark, so the shell's logo never reads as one of the app tiles. */}
+								<div className="flex size-8 shrink-0 items-center justify-center">
+									<span className="text-[24px] font-bold leading-none text-sidebar-foreground">
+										生
+									</span>
+								</div>
+								<div className="flex min-w-0 flex-col text-left leading-none">
+									<span className="text-sm font-bold">seikatsu</span>
+									<span className="truncate text-xs text-muted-foreground">
+										{pathname === "/" ? "Today" : workspaceName}
+									</span>
+								</div>
+							</Link>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 				</SidebarMenu>
