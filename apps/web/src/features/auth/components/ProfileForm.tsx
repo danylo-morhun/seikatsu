@@ -2,259 +2,219 @@
 
 import { Spinner } from "@/components/Spinner";
 import { updateProfile } from "@/features/auth/actions/settings";
-import type { SettingsState } from "@/features/auth/actions/settings";
-import { Cancel01Icon, ImageUpload01Icon, Link01Icon } from "@hugeicons/core-free-icons";
+import { Camera01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Avatar, cn } from "@seikatsu/ui";
 import { Button } from "@seikatsu/ui/button";
 import { Input } from "@seikatsu/ui/input";
 import { Label } from "@seikatsu/ui/label";
-import { type ChangeEvent, type DragEvent, useRef, useState, useTransition } from "react";
+import { type DragEvent, useEffect, useId, useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 
-type Tab = "file" | "url";
+const MAX_BYTES = 2 * 1024 * 1024;
+const QUIET =
+	"rounded-sm text-sm text-muted-foreground underline-offset-2 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring";
+
+/** The photo is a file, a link, or nothing; the saved one until it changes. */
+type Photo = { kind: "saved" } | { kind: "file"; file: File; preview: string } | { kind: "url" };
+
+function isUrl(str: string) {
+	try {
+		return Boolean(new URL(str));
+	} catch {
+		return false;
+	}
+}
 
 interface Props {
 	name: string | null;
 	image: string | null;
 }
 
-function isValidUrl(str: string) {
-	try {
-		new URL(str);
-		return true;
-	} catch {
-		return false;
-	}
-}
-
-export function ProfileForm({ name, image }: Props) {
-	const [state, setState] = useState<SettingsState>(null);
+/**
+ * Name and photo. The avatar itself is the upload target (click or drop a file);
+ * a link or removal sit beside it as quiet text. Save stays quiet until something changed.
+ */
+export function ProfileForm({ name: savedName, image }: Props) {
+	const id = useId();
+	const [name, setName] = useState(savedName ?? "");
+	const [photo, setPhoto] = useState<Photo>({ kind: "saved" });
+	const [url, setUrl] = useState(image ?? "");
+	const [cleared, setCleared] = useState(false);
+	const [dragging, setDragging] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 	const [pending, startTransition] = useTransition();
+	const fileRef = useRef<HTMLInputElement>(null);
 
-	const [tab, setTab] = useState<Tab>("file");
-	const [selectedFile, setSelectedFile] = useState<File | null>(null);
-	const [fileObjectUrl, setFileObjectUrl] = useState<string | null>(null);
-	const [urlInput, setUrlInput] = useState(image ?? "");
-	const [isDragging, setIsDragging] = useState(false);
-	const [clearedImage, setClearedImage] = useState(false);
+	// The preview owns an object URL; let it go when replaced or unmounted.
+	const preview = photo.kind === "file" ? photo.preview : null;
+	useEffect(() => () => void (preview && URL.revokeObjectURL(preview)), [preview]);
 
-	const fileInputRef = useRef<HTMLInputElement>(null);
+	const shown =
+		photo.kind === "file"
+			? photo.preview
+			: photo.kind === "url"
+				? isUrl(url)
+					? url
+					: null
+				: cleared
+					? null
+					: image;
 
-	// Derived — no separate state needed
-	const previewUrl =
-		tab === "file"
-			? (fileObjectUrl ?? (clearedImage ? null : image) ?? null)
-			: isValidUrl(urlInput)
-				? urlInput
-				: (image ?? null);
+	const dirty =
+		name.trim() !== (savedName ?? "") ||
+		photo.kind === "file" ||
+		(photo.kind === "url" && url.trim() !== (image ?? "")) ||
+		(photo.kind === "saved" && cleared && image !== null);
 
-	function handleFileSelect(file: File) {
-		if (!file.type.startsWith("image/")) {
-			setState({ error: "Only image files are allowed." });
-			return;
-		}
-		if (file.size > 2 * 1024 * 1024) {
-			setState({ error: "Image must be under 2 MB." });
-			return;
-		}
-		if (fileObjectUrl) URL.revokeObjectURL(fileObjectUrl);
-		setFileObjectUrl(URL.createObjectURL(file));
-		setSelectedFile(file);
-		setState(null);
+	function pick(file: File) {
+		if (!file.type.startsWith("image/")) return setError("That isn't an image.");
+		if (file.size > MAX_BYTES) return setError("Pick an image under 2 MB.");
+		setError(null);
+		setCleared(false);
+		setPhoto({ kind: "file", file, preview: URL.createObjectURL(file) });
 	}
 
-	function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
-		const file = e.target.files?.[0];
-		if (file) handleFileSelect(file);
+	function remove() {
+		setPhoto({ kind: "saved" });
+		setCleared(true);
+		setUrl("");
+		if (fileRef.current) fileRef.current.value = "";
 	}
 
-	function handleDragOver(e: DragEvent) {
+	function onDrop(e: DragEvent) {
 		e.preventDefault();
-		setIsDragging(true);
-	}
-
-	function handleDragLeave(e: DragEvent) {
-		e.preventDefault();
-		setIsDragging(false);
-	}
-
-	function handleDrop(e: DragEvent) {
-		e.preventDefault();
-		setIsDragging(false);
+		setDragging(false);
 		const file = e.dataTransfer.files[0];
-		if (file) handleFileSelect(file);
-	}
-
-	function clearAll() {
-		if (fileObjectUrl) URL.revokeObjectURL(fileObjectUrl);
-		setFileObjectUrl(null);
-		setSelectedFile(null);
-		setUrlInput("");
-		setClearedImage(true);
-		if (fileInputRef.current) fileInputRef.current.value = "";
+		if (file) pick(file);
 	}
 
 	function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
-		setState(null);
-
-		const formData = new FormData(e.currentTarget);
-
-		if (tab === "file" && selectedFile) {
-			formData.set("avatarFile", selectedFile);
-		} else if (tab === "url") {
-			formData.set("image", urlInput);
-		} else {
-			formData.set("image", clearedImage ? "" : (image ?? ""));
+		if (photo.kind === "url" && url.trim() && !isUrl(url.trim())) {
+			return setError("That link isn't a full address (https://…).");
 		}
+		const formData = new FormData();
+		formData.set("name", name.trim());
+		if (photo.kind === "file") formData.set("avatarFile", photo.file);
+		else if (photo.kind === "url") formData.set("image", url.trim());
+		else formData.set("image", cleared ? "" : (image ?? ""));
 
+		setError(null);
 		startTransition(async () => {
-			const result = await updateProfile(null, formData);
-			setState(result);
+			const result = await updateProfile(null, formData).catch(() => ({
+				error: "Couldn't save. Check your connection.",
+			}));
+			if (result && "error" in result) return setError(result.error);
+			setPhoto({ kind: "saved" });
+			setCleared(false);
+			toast.success("Profile saved");
 		});
 	}
 
+	const hasPhoto = shown !== null;
+
 	return (
-		<form onSubmit={handleSubmit} className="space-y-6">
-			{/* Avatar preview + name */}
+		<form onSubmit={handleSubmit} className="space-y-4">
 			<div className="flex items-center gap-5">
-				<div className="relative shrink-0">
-					<Avatar src={previewUrl} name={name} size="lg" className="h-20 w-20 text-2xl" />
-					{(fileObjectUrl ||
-						(tab === "file" && !clearedImage && image) ||
-						(tab === "url" && urlInput)) && (
-						<button
-							type="button"
-							onClick={clearAll}
-							className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm transition-opacity hover:opacity-80"
-							aria-label="Clear avatar"
-						>
-							<HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
-						</button>
+				<button
+					type="button"
+					onClick={() => fileRef.current?.click()}
+					onDragOver={(e) => {
+						e.preventDefault();
+						setDragging(true);
+					}}
+					onDragLeave={() => setDragging(false)}
+					onDrop={onDrop}
+					aria-label={hasPhoto ? "Change photo" : "Upload photo"}
+					className={cn(
+						"group relative size-20 shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+						dragging && "ring-2 ring-primary ring-offset-2 ring-offset-background",
 					)}
-				</div>
-				<div className="flex-1 space-y-1.5">
-					<Label htmlFor="name">Display name</Label>
-					<Input id="name" name="name" defaultValue={name ?? ""} required maxLength={100} />
+				>
+					<Avatar src={shown} name={name || savedName} className="size-20 text-2xl" />
+					<span
+						aria-hidden
+						className="absolute inset-0 flex items-center justify-center rounded-full bg-black/55 text-white opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-visible:opacity-100"
+					>
+						<HugeiconsIcon icon={Camera01Icon} className="size-5" />
+					</span>
+				</button>
+				<input
+					ref={fileRef}
+					type="file"
+					accept="image/jpeg,image/png,image/gif,image/webp"
+					className="sr-only"
+					tabIndex={-1}
+					onChange={(e) => {
+						const file = e.target.files?.[0];
+						if (file) pick(file);
+					}}
+				/>
+				<div className="min-w-0 flex-1 space-y-2">
+					<Label htmlFor={`${id}-name`}>Name</Label>
+					<Input
+						id={`${id}-name`}
+						value={name}
+						onChange={(e) => setName(e.target.value)}
+						required
+						maxLength={100}
+						autoComplete="name"
+					/>
 				</div>
 			</div>
 
-			{/* Avatar source */}
-			<div className="space-y-2">
-				<Label>Avatar photo</Label>
-
-				{/* Tab switcher */}
-				<div className="flex w-fit rounded-md border border-border bg-muted/40 p-0.5 gap-0.5">
-					<button
-						type="button"
-						onClick={() => setTab("file")}
-						className={cn(
-							"flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition-all",
-							tab === "file"
-								? "bg-background text-foreground shadow-sm"
-								: "text-muted-foreground hover:text-foreground",
-						)}
-					>
-						<HugeiconsIcon icon={ImageUpload01Icon} className="h-3.5 w-3.5" />
-						Upload file
+			<div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+				<button type="button" className={QUIET} onClick={() => fileRef.current?.click()}>
+					{hasPhoto ? "Upload another" : "Upload a photo"}
+				</button>
+				<button
+					type="button"
+					className={cn(QUIET, photo.kind === "url" && "text-foreground")}
+					onClick={() => {
+						setError(null);
+						setPhoto({ kind: "url" });
+					}}
+				>
+					Use a link
+				</button>
+				{hasPhoto && (
+					<button type="button" className={QUIET} onClick={remove}>
+						Remove
 					</button>
-					<button
-						type="button"
-						onClick={() => setTab("url")}
-						className={cn(
-							"flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition-all",
-							tab === "url"
-								? "bg-background text-foreground shadow-sm"
-								: "text-muted-foreground hover:text-foreground",
-						)}
-					>
-						<HugeiconsIcon icon={Link01Icon} className="h-3.5 w-3.5" />
-						Use URL
-					</button>
-				</div>
-
-				{/* Drop zone */}
-				{tab === "file" && (
-					<>
-						<input
-							ref={fileInputRef}
-							type="file"
-							accept="image/jpeg,image/png,image/gif,image/webp"
-							className="sr-only"
-							onChange={handleFileChange}
-							tabIndex={-1}
-						/>
-						<div
-							role="button"
-							tabIndex={0}
-							onClick={() => fileInputRef.current?.click()}
-							onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
-							onDragOver={handleDragOver}
-							onDragLeave={handleDragLeave}
-							onDrop={handleDrop}
-							className={cn(
-								"flex cursor-pointer select-none flex-col items-center justify-center gap-2.5 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-all",
-								isDragging
-									? "border-primary bg-primary/5"
-									: selectedFile
-										? "border-border bg-muted/20"
-										: "border-border hover:border-muted-foreground/40 hover:bg-muted/20",
-							)}
-						>
-							{selectedFile ? (
-								<>
-									<div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 ring-4 ring-primary/10">
-										<HugeiconsIcon icon={ImageUpload01Icon} className="h-5 w-5 text-primary" />
-									</div>
-									<div>
-										<p className="text-sm font-medium text-foreground">{selectedFile.name}</p>
-										<p className="text-xs text-muted-foreground">
-											{(selectedFile.size / 1024).toFixed(0)} KB · click to replace
-										</p>
-									</div>
-								</>
-							) : (
-								<>
-									<div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted ring-4 ring-muted/50">
-										<HugeiconsIcon
-											icon={ImageUpload01Icon}
-											className={cn(
-												"h-5 w-5 transition-colors",
-												isDragging ? "text-primary" : "text-muted-foreground",
-											)}
-										/>
-									</div>
-									<div>
-										<p className="text-sm font-medium">
-											{isDragging ? "Drop it here" : "Drop image here"}
-										</p>
-										<p className="text-xs text-muted-foreground">or click to browse</p>
-									</div>
-									<p className="text-xs text-muted-foreground/70">JPG, PNG, WebP · max 2 MB</p>
-								</>
-							)}
-						</div>
-					</>
 				)}
+				<span className="text-xs text-muted-foreground">JPG, PNG or WebP, up to 2 MB</span>
+			</div>
 
-				{/* URL input */}
-				{tab === "url" && (
+			{photo.kind === "url" && (
+				<div className="space-y-2">
+					<Label htmlFor={`${id}-url`}>Photo link</Label>
 					<Input
+						id={`${id}-url`}
 						type="url"
-						value={urlInput}
-						onChange={(e) => setUrlInput(e.target.value)}
-						placeholder="https://example.com/avatar.jpg"
+						inputMode="url"
+						value={url}
+						onChange={(e) => setUrl(e.target.value)}
+						placeholder="https://example.com/me.jpg"
 						autoFocus
 					/>
-				)}
-			</div>
+				</div>
+			)}
 
-			{state && "error" in state && <p className="text-sm text-destructive">{state.error}</p>}
-			{state && "success" in state && <p className="text-sm text-green-500">Profile updated.</p>}
+			{error && (
+				<p role="alert" className="text-[0.8rem] text-destructive">
+					{error}
+				</p>
+			)}
 
-			<Button type="submit" disabled={pending} className="gap-1.5">
+			<Button
+				type="submit"
+				variant={dirty ? "default" : "outline"}
+				disabled={pending || !dirty || !name.trim()}
+				className="gap-1.5"
+			>
 				{pending && <Spinner />}
-				{pending ? "Saving…" : "Save changes"}
+				{pending ? "Saving…" : "Save profile"}
 			</Button>
 		</form>
 	);
