@@ -3,6 +3,7 @@
 // No auth here — callers must authorize first.
 
 import { accounts, and, db, eq, transactionEntries, transactions } from "@seikatsu/db";
+import { claimSavedCapture, settlePendingCapture } from "./capture-intake";
 import { getExchangeRate } from "./exchange-rates";
 
 export function isoDate(d: Date): string {
@@ -86,7 +87,8 @@ export async function ensureOpeningBalanceAccount(
 }
 
 // Insert one imported transaction as a balanced double-entry, deduped by
-// (workspaceId, externalId). Returns true if a new row was created.
+// (workspaceId, externalId). A card payment already saved from Apple Pay is claimed
+// instead of doubled. Returns true if a new row was created.
 export async function insertImported(opts: {
 	workspaceId: string;
 	externalId: string;
@@ -120,13 +122,26 @@ export async function insertImported(opts: {
 	const toAccountId = isInflow ? bankAccountId : counterpartId;
 
 	return db.transaction(async (tx) => {
+		const [seen] = await tx
+			.select({ id: transactions.id })
+			.from(transactions)
+			.where(
+				and(eq(transactions.workspaceId, workspaceId), eq(transactions.externalId, externalId)),
+			)
+			.limit(1);
+		if (seen) return false; // already imported
+
+		const booked = { workspaceId, externalId, date, bankAccountId, amount, currency };
+		if (!isInflow && (await claimSavedCapture(tx, booked))) return false;
+
 		const [txn] = await tx
 			.insert(transactions)
 			.values({ workspaceId, date, description, externalId })
 			.onConflictDoNothing({ target: [transactions.workspaceId, transactions.externalId] })
 			.returning({ id: transactions.id });
 
-		if (!txn) return false; // already imported
+		if (!txn) return false; // imported by a run alongside this one
+		if (!isInflow) await settlePendingCapture(tx, { ...booked, transactionId: txn.id });
 
 		await tx.insert(transactionEntries).values([
 			{
