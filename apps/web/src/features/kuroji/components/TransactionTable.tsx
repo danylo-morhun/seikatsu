@@ -5,7 +5,6 @@ import { Spinner } from "@/components/Spinner";
 import { createBankRule } from "@/features/kuroji/actions/bank";
 import { exportTransactionsCsv } from "@/features/kuroji/actions/export";
 import {
-	deleteTransaction,
 	deleteTransactions,
 	recategorizeTransactions,
 } from "@/features/kuroji/actions/transactions";
@@ -23,6 +22,8 @@ import {
 import { buildPeriodLabel, formatDayDate, localToday } from "@/features/kuroji/lib/dates";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { formatCurrency } from "@/features/kuroji/lib/format";
+import { QUEUED_TOAST, isQueued, removeTransaction } from "@/features/kuroji/lib/offline";
+import { type ShownTransaction, overlayTransactions } from "@/features/kuroji/lib/overlay";
 import {
 	categoryEnd,
 	pickableCategories,
@@ -34,6 +35,7 @@ import {
 	TRANSACTIONS_PAGE_SIZE,
 	type TransactionFilters,
 } from "@/features/kuroji/lib/transaction-filters";
+import { usePendingOps } from "@/features/pwa/lib/use-outbox";
 import {
 	Alert01Icon,
 	ArrowDown02Icon,
@@ -127,17 +129,32 @@ export function TransactionTable({
 	const [isPending, startTransition] = useTransition();
 	const [, startCategorize] = useTransition();
 	const [picker, setPicker] = useState<{ txnId: string; anchor: HTMLElement } | null>(null);
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+	// Changes queued offline show until the server has them (lib/overlay.ts).
+	const pending = usePendingOps("kuroji.");
+	// Categories a transaction can be moved to (below), and names for queued rows.
+	const { accounts: formAccounts } = useFormOptions(
+		workspaceId,
+		selectedIds.size > 0 || picker !== null,
+	);
+	const listed = useMemo(
+		() =>
+			overlayTransactions(transactions, pending, formAccounts, currency, {
+				firstPage: page === 0,
+				byDateDesc: sortField === "date" && sortDir === "desc",
+			}),
+		[transactions, pending, formAccounts, currency, page, sortField, sortDir],
+	);
 	// A categorised row reads as filed at once; the server's answer replaces it.
 	const [shown, fileOptimistic] = useOptimistic(
-		transactions,
-		(rows, filed: { id: string; category: { id: string; name: string } }) =>
+		listed,
+		(rows: ShownTransaction[], filed: { id: string; category: { id: string; name: string } }) =>
 			rows.map((t) => (t.id === filed.id ? withCategory(t, filed.category) : t)),
 	);
 	const [isExporting, setIsExporting] = useState(false);
 	const [pendingId, setPendingId] = useState<string | null>(null);
 	const [editTarget, setEditTarget] = useState<RecentTransaction | null>(null);
 	const [localQuery, setLocalQuery] = useState(searchQuery ?? "");
-	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 	// Phones have no checkbox column until you ask for it.
 	const [selectMode, setSelectMode] = useState(false);
@@ -230,10 +247,13 @@ export function TransactionTable({
 	}
 
 	function handleDelete(id: string) {
+		const what = shown.find((t) => t.id === id)?.description ?? "transaction";
 		startTransition(async () => {
-			const result = await deleteTransaction(id);
+			const result = await removeTransaction(id, what);
 			if ("error" in result) {
 				toast.error(result.error);
+			} else if (isQueued(result)) {
+				toast(QUEUED_TOAST);
 			} else {
 				toast.success("Transaction deleted.");
 			}
@@ -261,6 +281,16 @@ export function TransactionTable({
 	function handleBulkDelete() {
 		const ids = Array.from(selectedIds);
 		startTransition(async () => {
+			if (!navigator.onLine) {
+				// Offline: one queued delete each, replayed in order.
+				for (const id of ids) {
+					await removeTransaction(id, shown.find((t) => t.id === id)?.description ?? "transaction");
+				}
+				toast(QUEUED_TOAST);
+				setSelectedIds(new Set());
+				setBulkDeleteOpen(false);
+				return;
+			}
 			const result = await deleteTransactions(ids, workspaceId);
 			if ("error" in result) {
 				toast.error(result.error);
@@ -290,10 +320,6 @@ export function TransactionTable({
 					: "No transactions match these filters";
 
 	// Categories a transaction can be moved to: postable income/expense accounts.
-	const { accounts: formAccounts } = useFormOptions(
-		workspaceId,
-		selectedIds.size > 0 || picker !== null,
-	);
 	const { expenseCategories, incomeCategories } = useMemo(() => {
 		const parentIds = new Set(formAccounts.map((a) => a.parentId).filter(Boolean));
 		const leaves = (type: "EXPENSE" | "INCOME") =>
@@ -571,7 +597,7 @@ export function TransactionTable({
 				<span />
 			</div>
 
-			{transactions.length === 0 ? (
+			{shown.length === 0 ? (
 				emptyState
 			) : (
 				<div>

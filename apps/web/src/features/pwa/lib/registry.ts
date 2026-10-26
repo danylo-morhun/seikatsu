@@ -4,10 +4,31 @@
 import { archiveHabit, unarchiveHabit, updateHabit } from "@/features/keizoku/actions/habits";
 import { checkDay, saveDayNote, uncheckDay } from "@/features/keizoku/actions/logs";
 import { habitPatchSchema } from "@/features/keizoku/lib/keizoku-schemas";
+import {
+	createTransaction,
+	deleteTransaction,
+	updateTransaction,
+} from "@/features/kuroji/actions/transactions";
 import type { OfflineOps, OpName, OpResult } from "@/features/pwa/lib/ops";
 import { z } from "zod";
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+const money = z.number().finite().positive().max(1e12);
+const legs = z.array(z.object({ accountId: z.uuid(), amount: money })).max(50);
+// The capture form's payload (TransactionInput); the action checks accounts and tags belong.
+const transactionInput = z.object({
+	fromAccountId: z.uuid().optional(),
+	toAccountId: z.uuid().optional(),
+	amount: money.optional(),
+	toSplits: legs.optional(),
+	fromSplits: legs.optional(),
+	currency: z.string().regex(/^[A-Z]{3}$/),
+	received: money.optional(),
+	description: z.string().max(500).optional(),
+	date: day,
+	tagIds: z.array(z.uuid()).max(50).optional(),
+});
 
 type Entry<N extends OpName> = {
 	schema: z.ZodType<OfflineOps[N]>;
@@ -53,6 +74,24 @@ export const REGISTRY: { [N in OpName]: Entry<N> } = {
 	"keizoku.unarchiveHabit": {
 		schema: z.object({ habitId: z.uuid() }),
 		run: ({ habitId }) => unarchiveHabit(habitId),
+	},
+	"kuroji.createTransaction": {
+		schema: transactionInput.extend({ workspaceId: z.uuid(), id: z.uuid() }),
+		run: (args) => createTransaction(args),
+	},
+	"kuroji.updateTransaction": {
+		schema: transactionInput.extend({ transactionId: z.uuid() }),
+		run: (args) => updateTransaction(args),
+	},
+	"kuroji.deleteTransaction": {
+		schema: z.object({ transactionId: z.uuid() }),
+		run: async ({ transactionId }) => {
+			// Already gone (deleted before the response got lost) is what was asked for.
+			const result = await deleteTransaction(transactionId);
+			return "error" in result && result.error === "Transaction not found"
+				? { success: true }
+				: result;
+		},
 	},
 };
 

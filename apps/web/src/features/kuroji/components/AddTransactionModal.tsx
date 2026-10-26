@@ -3,7 +3,6 @@
 import { AutoHeight } from "@/components/AutoHeight";
 import { Spinner } from "@/components/Spinner";
 import type { getAccounts } from "@/features/kuroji/actions/accounts";
-import { createTransaction, updateTransaction } from "@/features/kuroji/actions/transactions";
 import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
 import { CategorySelect } from "@/features/kuroji/components/CategoryCombobox";
 import { CategoryTiles } from "@/features/kuroji/components/CategoryTiles";
@@ -12,6 +11,12 @@ import { readCaptureMemory, rememberCapture } from "@/features/kuroji/lib/captur
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
 import { addTagToFormOptions, useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { formatCurrency } from "@/features/kuroji/lib/format";
+import {
+	QUEUED_TOAST,
+	captureTransaction,
+	editTransaction,
+	isQueued,
+} from "@/features/kuroji/lib/offline";
 import {
 	type AddTransactionFormValues,
 	DESCRIPTION_PLACEHOLDER,
@@ -256,8 +261,8 @@ export function AddTransactionModal({
 							received: showReceived ? values.received : undefined,
 						};
 		const result = editing
-			? await updateTransaction({ transactionId: editing.transactionId, ...common, ...legs })
-			: await createTransaction({ workspaceId, ...common, ...legs });
+			? await editTransaction(editing.transactionId, { ...common, ...legs })
+			: await captureTransaction(workspaceId, { ...common, ...legs });
 
 		if ("error" in result) {
 			toast.error(result.error);
@@ -265,7 +270,8 @@ export function AddTransactionModal({
 		}
 
 		if (editing) {
-			toast.success("Transaction updated.");
+			if (isQueued(result)) toast(QUEUED_TOAST);
+			else toast.success("Transaction updated.");
 			setOpen(false);
 			return;
 		}
@@ -280,7 +286,8 @@ export function AddTransactionModal({
 						categoryIds: values.splits.map((s) => s.categoryId),
 					},
 		);
-		toast.success("Transaction recorded.");
+		if (isQueued(result)) toast(QUEUED_TOAST);
+		else toast.success("Transaction recorded.");
 		// Through onOpenChange so the next capture starts from a clean form.
 		onOpenChange(false);
 	};
