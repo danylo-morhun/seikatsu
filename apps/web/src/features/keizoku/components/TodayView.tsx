@@ -3,13 +3,7 @@
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
 import { startNavigationProgress } from "@/components/NavigationProgress";
-import { archiveHabit, unarchiveHabit, updateHabit } from "@/features/keizoku/actions/habits";
-import {
-	type TodayHabit,
-	checkDay,
-	saveDayNote,
-	uncheckDay,
-} from "@/features/keizoku/actions/logs";
+import type { TodayHabit } from "@/features/keizoku/actions/logs";
 import { DayNoteDialog, type DayNoteTarget } from "@/features/keizoku/components/DayNoteDialog";
 import { FIGURES_ROW, Figure } from "@/features/keizoku/components/Figure";
 import { HabitDialog } from "@/features/keizoku/components/HabitDialog";
@@ -22,7 +16,10 @@ import {
 } from "@/features/keizoku/components/HabitRow";
 import { formatDay } from "@/features/keizoku/lib/constants";
 import { neighbourHabit, targetHabit } from "@/features/keizoku/lib/habit-nav";
+import { editHabit, saveNote, setArchived, tickDay } from "@/features/keizoku/lib/offline";
+import { overlayToday } from "@/features/keizoku/lib/overlay";
 import { rate, runUnit, tally } from "@/features/keizoku/lib/streak";
+import { usePendingOps } from "@/features/pwa/lib/use-outbox";
 import { pageKey } from "@/lib/capture-shortcut";
 import {
 	Archive01Icon,
@@ -56,7 +53,7 @@ function localToday(): string {
 
 /** Today: the day at a glance, then each habit with its check and its week. */
 export function TodayView({
-	habits: saved,
+	habits: server,
 	today,
 	heatmap,
 }: {
@@ -83,6 +80,9 @@ export function TodayView({
 		router.refresh();
 	}, [today, router]);
 
+	// Changes queued offline show until the server has them (lib/overlay.ts).
+	const pending = usePendingOps("keizoku.");
+	const saved = useMemo(() => overlayToday(server, pending, today), [server, pending, today]);
 	const [habits, applyPatch] = useOptimistic(saved, (list, p: Patch) =>
 		"remove" in p
 			? list.filter((h) => h.habit.id !== p.habitId)
@@ -117,12 +117,12 @@ export function TodayView({
 		const day = item?.days.find((d) => d.date === date);
 		if (!item || !day) return;
 		if (!day.done) {
-			run({ habitId, date, done: true }, () => checkDay(habitId, date));
+			run({ habitId, date, done: true }, () => tickDay(item.habit, date, true));
 			return;
 		}
 		// Words or a picture go with the day: ask first.
 		if (day.note || day.photoUrl) setClearing({ habitId, date });
-		else run({ habitId, date, done: false }, () => uncheckDay(habitId, date));
+		else run({ habitId, date, done: false }, () => tickDay(item.habit, date, false));
 	}, []);
 
 	function openNote(habitId: string, instant: boolean) {
@@ -146,13 +146,13 @@ export function TodayView({
 		const item = find(habitId);
 		if (!item) return;
 		run({ habitId, remove: true }, async () => {
-			const result = await archiveHabit(habitId);
+			const result = await setArchived(item.habit, true);
 			if ("success" in result) {
 				toast(`“${item.habit.name}” archived`, {
 					action: {
 						label: "Undo",
 						onClick: () =>
-							void unarchiveHabit(habitId).then((r) => "error" in r && toast.error(r.error)),
+							void setArchived(item.habit, false).then((r) => "error" in r && toast.error(r.error)),
 					},
 				});
 			}
@@ -373,7 +373,7 @@ export function TodayView({
 				onOpenChange={(open) => !open && setEditingId(null)}
 				onSave={async (values) => {
 					if (!editing) return;
-					const result = await updateHabit(editing.id, values).catch(() => FAILED);
+					const result = await editHabit(editing, values).catch(() => FAILED);
 					return "error" in result ? result.error : undefined;
 				}}
 			/>
@@ -385,12 +385,13 @@ export function TodayView({
 					// A note belongs to a done day: saving one checks the day in, cancelling leaves it be.
 					const target = noteTarget?.target;
 					const item = target && find(target.habitId);
-					const day = item?.days.find((d) => d.date === target?.date);
-					if (target && day && !day.done) {
-						const checked = await checkDay(target.habitId, target.date).catch(() => FAILED);
+					if (!target || !item) return;
+					const day = item.days.find((d) => d.date === target.date);
+					if (day && !day.done) {
+						const checked = await tickDay(item.habit, target.date, true).catch(() => FAILED);
 						if ("error" in checked) return checked.error;
 					}
-					const result = await saveDayNote(data).catch(() => FAILED);
+					const result = await saveNote(item.habit, data).catch(() => FAILED);
 					return "error" in result ? result.error : undefined;
 				}}
 			/>
@@ -405,7 +406,8 @@ export function TodayView({
 					const { habitId, date } = clearing;
 					return new Promise<void>((resolve) => {
 						run({ habitId, date, done: false }, async () => {
-							const result = await uncheckDay(habitId, date);
+							const habit = find(habitId)?.habit;
+							const result = habit ? await tickDay(habit, date, false) : FAILED;
 							resolve();
 							return result;
 						});

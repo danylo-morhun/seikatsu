@@ -1,14 +1,8 @@
 "use client";
 
 import { ConfirmDelete } from "@/components/ConfirmDelete";
-import {
-	type KeizokuHabit,
-	archiveHabit,
-	deleteHabit,
-	unarchiveHabit,
-	updateHabit,
-} from "@/features/keizoku/actions/habits";
-import { type DayCell, checkDay, saveDayNote, uncheckDay } from "@/features/keizoku/actions/logs";
+import { type KeizokuHabit, deleteHabit } from "@/features/keizoku/actions/habits";
+import type { DayCell } from "@/features/keizoku/actions/logs";
 import type { HabitSummary } from "@/features/keizoku/actions/stats";
 import { DayNoteDialog, type DayNoteTarget } from "@/features/keizoku/components/DayNoteDialog";
 import { FIGURES_ROW, Figure } from "@/features/keizoku/components/Figure";
@@ -18,12 +12,15 @@ import { type HeatDay, Heatmap } from "@/features/keizoku/components/Heatmap";
 import { Photo } from "@/features/keizoku/components/Photo";
 import { formatDay } from "@/features/keizoku/lib/constants";
 import { TIME_OF_DAY_LABELS, scheduleLabel } from "@/features/keizoku/lib/constants";
+import { editHabit, saveNote, setArchived, tickDay } from "@/features/keizoku/lib/offline";
+import { overlayDays } from "@/features/keizoku/lib/overlay";
 import {
 	addDays,
 	isScheduled,
 	runUnit,
 	mondayOf as weekStart,
 } from "@/features/keizoku/lib/streak";
+import { usePendingOps } from "@/features/pwa/lib/use-outbox";
 import { pageKey } from "@/lib/capture-shortcut";
 import {
 	Archive01Icon,
@@ -78,7 +75,7 @@ interface Props {
 }
 
 /** One habit: today's check, its figures, the year (tap a day to fill it in), what it remembers. */
-export function HabitPage({ habit, summary, days: saved, journal, today }: Props) {
+export function HabitPage({ habit, summary, days: server, journal, today }: Props) {
 	const router = useRouter();
 	const [, startTransition] = useTransition();
 	const [menuOpen, setMenuOpen] = useState(false);
@@ -93,6 +90,9 @@ export function HabitPage({ habit, summary, days: saved, journal, today }: Props
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const archived = habit.archivedAt != null;
 
+	// Changes queued offline show until the server has them (lib/overlay.ts).
+	const pending = usePendingOps("keizoku.");
+	const saved = useMemo(() => overlayDays(server, habit.id, pending), [server, habit.id, pending]);
 	const [days, applyPatch] = useOptimistic(saved, (list, p: Patch) =>
 		p.done
 			? [{ date: p.date, done: true, note: null, photoUrl: null }, ...list]
@@ -113,9 +113,9 @@ export function HabitPage({ habit, summary, days: saved, journal, today }: Props
 	const toggleRef = useRef<(date: string) => void>(() => {});
 	toggleRef.current = (date) => {
 		const day = byDate.get(date);
-		if (!day) run({ date, done: true }, () => checkDay(habit.id, date));
+		if (!day) run({ date, done: true }, () => tickDay(habit, date, true));
 		else if (day.note || day.photoUrl) setClearing(date);
-		else run({ date, done: false }, () => uncheckDay(habit.id, date));
+		else run({ date, done: false }, () => tickDay(habit, date, false));
 	};
 	// Stable for the memoised calendar.
 	const [onToggle] = useState(() => (date: string) => toggleRef.current(date));
@@ -137,9 +137,7 @@ export function HabitPage({ habit, summary, days: saved, journal, today }: Props
 
 	function toggleArchive() {
 		startTransition(async () => {
-			const result = await (archived ? unarchiveHabit(habit.id) : archiveHabit(habit.id)).catch(
-				() => FAILED,
-			);
+			const result = await setArchived(habit, !archived).catch(() => FAILED);
 			if ("error" in result) toast.error(result.error);
 			else if (archived) toast(`“${habit.name}” is back on Today`);
 			else
@@ -147,7 +145,7 @@ export function HabitPage({ habit, summary, days: saved, journal, today }: Props
 					action: {
 						label: "Undo",
 						onClick: () =>
-							void unarchiveHabit(habit.id).then((r) => "error" in r && toast.error(r.error)),
+							void setArchived(habit, false).then((r) => "error" in r && toast.error(r.error)),
 					},
 				});
 		});
@@ -374,7 +372,7 @@ export function HabitPage({ habit, summary, days: saved, journal, today }: Props
 				instant={editing.instant}
 				onOpenChange={(open) => setEditing((s) => ({ ...s, open }))}
 				onSave={async (values) => {
-					const result = await updateHabit(habit.id, values).catch(() => FAILED);
+					const result = await editHabit(habit, values).catch(() => FAILED);
 					return "error" in result ? result.error : undefined;
 				}}
 			/>
@@ -386,10 +384,10 @@ export function HabitPage({ habit, summary, days: saved, journal, today }: Props
 					// A note belongs to a done day: saving one checks the day in, cancelling leaves it be.
 					const date = noteTarget?.target.date;
 					if (date && !byDate.has(date)) {
-						const checked = await checkDay(habit.id, date).catch(() => FAILED);
+						const checked = await tickDay(habit, date, true).catch(() => FAILED);
 						if ("error" in checked) return checked.error;
 					}
-					const result = await saveDayNote(data).catch(() => FAILED);
+					const result = await saveNote(habit, data).catch(() => FAILED);
 					return "error" in result ? result.error : undefined;
 				}}
 			/>
@@ -404,7 +402,7 @@ export function HabitPage({ habit, summary, days: saved, journal, today }: Props
 					const date = clearing;
 					return new Promise<void>((resolve) =>
 						run({ date, done: false }, async () => {
-							const result = await uncheckDay(habit.id, date);
+							const result = await tickDay(habit, date, false);
 							resolve();
 							return result;
 						}),
