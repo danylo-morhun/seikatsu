@@ -4,10 +4,11 @@ import { AutoHeight } from "@/components/AutoHeight";
 import { QuietAdd } from "@/components/QuietAdd";
 import { Spinner } from "@/components/Spinner";
 import type { ServiceWithItems } from "@/features/aisha/actions/data";
-import { logService, updateService } from "@/features/aisha/actions/services";
+import { updateService } from "@/features/aisha/actions/services";
 import { FOOTER, FieldError, instantClass } from "@/features/aisha/components/DialogParts";
 import { CURRENCY } from "@/features/aisha/lib/constants";
 import { parseNumber } from "@/features/aisha/lib/format";
+import { QUEUED_TOAST, saveService } from "@/features/aisha/lib/offline";
 import { localToday } from "@/features/aisha/lib/today";
 import { AccountPicker } from "@/features/kuroji/components/AccountSelect";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
@@ -152,13 +153,15 @@ export function ServiceDialog({
 		startSave(async () => {
 			const result = await (service
 				? updateService(service.id, values)
-				: logService(vehicleId, values)
+				: saveService(vehicleId, values)
 			).catch(() => ({ error: "Couldn't save. Check your connection." }));
 			if ("error" in result) {
 				setError({ message: result.error });
 				return;
 			}
-			if (result.warning) toast.warning(result.warning);
+			if ("queued" in result) toast(QUEUED_TOAST);
+			else if ("warning" in result && typeof result.warning === "string")
+				toast.warning(result.warning);
 			else if (!service)
 				toast.success(toKuroji ? "Service logged, and in Kuroji" : "Service logged");
 			onOpenChange(false);
