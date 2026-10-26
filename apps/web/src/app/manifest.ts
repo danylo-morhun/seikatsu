@@ -24,6 +24,12 @@ export default function manifest(): MetadataRoute.Manifest {
 				purpose: "maskable",
 			},
 		],
+		// Share a shop's link from any app: Hoshii opens Add a Want with it.
+		share_target: {
+			action: "/hoshii/share",
+			method: "GET",
+			params: { title: "title", text: "text", url: "url" },
+		},
 		// Long-press on the home-screen icon jumps straight into an app.
 		shortcuts: Object.entries(APPS_CONFIG).map(([href, { name, label }]) => ({
 			name,
