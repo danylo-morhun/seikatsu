@@ -73,6 +73,8 @@ export function VehicleForm({
 		setForm((f) => ({ ...f, [key]: value }));
 		setError(null);
 	};
+	// In settings, Save stays quiet until something differs from the saved car.
+	const dirty = !vehicle || JSON.stringify(form) !== JSON.stringify(formOf(vehicle));
 	const invalid = (field: keyof Form) => error?.field === field || undefined;
 	const fail = (field: keyof Form, message: string) => {
 		setError({ field, message });
@@ -145,7 +147,7 @@ export function VehicleForm({
 					className: "font-figures",
 				})}
 				{field("engine", "Engine", { placeholder: "1.6 CRDi" })}
-				<div className="space-y-2">
+				<div className="grid gap-2">
 					<Label htmlFor={`${id}-fuel`}>Fuel</Label>
 					<Select value={form.fuelType} onValueChange={(v) => set("fuelType", v as FuelType)}>
 						<SelectTrigger id={`${id}-fuel`}>
@@ -160,7 +162,7 @@ export function VehicleForm({
 						</SelectContent>
 					</Select>
 				</div>
-				<div className="space-y-2">
+				<div className="grid gap-2">
 					<Label htmlFor={`${id}-gearbox`}>Gearbox</Label>
 					<Select
 						value={form.transmission}
@@ -213,9 +215,14 @@ export function VehicleForm({
 
 			{error && <FieldError>{error.message}</FieldError>}
 			<div>
-				<Button type="submit" className="gap-1.5" disabled={isSaving}>
+				<Button
+					type="submit"
+					variant={dirty ? "default" : "outline"}
+					className="gap-1.5"
+					disabled={isSaving || !dirty}
+				>
 					{isSaving && <Spinner />}
-					{isSaving ? "Saving…" : vehicle ? "Save" : "Add the car"}
+					{isSaving ? "Saving…" : vehicle ? "Save car" : "Add the car"}
 				</Button>
 			</div>
 		</form>
