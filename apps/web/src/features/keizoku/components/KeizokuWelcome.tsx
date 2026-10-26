@@ -52,7 +52,9 @@ export function KeizokuWelcome() {
 	function start() {
 		startSave(async () => {
 			for (const habit of STARTERS.filter((s) => picked.includes(s.name))) {
-				const result = await createHabit(habit);
+				const result = await createHabit(habit).catch(() => ({
+					error: "Couldn't save. Check your connection.",
+				}));
 				if ("error" in result) {
 					toast.error(result.error);
 					return;
