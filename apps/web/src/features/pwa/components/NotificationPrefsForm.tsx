@@ -117,18 +117,18 @@ export function NotificationPrefsForm({ prefs }: { prefs: NotificationPrefs | nu
 	);
 
 	return (
-		<ul className="divide-y divide-rule">
-			<li className="flex items-center gap-3 pb-4">
+		<ul className="divide-y divide-rule border-y border-rule">
+			<li className="flex items-center gap-3 py-3">
 				<div className="min-w-0 flex-1">
-					<p className="text-sm font-medium">Morning time</p>
+					<p className="text-sm">Morning time</p>
 					<p className="mt-0.5 text-sm text-muted-foreground">
-						When the morning ones below go out, together.
+						The morning ones below go out together, at this time.
 					</p>
 				</div>
 				{timeInput("morningTime", "Morning time")}
 			</li>
 			{ROWS.map((row) => (
-				<li key={row.key} className="flex items-start gap-3 py-4">
+				<li key={row.key} className="flex items-start gap-3 py-3">
 					<Checkbox
 						id={`${id}-${row.key}`}
 						checked={values[row.key]}
@@ -136,8 +136,9 @@ export function NotificationPrefsForm({ prefs }: { prefs: NotificationPrefs | nu
 						className="mt-0.5"
 					/>
 					<div className="min-w-0 flex-1">
-						<Label htmlFor={`${id}-${row.key}`} className="text-sm font-medium">
-							<span className="text-muted-foreground">{row.app}</span> · {row.label}
+						<Label htmlFor={`${id}-${row.key}`} className="text-sm font-normal">
+							{row.label}
+							<span className="text-muted-foreground"> · {row.app}</span>
 						</Label>
 						<p className="mt-0.5 text-sm text-muted-foreground">{row.detail}</p>
 					</div>
