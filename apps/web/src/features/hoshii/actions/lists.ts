@@ -65,15 +65,6 @@ export async function renameList(listId: string, name: string): Promise<Result> 
 	return { success: true };
 }
 
-/** A new place among the lists. */
-export async function moveList(listId: string, position: string): Promise<Result> {
-	if (!/^[0-9A-Za-z]{1,64}$/.test(position)) return { error: "Invalid position" };
-	if (!(await ownedList(listId))) return { error: "List not found" };
-	await db.update(hoshiiLists).set({ position }).where(eq(hoshiiLists.id, listId));
-	revalidateHoshii();
-	return { success: true };
-}
-
 /** The list goes; its wants stay, in no list. */
 export async function deleteList(listId: string): Promise<Result> {
 	if (!(await ownedList(listId))) return { error: "List not found" };
