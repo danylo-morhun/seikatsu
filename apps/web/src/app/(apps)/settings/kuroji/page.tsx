@@ -3,11 +3,13 @@ import { UnderlineTab, UnderlineTabs } from "@/components/UnderlineTabs";
 import { getAccounts } from "@/features/kuroji/actions/accounts";
 import { getBalances } from "@/features/kuroji/actions/balances";
 import { getBankConnections, getBankRules } from "@/features/kuroji/actions/bank";
+import { getCaptureKeyStatus } from "@/features/kuroji/actions/capture";
 import { getRecurringTransactions } from "@/features/kuroji/actions/recurring";
 import { initializeWorkspace } from "@/features/kuroji/actions/workspace";
 import { AccountsOverview } from "@/features/kuroji/components/AccountsOverview";
 import { AddAccountModal } from "@/features/kuroji/components/AddAccountModal";
 import { AddRecurringModal } from "@/features/kuroji/components/AddRecurringModal";
+import { ApplePaySection } from "@/features/kuroji/components/ApplePaySection";
 import { ArchivedAccountsList } from "@/features/kuroji/components/ArchivedAccountsList";
 import { BankConnectionsSection } from "@/features/kuroji/components/BankConnectionsSection";
 import { BankRulesManager } from "@/features/kuroji/components/BankRulesManager";
@@ -115,9 +117,10 @@ export default async function KurojiSettingsPage({
 			</section>
 		);
 	} else {
-		const [bankConnections, bankRules] = await Promise.all([
+		const [bankConnections, bankRules, captureKey] = await Promise.all([
 			getBankConnections(workspace.id),
 			getBankRules(workspace.id),
+			getCaptureKeyStatus(workspace.id),
 		]);
 		body = (
 			<div className="space-y-12">
@@ -131,6 +134,13 @@ export default async function KurojiSettingsPage({
 						connections={bankConnections}
 						accounts={accounts}
 					/>
+				</section>
+				<section>
+					<SectionHeader
+						title="Apple Pay"
+						description="An iPhone Shortcut sends each payment here; tap its notification to add it. The bank import later matches it instead of adding it twice."
+					/>
+					<ApplePaySection workspaceId={workspace.id} status={captureKey} />
 				</section>
 				<section>
 					<SectionHeader
