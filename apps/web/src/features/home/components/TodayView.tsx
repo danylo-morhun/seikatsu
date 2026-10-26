@@ -64,7 +64,6 @@ function longDate(iso: string) {
 
 interface TileProps {
 	href: AppHref;
-	label: string;
 	value: string | null;
 	note?: string | null;
 	alert?: boolean;
@@ -77,10 +76,9 @@ interface TileProps {
 	index: number;
 }
 
-/** One app at a glance: its seal, one figure, a note, at most a short list. The tile opens the app. */
+/** One app at a glance: its seal and name as the sidebar has them, one figure, a note, at most a short list. The tile opens the app. */
 function Tile({
 	href,
-	label,
 	value,
 	note,
 	alert = false,
@@ -100,7 +98,7 @@ function Tile({
 			)}
 			style={{ "--i": index } as CSSProperties}
 		>
-			<div className="flex min-h-10 items-center gap-2 md:min-h-8">
+			<div className="flex items-center gap-2">
 				<Link
 					href={href}
 					prefetch
@@ -109,9 +107,11 @@ function Tile({
 					<span aria-hidden className="font-semibold text-primary">
 						{app.kanji}
 					</span>
-					<span className="truncate">{label}</span>
+					<span className="truncate">{app.label}</span>
 				</Link>
-				{action && <div className="relative z-10 ml-auto shrink-0">{action}</div>}
+				{action && (
+					<div className="relative z-10 -my-3 -mr-2 ml-auto shrink-0 md:-my-2">{action}</div>
+				)}
 			</div>
 			<p
 				className={cn(
@@ -302,10 +302,9 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 				<Tile
 					index={0}
 					href="/kuroji"
-					label="Net worth"
 					negative={(m?.netWorth ?? 0) < 0}
 					value={m ? money(m.netWorth, m.currency) : null}
-					note={m ? `${money(m.spentThisMonth, m.currency)} spent this month` : "Not set up"}
+					note={m ? `Net worth · ${money(m.spentThisMonth, m.currency)} spent` : "Not set up"}
 					action={
 						<AddTransactionModal
 							workspaceId={workspace.id}
@@ -329,22 +328,26 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 				<Tile
 					index={1}
 					href="/seiryu"
-					label="Cards due"
 					value={String(cards.length)}
-					note={overdue > 0 ? `${overdue} overdue` : cards.length > 0 ? "Due today" : "Nothing due"}
+					note={
+						overdue > 0
+							? `${plural(overdue, "card")} overdue`
+							: cards.length > 0
+								? "cards due today"
+								: "No cards due"
+					}
 					alert={overdue > 0}
 				/>
 
 				<Tile
 					index={2}
 					href="/kyuu"
-					label="To send"
 					value={jobs ? String(jobs.toSend) : null}
 					note={
 						jobs
 							? jobs.ghostDue > 0
-								? `${jobs.ghostDue} to close`
-								: `${jobs.waiting} waiting`
+								? `to send · ${jobs.ghostDue} to close`
+								: `to send · ${jobs.waiting} waiting`
 							: null
 					}
 				/>
@@ -352,7 +355,6 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 				<Tile
 					index={3}
 					href="/aisha"
-					label={next ? next.name : "Car"}
 					value={
 						next?.kmLeft != null
 							? km(next.kmLeft)
@@ -368,10 +370,8 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 							: !next
 								? "on the odometer"
 								: next.status === "overdue"
-									? "Overdue"
-									: next.kmLeft != null
-										? "to go"
-										: "left"
+									? `${next.name} overdue`
+									: `to ${next.name}`
 					}
 					alert={next?.status === "overdue"}
 					action={
@@ -390,7 +390,6 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 					wide
 					index={4}
 					href="/keizoku"
-					label="Habits"
 					value={habits.length > 0 ? `${habits.length - left} / ${habits.length}` : null}
 					note={
 						habits.length === 0
@@ -409,7 +408,6 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 					wide
 					index={5}
 					href="/tsundoku"
-					label="Reading"
 					value={book ? `p. ${book.currentPage}` : null}
 					note={book ? book.title : "No book on the go"}
 					action={
