@@ -12,8 +12,6 @@ import { saveProgress as sendProgress } from "@/features/tsundoku/lib/offline";
 import { APPS_CONFIG } from "@/lib/app-themes";
 import { pageKey } from "@/lib/capture-shortcut";
 import type { Workspace } from "@/lib/session";
-import { Add01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -94,7 +92,8 @@ function Tile({
 			className={cn(
 				app.theme,
 				"relative flex min-w-0 animate-rise flex-col rounded-xl bg-surface p-4 transition-colors duration-150 has-[>div>a:hover]:bg-surface-2/60",
-				wide && "col-span-2",
+				// A list sets its own height; its neighbour keeps its own.
+				wide && "col-span-2 lg:self-start",
 			)}
 			style={{ "--i": index } as CSSProperties}
 		>
@@ -109,9 +108,6 @@ function Tile({
 					</span>
 					<span className="truncate">{app.label}</span>
 				</Link>
-				{action && (
-					<div className="relative z-10 -my-3 -mr-2 ml-auto shrink-0 md:-my-2">{action}</div>
-				)}
 			</div>
 			<p
 				className={cn(
@@ -128,29 +124,25 @@ function Tile({
 				</p>
 			)}
 			{children && <div className="relative z-10 mt-3">{children}</div>}
+			{action && <div className="relative z-10 -mx-4 mt-auto -mb-4 pt-4">{action}</div>}
 		</section>
 	);
 }
 
+/** The tile's one capture, named by its verb across the tile's foot. */
 const tileAction =
-	"flex h-10 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-muted-foreground outline-none transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-8";
+	"flex h-11 w-full items-center gap-2 rounded-b-xl border-t border-rule px-4 text-left text-sm text-muted-foreground outline-none transition-colors duration-150 hover:bg-surface-2/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset md:h-10";
 
 function TileAction({
 	label,
 	keys,
+	hint,
 	onClick,
-	iconOnly = false,
-}: { label: string; keys: string; onClick?: () => void; iconOnly?: boolean }) {
+}: { label: string; keys: string; hint?: string; onClick?: () => void }) {
 	return (
-		<button
-			type="button"
-			className={cn(tileAction, iconOnly && "w-10 justify-center px-0 md:w-8")}
-			aria-label={iconOnly ? label : undefined}
-			aria-keyshortcuts={keys}
-			onClick={onClick}
-		>
-			<HugeiconsIcon icon={Add01Icon} className="size-3.5 shrink-0" />
-			{!iconOnly && label}
+		<button type="button" className={tileAction} aria-keyshortcuts={keys} onClick={onClick}>
+			<span className="min-w-0 flex-1 truncate">{label}</span>
+			{hint && <span className="shrink-0 font-figures text-xs max-sm:hidden">{hint}</span>}
 		</button>
 	);
 }
@@ -311,14 +303,8 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 							baseCurrency={workspace.baseCurrency}
 							shortcut
 							trigger={
-								<button
-									type="button"
-									className={tileAction}
-									aria-label="New transaction"
-									aria-keyshortcuts="N"
-								>
-									<HugeiconsIcon icon={Add01Icon} className="size-3.5 shrink-0" />
-									<span className="hidden sm:inline">Transaction</span>
+								<button type="button" className={tileAction} aria-keyshortcuts="N">
+									Add transaction
 								</button>
 							}
 						/>
@@ -327,33 +313,6 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 
 				<Tile
 					index={1}
-					href="/seiryu"
-					value={String(cards.length)}
-					note={
-						overdue > 0
-							? `${plural(overdue, "card")} overdue`
-							: cards.length > 0
-								? "cards due today"
-								: "No cards due"
-					}
-					alert={overdue > 0}
-				/>
-
-				<Tile
-					index={2}
-					href="/kyuu"
-					value={jobs ? String(jobs.toSend) : null}
-					note={
-						jobs
-							? jobs.ghostDue > 0
-								? `to send · ${jobs.ghostDue} to close`
-								: `to send · ${jobs.waiting} waiting`
-							: null
-					}
-				/>
-
-				<Tile
-					index={3}
 					href="/aisha"
 					value={
 						next?.kmLeft != null
@@ -379,10 +338,37 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 							<TileAction
 								label="Log mileage"
 								keys="M"
-								iconOnly
+								hint={km(data.car.currentKm)}
 								onClick={() => setMileageOpen(true)}
 							/>
 						)
+					}
+				/>
+
+				<Tile
+					index={2}
+					href="/seiryu"
+					value={String(cards.length)}
+					note={
+						overdue > 0
+							? `${plural(overdue, "card")} overdue`
+							: cards.length > 0
+								? "cards due today"
+								: "No cards due"
+					}
+					alert={overdue > 0}
+				/>
+
+				<Tile
+					index={3}
+					href="/kyuu"
+					value={jobs ? String(jobs.toSend) : null}
+					note={
+						jobs
+							? jobs.ghostDue > 0
+								? `to send · ${jobs.ghostDue} to close`
+								: `to send · ${jobs.waiting} waiting`
+							: null
 					}
 				/>
 
@@ -402,6 +388,15 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 					{habitList.length > 0 && (
 						<Habits habits={habitList} today={data.habits?.today ?? today} />
 					)}
+					{habits.length > habitList.length && (
+						<Link
+							href="/keizoku"
+							prefetch
+							className="mt-1 inline-block text-xs text-muted-foreground transition-colors hover:text-foreground"
+						>
+							{habits.length - habitList.length} more
+						</Link>
+					)}
 				</Tile>
 
 				<Tile
@@ -409,13 +404,18 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 					index={5}
 					href="/tsundoku"
 					value={book ? `p. ${book.currentPage}` : null}
-					note={book ? book.title : "No book on the go"}
+					note={
+						book
+							? [book.title, book.pageCount && `of ${book.pageCount}`].filter(Boolean).join(" · ")
+							: "No book on the go"
+					}
 					action={
-						book && <TileAction label="Pages" keys="P" onClick={() => setProgressBook(book)} />
+						book && <TileAction label="Log pages" keys="P" onClick={() => setProgressBook(book)} />
 					}
 				>
 					{book && (
 						<ProgressMeter
+							compact
 							currentPage={book.currentPage}
 							pageCount={book.pageCount}
 							daysToFinish={book.daysToFinish}
