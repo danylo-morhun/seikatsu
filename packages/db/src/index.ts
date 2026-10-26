@@ -18,4 +18,5 @@ export {
 	ne,
 	sum,
 	max,
+	like,
 } from "drizzle-orm";
