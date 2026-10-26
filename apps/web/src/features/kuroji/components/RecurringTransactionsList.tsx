@@ -66,7 +66,11 @@ export function RecurringTransactionsList({
 	}
 
 	if (items.length === 0) {
-		return <p className="text-sm text-muted-foreground">No recurring transactions set up yet.</p>;
+		return (
+			<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+				None yet. Add rent or a subscription once and it records itself from then on.
+			</p>
+		);
 	}
 
 	return (
@@ -109,7 +113,7 @@ export function RecurringTransactionsList({
 							<Button
 								variant="ghost"
 								size="icon"
-								className="size-8"
+								className="size-10 text-muted-foreground hover:text-foreground md:size-8"
 								onClick={() => handleToggle(rt.id)}
 								aria-label={`${rt.isActive ? "Pause" : "Resume"} ${rt.fromAccountName} to ${rt.toAccountName}`}
 							>
@@ -121,7 +125,7 @@ export function RecurringTransactionsList({
 							<Button
 								variant="ghost"
 								size="icon"
-								className="size-8 text-destructive hover:text-destructive"
+								className="size-10 text-muted-foreground hover:text-destructive md:size-8"
 								onClick={() => setDeleteTarget({ id: rt.id })}
 								aria-label={`Delete ${rt.fromAccountName} to ${rt.toAccountName}`}
 							>
