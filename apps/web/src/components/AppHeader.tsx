@@ -181,7 +181,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 				</nav>
 			)}
 
-			{app && (
+			{(app || pathname === "/") && (
 				<div className="ml-auto flex min-w-0 items-center gap-1.5">
 					{isKuroji && workspaceId && baseCurrency && (
 						<>
