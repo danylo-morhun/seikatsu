@@ -17,6 +17,20 @@ export const GENERAL_SHORTCUTS: ShortcutGroup = {
 
 /** By route prefix. */
 export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
+	"/": [
+		{
+			title: "Today",
+			items: [
+				{ keys: ["N"], label: "New transaction" },
+				{ keys: ["P"], label: "Log pages of the book you're reading" },
+				{ keys: ["M"], label: "Update the car's mileage" },
+				{
+					keys: ["1", "2", "3", "4", "5", "6"],
+					label: "Open Kuroji, Seiryu, Tsundoku, Keizoku, Kyuu, Aisha",
+				},
+			],
+		},
+	],
 	"/kuroji": [
 		{
 			title: "Kuroji",

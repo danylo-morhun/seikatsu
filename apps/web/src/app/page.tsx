@@ -1,19 +1,36 @@
 import { auth } from "@/auth";
-import { HomeGrid } from "@/components/HomeGrid";
+import { AppFrame } from "@/components/AppFrame";
+import { PageLoader } from "@/components/PageLoader";
 import { SignInCard } from "@/features/auth/components/SignInCard";
+import { TodayView } from "@/features/home/components/TodayView";
+import { getToday } from "@/features/home/lib/today";
+import { getCurrentWorkspace } from "@/lib/session";
+import { getUserToday } from "@/lib/timezone";
+import { Suspense } from "react";
 
 export default async function HomePage() {
 	const session = await auth();
 
-	if (session) {
-		return <HomeGrid user={session.user} />;
+	if (!session) {
+		return (
+			<main className="flex min-h-screen items-center justify-center p-4">
+				<SignInCard />
+			</main>
+		);
 	}
 
 	return (
-		<main className="relative flex min-h-screen items-center justify-center overflow-hidden p-4">
-			<div className="pointer-events-none absolute -top-1/3 -left-1/4 h-2/3 w-2/3 rounded-full bg-primary/10 blur-3xl" />
-			<div className="pointer-events-none absolute -bottom-1/3 -right-1/4 h-2/3 w-2/3 rounded-full bg-primary/8 blur-3xl" />
-			<SignInCard />
-		</main>
+		<AppFrame>
+			<Suspense fallback={<PageLoader />}>
+				<Today firstName={session.user?.name?.split(" ")[0] ?? null} />
+			</Suspense>
+		</AppFrame>
 	);
+}
+
+async function Today({ firstName }: { firstName: string | null }) {
+	const [workspace, today] = await Promise.all([getCurrentWorkspace(), getUserToday()]);
+	if (!workspace) return null;
+	const data = await getToday(workspace, today);
+	return <TodayView data={data} today={today} workspace={workspace} firstName={firstName} />;
 }
