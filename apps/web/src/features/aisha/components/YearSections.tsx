@@ -24,9 +24,7 @@ export function YearFigures({ year, currency }: { year: CarYear; currency: strin
 				label="Driven"
 				value={formatNumber(year.driven)}
 				unit="km"
-				note={
-					year.driven > 0 ? `≈ ${formatKm(year.driven / activeMonths(year))} a month` : undefined
-				}
+				note={paceNote(year)}
 			/>
 			<Figure
 				index={2}
@@ -41,9 +39,11 @@ export function YearFigures({ year, currency }: { year: CarYear; currency: strin
 	);
 }
 
-/** Months the car was known to be on the road: those with km, at least one. */
-function activeMonths(year: CarYear) {
-	return Math.max(1, year.months.filter((m) => m.km > 0).length);
+/** km a month over the days the readings span; under two weeks, just the span. */
+function paceNote(year: CarYear) {
+	if (year.driven <= 0 || year.trackedDays <= 0) return undefined;
+	if (year.trackedDays < 14) return `over ${year.trackedDays} days`;
+	return `≈ ${formatKm((year.driven / year.trackedDays) * 30)} a month`;
 }
 
 const MONTH = new Intl.DateTimeFormat("en", { month: "short", timeZone: "UTC" });

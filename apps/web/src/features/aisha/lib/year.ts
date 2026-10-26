@@ -35,6 +35,8 @@ export interface CarYear {
 	year: number;
 	/** km driven in the year, as far as the readings tell. */
 	driven: number;
+	/** Days of the year the readings span: what `driven` was driven over. */
+	trackedDays: number;
 	spent: number;
 	services: number;
 	months: { km: number; spent: number; services: number }[];
@@ -52,9 +54,14 @@ export function carYear(readings: Reading[], services: YearService[], year: numb
 		month.services += 1;
 		month.spent += s.cost != null ? Number(s.cost) : 0;
 	}
+	const dates = readings.map((r) => r.date).sort();
+	const from = dates[0] && dates[0] > monthStart(year, 0) ? dates[0] : monthStart(year, 0);
+	const last = dates.at(-1);
+	const to = last && last < monthStart(year + 1, 0) ? last : monthStart(year + 1, 0);
 	return {
 		year,
 		driven: months.reduce((n, m) => n + m.km, 0),
+		trackedDays: dates.length > 1 ? Math.max(0, daysBetween(from, to)) : 0,
 		spent: months.reduce((n, m) => n + m.spent, 0),
 		services: months.reduce((n, m) => n + m.services, 0),
 		months,
