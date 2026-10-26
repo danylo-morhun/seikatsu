@@ -6,6 +6,7 @@
 // - RSC fetches (client navigation): network-only; offline, answer with a non-RSC response so
 //   the router falls back to a full page load, which the page cache then serves.
 // - Anything else (server actions, POSTs, /api): untouched.
+// - Push: shows the payload sent by features/pwa/lib/push.ts; a tap opens its url.
 
 const VERSION = new URL(self.location.href).searchParams.get("v") || "dev";
 const STATIC = "seikatsu-static";
@@ -180,3 +181,43 @@ async function trim(name, limit) {
 	const keys = await cache.keys();
 	await Promise.all(keys.slice(0, Math.max(0, keys.length - limit)).map((k) => cache.delete(k)));
 }
+
+self.addEventListener("push", (event) => {
+	let data = {};
+	try {
+		data = event.data ? event.data.json() : {};
+	} catch {
+		data = { body: event.data ? event.data.text() : "" };
+	}
+	event.waitUntil(
+		Promise.all([
+			self.registration.showNotification(data.title || "seikatsu", {
+				body: data.body || "",
+				icon: "/icons/icon-192.png",
+				badge: "/icons/badge-96.png",
+				tag: data.tag,
+				data: { url: data.url || "/" },
+			}),
+			self.navigator.setAppBadge?.().catch(() => undefined),
+		]),
+	);
+});
+
+self.addEventListener("notificationclick", (event) => {
+	event.notification.close();
+	const target = new URL(event.notification.data?.url || "/", self.location.origin).href;
+	event.waitUntil(
+		(async () => {
+			await self.navigator.clearAppBadge?.().catch(() => undefined);
+			const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+			// Reuse the open app: focus it and move it to the notification's page.
+			const open = windows.find((w) => new URL(w.url).origin === self.location.origin);
+			if (open) {
+				await open.focus();
+				if (open.url !== target && "navigate" in open) await open.navigate(target);
+				return;
+			}
+			await self.clients.openWindow(target);
+		})(),
+	);
+});
