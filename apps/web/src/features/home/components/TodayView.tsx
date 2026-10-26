@@ -6,9 +6,9 @@ import { CheckButton } from "@/features/keizoku/components/HabitRow";
 import { tickDay } from "@/features/keizoku/lib/offline";
 import { AddTransactionModal } from "@/features/kuroji/components/AddTransactionModal";
 import { usePendingOps } from "@/features/pwa/lib/use-outbox";
-import { setProgress } from "@/features/tsundoku/actions/books";
 import { ProgressDialog, type ProgressTarget } from "@/features/tsundoku/components/ProgressDialog";
 import { ProgressMeter } from "@/features/tsundoku/components/ProgressMeter";
+import { saveProgress as sendProgress } from "@/features/tsundoku/lib/offline";
 import { APPS_CONFIG } from "@/lib/app-themes";
 import { pageKey } from "@/lib/capture-shortcut";
 import type { Workspace } from "@/lib/session";
@@ -474,7 +474,8 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 
 	function saveProgress(bookId: string, page: number) {
 		startTransition(async () => {
-			const result = await setProgress(bookId, { currentPage: page }).catch(() => ({
+			const title = data.reading?.find((b) => b.id === bookId)?.title ?? "Book";
+			const result = await sendProgress({ id: bookId, title }, page).catch(() => ({
 				error: "Couldn't save. Check your connection.",
 			}));
 			if ("error" in result) toast.error(result.error);
