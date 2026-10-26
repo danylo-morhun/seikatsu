@@ -3,15 +3,17 @@
 import { Spinner } from "@/components/Spinner";
 import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import { importPrivat24Statement } from "@/features/kuroji/actions/privat24-import";
+import { Xls01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
-	Input,
 	Label,
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	cn,
 } from "@seikatsu/ui";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -32,15 +34,10 @@ export function Privat24ImportSection({
 
 	const targets = accounts.filter((a) => a.type === "ASSET" || a.type === "LIABILITY");
 
+	const ready = accountId !== "" && file !== null;
+
 	function handleSubmit() {
-		if (!accountId) {
-			toast.error("Pick an account to import into.");
-			return;
-		}
-		if (!file) {
-			toast.error("Choose a Privat24 .xlsx statement.");
-			return;
-		}
+		if (!file) return;
 		const formData = new FormData();
 		formData.set("workspaceId", workspaceId);
 		formData.set("accountId", accountId);
@@ -52,10 +49,10 @@ export function Privat24ImportSection({
 				toast.error(result.error);
 				return;
 			}
-			const opening = result.seededOpening ? " Opening balance seeded." : "";
-			toast.success(
-				`Imported ${result.imported} transaction(s), skipped ${result.skipped}.${opening}`,
-			);
+			const n = (k: number) => `${k} ${k === 1 ? "transaction" : "transactions"}`;
+			const skipped = result.skipped ? ` · ${result.skipped} already here` : "";
+			const opening = result.seededOpening ? " · opening balance set" : "";
+			toast.success(`${n(result.imported)} imported${skipped}${opening}`);
 			setFile(null);
 			if (fileInputRef.current) fileInputRef.current.value = "";
 		});
@@ -63,8 +60,8 @@ export function Privat24ImportSection({
 
 	if (targets.length === 0) {
 		return (
-			<p className="text-sm text-muted-foreground">
-				Create an asset or liability account first, then import a statement into it.
+			<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+				Add the card as an account under Accounts first, then import its statement into it.
 			</p>
 		);
 	}
@@ -72,11 +69,12 @@ export function Privat24ImportSection({
 	return (
 		<div className="space-y-4">
 			<div className="grid gap-3 sm:grid-cols-2">
-				<div className="space-y-1.5">
-					<Label htmlFor="p24-account">Import into account</Label>
+				{/* grid, not space-y: Radix puts a hidden <select> after the trigger. */}
+				<div className="grid gap-2">
+					<Label htmlFor="p24-account">Into account</Label>
 					<Select value={accountId} onValueChange={setAccountId}>
 						<SelectTrigger id="p24-account">
-							<SelectValue placeholder="Select account" />
+							<SelectValue placeholder="Pick the card" />
 						</SelectTrigger>
 						<SelectContent>
 							{targets.map((a) => (
@@ -87,26 +85,45 @@ export function Privat24ImportSection({
 						</SelectContent>
 					</Select>
 				</div>
-				<div className="space-y-1.5">
-					<Label htmlFor="p24-file">Statement file (.xlsx)</Label>
-					<Input
+				<div className="space-y-2">
+					<Label htmlFor="p24-file">Statement</Label>
+					<input
 						id="p24-file"
 						ref={fileInputRef}
 						type="file"
 						accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+						className="sr-only"
 						onChange={(e) => setFile(e.target.files?.[0] ?? null)}
 						disabled={isPending}
 					/>
+					{/* The native picker can't be styled; this stands in for it and opens it. */}
+					<button
+						type="button"
+						onClick={() => fileInputRef.current?.click()}
+						disabled={isPending}
+						aria-describedby="p24-hint"
+						className="flex h-10 w-full items-center gap-2 rounded-md border border-input px-3 md:h-9 text-left text-base outline-none transition-colors hover:bg-surface focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 md:text-sm"
+					>
+						<HugeiconsIcon icon={Xls01Icon} className="size-4 shrink-0 text-muted-foreground" />
+						<span className={cn("truncate", !file && "text-muted-foreground")}>
+							{file ? file.name : "Choose the .xlsx"}
+						</span>
+					</button>
 				</div>
 			</div>
-			<Button onClick={handleSubmit} disabled={isPending} className="gap-1.5">
+			<Button
+				onClick={handleSubmit}
+				variant={ready ? "default" : "outline"}
+				disabled={isPending || !ready}
+				className="gap-1.5"
+			>
 				{isPending && <Spinner />}
 				{isPending ? "Importing…" : "Import statement"}
 			</Button>
-			<p className="max-w-prose text-xs text-muted-foreground">
-				Export from the Privat24 app: card → Виписка → save as Excel. Import your oldest statement
-				first so the opening balance is set correctly; re-importing the same file is safe
-				(duplicates are skipped). Categories are auto-assigned by your import rules.
+			<p id="p24-hint" className="max-w-prose text-xs text-muted-foreground">
+				In Privat24: the card → Виписка → save as Excel. Start with the oldest statement so the
+				opening balance comes out right. The same file twice is fine; repeats are skipped. Import
+				rules pick the categories.
 			</p>
 		</div>
 	);
