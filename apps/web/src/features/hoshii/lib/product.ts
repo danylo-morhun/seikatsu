@@ -204,3 +204,9 @@ export function shopOf(url: string | null): string | null {
 		return null;
 	}
 }
+
+/** A want's links in a few words: its shop, or how many options. */
+export function linksText(links: { url: string }[]): string | null {
+	if (links.length > 1) return `${links.length} options`;
+	return shopOf(links[0]?.url ?? null);
+}
