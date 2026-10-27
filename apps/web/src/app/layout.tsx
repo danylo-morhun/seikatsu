@@ -23,7 +23,8 @@ export const metadata: Metadata = {
 	manifest: "/manifest.webmanifest",
 	appleWebApp: {
 		capable: true,
-		statusBarStyle: "black-translucent",
+		// Opaque: the page starts below the status bar, so iOS has nothing to blur over the header.
+		statusBarStyle: "black",
 		title: "seikatsu",
 		startupImage: splashScreens.map(({ width, height, ratio }) => ({
 			url: `/icons/splash/${width}x${height}@${ratio}.png`,
