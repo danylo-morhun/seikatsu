@@ -9,7 +9,7 @@ import {
 	isOwnedList,
 	revalidateHoshii,
 } from "@/features/hoshii/actions/guard";
-import { dropPhoto, isStoredPhoto, keepPhoto } from "@/features/hoshii/actions/photo";
+import { dropPhotos, keepPhotos } from "@/features/hoshii/actions/photo";
 import { coolingDays } from "@/features/hoshii/lib/cooling";
 import { addDays } from "@/features/hoshii/lib/dates";
 import {
@@ -73,8 +73,7 @@ export async function createItem(
 		.returning({ id: hoshiiItems.id });
 	if (!row) return { error: "Conflict" };
 
-	const photo = v.imageUrl;
-	if (photo && !isStoredPhoto(photo)) after(() => keepPhoto(row.id, ws.id, photo));
+	after(() => keepPhotos(row.id, ws.id, v));
 	revalidateHoshii();
 	return { success: true, data: { id: row.id, coolUntil } };
 }
@@ -105,13 +104,10 @@ export async function updateItem(itemId: string, values: ItemFormValues): Promis
 		.set({ ...v, price: v.price != null ? String(v.price) : null, coolUntil })
 		.where(eq(hoshiiItems.id, itemId));
 
-	if (v.imageUrl !== item.imageUrl) {
-		const photo = v.imageUrl;
-		after(async () => {
-			await dropPhoto(item.imageUrl);
-			if (photo) await keepPhoto(itemId, ws.id, photo);
-		});
-	}
+	after(async () => {
+		await dropPhotos(item, v, ws.id);
+		await keepPhotos(itemId, ws.id, v);
+	});
 	revalidateHoshii();
 	return { success: true };
 }
@@ -284,8 +280,7 @@ export async function deleteItem(itemId: string): Promise<Result> {
 	const owned = await getOwnedItem(itemId);
 	if (!owned) return { error: "Want not found" };
 	await db.delete(hoshiiItems).where(eq(hoshiiItems.id, itemId));
-	const photo = owned.item.imageUrl;
-	after(() => dropPhoto(photo));
+	after(() => dropPhotos(owned.item, null, owned.ws.id));
 	revalidateHoshii();
 	return { success: true };
 }
