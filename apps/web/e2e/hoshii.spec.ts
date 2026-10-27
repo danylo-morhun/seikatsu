@@ -143,3 +143,31 @@ test("a link shared from another app opens Add a Want with it", async ({ page })
 	await expect(dialog.getByText(/Couldn't read/)).toBeVisible();
 	await expect(page).toHaveURL(/\/hoshii$/);
 });
+
+test("a want keeps a few links: options to buy it at", async ({ page }) => {
+	const ws = await fresh();
+	const name = `Sneakers ${uid()}`;
+	const link = (url: string) => ({ url, title: null, imageUrl: null, price: null, currency: null });
+	await seed(ws.id, ws.baseCurrency, [
+		{
+			title: name,
+			links: [link("http://localhost:1/a")],
+			state: "plan",
+			planPosition: "a0",
+			keptOn: day(-2),
+		},
+	]);
+	await page.goto("/hoshii");
+
+	await page.locator("[data-hoshii-row]", { hasText: name }).getByText(name).click();
+	await page.getByRole("button", { name: "Edit", exact: true }).click();
+	const dialog = page.getByRole("dialog", { name: "Edit Want" });
+	await dialog.getByRole("button", { name: "Add another option" }).click();
+	await dialog.getByLabel("Add another option").fill("http://localhost:1/b");
+	// Not the public web: kept, though its page can't be read.
+	await expect(dialog.getByText("Couldn't read localhost")).toHaveCount(1);
+	await dialog.getByRole("button", { name: "Save" }).click();
+	await expect(dialog).toHaveCount(0);
+
+	await expect(page.locator("[data-hoshii-row]", { hasText: name })).toContainText("2 options");
+});
