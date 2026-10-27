@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parsePrice, parseProductPage, shopOf } from "./product";
+import { linksText, parsePrice, parseProductPage, shopOf } from "./product";
 
 const URL = "https://www.x-kom.pl/p/123-sluchawki";
 
@@ -93,5 +93,13 @@ describe("shopOf", () => {
 		expect(shopOf(URL)).toBe("x-kom.pl");
 		expect(shopOf("not a url")).toBeNull();
 		expect(shopOf(null)).toBeNull();
+	});
+});
+
+describe("linksText", () => {
+	it("is the shop for one link, the count for more, null for none", () => {
+		expect(linksText([])).toBeNull();
+		expect(linksText([{ url: URL }])).toBe("x-kom.pl");
+		expect(linksText([{ url: URL }, { url: "https://allegro.pl/x" }])).toBe("2 options");
 	});
 });
