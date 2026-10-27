@@ -225,6 +225,20 @@
 			"when": 1793051046193,
 			"tag": "0031_hoshii",
 			"breakpoints": true
+		},
+		{
+			"idx": 32,
+			"version": "7",
+			"when": 1793111371440,
+			"tag": "0032_hoshii_links",
+			"breakpoints": true
+		},
+		{
+			"idx": 33,
+			"version": "7",
+			"when": 1793111375213,
+			"tag": "0033_hoshii_drop_url",
+			"breakpoints": true
 		}
 	]
 }

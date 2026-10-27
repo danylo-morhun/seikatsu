@@ -277,22 +277,6 @@ function ItemSheet({
 										<dd>{it.listName}</dd>
 									</>
 								)}
-								{it.url && (
-									<>
-										<dt className="text-muted-foreground">Shop</dt>
-										<dd className="min-w-0">
-											<a
-												href={it.url}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="inline-flex max-w-full items-center gap-1 rounded underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
-											>
-												<span className="truncate">{shopOf(it.url) ?? it.url}</span>
-												<HugeiconsIcon icon={LinkSquare02Icon} className="size-3.5 shrink-0" />
-											</a>
-										</dd>
-									</>
-								)}
 								{it.state === "bought" && it.boughtPrice != null && (
 									<>
 										<dt className="text-muted-foreground">Paid</dt>
@@ -305,6 +289,46 @@ function ItemSheet({
 									</>
 								)}
 							</dl>
+
+							{it.links.length > 0 && (
+								<section aria-label="Where to buy">
+									<p className="mb-2 text-xs text-muted-foreground">
+										{it.links.length > 1 ? `${it.links.length} options` : "Where to buy"}
+									</p>
+									<ul className="space-y-1.5">
+										{it.links.map((link, i) => (
+											<li key={`${i}-${link.url}`}>
+												<a
+													href={link.url}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-lg bg-surface p-1.5 pr-3 outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring"
+												>
+													<Thumb src={link.imageUrl} className="size-10 rounded-md" />
+													<span className="min-w-0">
+														<span className="block truncate text-sm">
+															{link.title ?? shopOf(link.url) ?? link.url}
+														</span>
+														<span className="block truncate text-xs text-muted-foreground">
+															{shopOf(link.url)}
+															{link.price != null && link.currency && (
+																<span className="font-figures">
+																	{" · "}
+																	{formatMoney(link.price, link.currency)}
+																</span>
+															)}
+														</span>
+													</span>
+													<HugeiconsIcon
+														icon={LinkSquare02Icon}
+														className="size-3.5 text-muted-foreground"
+													/>
+												</a>
+											</li>
+										))}
+									</ul>
+								</section>
+							)}
 
 							<div className="rounded-lg bg-surface px-3.5 py-3 text-sm">
 								<p className="mb-1 text-xs text-muted-foreground">Why you want it</p>

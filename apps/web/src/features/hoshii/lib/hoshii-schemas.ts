@@ -16,11 +16,23 @@ const optionalText = (max: number) =>
 		.nullable()
 		.transform((v) => v || null);
 
+/** One option to buy, with what its page said. */
+export const linkSchema = z.object({
+	url: webUrl,
+	title: optionalText(200),
+	imageUrl: webUrl.nullable(),
+	price: money.nullable(),
+	currency: currency.nullable(),
+});
+export type LinkValues = z.output<typeof linkSchema>;
+
+export const MAX_LINKS = 10;
+
 /** A want, new or edited. The id is made on the device so a resend lands once. */
 export const itemFormSchema = z.object({
 	id: z.uuid().optional(),
 	title: z.string().trim().min(1, "Name the want").max(200),
-	url: webUrl.nullable(),
+	links: z.array(linkSchema).max(MAX_LINKS, `At most ${MAX_LINKS} links`),
 	imageUrl: webUrl.nullable(),
 	price: money.nullable(),
 	currency,
@@ -30,6 +42,16 @@ export const itemFormSchema = z.object({
 	skipCooling: z.boolean().optional(),
 });
 export type ItemFormValues = z.input<typeof itemFormSchema>;
+
+/** A want queued offline before links: its one `url` becomes the first link. */
+export function fromSingleUrl(args: unknown): unknown {
+	if (typeof args !== "object" || args === null || "links" in args) return args;
+	const { url, ...rest } = args as { url?: string | null };
+	return {
+		...rest,
+		links: url ? [{ url, title: null, imageUrl: null, price: null, currency: null }] : [],
+	};
+}
 
 export const moveTargets = ["plan", "released", "cooling"] as const;
 export type MoveTarget = (typeof moveTargets)[number];

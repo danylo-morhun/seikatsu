@@ -10,11 +10,18 @@ import type { ChromeData, HoshiiItem } from "@/features/hoshii/actions/data";
 import { updateItem } from "@/features/hoshii/actions/items";
 import { readLink } from "@/features/hoshii/actions/link";
 import { createList } from "@/features/hoshii/actions/lists";
+import { discardPhoto, uploadPhoto } from "@/features/hoshii/actions/upload";
+import {
+	type LinkDraft,
+	LinkList,
+	PhotoPicker,
+	type Reading,
+	isLink,
+} from "@/features/hoshii/components/LinkFields";
 import { CurrencySelect, Toggle } from "@/features/hoshii/components/Parts";
-import { Thumb } from "@/features/hoshii/components/Thumb";
 import { coolingDays } from "@/features/hoshii/lib/cooling";
 import { addDays, formatDay } from "@/features/hoshii/lib/dates";
-import type { ItemFormValues } from "@/features/hoshii/lib/hoshii-schemas";
+import { type ItemFormValues, MAX_LINKS } from "@/features/hoshii/lib/hoshii-schemas";
 import { QUEUED_TOAST, saveNewItem } from "@/features/hoshii/lib/offline";
 import { shopOf } from "@/features/hoshii/lib/product";
 import { NEEDS_CONNECTION } from "@/features/pwa/lib/run";
@@ -32,13 +39,13 @@ import {
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
-type Reading = "idle" | "reading" | "found" | "failed";
-
 type Form = {
 	/** Add only: a link or a name, whichever was typed or pasted. */
 	query: string;
+	/** Add only: the query is a link, and it's `links[0]`. */
+	queryLink: boolean;
 	title: string;
-	url: string;
+	links: LinkDraft[];
 	imageUrl: string | null;
 	price: string;
 	currency: string;
@@ -47,13 +54,22 @@ type Form = {
 	skip: boolean;
 };
 
-const isLink = (text: string) => /^https?:\/\/\S+$/i.test(text.trim());
+const draftOf = (url: string, reading: Reading = "idle"): LinkDraft => ({
+	key: crypto.randomUUID(),
+	url,
+	title: null,
+	imageUrl: null,
+	price: null,
+	currency: null,
+	reading,
+});
 
 function formOf(item: HoshiiItem | null, chrome: ChromeData): Form {
 	return {
 		query: "",
+		queryLink: false,
 		title: item?.title ?? "",
-		url: item?.url ?? "",
+		links: (item?.links ?? []).map((l) => ({ ...l, key: crypto.randomUUID(), reading: "idle" })),
 		imageUrl: item?.imageUrl ?? null,
 		price: item?.price != null ? String(Number(item.price)).replace(".", ",") : "",
 		currency: item?.currency ?? chrome.currency,
@@ -87,25 +103,30 @@ export function ItemDialog({
 	const id = useId();
 	const editing = item != null;
 	const [form, setForm] = useState(() => formOf(item, chrome));
-	const [reading, setReading] = useState<Reading>("idle");
+	const [uploading, setUploading] = useState(false);
+	/** Photos uploaded while open: the ones not saved go when it closes. */
+	const uploads = useRef(new Set<string>());
 	const [error, setError] = useState<{ field?: keyof Form; message: string } | null>(null);
 	const [lists, setLists] = useState(chrome.lists);
 	const [newList, setNewList] = useState<string | null>(null);
 	const [isSaving, startSave] = useTransition();
-	const readId = useRef(0);
 	const debounce = useRef<ReturnType<typeof setTimeout>>(undefined);
 
 	useEffect(() => setLists(chrome.lists), [chrome.lists]);
 
 	useEffect(() => {
-		if (!open) return;
+		if (!open) {
+			for (const url of uploads.current) void discardPhoto(url).catch(() => {});
+			uploads.current.clear();
+			return;
+		}
 		setForm(formOf(item, chrome));
-		setReading("idle");
 		setError(null);
 		setNewList(null);
 		if (initialUrl) {
-			setForm((f) => ({ ...f, query: initialUrl, url: initialUrl }));
-			read(initialUrl);
+			const link = draftOf(initialUrl, "reading");
+			setForm((f) => ({ ...f, query: initialUrl, queryLink: true, links: [link] }));
+			read(link.key, initialUrl);
 		}
 		// Each opening starts from what was asked for, not from the last edit.
 	}, [open]);
@@ -115,47 +136,106 @@ export function ItemDialog({
 		setError(null);
 	};
 
-	/** Reads the shop's page; fills only what the user hasn't typed. */
-	function read(link: string) {
-		const mine = ++readId.current;
-		setReading("reading");
+	const setLink = (key: string, change: Partial<LinkDraft>) =>
+		setForm((f) => ({
+			...f,
+			links: f.links.map((l) => (l.key === key ? { ...l, ...change } : l)),
+		}));
+
+	/** Reads a shop's page into its link; fills only what the user hasn't typed or picked. */
+	function read(key: string, link: string) {
+		setLink(key, { reading: "reading" });
 		readLink(link)
 			.catch(() => ({ error: NEEDS_CONNECTION }))
 			.then((result) => {
-				if (mine !== readId.current) return;
 				if ("error" in result) {
-					setReading("failed");
+					setLink(key, { reading: "failed" });
 					return;
 				}
 				const info = result.data;
-				setReading("found");
-				setForm((f) => ({
-					...f,
-					title: f.title || info.title || shopOf(link) || "",
-					imageUrl: info.imageUrl ?? f.imageUrl,
-					price: f.price || info.price == null ? f.price : String(info.price).replace(".", ","),
-					currency: f.price || !info.currency ? f.currency : info.currency,
-				}));
+				setForm((f) => {
+					// Gone meanwhile (removed, or the query changed): nothing to fill.
+					if (!f.links.some((l) => l.key === key)) return f;
+					const fillPrice = !f.price && info.price != null;
+					return {
+						...f,
+						links: f.links.map((l) =>
+							l.key === key
+								? {
+										...l,
+										reading: "found",
+										title: info.title,
+										imageUrl: info.imageUrl,
+										price: info.price,
+										currency: info.currency,
+									}
+								: l,
+						),
+						title: f.title || info.title || shopOf(link) || "",
+						imageUrl: f.imageUrl ?? info.imageUrl,
+						price: fillPrice ? String(info.price).replace(".", ",") : f.price,
+						currency: fillPrice && info.currency ? info.currency : f.currency,
+					};
+				});
 			});
 	}
 
 	function onQuery(text: string) {
 		clearTimeout(debounce.current);
-		const link = isLink(text);
-		setForm((f) => ({
-			...f,
-			query: text,
-			url: link ? text.trim() : "",
-			// Typing a name: that's the name. A link: the page names it.
-			title: link ? "" : text,
-			imageUrl: link ? f.imageUrl : null,
-		}));
+		const link = isLink(text) ? draftOf(text.trim()) : null;
+		setForm((f) => {
+			const others = f.queryLink ? f.links.slice(1) : f.links;
+			const dropped = f.queryLink ? f.links[0] : null;
+			return {
+				...f,
+				query: text,
+				queryLink: link != null,
+				links: link ? [link, ...others] : others,
+				// Typing a name: that's the name. A link: the page names it.
+				title: link ? "" : text,
+				imageUrl: dropped && f.imageUrl === dropped.imageUrl ? null : f.imageUrl,
+			};
+		});
 		setError(null);
-		if (link) debounce.current = setTimeout(() => read(text.trim()), 350);
-		else {
-			readId.current++;
-			setReading("idle");
-		}
+		if (link) debounce.current = setTimeout(() => read(link.key, link.url), 350);
+	}
+
+	function addLink(url: string) {
+		const link = draftOf(url, "reading");
+		setForm((f) => ({ ...f, links: [...f.links, link] }));
+		setError(null);
+		read(link.key, url);
+	}
+
+	function removeLink(key: string) {
+		setForm((f) => {
+			const removed = f.links.find((l) => l.key === key);
+			const links = f.links.filter((l) => l.key !== key);
+			// Its photo was the want's: the next link's, if any, takes over.
+			const photoGone = removed?.imageUrl != null && f.imageUrl === removed.imageUrl;
+			return {
+				...f,
+				links,
+				imageUrl: photoGone ? (links.find((l) => l.imageUrl)?.imageUrl ?? null) : f.imageUrl,
+			};
+		});
+	}
+
+	function upload(file: File) {
+		const data = new FormData();
+		data.set("photo", file);
+		setUploading(true);
+		uploadPhoto(data)
+			.catch(() => ({ error: NEEDS_CONNECTION }))
+			.then((result) => {
+				setUploading(false);
+				if ("error" in result) {
+					toast.error(result.error);
+					return;
+				}
+				uploads.current.add(result.data.url);
+				set("imageUrl", result.data.url);
+			});
 	}
 
 	function addList() {
@@ -181,27 +261,26 @@ export function ItemDialog({
 	const days =
 		form.currency === chrome.currency || price == null ? coolingDays(price, chrome.tiers) : null;
 	const shown = editing || form.query.trim() !== "";
+	const queryReading = form.queryLink ? form.links[0]?.reading : "idle";
+	const photoChoices = [
+		...new Set([form.imageUrl, ...form.links.map((l) => l.imageUrl)].filter((u) => u != null)),
+	];
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		const title = form.title.trim();
 		if (!title) {
 			setError({ field: "title", message: "Name the want" });
-			document.getElementById(`${id}-${editing || form.url ? "title" : "query"}`)?.focus();
+			document.getElementById(`${id}-${editing || form.queryLink ? "title" : "query"}`)?.focus();
 			return;
 		}
 		if (form.price.trim() && (price == null || price < 0)) {
 			setError({ field: "price", message: "Enter the price as a number" });
 			return;
 		}
-		const url = form.url.trim();
-		if (url && !isLink(url)) {
-			setError({ field: "url", message: "Enter a web link, starting with https://" });
-			return;
-		}
 		const values: ItemFormValues = {
 			title,
-			url: url || null,
+			links: form.links.map(({ key: _, reading: __, ...link }) => link),
 			imageUrl: form.imageUrl,
 			price,
 			currency: form.currency,
@@ -217,6 +296,8 @@ export function ItemDialog({
 				setError({ message: result.error });
 				return;
 			}
+			// The photo is the want's now; the other uploads go when the dialog closes.
+			if (form.imageUrl) uploads.current.delete(form.imageUrl);
 			if ("queued" in result) toast(QUEUED_TOAST);
 			else if (!item) {
 				toast.success(
@@ -253,18 +334,18 @@ export function ItemDialog({
 								autoComplete="off"
 								placeholder="Paste a shop link, or type what you want"
 								value={form.query}
-								aria-invalid={invalid("title") && !form.url ? true : undefined}
+								aria-invalid={invalid("title") && !form.queryLink ? true : undefined}
 								onChange={(e) => onQuery(e.target.value)}
 							/>
-							{reading === "reading" && (
+							{queryReading === "reading" && (
 								<p className="flex items-center gap-2 text-xs text-muted-foreground">
 									<Spinner />
-									Reading {shopOf(form.url) ?? "the page"}…
+									Reading {shopOf(form.query) ?? "the page"}…
 								</p>
 							)}
-							{reading === "failed" && (
+							{queryReading === "failed" && (
 								<p className="text-xs text-muted-foreground">
-									Couldn't read {shopOf(form.url) ?? "the page"}. Fill in the name and price; the
+									Couldn't read {shopOf(form.query) ?? "the page"}. Fill in the name and price; the
 									link stays.
 								</p>
 							)}
@@ -274,41 +355,36 @@ export function ItemDialog({
 					<AutoHeight>
 						{shown && (
 							<div className="animate-swap space-y-4">
-								{(editing || form.url) && (
-									<div
-										className={cn(
-											"grid gap-3",
-											form.imageUrl && "grid-cols-[4rem_minmax(0,1fr)] items-start",
-										)}
-									>
-										{form.imageUrl && <Thumb src={form.imageUrl} className="size-16" />}
-										<div className="space-y-2">
-											<Label htmlFor={`${id}-title`}>Name</Label>
-											<Input
-												id={`${id}-title`}
-												autoComplete="off"
-												placeholder={reading === "reading" ? "Reading…" : "What is it?"}
-												value={form.title}
-												aria-invalid={invalid("title")}
-												onChange={(e) => set("title", e.target.value)}
-											/>
-										</div>
-									</div>
-								)}
-								{editing && (
+								{(editing || form.queryLink) && (
 									<div className="space-y-2">
-										<Label htmlFor={`${id}-url`}>Link</Label>
+										<Label htmlFor={`${id}-title`}>Name</Label>
 										<Input
-											id={`${id}-url`}
-											type="url"
+											id={`${id}-title`}
 											autoComplete="off"
-											placeholder="Optional"
-											value={form.url}
-											aria-invalid={invalid("url")}
-											onChange={(e) => set("url", e.target.value)}
+											placeholder={queryReading === "reading" ? "Reading…" : "What is it?"}
+											value={form.title}
+											aria-invalid={invalid("title")}
+											onChange={(e) => set("title", e.target.value)}
 										/>
 									</div>
 								)}
+
+								<LinkList
+									links={form.queryLink ? form.links.slice(1) : form.links}
+									label={form.queryLink ? "Other options" : "Links"}
+									addLabel={form.links.length > 0 ? "Add another option" : "Add a shop link"}
+									full={form.links.length >= MAX_LINKS}
+									onAdd={addLink}
+									onRemove={removeLink}
+								/>
+
+								<PhotoPicker
+									value={form.imageUrl}
+									choices={photoChoices}
+									uploading={uploading}
+									onChange={(url) => set("imageUrl", url)}
+									onUpload={upload}
+								/>
 
 								<div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
 									<div className="space-y-2">
@@ -432,7 +508,11 @@ export function ItemDialog({
 						>
 							Cancel
 						</Button>
-						<Button type="submit" className="gap-1.5 max-sm:flex-1" disabled={isSaving || !shown}>
+						<Button
+							type="submit"
+							className="gap-1.5 max-sm:flex-1"
+							disabled={isSaving || uploading || !shown}
+						>
 							{isSaving && <Spinner />}
 							{isSaving ? "Saving…" : editing ? "Save" : "Add Want"}
 						</Button>

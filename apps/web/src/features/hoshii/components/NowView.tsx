@@ -11,7 +11,7 @@ import { requestAdd } from "@/features/hoshii/lib/events";
 import { formatMoney, plural } from "@/features/hoshii/lib/format";
 import { moveRowFocus, targetRow } from "@/features/hoshii/lib/keys";
 import { QUEUED_TOAST, sendReorder } from "@/features/hoshii/lib/offline";
-import { shopOf } from "@/features/hoshii/lib/product";
+import { linksText } from "@/features/hoshii/lib/product";
 import { fundPlan } from "@/features/hoshii/lib/queue";
 import { pageKey } from "@/lib/capture-shortcut";
 import { generateKeyBetween } from "@/lib/position";
@@ -509,7 +509,7 @@ function PlanRow({
 			<RowMain
 				item={item}
 				onOpen={() => actions.open(item)}
-				detail={[item.listName, shopOf(item.url)].filter(Boolean).join(" · ") || "No list"}
+				detail={[item.listName, linksText(item.links)].filter(Boolean).join(" · ") || "No list"}
 			>
 				{funding && share != null && (
 					<span

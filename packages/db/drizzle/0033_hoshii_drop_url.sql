@@ -1,0 +1,1 @@
+ALTER TABLE "hoshii_items" DROP COLUMN "url";

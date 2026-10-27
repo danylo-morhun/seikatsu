@@ -4,6 +4,7 @@ import {
 	date,
 	index,
 	integer,
+	jsonb,
 	numeric,
 	pgEnum,
 	pgTable,
@@ -13,6 +14,15 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import { accounts, transactions, workspaces } from "./kuroji";
+
+/** One option for a want, as its shop's page describes it (read when added). */
+export type HoshiiLink = {
+	url: string;
+	title: string | null;
+	imageUrl: string | null;
+	price: number | null;
+	currency: string | null;
+};
 
 /** Cooling → (decide) → plan → bought, or released (let go) from cooling or plan. */
 export const hoshiiStateEnum = pgEnum("hoshii_state", ["cooling", "plan", "bought", "released"]);
@@ -42,7 +52,9 @@ export const hoshiiItems = pgTable(
 			.references(() => workspaces.id, { onDelete: "cascade" }),
 		listId: uuid("list_id").references(() => hoshiiLists.id, { onDelete: "set null" }),
 		title: text("title").notNull(),
-		url: text("url"),
+		/** Where to buy it: one shop link, or a few options (sizes, colours, shops). */
+		links: jsonb("links").$type<HoshiiLink[]>().notNull().default([]),
+		/** The want's photo: copied from a link's photo, or uploaded. */
 		imageUrl: text("image_url"),
 		/** Unknown until filled in; cooling then uses the middle tier. */
 		price: numeric("price", { precision: 19, scale: 4 }),
