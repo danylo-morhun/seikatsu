@@ -20,9 +20,10 @@ const NOTIFIERS: Record<string, Notifier> = {
 	kurojiWeekly: notifyKurojiWeekly,
 };
 
-// Every 15 minutes from GitHub Actions (.github/workflows/notify.yml — Vercel Hobby crons run
-// once a day). Each notifier decides from the user's local clock whether it's due; the
-// notification log keeps a late or repeated run from sending twice. Guarded by CRON_SECRET.
+// Every 15 minutes from cron-job.org, with GitHub Actions (.github/workflows/notify.yml) as a
+// throttled backup — Vercel Hobby crons run once a day (docs/ops/runbook.md). Each notifier
+// decides from the user's local clock whether it's due; the notification log keeps a late or
+// repeated run from sending twice. Guarded by CRON_SECRET.
 export async function GET(req: NextRequest) {
 	const secret = process.env.CRON_SECRET;
 	if (!secret) {

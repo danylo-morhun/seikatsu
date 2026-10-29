@@ -1,6 +1,7 @@
-# Push notifications scheduler. Vercel Hobby crons run at most once a day, so GitHub calls the
-# notify cron every 15 minutes; each notifier checks the user's local time itself and the
-# notification log stops a late or doubled run from sending twice.
+# Backup push notifications scheduler. cron-job.org is the primary caller (every 15 min):
+# GitHub throttles this schedule to every few hours (docs/ops/runbook.md). Each notifier checks
+# the user's local time itself and the notification log stops a late or doubled run from
+# sending twice.
 name: Notify
 
 on:
