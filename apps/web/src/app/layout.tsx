@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { TimezoneSync } from "@/components/TimezoneSync";
 import { OutboxSync } from "@/features/pwa/components/OutboxSync";
 import { ServiceWorker } from "@/features/pwa/components/ServiceWorker";
+import { TapProbe } from "@/features/pwa/components/TapProbe";
 import splashScreens from "@/features/pwa/lib/splash-screens.json";
 import { TooltipProvider } from "@seikatsu/ui";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -61,6 +62,7 @@ export default function RootLayout({
 				<TimezoneSync />
 				<ServiceWorker />
 				<OutboxSync />
+				<TapProbe />
 			</body>
 		</html>
 	);
