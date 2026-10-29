@@ -13,15 +13,20 @@ export function ServiceWorker() {
 		if (!swSupported() || process.env.NODE_ENV !== "production") return;
 		let reloading = false;
 
-		const offerUpdate = (worker: ServiceWorker) => {
+		const offerUpdate = () => {
 			toast("A new version is ready", {
 				id: "sw-update",
 				duration: Number.POSITIVE_INFINITY,
-				action: {
-					label: "Reload",
-					onClick: () => worker.postMessage({ type: "skipWaiting" }),
-				},
+				action: { label: "Reload", onClick: () => void applyUpdate() },
 			});
+		};
+
+		// The worker waiting now, not the one the toast was offered for (a newer deploy may have
+		// replaced it). Reload anyway if the switch doesn't come: the toast must never stick.
+		const applyUpdate = async () => {
+			const registration = await navigator.serviceWorker.getRegistration();
+			registration?.waiting?.postMessage({ type: "skipWaiting" });
+			setTimeout(onControllerChange, registration?.waiting ? 3000 : 0);
 		};
 
 		const onControllerChange = () => {
@@ -40,17 +45,21 @@ export function ServiceWorker() {
 		};
 		document.addEventListener("visibilitychange", onVisible);
 
-		navigator.serviceWorker
-			.register(SW_URL, { scope: "/", updateViaCache: "none" })
+		isStalePage()
+			.then((stale) => {
+				if (stale) return;
+				return navigator.serviceWorker.register(SW_URL, { scope: "/", updateViaCache: "none" });
+			})
 			.then((registration) => {
+				if (!registration) return;
 				// Only an update has a controller already; the first install takes over silently.
 				const hasController = !!navigator.serviceWorker.controller;
-				if (registration.waiting && hasController) offerUpdate(registration.waiting);
+				if (registration.waiting && hasController) offerUpdate();
 				registration.addEventListener("updatefound", () => {
 					const next = registration.installing;
 					next?.addEventListener("statechange", () => {
 						if (next.state === "installed" && navigator.serviceWorker.controller) {
-							offerUpdate(next);
+							offerUpdate();
 						}
 					});
 				});
@@ -67,4 +76,21 @@ export function ServiceWorker() {
 	}, []);
 
 	return null;
+}
+
+/**
+ * A page the worker answered from its cache (slow network) may be an older build. Registering
+ * its worker URL would install that old worker over the live one and offer it as "a new
+ * version" — forever, as each reload flips between the two. Only the live build registers.
+ */
+async function isStalePage(): Promise<boolean> {
+	const active = navigator.serviceWorker.controller?.scriptURL;
+	if (!active || new URL(active).href === new URL(SW_URL, location.origin).href) return false;
+	try {
+		const res = await fetch("/api/version", { cache: "no-store" });
+		const { build } = (await res.json()) as { build: string };
+		return build !== process.env.NEXT_PUBLIC_BUILD_ID;
+	} catch {
+		return true; // offline: keep the worker that's running
+	}
 }
