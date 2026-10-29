@@ -47,7 +47,7 @@ export async function sendToWorkspace(workspaceId: string, payload: PushPayload)
 				await webpush.sendNotification(
 					{ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
 					body,
-					{ TTL: 60 * 60 * 12, urgency: "normal" },
+					{ TTL: 60 * 60 * 12, urgency: "high" },
 				);
 				return { id: sub.id, ok: true, gone: false };
 			} catch (e) {
