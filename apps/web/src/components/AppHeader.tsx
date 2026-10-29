@@ -149,8 +149,9 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 	}
 
 	return (
-		// Sticky with a solid fill: iOS 26 tints the status bar from it instead of blurring the header.
-		<header className="sticky top-0 z-40 box-content flex h-14 shrink-0 items-center gap-1 border-b border-border bg-background px-2 pt-[env(safe-area-inset-top)]">
+		// Solid fill: iOS 26 tints the status bar from it. Not sticky — in the Home Screen app a
+		// sticky header under the status bar swallowed every tap on the page below it.
+		<header className="box-content flex h-14 shrink-0 items-center gap-1 border-b border-border bg-background px-2 pt-[env(safe-area-inset-top)]">
 			<SidebarTrigger className="size-10 max-md:-ml-2 md:size-8 [&>svg]:h-4 [&>svg]:w-4" />
 			<div aria-hidden className="h-4 w-px shrink-0 bg-border" />
 
