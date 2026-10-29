@@ -41,7 +41,7 @@ export function timeToMinutes(time: string): number {
 }
 
 /**
- * The cron runs every 15 minutes but GitHub may start it late or skip a run, so a time stays
+ * The cron runs every 15 minutes but a run may start late or be skipped, so a time stays
  * due for an hour after it passes; the notification log makes sure it's sent once.
  */
 export const DUE_WINDOW_MINUTES = 60;
