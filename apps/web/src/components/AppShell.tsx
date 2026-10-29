@@ -49,6 +49,21 @@ export function AppShell({
 		};
 	}, [theme]);
 
+	// A Radix menu or sheet closed by navigating away can unmount without handing the page back:
+	// body keeps `pointer-events: none` and nothing on the new page takes a tap. Once the route
+	// has settled (closing layers finish their exit) with no layer open, give it back.
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			const layerOpen = document.querySelector(
+				'[data-state="open"]:is([role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"])',
+			);
+			if (!layerOpen && document.body.style.pointerEvents === "none") {
+				document.body.style.pointerEvents = "";
+			}
+		}, 500);
+		return () => clearTimeout(timer);
+	}, [pathname]);
+
 	return (
 		<SidebarProvider defaultOpen={sidebarDefaultOpen} className={theme}>
 			<AppSidebar workspaceName={workspaceName} hiddenApps={hiddenApps} user={user} />
