@@ -28,6 +28,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 const ACCOUNT_TYPES = ["ASSET", "LIABILITY", "INCOME", "EXPENSE"] as const;
+/** The parent picker's top-level choice: Radix Select can't hold an empty value. */
+const NO_PARENT = "none";
 
 const formSchema = z.object({
 	name: z.string().min(1, "Name required"),
@@ -195,11 +197,15 @@ export function EditAccountModal({ account, workspaceId, open, onOpenChange }: P
 							control={control}
 							name="parentId"
 							render={({ field }) => (
-								<Select onValueChange={field.onChange} value={field.value ?? ""}>
+								<Select
+									onValueChange={(v) => field.onChange(v === NO_PARENT ? undefined : v)}
+									value={field.value ?? NO_PARENT}
+								>
 									<SelectTrigger id="edit-acc-parent">
 										<SelectValue placeholder="None" />
 									</SelectTrigger>
 									<SelectContent>
+										<SelectItem value={NO_PARENT}>None</SelectItem>
 										{parentOptions.map((a) => (
 											<SelectItem key={a.id} value={a.id}>
 												{a.name} ({a.type})
