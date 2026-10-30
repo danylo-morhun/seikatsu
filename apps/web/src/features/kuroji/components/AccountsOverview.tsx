@@ -433,7 +433,7 @@ export function AccountsOverview({
 							)}
 						</div>
 
-						<div className="divide-y divide-rule">
+						<div className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 							{listMode ? (
 								typeAccounts.map((acct) => {
 									const row = rowMap.get(acct.id);
@@ -521,8 +521,9 @@ export function AccountsOverview({
 	return (
 		<section>
 			{!hideHeader && (
-				<div className="mb-4 flex items-center justify-between">
-					<h2 className="text-sm font-medium">Accounts</h2>
+				// The page's large title already names it; only the action stays visible.
+				<div className="mb-4 flex items-center justify-end">
+					<h2 className="sr-only">Accounts</h2>
 					<AddAccountModal workspaceId={workspaceId} baseCurrency={currency} />
 				</div>
 			)}

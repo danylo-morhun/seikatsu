@@ -75,7 +75,7 @@ export function RecurringTransactionsList({
 
 	return (
 		<>
-			<div className="divide-y divide-rule">
+			<div className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 				{items.map((rt) => (
 					<div
 						key={rt.id}

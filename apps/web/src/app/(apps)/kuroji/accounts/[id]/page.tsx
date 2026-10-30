@@ -107,7 +107,9 @@ export default async function AccountDetailPage({
 
 			<div className="mb-10 flex items-start justify-between gap-4">
 				<div className="min-w-0">
-					<h1 className="truncate text-xl font-semibold">{account.name}</h1>
+					<h1 className="truncate text-[1.75rem] leading-tight font-bold tracking-tight">
+						{account.name}
+					</h1>
 					<p
 						data-total="lead"
 						className={cn(
@@ -158,7 +160,7 @@ export default async function AccountDetailPage({
 							<h2 id="subs-title" className="mb-3 text-sm font-medium">
 								Sub-accounts
 							</h2>
-							<ul className="divide-y divide-rule">
+							<ul className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 								{subAccounts.map((sub) => {
 									const subBalance = displayBalance(sub.type, Number(sub.balance));
 									return (

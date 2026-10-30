@@ -107,7 +107,7 @@ export function MonthlyFlow({
 			{rows.length === 0 ? (
 				<p className="py-6 text-sm text-muted-foreground">No income or spending in this range.</p>
 			) : (
-				<ol className="divide-y divide-rule">
+				<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 					{rows.map((m, i) => {
 						if (m.kind === "gap") {
 							return (
