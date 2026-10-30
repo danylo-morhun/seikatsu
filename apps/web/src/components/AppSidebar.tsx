@@ -1,5 +1,6 @@
 "use client";
 
+import { useDesign } from "@/components/DesignProvider";
 import { signOutAction } from "@/features/auth/actions/auth";
 import { readAppEntry } from "@/lib/app-entry";
 import { APPS_CONFIG } from "@/lib/app-themes";
@@ -63,8 +64,11 @@ export function AppSidebar({ workspaceName, hiddenApps, user }: Props) {
 		setEntryHrefs(next);
 	}, [pathname]);
 
+	const { design } = useDesign();
+
 	return (
-		<Sidebar collapsible="icon" variant="floating">
+		// Liquid Glass: a floating glass panel; Classic: the lacquer shell around an inset tray.
+		<Sidebar collapsible="icon" variant={design === "glass" ? "floating" : "inset"}>
 			<SidebarHeader>
 				<SidebarMenu>
 					<SidebarMenuItem>

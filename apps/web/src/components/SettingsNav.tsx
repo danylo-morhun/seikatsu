@@ -1,6 +1,6 @@
 "use client";
 
-import { SegmentedTab, SegmentedTabs } from "@/components/SegmentedTabs";
+import { PageTab, PageTabs } from "@/components/PageTabs";
 import { APPS_CONFIG } from "@/lib/app-themes";
 import { usePathname } from "next/navigation";
 
@@ -29,13 +29,13 @@ export function SettingsNav() {
 
 	return (
 		<div className="max-w-3xl px-4 pt-2 sm:px-8 md:pt-4">
-			<SegmentedTabs label="Settings">
+			<PageTabs label="Settings">
 				{links.map(({ href, label }) => (
-					<SegmentedTab key={href} href={href} current={pathname === href}>
+					<PageTab key={href} href={href} current={pathname === href}>
 						{label}
-					</SegmentedTab>
+					</PageTab>
 				))}
-			</SegmentedTabs>
+			</PageTabs>
 		</div>
 	);
 }

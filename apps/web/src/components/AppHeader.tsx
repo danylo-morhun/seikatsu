@@ -1,6 +1,8 @@
 "use client";
 
+import { useDesign } from "@/components/DesignProvider";
 import { ShortcutsButton } from "@/components/KeyboardShortcuts";
+import { SectionNav } from "@/components/SectionNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { requestLogService } from "@/features/aisha/lib/events";
 import { requestAdd } from "@/features/hoshii/lib/events";
@@ -67,10 +69,12 @@ const KUROJI_TABS: { value: KurojiTab; label: string }[] = [
 	{ value: "plan", label: "Plan" },
 ];
 
-// The app's capture: a labelled button on wide screens; on phones an accent glyph in the
-// header's glass capsule, like iOS Mail's compose — the tab bar below holds only tabs.
-const CAPTURE =
-	"md:rounded-full xl:w-auto xl:gap-2 xl:px-3 max-md:bg-transparent max-md:text-primary max-md:shadow-none max-md:hover:bg-surface-2 max-md:active:bg-surface-2 max-md:[&_svg]:size-5 max-md:[&_svg]:stroke-[2]";
+// The app's capture: a labelled button on wide screens. Liquid Glass puts it on phones too, an
+// accent glyph in the header's glass capsule like iOS Mail's compose (the tab bar holds only
+// tabs); Classic leaves it to the phone tab bar's centre button.
+const CAPTURE_GLASS =
+	"xl:w-auto xl:gap-2 xl:px-3 max-md:bg-transparent max-md:text-primary max-md:shadow-none max-md:hover:bg-surface-2 max-md:active:bg-surface-2 max-md:[&_svg]:size-5 max-md:[&_svg]:stroke-[2]";
+const CAPTURE_CLASSIC = "xl:w-auto xl:gap-2 xl:px-3 max-md:hidden";
 
 interface Props {
 	workspaceId?: string;
@@ -141,20 +145,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 						: isHoshiiHome
 							? HOSHII_TABS.map(({ value, label }) => ({ value, label, href: value }))
 							: [];
-	// The segmented control's lens: measured from the lit segment so it hugs its label.
-	const navRef = useRef<HTMLElement>(null);
-	const [lens, setLens] = useState<{ x: number; w: number; moved: boolean } | null>(null);
-	useLayoutEffect(() => {
-		const nav = navRef.current;
-		function place() {
-			const lit = nav?.querySelector<HTMLElement>(`[data-tab="${displayTab}"]`);
-			if (!lit) return setLens(null);
-			setLens((prev) => ({ x: lit.offsetLeft, w: lit.offsetWidth, moved: prev !== null }));
-		}
-		place();
-		window.addEventListener("resize", place);
-		return () => window.removeEventListener("resize", place);
-	}, [displayTab]);
+	const glass = useDesign().design === "glass";
 
 	// The table and Stats share their filters.
 	function kyuuTabHref(href: string) {
@@ -167,17 +158,30 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 		return qs ? `${href}?${qs}` : href;
 	}
 
+	const CAPTURE = glass ? CAPTURE_GLASS : CAPTURE_CLASSIC;
+
 	return (
-		// Solid fill: iOS 26 tints the status bar from it; no hairline on phones, as in iOS 26.
-		// Not sticky on touch — in the Home Screen app a sticky header under the status bar
-		// swallowed every tap on the page below it. With a mouse it sticks and turns to glass once
-		// the page scrolls under it, like a macOS toolbar.
+		// Solid fill: iOS 26 tints the status bar from it. Not sticky on touch — in the Home
+		// Screen app a sticky header under the status bar swallowed every tap on the page below
+		// it. Liquid Glass: no hairline on phones; with a mouse it sticks and turns to glass once
+		// the page scrolls under it, like a macOS toolbar. Classic: a ruled bar that scrolls away.
 		<header
 			data-scrolled={scrolled || undefined}
-			className="box-content flex h-14 shrink-0 items-center gap-1 bg-background px-2 pt-[env(safe-area-inset-top)] md:top-0 md:z-30 md:transition-[background-color,box-shadow] md:duration-200 md:pointer-fine:sticky md:data-scrolled:bg-background/70 md:data-scrolled:shadow-[0_1px_0_var(--rule)] md:data-scrolled:backdrop-blur-xl md:data-scrolled:backdrop-saturate-150"
+			className={cn(
+				"box-content flex h-14 shrink-0 items-center gap-1 bg-background px-2 pt-[env(safe-area-inset-top)]",
+				glass
+					? "md:top-0 md:z-30 md:transition-[background-color,box-shadow] md:duration-200 md:pointer-fine:sticky md:data-scrolled:bg-background/70 md:data-scrolled:shadow-[0_1px_0_var(--rule)] md:data-scrolled:backdrop-blur-xl md:data-scrolled:backdrop-saturate-150"
+					: "border-b border-border",
+			)}
 		>
-			<div className="flex min-w-0 items-center gap-3">
-				<SidebarTrigger className="glass size-10 rounded-full md:size-9 [&>svg]:h-4 [&>svg]:w-4" />
+			<div className={cn("flex min-w-0 items-center", glass ? "gap-3" : "gap-1")}>
+				<SidebarTrigger
+					className={cn(
+						"[&>svg]:h-4 [&>svg]:w-4",
+						glass ? "glass size-10 rounded-full md:size-9" : "size-10 max-md:-ml-2 md:size-8",
+					)}
+				/>
+				{!glass && <div aria-hidden className="mr-1 h-4 w-px shrink-0 bg-border" />}
 				<Link
 					href={app?.href ?? (isSettings ? "/settings" : "/")}
 					className={cn(
@@ -195,43 +199,12 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 			</div>
 
 			{tabs.length > 0 && (
-				// macOS segmented control: a glass capsule whose lens slides to the open section.
-				<nav
-					ref={navRef}
-					aria-label={`${app?.name ?? ""} sections`}
-					className="glass relative ml-1 hidden h-9 shrink-0 rounded-full p-0.5 md:flex lg:ml-3"
-				>
-					{lens && (
-						<span
-							aria-hidden
-							className={cn(
-								"absolute inset-y-0.5 left-0 rounded-full bg-(--glass-lens)",
-								lens.moved &&
-									"transition-[transform,width] duration-300 ease-drawer motion-reduce:transition-none",
-							)}
-							style={{ width: lens.w, transform: `translateX(${lens.x}px)` }}
-						/>
-					)}
-					{tabs.map(({ value, label, href }) => {
-						const active = displayTab === value;
-						return (
-							<Link
-								key={value}
-								href={href}
-								prefetch
-								data-tab={value}
-								aria-current={active ? "page" : undefined}
-								onClick={() => setPendingTab(value)}
-								className={cn(
-									"relative flex items-center justify-center rounded-full px-3 text-sm font-medium whitespace-nowrap lg:px-4 outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring",
-									active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-								)}
-							>
-								{label}
-							</Link>
-						);
-					})}
-				</nav>
+				<SectionNav
+					label={`${app?.name ?? ""} sections`}
+					sections={tabs}
+					current={displayTab}
+					onSelect={setPendingTab}
+				/>
 			)}
 
 			{(app || pathname === "/") && (
@@ -241,8 +214,15 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 					{isKuroji && workspaceId && baseCurrency && !(isKurojiHome && activeTab === "plan") && (
 						<DateRangePicker />
 					)}
-					{/* Phones: capture and theme share one glass capsule, like iOS 26 bar buttons. */}
-					<div className="flex items-center max-md:glass max-md:rounded-full max-md:p-0.5 max-md:[&_button]:size-9 max-md:[&_button]:rounded-full md:contents">
+					{/* Liquid Glass phones: capture and theme share one glass capsule, like iOS 26 bar buttons. */}
+					<div
+						className={cn(
+							"flex items-center",
+							glass
+								? "max-md:glass max-md:rounded-full max-md:p-0.5 max-md:[&_button]:size-9 max-md:[&_button]:rounded-full md:contents"
+								: "contents",
+						)}
+					>
 						{isKuroji && workspaceId && baseCurrency && (
 							<AddTransactionModal
 								workspaceId={workspaceId}
@@ -328,7 +308,13 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 							</Button>
 						)}
 						{/* Wide screens: the quiet buttons share a capsule; capture stands beside it. */}
-						<div className="max-md:contents md:glass md:flex md:items-center md:rounded-full md:p-0.5 md:[&_button]:rounded-full">
+						<div
+							className={cn(
+								glass
+									? "max-md:contents md:glass md:flex md:items-center md:rounded-full md:p-0.5 md:[&_button]:rounded-full"
+									: "contents",
+							)}
+						>
 							<ShortcutsButton />
 							<ThemeToggle />
 						</div>

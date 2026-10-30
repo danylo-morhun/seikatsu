@@ -2,7 +2,7 @@
 
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { startNavigationProgress } from "@/components/NavigationProgress";
-import { SegmentedTab, SegmentedTabs } from "@/components/SegmentedTabs";
+import { PageTab, PageTabs } from "@/components/PageTabs";
 import { Button, cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -99,9 +99,9 @@ export function AllView({
 
 	return (
 		<ApplicationArea rows={rows}>
-			<SegmentedTabs label="Views">
+			<PageTabs label="Views">
 				{VIEWS.map((v) => (
-					<SegmentedTab
+					<PageTab
 						key={v.value}
 						href={href({ view: v.value === "all" ? null : v.value, page: null })}
 						current={view === v.value}
@@ -110,9 +110,9 @@ export function AllView({
 						<span className="ml-1.5 font-figures text-xs text-muted-foreground">
 							{counts[v.value]}
 						</span>
-					</SegmentedTab>
+					</PageTab>
 				))}
-			</SegmentedTabs>
+			</PageTabs>
 
 			<div className="mt-5 flex flex-wrap items-center justify-between gap-3">
 				<div className="min-w-0 flex-1">
@@ -127,7 +127,12 @@ export function AllView({
 			{view === "waiting" && ghostDue.length > 0 && <GhostBar ids={ghostDue} />}
 
 			<div className="mt-6">
-				<div className={cn(TABLE_GRID, "px-4 pb-2 text-xs text-muted-foreground")}>
+				<div
+					className={cn(
+						TABLE_GRID,
+						"border-b border-(--head-rule) px-(--group-px) pb-2 text-xs text-muted-foreground",
+					)}
+				>
 					{header("date", "Sent", "max-sm:hidden")}
 					{header("company", "Company")}
 					<span className="max-md:hidden">Role</span>
@@ -143,7 +148,7 @@ export function AllView({
 							: (VIEWS.find((v) => v.value === view)?.empty ?? "")}
 					</p>
 				) : (
-					<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+					<ol className="inset-group">
 						{rows.map((row) => (
 							<ApplicationRowItem key={row.id} row={row} today={today} />
 						))}

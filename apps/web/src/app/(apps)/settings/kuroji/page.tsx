@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { SegmentedTab, SegmentedTabs } from "@/components/SegmentedTabs";
+import { PageTab, PageTabs } from "@/components/PageTabs";
 import { SettingsPage, SettingsSection } from "@/components/SettingsSection";
 import { getAccounts } from "@/features/kuroji/actions/accounts";
 import { getBalances } from "@/features/kuroji/actions/balances";
@@ -143,17 +143,17 @@ export default async function KurojiSettingsPage({
 			title="黒 Kuroji"
 			appNav
 			tabs={
-				<SegmentedTabs label="Kuroji settings">
+				<PageTabs label="Kuroji settings">
 					{SECTIONS.map((s) => (
-						<SegmentedTab
+						<PageTab
 							key={s.id}
 							href={s.id === "general" ? "/settings/kuroji" : `/settings/kuroji?section=${s.id}`}
 							current={section === s.id}
 						>
 							{s.label}
-						</SegmentedTab>
+						</PageTab>
 					))}
-				</SegmentedTabs>
+				</PageTabs>
 			}
 		>
 			{body}
