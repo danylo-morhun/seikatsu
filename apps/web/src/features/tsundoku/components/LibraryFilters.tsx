@@ -36,7 +36,7 @@ import { forwardRef } from "react";
 
 const ALL = "all";
 
-/** All · Reading · Pile · Read, with counts; one chip slides under the chosen pile. */
+/** All · Reading · Pile · Read, with counts: a macOS segmented control whose lens slides under the chosen pile. */
 export function SegmentSwitch({
 	value,
 	counts,
@@ -49,10 +49,10 @@ export function SegmentSwitch({
 	const options = [{ value: null, label: "All" }, ...SEGMENTS] as const;
 	const index = options.findIndex((o) => o.value === value);
 	return (
-		<nav aria-label="Piles" className="relative flex rounded-md bg-surface p-0.5">
+		<nav aria-label="Piles" className="relative flex rounded-full bg-surface p-0.5">
 			<span
 				aria-hidden
-				className="absolute inset-y-0.5 left-0.5 w-[calc((100%-0.25rem)/4)] rounded bg-surface-2 transition-transform duration-250 ease-in-out motion-reduce:transition-none"
+				className="absolute inset-y-0.5 left-0.5 w-[calc((100%-0.25rem)/4)] rounded-full bg-surface-2 shadow-sm transition-transform duration-250 ease-in-out motion-reduce:transition-none"
 				style={{ transform: `translateX(${index * 100}%)` }}
 			/>
 			{options.map((o) => {
@@ -65,7 +65,7 @@ export function SegmentSwitch({
 						aria-pressed={active}
 						onClick={() => onChange(o.value)}
 						className={cn(
-							"relative flex h-8 flex-1 items-center justify-center gap-1.5 rounded px-2.5 text-xs font-medium whitespace-nowrap outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring sm:flex-none sm:min-w-20",
+							"relative flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-sm whitespace-nowrap outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring sm:flex-none sm:min-w-20",
 							active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
 						)}
 					>
@@ -106,7 +106,7 @@ export const SearchBox = forwardRef<
 						onChange("");
 					}
 				}}
-				className="pl-9 md:h-8"
+				className="rounded-full border-transparent bg-surface pl-9 md:h-8"
 			/>
 		</div>
 	);
@@ -117,10 +117,14 @@ export function ViewSwitch({
 	onChange,
 }: { view: "grid" | "list"; onChange: (view: "grid" | "list") => void }) {
 	return (
-		<div role="radiogroup" aria-label="View" className="relative flex rounded-md bg-surface p-0.5">
+		<div
+			role="radiogroup"
+			aria-label="View"
+			className="relative flex rounded-full bg-surface p-0.5"
+		>
 			<span
 				aria-hidden
-				className="absolute inset-y-0.5 left-0.5 w-9 rounded bg-surface-2 transition-transform duration-200 ease-in-out motion-reduce:transition-none"
+				className="absolute inset-y-0.5 left-0.5 w-9 rounded-full bg-surface-2 shadow-sm transition-transform duration-200 ease-in-out motion-reduce:transition-none"
 				style={{ transform: `translateX(${view === "list" ? 100 : 0}%)` }}
 			/>
 			{(
@@ -137,7 +141,7 @@ export function ViewSwitch({
 					aria-label={label}
 					onClick={() => onChange(value)}
 					className={cn(
-						"relative flex h-9 w-9 items-center justify-center rounded outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring md:h-7",
+						"relative flex h-9 w-9 items-center justify-center rounded-full outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring md:h-7",
 						view === value ? "text-foreground" : "text-muted-foreground hover:text-foreground",
 					)}
 				>
