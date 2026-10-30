@@ -3,6 +3,8 @@
 import { ColorSwatches } from "@/components/ColorSwatches";
 import { Spinner } from "@/components/Spinner";
 import { createProject, updateProject } from "@/features/seiryu/actions/projects";
+import { useHeld } from "@/hooks/useHeld";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 import { LABEL_COLORS } from "@/lib/pigments";
 import {
 	Button,
@@ -29,16 +31,20 @@ interface Props {
 	count?: number;
 }
 
-export function ProjectDialog({ open, onOpenChange, project, count = 0 }: Props) {
+export function ProjectDialog({ open, onOpenChange, project: projectProp, count = 0 }: Props) {
+	// Settings clears the project as the dialog closes: "Edit" mustn't flip to "New" on the way out.
+	const project = useHeld(projectProp, open);
 	const id = useId();
 	const router = useRouter();
 	const [name, setName] = useState("");
 	const [color, setColor] = useState<string | null>(null);
 	const [isSaving, startSave] = useTransition();
 
-	// Every open starts from the project (or a blank form with the next pigment).
+	// Every open starts from the project (or a blank form with the next pigment), unless a new
+	// project's draft was dismissed with Escape or a click outside.
+	const draft = useKeptDraft();
 	useEffect(() => {
-		if (!open) return;
+		if (!open || draft.resume(!project)) return;
 		setName(project?.name ?? "");
 		setColor(project?.color ?? LABEL_COLORS[count % LABEL_COLORS.length]?.hex ?? null);
 	}, [open, project, count]);
@@ -72,7 +78,14 @@ export function ProjectDialog({ open, onOpenChange, project, count = 0 }: Props)
 	}
 
 	return (
-		<Dialog open={open} onOpenChange={(v) => !isSaving && onOpenChange(v)}>
+		<Dialog
+			open={open}
+			onOpenChange={(v) => {
+				if (isSaving) return;
+				if (!v) draft.keep(!project);
+				onOpenChange(v);
+			}}
+		>
 			<DialogContent className="sm:max-w-md max-sm:flex max-sm:flex-col">
 				<DialogHeader>
 					<DialogTitle>{project ? "Edit Project" : "New Project"}</DialogTitle>
