@@ -39,8 +39,18 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 				{ keys: ["1"], label: "Expenses" },
 				{ keys: ["2"], label: "Accounts" },
 				{ keys: ["3"], label: "Transactions" },
+				{ keys: ["4"], label: "Plan" },
 				{ keys: ["/"], label: "Search transactions" },
 				{ keys: [","], label: "Settings" },
+			],
+		},
+		{
+			title: "Kuroji · Plan",
+			items: [
+				{ keys: ["[", "]"], label: "Previous / next month" },
+				{ keys: ["P"], label: "Plan a category" },
+				{ keys: ["E"], label: "Edit the focused category's plan" },
+				{ keys: ["F"], label: "New fund" },
 			],
 		},
 	],

@@ -66,6 +66,7 @@ const KUROJI_TABS: { value: KurojiTab; label: string }[] = [
 	{ value: "expense", label: "Expenses" },
 	{ value: "accounts", label: "Accounts" },
 	{ value: "transactions", label: "Transactions" },
+	{ value: "plan", label: "Plan" },
 ];
 
 interface Props {
@@ -203,7 +204,8 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 					<OfflinePill />
 					{isKuroji && workspaceId && baseCurrency && (
 						<>
-							<DateRangePicker />
+							{/* The plan picks its own month. */}
+							{!(isKurojiHome && activeTab === "plan") && <DateRangePicker />}
 							<span className="hidden md:contents">
 								<AddTransactionModal
 									workspaceId={workspaceId}

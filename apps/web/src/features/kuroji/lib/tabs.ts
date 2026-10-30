@@ -1,4 +1,4 @@
-export type KurojiTab = "expense" | "accounts" | "transactions";
+export type KurojiTab = "expense" | "accounts" | "transactions" | "plan";
 
 export function buildTabHref(tab: KurojiTab, currentParams: string): string {
 	const params = new URLSearchParams(currentParams);
@@ -7,6 +7,8 @@ export function buildTabHref(tab: KurojiTab, currentParams: string): string {
 	} else {
 		params.set("tab", tab);
 	}
+	// The plan has its own month; the other tabs keep the period.
+	if (tab !== "plan") params.delete("month");
 	if (tab !== "transactions") {
 		params.delete("page");
 		params.delete("account");

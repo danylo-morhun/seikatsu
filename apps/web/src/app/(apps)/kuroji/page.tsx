@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { getAccounts } from "@/features/kuroji/actions/accounts";
 import { getBalances } from "@/features/kuroji/actions/balances";
 import { getBankProblem } from "@/features/kuroji/actions/bank";
+import { getPlan, getPlanSuggestions } from "@/features/kuroji/actions/plan";
 import { getTags } from "@/features/kuroji/actions/tags";
 import { getRecentTransactions, hasAnyTransactions } from "@/features/kuroji/actions/transactions";
 import { getMonthlyTrends } from "@/features/kuroji/actions/trends";
@@ -14,6 +15,8 @@ import type { KurojiTab } from "@/features/kuroji/components/KurojiNavTabs";
 import { MonthlyFlow } from "@/features/kuroji/components/MonthlyFlow";
 import { OnboardingCard } from "@/features/kuroji/components/OnboardingCard";
 import { OverviewFigures } from "@/features/kuroji/components/OverviewFigures";
+import { PlanSuggestions } from "@/features/kuroji/components/PlanSuggestions";
+import { PlanView } from "@/features/kuroji/components/PlanView";
 import { TransactionTable } from "@/features/kuroji/components/TransactionTable";
 import { displayBalance, rollupRoots } from "@/features/kuroji/lib/balance";
 import { periodAfterSync } from "@/features/kuroji/lib/bank-health";
@@ -27,7 +30,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import type { CSSProperties } from "react";
 
-const VALID_TABS: KurojiTab[] = ["expense", "accounts", "transactions"];
+const VALID_TABS: KurojiTab[] = ["expense", "accounts", "transactions", "plan"];
 
 export default async function KurojiPage({
 	searchParams,
@@ -44,6 +47,7 @@ export default async function KurojiPage({
 		dir?: string;
 		tag?: string;
 		trend?: string;
+		month?: string;
 	}>;
 }) {
 	const session = await auth();
@@ -61,6 +65,7 @@ export default async function KurojiPage({
 		dir: rawDir,
 		tag: rawTag,
 		trend: rawTrend,
+		month: rawMonth,
 	} = await searchParams;
 
 	const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -187,6 +192,35 @@ export default async function KurojiPage({
 						</div>
 					</div>
 				)}
+			</div>
+		);
+	}
+
+	// ── Plan ────────────────────────────────────────────────────────────────────
+	if (tab === "plan") {
+		const month =
+			rawMonth && /^\d{4}-(0[1-9]|1[0-2])$/.test(rawMonth) ? rawMonth : today.slice(0, 7);
+		const plan = await getPlan(workspace.id, month);
+		const nothingPlanned =
+			plan.expense.length === 0 && plan.income.length === 0 && plan.funds.length === 0;
+		const suggestions = nothingPlanned ? await getPlanSuggestions(workspace.id, month) : [];
+
+		return (
+			<div className="flex flex-col pb-28 md:pb-0">
+				<div className="px-4 py-6 sm:px-8 md:py-8">
+					<h1 className="sr-only">Kuroji — Plan</h1>
+					<PlanView
+						data={plan}
+						workspaceId={workspace.id}
+						empty={
+							<PlanSuggestions
+								workspaceId={workspace.id}
+								currency={workspace.baseCurrency}
+								suggestions={suggestions}
+							/>
+						}
+					/>
+				</div>
 			</div>
 		);
 	}

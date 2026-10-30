@@ -1,6 +1,6 @@
 import { type AccountType, displayBalance } from "@/features/kuroji/lib/balance";
 import { parseLocal } from "@/features/kuroji/lib/dates";
-import { type Frequency, advanceDate } from "@/features/kuroji/lib/recurring-runner";
+import { type Frequency, advanceDate } from "@/features/kuroji/lib/recurring-dates";
 import { differenceInCalendarMonths, endOfMonth, format } from "date-fns";
 
 /** "2026-11" → its first and last day and length. */
@@ -66,6 +66,8 @@ export type PlanRow = {
 	plan: number;
 	/** The month has its own amount instead of the default. */
 	overridden: boolean;
+	/** The amount every month gets unless it has its own. */
+	defaultPlan: number;
 	/** Spent (expense) or received (income) in the month, base currency. */
 	actual: number;
 	/** Recurring transactions into this category still due this month. */
@@ -125,6 +127,7 @@ export function buildPlan({
 			name: a.name,
 			plan: planOf(a) ?? 0,
 			overridden: overrides.has(a.id),
+			defaultPlan: a.budget ?? 0,
 			actual,
 			upcoming,
 			fixed,
@@ -132,10 +135,12 @@ export function buildPlan({
 		};
 	};
 
+	// Biggest plans first: they decide the month.
 	const planned = (type: AccountType) =>
 		visible
 			.filter((a) => a.type === type && isPlanned(a))
-			.map((a) => ({ row: row(a), counted: !plannedAncestor(a) }));
+			.map((a) => ({ row: row(a), counted: !plannedAncestor(a) }))
+			.sort((x, y) => y.row.plan - x.row.plan);
 
 	const expense = planned("EXPENSE");
 	const income = planned("INCOME");

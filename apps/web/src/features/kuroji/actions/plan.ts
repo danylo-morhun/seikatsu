@@ -2,7 +2,8 @@
 
 import { auth } from "@/auth";
 import { getBalances } from "@/features/kuroji/actions/balances";
-import { type AccountType, displayBalance } from "@/features/kuroji/lib/balance";
+import { displayBalance } from "@/features/kuroji/lib/balance";
+import { parseLocal } from "@/features/kuroji/lib/dates";
 import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
 import {
 	type FundView,
@@ -31,7 +32,6 @@ import {
 import { addDays, format } from "date-fns";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { parseLocal } from "../lib/dates";
 
 export type UpcomingItem = {
 	id: string;
@@ -209,7 +209,12 @@ export async function getPlan(workspaceId: string, month: string) {
 		/** For "plan a category": every visible flow category. */
 		categories: all
 			.filter((a) => (a.type === "EXPENSE" || a.type === "INCOME") && !a.hiddenFromDashboard)
-			.map((a) => ({ id: a.id, name: a.name, type: a.type as AccountType, parentId: a.parentId })),
+			.map((a) => ({
+				id: a.id,
+				name: a.name,
+				type: a.type as "EXPENSE" | "INCOME",
+				parentId: a.parentId,
+			})),
 	};
 }
 
