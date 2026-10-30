@@ -12,6 +12,7 @@ import { QUEUED_TOAST, saveService } from "@/features/aisha/lib/offline";
 import { localToday } from "@/features/aisha/lib/today";
 import { AccountPicker } from "@/features/kuroji/components/AccountSelect";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
+import { useHeld } from "@/hooks/useHeld";
 import {
 	Button,
 	Dialog,
@@ -73,7 +74,7 @@ export function ServiceDialog({
 	currentKm,
 	items,
 	kurojiDefaults,
-	service = null,
+	service: serviceProp = null,
 	preselected = [],
 }: {
 	open: boolean;
@@ -88,6 +89,7 @@ export function ServiceDialog({
 	service?: ServiceWithItems | null;
 	preselected?: string[];
 }) {
+	const service = useHeld(serviceProp, open);
 	const id = useId();
 	const [form, setForm] = useState(() => formOf(service, preselected, currentKm, kurojiDefaults));
 	const [error, setError] = useState<{ field?: keyof Form; message: string } | null>(null);

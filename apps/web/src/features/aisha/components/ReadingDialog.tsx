@@ -7,6 +7,7 @@ import { FOOTER, FieldError, instantClass } from "@/features/aisha/components/Di
 import { formatKm, parseNumber } from "@/features/aisha/lib/format";
 import { QUEUED_TOAST, saveReading } from "@/features/aisha/lib/offline";
 import { localToday } from "@/features/aisha/lib/today";
+import { useHeld } from "@/hooks/useHeld";
 import {
 	Button,
 	Dialog,
@@ -28,7 +29,7 @@ export function ReadingDialog({
 	instant,
 	vehicleId,
 	currentKm,
-	reading = null,
+	reading: readingProp = null,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -38,6 +39,7 @@ export function ReadingDialog({
 	/** null = a new reading. */
 	reading?: AishaReading | null;
 }) {
+	const reading = useHeld(readingProp, open);
 	const id = useId();
 	const [date, setDate] = useState(localToday);
 	const [km, setKm] = useState("");
