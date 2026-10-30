@@ -1,6 +1,7 @@
 "use client";
 
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
+import { PageTitle } from "@/components/PageTitle";
 import { QuietAdd } from "@/components/QuietAdd";
 import type { ChromeData, HoshiiItem, HoshiiList } from "@/features/hoshii/actions/data";
 import { stageOf, stageText, useItemLayer } from "@/features/hoshii/components/ItemLayer";
@@ -100,7 +101,7 @@ export function ListsView({
 
 	return (
 		<>
-			<h1 className="sr-only">Hoshii — every want</h1>
+			<PageTitle title="Lists" subtitle="Every want" />
 			<div className="flex animate-rise flex-wrap items-center gap-1.5">
 				{chip(null, "All")}
 				{lists.map((l) => chip(l.id, l.name))}

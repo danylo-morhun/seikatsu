@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/PageTitle";
 import { YearSwitch } from "@/components/YearSwitch";
 import { getHoshii, getSummaryItems } from "@/features/hoshii/actions/data";
 import {
@@ -44,7 +45,7 @@ export default async function HoshiiSummaryPage({
 
 	return (
 		<div className="space-y-10 px-4 pt-6 pb-28 sm:px-8 md:py-8">
-			<h1 className="sr-only">Hoshii — {year} in wants</h1>
+			<PageTitle title={`${year} in wants`} />
 			<div className="space-y-6">
 				{years.length > 1 && <YearSwitch years={years} year={year} base="/hoshii/summary" />}
 				<SummaryFigures summary={summary} currency={data.currency} />
