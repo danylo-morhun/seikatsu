@@ -25,6 +25,7 @@ import { type ItemFormValues, MAX_LINKS } from "@/features/hoshii/lib/hoshii-sch
 import { QUEUED_TOAST, saveNewItem } from "@/features/hoshii/lib/offline";
 import { shopOf } from "@/features/hoshii/lib/product";
 import { NEEDS_CONNECTION } from "@/features/pwa/lib/run";
+import { useHeld } from "@/hooks/useHeld";
 import {
 	Button,
 	Dialog,
@@ -88,7 +89,7 @@ export function ItemDialog({
 	onOpenChange,
 	instant,
 	chrome,
-	item = null,
+	item: itemProp = null,
 	initialUrl,
 }: {
 	open: boolean;
@@ -100,6 +101,7 @@ export function ItemDialog({
 	/** Shared from a shop app: read at once. */
 	initialUrl?: string;
 }) {
+	const item = useHeld(itemProp, open);
 	const id = useId();
 	const editing = item != null;
 	const [form, setForm] = useState(() => formOf(item, chrome));
