@@ -1,6 +1,7 @@
 "use client";
 
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
+import { PageTitle } from "@/components/PageTitle";
 import { QuietAdd } from "@/components/QuietAdd";
 import { FIGURES_ROW, Figure } from "@/features/aisha/components/Figure";
 import type { ChromeData, HoshiiData, HoshiiItem, PlanEntry } from "@/features/hoshii/actions/data";
@@ -160,7 +161,7 @@ export function NowView({ data, chrome, today }: Props) {
 
 	return (
 		<>
-			<h1 className="sr-only">Hoshii — what to decide and what to buy</h1>
+			<PageTitle title="Now" subtitle="What to decide and what to buy" />
 			<section
 				aria-label="Wants at a glance"
 				className={`${FIGURES_ROW} md:grid-cols-[1.4fr_1fr_1fr]`}
@@ -353,7 +354,7 @@ function Section({
 }) {
 	return (
 		<section aria-labelledby={id} className="animate-rise" style={rise(index)}>
-			<div className="flex items-baseline justify-between gap-3 border-b border-rule pb-2">
+			<div className="flex items-baseline justify-between gap-3 px-1 pb-2">
 				<div className="min-w-0 truncate text-sm">
 					<h2 id={id} className="inline font-medium">
 						{title}
@@ -363,7 +364,7 @@ function Section({
 				<span className="font-figures text-xs text-muted-foreground">{count}</span>
 			</div>
 			{count > 0 ? (
-				<ol className="divide-y divide-rule">{children}</ol>
+				<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">{children}</ol>
 			) : (
 				<p className="pt-3 text-sm text-muted-foreground">{empty}</p>
 			)}
