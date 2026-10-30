@@ -56,7 +56,7 @@ export function LinkedProviders({
 	const canUnlink = providers.length + (hasPassword ? 1 : 0) > 1;
 
 	return (
-		<ul className="divide-y divide-rule">
+		<ul className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 			{providers.map((provider) => (
 				<ProviderRow key={provider} provider={provider} canUnlink={canUnlink} />
 			))}
