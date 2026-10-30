@@ -17,7 +17,7 @@ export default async function AishaSettingsPage() {
 			{vehicle ? (
 				<Settings vehicle={vehicle} />
 			) : (
-				<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+				<p className="py-4 text-sm text-muted-foreground">
 					No car yet.{" "}
 					<Link href="/aisha" prefetch className={NOTE_LINK}>
 						Add it in Aisha

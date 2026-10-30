@@ -225,7 +225,7 @@ export function LibraryView({ books: server, shelves, today }: Props) {
 				))}
 			</div>
 		) : (
-			<ul className="divide-y divide-rule border-y border-rule">
+			<ul className="divide-y divide-rule">
 				{list.map((b, i) => (
 					<BookRow key={b.id} book={b} index={i} />
 				))}
@@ -233,7 +233,7 @@ export function LibraryView({ books: server, shelves, today }: Props) {
 		);
 
 	const reading = (list: LibraryBook[]) => (
-		<ol className="divide-y divide-rule border-y border-rule">
+		<ol className="divide-y divide-rule">
 			{list.map((b, i) => (
 				<ReadingRow key={b.id} book={b} index={i} onProgress={actions.progress} />
 			))}
@@ -343,7 +343,7 @@ function Overview({
 				{onTheGo.length > 0 ? (
 					reading(onTheGo)
 				) : (
-					<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+					<p className="py-4 text-sm text-muted-foreground">
 						{pile.length > 0
 							? "Nothing on the go. Pick the next one from the pile."
 							: "Nothing on the go."}
@@ -371,7 +371,7 @@ function Overview({
 				{pile.length > 0 ? (
 					tiles(pile)
 				) : (
-					<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+					<p className="py-4 text-sm text-muted-foreground">
 						The pile is empty. Books you want to read wait here.
 					</p>
 				)}

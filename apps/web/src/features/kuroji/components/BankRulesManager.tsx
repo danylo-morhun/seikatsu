@@ -91,7 +91,7 @@ export function BankRulesManager({
 			</form>
 
 			{rules.length > 0 && (
-				<div className="divide-y divide-rule border-y border-rule">
+				<div className="divide-y divide-rule">
 					{rules.map((r) => (
 						<div key={r.id} className="flex items-center justify-between gap-3 py-1.5">
 							<div className="flex min-w-0 items-center gap-2 text-sm">

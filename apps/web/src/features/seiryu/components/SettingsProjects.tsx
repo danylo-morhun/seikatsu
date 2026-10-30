@@ -37,14 +37,12 @@ export function SettingsProjects({ projects }: { projects: Row[] }) {
 	const [deleting, setDeleting] = useState<ProjectSummary | null>(null);
 
 	if (projects.length === 0) {
-		return (
-			<p className="border-y border-rule py-4 text-sm text-muted-foreground">No projects yet.</p>
-		);
+		return <p className="py-4 text-sm text-muted-foreground">No projects yet.</p>;
 	}
 
 	return (
 		<>
-			<ul className="divide-y divide-rule border-y border-rule">
+			<ul className="divide-y divide-rule">
 				{projects.map((p, i) => (
 					<li
 						key={p.id}

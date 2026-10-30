@@ -67,7 +67,7 @@ export function RecurringTransactionsList({
 
 	if (items.length === 0) {
 		return (
-			<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+			<p className="py-4 text-sm text-muted-foreground">
 				None yet. Add rent or a subscription once and it records itself from then on.
 			</p>
 		);
@@ -75,7 +75,7 @@ export function RecurringTransactionsList({
 
 	return (
 		<>
-			<div className="divide-y divide-rule border-y border-rule">
+			<div className="divide-y divide-rule">
 				{items.map((rt) => (
 					<div
 						key={rt.id}

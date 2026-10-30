@@ -433,7 +433,7 @@ export function AccountsOverview({
 							)}
 						</div>
 
-						<div className="divide-y divide-rule border-y border-rule">
+						<div className="divide-y divide-rule">
 							{listMode ? (
 								typeAccounts.map((acct) => {
 									const row = rowMap.get(acct.id);

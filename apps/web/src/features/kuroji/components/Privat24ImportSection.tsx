@@ -60,7 +60,7 @@ export function Privat24ImportSection({
 
 	if (targets.length === 0) {
 		return (
-			<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+			<p className="py-4 text-sm text-muted-foreground">
 				Add the card as an account under Accounts first, then import its statement into it.
 			</p>
 		);

@@ -39,7 +39,7 @@ export function AccountActivityChart({ data, currency, type }: Props) {
 			{months.length === 0 ? (
 				<p className="py-4 text-sm text-muted-foreground">No movement in the last six months.</p>
 			) : (
-				<ol className="divide-y divide-rule border-y border-rule">
+				<ol className="divide-y divide-rule">
 					{months.map((m, i) => (
 						<li
 							key={m.month}

@@ -99,7 +99,7 @@ export function CaptureInbox({
 					<h2 id="capture-inbox-title" className="mb-2 text-xs text-muted-foreground">
 						Apple Pay · {shown.length} to add
 					</h2>
-					<ul className="divide-y divide-rule border-y border-rule">
+					<ul className="divide-y divide-rule">
 						{shown.map((c) => (
 							<li key={c.id} className="flex items-center gap-2">
 								<button

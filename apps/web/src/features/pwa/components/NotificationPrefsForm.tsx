@@ -138,7 +138,7 @@ export function NotificationPrefsForm({ prefs }: { prefs: NotificationPrefs | nu
 	);
 
 	return (
-		<ul className="divide-y divide-rule border-y border-rule">
+		<ul className="divide-y divide-rule">
 			<li className="flex items-center gap-3 py-3">
 				<div className="min-w-0 flex-1">
 					<p className="text-sm">Morning time</p>

@@ -50,10 +50,7 @@ export function AppWelcome({ app, title, lead, children, steps = [] }: Props) {
 			</div>
 
 			{steps.length > 0 && (
-				<ol
-					className="mt-12 animate-rise divide-y divide-rule border-y border-rule"
-					style={rise(4)}
-				>
+				<ol className="mt-12 animate-rise divide-y divide-rule" style={rise(4)}>
 					{steps.map((step, i) => (
 						<li key={step.title} className="grid grid-cols-[2rem_minmax(0,1fr)_auto] gap-x-3 py-4">
 							<span className="font-figures text-sm text-muted-foreground">{i + 1}</span>

@@ -100,7 +100,7 @@ export const QuotesSection = forwardRef<
 		<section aria-labelledby={`${id}-title`}>
 			<SectionTitle id={`${id}-title`}>Quotes</SectionTitle>
 			{quotes.length > 0 && (
-				<ul className="mb-2 divide-y divide-rule border-y border-rule">
+				<ul className="mb-2 divide-y divide-rule">
 					{quotes.map((q) => (
 						<li
 							key={q.id}
@@ -260,7 +260,7 @@ export function SessionsSection({
 				Reading days
 			</SectionTitle>
 			{sessions.length > 0 ? (
-				<ul className="mb-2 divide-y divide-rule border-y border-rule">
+				<ul className="mb-2 divide-y divide-rule">
 					{sessions.map((s) => (
 						<li key={s.id} className="flex items-center gap-3 py-1.5">
 							<span className="min-w-0 flex-1 text-sm">
@@ -477,7 +477,7 @@ export function SeriesSection({
 			>
 				{name}
 			</SectionTitle>
-			<ol className="divide-y divide-rule border-y border-rule">
+			<ol className="divide-y divide-rule">
 				{books.map((b) => (
 					<li key={b.id}>
 						<Link
