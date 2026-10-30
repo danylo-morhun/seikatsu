@@ -3,6 +3,7 @@
 import { SettingsSection } from "@/components/SettingsSection";
 import { Spinner } from "@/components/Spinner";
 import { FOOTER } from "@/features/keizoku/components/HabitDialog";
+import { useHeld } from "@/hooks/useHeld";
 import {
 	Button,
 	Dialog,
@@ -28,8 +29,12 @@ export function SettingsSources({ sources }: { sources: { source: string; count:
 	const [error, setError] = useState<string | null>(null);
 	const [isSaving, startSaving] = useTransition();
 
+	// The name stays in the title and the field while the dialog fades out.
+	const shownSource = useHeld(renaming, renaming != null);
+
 	useEffect(() => {
-		setName(renaming ?? "");
+		if (renaming == null) return;
+		setName(renaming);
 		setError(null);
 	}, [renaming]);
 
@@ -78,7 +83,7 @@ export function SettingsSources({ sources }: { sources: { source: string; count:
 			<Dialog open={renaming != null} onOpenChange={(v) => !v && !isSaving && setRenaming(null)}>
 				<DialogContent className="max-sm:flex max-sm:flex-col sm:max-w-sm">
 					<DialogHeader>
-						<DialogTitle>Rename “{renaming}”</DialogTitle>
+						<DialogTitle>Rename “{shownSource}”</DialogTitle>
 						<DialogDescription>
 							Every application from it moves to the new name. Name another source to merge the two.
 						</DialogDescription>
