@@ -33,6 +33,8 @@ export const tsundokuBooks = pgTable(
 		authors: text("authors").array(),
 		isbn: text("isbn"),
 		coverUrl: text("cover_url"),
+		// The cover resized and kept in the blob store: "<base>-<width>.webp". Null until stored.
+		coverBlob: text("cover_blob"),
 		olKey: text("ol_key"),
 		pageCount: integer("page_count"),
 		publishedYear: integer("published_year"),
