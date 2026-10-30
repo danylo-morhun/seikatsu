@@ -68,7 +68,7 @@ export function StatsView({ stats, sources }: { stats: KyuuStats; sources: strin
 				/>
 			</section>
 
-			<div className="mt-12 grid gap-x-12 gap-y-12 lg:grid-cols-2">
+			<div className="mt-8 grid gap-6 lg:grid-cols-2">
 				<Block title="How far they got" index={4}>
 					<Bars
 						rows={stats.funnel.map((f) => ({
@@ -134,11 +134,11 @@ function Block({
 }) {
 	return (
 		<section className={cn("min-w-0 animate-rise", className)} style={rise(index)}>
-			<div className="mb-4 flex items-baseline justify-between gap-3">
+			<div className="mb-2 flex items-baseline justify-between gap-3 px-1">
 				<h2 className="text-sm font-medium">{title}</h2>
 				{note && <p className="truncate text-xs text-muted-foreground">{note}</p>}
 			</div>
-			{children}
+			<div className="rounded-2xl bg-surface p-4">{children}</div>
 		</section>
 	);
 }
