@@ -13,6 +13,7 @@ import { EditAccountModal } from "@/features/kuroji/components/EditAccountModal"
 import { displayBalance } from "@/features/kuroji/lib/balance";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { periodQuery } from "@/features/kuroji/lib/period";
+import { useHeld } from "@/hooks/useHeld";
 import {
 	Alert01Icon,
 	Archive01Icon,
@@ -184,6 +185,10 @@ export function AccountsOverview({
 	const [archiveTarget, setArchiveTarget] = React.useState<{ id: string; name: string } | null>(
 		null,
 	);
+	// Each dialog keeps its account while it fades out.
+	const editShown = useHeld(editTarget, editTarget != null);
+	const confirmShown = useHeld(confirmTarget, confirmTarget != null);
+	const archiveShown = useHeld(archiveTarget, archiveTarget != null);
 	const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
 	const [showHidden, setShowHidden] = React.useState(false);
 
@@ -524,9 +529,9 @@ export function AccountsOverview({
 
 			{content}
 
-			{editTarget && (
+			{editShown && (
 				<EditAccountModal
-					account={editTarget}
+					account={editShown}
 					workspaceId={workspaceId}
 					open={!!editTarget}
 					onOpenChange={(v) => {
@@ -543,7 +548,7 @@ export function AccountsOverview({
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Archive "{archiveTarget?.name}"?</AlertDialogTitle>
+						<AlertDialogTitle>Archive "{archiveShown?.name}"?</AlertDialogTitle>
 						<AlertDialogDescription>
 							The account will be hidden from pickers and the dashboard. Historical transactions are
 							preserved. You can restore it from Settings.
@@ -568,7 +573,7 @@ export function AccountsOverview({
 					<AlertDialogHeader>
 						<AlertDialogTitle className="flex items-center gap-2">
 							<HugeiconsIcon icon={Alert01Icon} className="h-5 w-5 text-destructive" />
-							Delete "{confirmTarget?.name}"?
+							Delete "{confirmShown?.name}"?
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							Only accounts without transactions can be deleted, and it can't be undone. To keep an
