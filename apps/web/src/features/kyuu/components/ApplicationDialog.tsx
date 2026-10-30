@@ -3,6 +3,7 @@
 import { QuietAdd } from "@/components/QuietAdd";
 import { Spinner } from "@/components/Spinner";
 import { FOOTER } from "@/features/keizoku/components/HabitDialog";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
@@ -90,9 +91,11 @@ export function ApplicationDialog({
 		defaultValues: blank(),
 	});
 
-	// Each opening starts blank, never from the last one's leftovers.
+	// Each opening starts blank, never from the last one's leftovers — unless the last one was
+	// dismissed (Escape, a click outside, ×): then its draft comes back. Cancel and Save drop it.
+	const draft = useKeptDraft();
 	useEffect(() => {
-		if (!open) return;
+		if (!open || draft.resume()) return;
 		reset(blank());
 		setShowMore(false);
 		setError(null);
@@ -141,7 +144,14 @@ export function ApplicationDialog({
 		);
 
 	return (
-		<Dialog open={open} onOpenChange={(v) => !isSubmitting && onOpenChange(v)}>
+		<Dialog
+			open={open}
+			onOpenChange={(v) => {
+				if (isSubmitting) return;
+				if (!v) draft.keep();
+				onOpenChange(v);
+			}}
+		>
 			<DialogContent
 				className={cn(
 					"max-sm:flex max-sm:flex-col sm:max-w-lg",
