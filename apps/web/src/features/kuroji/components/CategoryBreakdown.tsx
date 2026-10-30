@@ -77,10 +77,11 @@ export function CategoryBreakdown({ balances, currency, periodQuery }: Props) {
 	);
 
 	return (
-		<div>
+		// One group: the rest unfolds inside it, under the "more" row.
+		<div className="inset-group rounded-2xl bg-surface px-4">
 			<ol className="divide-y divide-rule">{rows.slice(0, VISIBLE).map(renderRow)}</ol>
 			{rows.length > VISIBLE && (
-				<details className="group/more">
+				<details className="group/more border-t border-rule">
 					<summary className="cursor-pointer list-none py-2.5 text-sm text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
 						<span className="group-open/more:hidden">Show {rows.length - VISIBLE} more</span>
 						<span className="hidden group-open/more:inline">Show less</span>

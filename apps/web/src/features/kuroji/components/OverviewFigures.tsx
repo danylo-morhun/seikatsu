@@ -67,7 +67,7 @@ export function OverviewFigures({
 	return (
 		<section
 			aria-label="Summary"
-			className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-[1.4fr_1fr_1fr_1fr] md:divide-x md:divide-rule md:gap-0 md:[&>*]:px-6 md:[&>*:first-child]:pl-0"
+			className="grid grid-cols-2 gap-3 md:grid-cols-[1.4fr_1fr_1fr_1fr] md:gap-4 [&>*]:rounded-2xl [&>*]:bg-surface [&>*]:px-4 [&>*]:py-3.5"
 		>
 			<div className="col-span-2 md:col-span-1">
 				<Figure

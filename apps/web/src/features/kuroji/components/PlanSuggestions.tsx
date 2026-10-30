@@ -56,7 +56,7 @@ export function PlanSuggestions({ workspaceId, currency, suggestions }: Props) {
 
 			{rows.length > 0 && (
 				<>
-					<ol className="divide-y divide-rule">
+					<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 						{rows.map((r, i) => (
 							<li key={r.accountId} className="flex items-center gap-3 py-2">
 								<Checkbox

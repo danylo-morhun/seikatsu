@@ -73,7 +73,7 @@ export function BankConnectionsSection({
 					rules.
 				</p>
 			) : (
-				<div className="divide-y divide-rule">
+				<div className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 					{connections.map((conn) => (
 						<ConnectionCard
 							key={conn.id}

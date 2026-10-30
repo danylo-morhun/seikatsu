@@ -119,7 +119,7 @@ export function PlanView({ data, workspaceId, empty }: Props) {
 				<>
 					<section
 						aria-label="Summary"
-						className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-[1.4fr_1fr_1fr] md:divide-x md:divide-rule md:gap-0 md:[&>*]:px-6 md:[&>*:first-child]:pl-0"
+						className="grid grid-cols-2 gap-3 md:grid-cols-[1.4fr_1fr_1fr] md:gap-4 [&>*]:rounded-2xl [&>*]:bg-surface [&>*]:px-4 [&>*]:py-3.5"
 					>
 						<div className="col-span-2 md:col-span-1">
 							<Figure
@@ -214,7 +214,7 @@ export function PlanView({ data, workspaceId, empty }: Props) {
 												</RowGroup>
 											</>
 										) : (
-											<ol className="divide-y divide-rule">
+											<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 												{data.expense.map((r) => (
 													<CategoryRow
 														key={r.accountId}
@@ -238,7 +238,7 @@ export function PlanView({ data, workspaceId, empty }: Props) {
 									<p className="mb-2 text-xs text-muted-foreground">
 										Spending in categories without a plan. Tap one to plan it.
 									</p>
-									<ol className="divide-y divide-rule">
+									<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 										{data.unplanned.map((u) => {
 											const category = data.categories.find((c) => c.id === u.accountId);
 											return (
@@ -281,7 +281,7 @@ export function PlanView({ data, workspaceId, empty }: Props) {
 									<h2 id="plan-income" className="mb-3 text-sm font-medium">
 										Income
 									</h2>
-									<ol className="divide-y divide-rule">
+									<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 										{data.income.map((r) => (
 											<IncomeRow
 												key={r.accountId}
@@ -315,7 +315,7 @@ export function PlanView({ data, workspaceId, empty }: Props) {
 										Put money aside for a date — a trip, a big purchase.
 									</p>
 								) : (
-									<ol className="divide-y divide-rule">
+									<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 										{data.funds.map((f) => (
 											<li key={f.id}>
 												<button
@@ -369,7 +369,7 @@ export function PlanView({ data, workspaceId, empty }: Props) {
 										No recurring transactions left in {monthName(month)}.
 									</p>
 								) : (
-									<ol className="divide-y divide-rule">
+									<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 										{data.upcoming.map((u) => (
 											<li
 												key={u.id}
@@ -460,7 +460,7 @@ function RowGroup({ title, children }: { title: string; children: ReactNode }) {
 	return (
 		<div>
 			<h3 className="text-xs text-muted-foreground">{title}</h3>
-			<ol className="divide-y divide-rule">{children}</ol>
+			<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">{children}</ol>
 		</div>
 	);
 }

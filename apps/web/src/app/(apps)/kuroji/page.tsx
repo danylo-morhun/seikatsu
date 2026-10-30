@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { PageTitle } from "@/components/PageTitle";
 import { getAccounts } from "@/features/kuroji/actions/accounts";
 import { getBalances } from "@/features/kuroji/actions/balances";
 import { getBankProblem } from "@/features/kuroji/actions/bank";
@@ -140,7 +141,7 @@ export default async function KurojiPage({
 					</div>
 				) : (
 					<div className="space-y-10 px-4 py-6 sm:px-8 md:py-8">
-						<h1 className="sr-only">Kuroji — Overview</h1>
+						<PageTitle title="Expenses" />
 						<div className="space-y-4">
 							{bankProblem && <BankSyncNotice problem={bankProblem} />}
 							<OverviewFigures
@@ -208,7 +209,7 @@ export default async function KurojiPage({
 		return (
 			<div className="flex flex-col pb-28 md:pb-0">
 				<div className="px-4 py-6 sm:px-8 md:py-8">
-					<h1 className="sr-only">Kuroji — Plan</h1>
+					<PageTitle title="Plan" />
 					<PlanView
 						data={plan}
 						workspaceId={workspace.id}
@@ -235,7 +236,7 @@ export default async function KurojiPage({
 		return (
 			<div className="flex flex-col pb-28 md:pb-0">
 				<div className="px-4 py-6 sm:px-6">
-					<h1 className="sr-only">Kuroji — Accounts</h1>
+					<PageTitle title="Accounts" />
 					<AccountsOverview
 						balances={balances}
 						accounts={accounts}
