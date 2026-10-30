@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/PageTitle";
 import { YearSwitch } from "@/components/YearSwitch";
 import { getCar, getCurrentVehicle } from "@/features/aisha/actions/data";
 import { MonthRows, YearFigures, YearServices } from "@/features/aisha/components/YearSections";
@@ -32,9 +33,7 @@ export default async function AishaYearPage({
 
 	return (
 		<div className="space-y-10 px-4 pt-6 pb-28 sm:px-8 md:py-8">
-			<h1 className="sr-only">
-				Aisha — {vehicle.make} {vehicle.model} in {year}
-			</h1>
+			<PageTitle title={`${year}`} subtitle={`${vehicle.make} ${vehicle.model}`} />
 			<div className="space-y-6">
 				{years.length > 1 && <YearSwitch years={years} year={year} base="/aisha/year" />}
 				<YearFigures year={stats} currency={currency} />

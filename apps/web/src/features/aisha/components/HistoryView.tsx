@@ -2,6 +2,7 @@
 
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
+import { PageTitle } from "@/components/PageTitle";
 import { QuietAdd } from "@/components/QuietAdd";
 import type { AishaReading, ServiceWithItems } from "@/features/aisha/actions/data";
 import { deleteReading } from "@/features/aisha/actions/readings";
@@ -121,7 +122,7 @@ export function HistoryView({
 
 	return (
 		<>
-			<h1 className="sr-only">Aisha — history</h1>
+			<PageTitle title="History" />
 			<ContextArea
 				attr="data-aisha-id"
 				onTarget={(raw) => {
@@ -158,7 +159,7 @@ export function HistoryView({
 			>
 				<div className="grid gap-12 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-12">
 					<section aria-labelledby="aisha-services" className="animate-rise" style={rise(0)}>
-						<div className="flex items-baseline justify-between gap-3 border-b border-rule pb-2">
+						<div className="flex items-baseline justify-between gap-3 px-1 pb-2">
 							<h2 id="aisha-services" className="text-sm font-medium">
 								Services
 							</h2>
@@ -170,7 +171,7 @@ export function HistoryView({
 								bill.
 							</p>
 						) : (
-							<ol className="divide-y divide-rule">
+							<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 								{services.map((s) => (
 									<ServiceRow
 										key={s.id}
@@ -198,13 +199,13 @@ export function HistoryView({
 					</section>
 
 					<section aria-labelledby="aisha-readings" className="animate-rise" style={rise(1)}>
-						<div className="flex items-baseline justify-between gap-3 border-b border-rule pb-2">
+						<div className="flex items-baseline justify-between gap-3 px-1 pb-2">
 							<h2 id="aisha-readings" className="text-sm font-medium">
 								Mileage
 							</h2>
 							<span className="font-figures text-xs text-muted-foreground">{readings.length}</span>
 						</div>
-						<ol className="divide-y divide-rule">
+						<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 							{readings.map((r) => (
 								<ReadingRow
 									key={r.id}
