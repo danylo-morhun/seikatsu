@@ -1,4 +1,4 @@
-import { SegmentedTab, SegmentedTabs } from "@/components/SegmentedTabs";
+import { PageTab, PageTabs } from "@/components/PageTabs";
 import { SettingsPage, SettingsSection } from "@/components/SettingsSection";
 import { getWorkspaceArchivedCards } from "@/features/seiryu/actions/cards";
 import { getWorkspaceLabels } from "@/features/seiryu/actions/labels";
@@ -75,17 +75,17 @@ export default async function SeiryuSettingsPage({
 			title="清 Seiryu"
 			appNav
 			tabs={
-				<SegmentedTabs label="Seiryu settings">
+				<PageTabs label="Seiryu settings">
 					{SECTIONS.map((s) => (
-						<SegmentedTab
+						<PageTab
 							key={s.id}
 							href={s.id === "projects" ? "/settings/seiryu" : `/settings/seiryu?section=${s.id}`}
 							current={section === s.id}
 						>
 							{s.label}
-						</SegmentedTab>
+						</PageTab>
 					))}
-				</SegmentedTabs>
+				</PageTabs>
 			}
 		>
 			{body}
