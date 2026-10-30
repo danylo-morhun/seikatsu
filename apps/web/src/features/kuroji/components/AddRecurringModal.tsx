@@ -7,6 +7,7 @@ import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { amountSchema, parseAmount } from "@/features/kuroji/lib/transaction-schema";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
@@ -61,6 +62,7 @@ export function AddRecurringModal({
 		handleSubmit,
 		control,
 		reset,
+		setValue,
 		formState: { errors, isSubmitting },
 	} = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
@@ -77,10 +79,14 @@ export function AddRecurringModal({
 		},
 	});
 
-	const onOpenChange = (val: boolean) => {
-		setOpen(val);
-		if (!val) reset();
-	};
+	// Escape, a click outside or × keep the draft; Cancel and Create start the next one blank,
+	// dated today (the page may have stayed open past midnight).
+	const draft = useKeptDraft();
+	React.useEffect(() => {
+		if (!open || draft.resume()) return;
+		reset();
+		setValue("startDate", format(new Date(), "yyyy-MM-dd"));
+	}, [open]);
 
 	const onSubmit = async (values: FormValues) => {
 		const result = await createRecurringTransaction({
@@ -99,8 +105,7 @@ export function AddRecurringModal({
 			toast.error(result.error);
 		} else {
 			toast.success("Recurring transaction created.");
-			// Through onOpenChange so the next one starts from a blank form.
-			onOpenChange(false);
+			setOpen(false);
 		}
 	};
 
@@ -109,7 +114,13 @@ export function AddRecurringModal({
 	const errs = errors as Record<string, { message?: string }>;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog
+			open={open}
+			onOpenChange={(v) => {
+				if (!v) draft.keep();
+				setOpen(v);
+			}}
+		>
 			<DialogTrigger asChild>
 				<Button variant="outline">Add Recurring</Button>
 			</DialogTrigger>
@@ -222,7 +233,7 @@ export function AddRecurringModal({
 						<Input id="rec-end" type="date" {...register("endDate")} />
 					</div>
 					<div className="flex justify-end gap-2 pt-2">
-						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+						<Button type="button" variant="outline" onClick={() => setOpen(false)}>
 							Cancel
 						</Button>
 						<Button type="submit" disabled={isSubmitting} className="gap-1.5">

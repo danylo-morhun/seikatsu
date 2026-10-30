@@ -25,6 +25,7 @@ import {
 	addTransactionFormSchema,
 	parseAmount,
 } from "@/features/kuroji/lib/transaction-schema";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 import { OVERLAY_SELECTOR, isEditable, shouldOpenCapture } from "@/lib/capture-shortcut";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Add01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
@@ -251,16 +252,27 @@ export function AddTransactionModal({
 		}
 	};
 
+	// Escape, a click outside or × keep a new capture's draft; Cancel and Save start the next
+	// one blank. Reset on opening, so the closing dialog never flashes back to an empty form.
+	const draft = useKeptDraft();
+	const keepable = !editing && !prefill;
+	React.useEffect(() => {
+		// An Apple Pay payment mounts fresh for each opening, already filled in.
+		if (!open || prefill || draft.resume(keepable)) return;
+		resetToType(initialType);
+		setTxType(initialType);
+		setSelectedTagIds(editing?.tagIds ?? []);
+		setAmountText(amountTextOf(editing?.values));
+		setTagsOpen(false);
+	}, [open]);
+
 	const onOpenChange = (val: boolean) => {
 		if (val) setOpenedByKey(false);
 		setOpen(val);
-		if (!val) {
-			resetToType(initialType);
-			setTxType(initialType);
-			setSelectedTagIds(editing?.tagIds ?? []);
-			setAmountText(amountTextOf(editing?.values));
-			setTagsOpen(false);
-		}
+	};
+	const onDialogChange = (val: boolean) => {
+		if (!val) draft.keep(keepable);
+		onOpenChange(val);
 	};
 
 	const amountField = (type: TxType) => (type === "transfer" ? "amount" : "splits.0.amount");
@@ -324,7 +336,6 @@ export function AddTransactionModal({
 		);
 		if (isQueued(result)) toast(QUEUED_TOAST);
 		else toast.success("Transaction recorded.");
-		// Through onOpenChange so the next capture starts from a clean form.
 		onOpenChange(false);
 	};
 
@@ -528,7 +539,7 @@ export function AddTransactionModal({
 	);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={onDialogChange}>
 			{!editing && !prefill && (
 				<DialogTrigger asChild>
 					{trigger ?? (
