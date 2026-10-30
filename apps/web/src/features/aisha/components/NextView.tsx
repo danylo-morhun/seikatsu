@@ -151,7 +151,7 @@ export function NextView({
 					</h2>
 					<span className="font-figures text-xs text-muted-foreground">{list.length}</span>
 				</div>
-				<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
+				<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 					{list.map((q) => (
 						<QueueRow
 							key={keyOf(q.entry)}

@@ -60,7 +60,7 @@ export function DeviceList({ devices }: { devices: PushDevice[] }) {
 	}
 
 	return (
-		<ul className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
+		<ul className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 			{shown.map((device) => (
 				<li key={device.id} className="flex items-center gap-3 py-2.5">
 					<div className="min-w-0 flex-1">

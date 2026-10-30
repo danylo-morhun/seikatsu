@@ -63,7 +63,7 @@ export function MonthRows({ stats, lastMonth }: { stats: YearStats; lastMonth: n
 	const name = (m: number) => MONTH.format(new Date(Date.UTC(stats.year, m, 1)));
 
 	return (
-		<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
+		<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 			{rows.map((row, i) => {
 				if (row.kind === "gap") {
 					return (
@@ -107,7 +107,7 @@ export function HabitRanking({ stats }: { stats: YearStats }) {
 		return <p className="py-6 text-sm text-muted-foreground">No habits this year.</p>;
 	}
 	return (
-		<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
+		<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 			{stats.habits.map((h, i) => (
 				<li key={h.id} className="pb-1">
 					<Link
