@@ -16,6 +16,7 @@ interface Props {
 export function WorkspaceSettingsForm({ workspaceId, initialName, baseCurrency }: Props) {
 	const [name, setName] = useState(initialName);
 	const [isPending, startTransition] = useTransition();
+	const unchanged = !name.trim() || name.trim() === initialName;
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -51,8 +52,8 @@ export function WorkspaceSettingsForm({ workspaceId, initialName, baseCurrency }
 			{/* Quiet until there is something to save, so the idle state never reads as broken. */}
 			<Button
 				type="submit"
-				variant={name.trim() === initialName ? "outline" : "default"}
-				disabled={isPending || name.trim() === initialName}
+				variant={unchanged ? "outline" : "default"}
+				disabled={isPending || unchanged}
 				className="gap-1.5"
 			>
 				{isPending && <Spinner />}
