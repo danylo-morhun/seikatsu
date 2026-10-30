@@ -102,7 +102,7 @@ export function Privat24ImportSection({
 						onClick={() => fileInputRef.current?.click()}
 						disabled={isPending}
 						aria-describedby="p24-hint"
-						className="flex h-10 w-full items-center gap-2 rounded-xl border border-input px-3 md:h-9 text-left text-base outline-none transition-colors hover:bg-surface focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 md:text-sm"
+						className="flex h-10 w-full items-center gap-2 rounded-field border border-input px-3 md:h-9 text-left text-base outline-none transition-colors hover:bg-surface focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 md:text-sm"
 					>
 						<HugeiconsIcon icon={Xls01Icon} className="size-4 shrink-0 text-muted-foreground" />
 						<span className={cn("truncate", !file && "text-muted-foreground")}>

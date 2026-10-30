@@ -42,6 +42,5 @@ export function Figure({
 	);
 }
 
-/** The figures row: one rounded tile per figure, as in macOS; the lead spans both phone columns. */
-export const FIGURES_ROW =
-	"grid grid-cols-2 gap-3 md:gap-4 [&>*]:rounded-2xl [&>*]:bg-surface [&>*]:px-4 [&>*]:py-3.5";
+/** The figures row (see `figure-row`): tiles in Liquid Glass, ruled apart in Classic. */
+export const FIGURES_ROW = "figure-row";

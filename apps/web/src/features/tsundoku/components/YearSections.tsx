@@ -53,10 +53,7 @@ export function YearFigures({ stats, isCurrent }: { stats: YearStats; isCurrent:
 	const streak = isCurrent ? stats.streak.current : longestIn(stats.days);
 	const logged = stats.months.reduce((s, m) => s + m, 0);
 	return (
-		<section
-			aria-label="Summary"
-			className="grid grid-cols-2 gap-3 md:grid-cols-[1.4fr_1fr_1fr_1fr] md:gap-4 [&>*]:rounded-2xl [&>*]:bg-surface [&>*]:px-4 [&>*]:py-3.5"
-		>
+		<section aria-label="Summary" className="figure-row md:grid-cols-[1.4fr_1fr_1fr_1fr]">
 			<div className="col-span-2 md:col-span-1">
 				<Figure
 					lead
@@ -168,7 +165,7 @@ export function MonthRows({ stats, lastMonth }: { stats: YearStats; lastMonth: n
 
 	return (
 		<>
-			<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+			<ol className="inset-group">
 				{rows.map((row, i) => {
 					if (row.kind === "gap") {
 						return (
@@ -305,7 +302,7 @@ export function TopRated({ books }: { books: YearBook[] }) {
 	if (rated.length === 0)
 		return <p className="py-6 text-sm text-muted-foreground">No ratings yet.</p>;
 	return (
-		<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+		<ol className="inset-group">
 			{rated.map((b, i) => (
 				<li key={b.id} className="pb-1">
 					<Link
@@ -337,7 +334,7 @@ export function QuoteFeed({ quotes }: { quotes: FeedQuote[] }) {
 		return <p className="py-6 text-sm text-muted-foreground">No quotes saved this year.</p>;
 	}
 	return (
-		<ul className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+		<ul className="inset-group">
 			{quotes.map((q) => (
 				<li key={q.id} className="py-3">
 					<blockquote className="border-l-2 border-primary/40 pl-3">
@@ -382,7 +379,7 @@ export function Records({ stats }: { stats: YearStats }) {
 	].filter((r): r is { label: string; book: YearBook; value: string } => !!r);
 	if (rows.length === 0) return null;
 	return (
-		<ul className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+		<ul className="inset-group">
 			{rows.map((r) => (
 				<li key={r.label}>
 					<Link

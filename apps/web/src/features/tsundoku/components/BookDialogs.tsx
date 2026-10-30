@@ -26,7 +26,7 @@ export const FOOTER =
 	"mt-auto flex justify-end gap-2 pt-2 max-sm:sticky max-sm:bottom-0 max-sm:-mx-6 max-sm:-mb-6 max-sm:border-t max-sm:bg-background max-sm:px-6 max-sm:py-4";
 
 export const FIELD_TEXTAREA =
-	"w-full resize-none rounded-xl border border-input bg-transparent px-3 py-2 text-base shadow-xs outline-none transition-colors [field-sizing:content] placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring md:text-sm";
+	"w-full resize-none rounded-field border border-input bg-transparent px-3 py-2 text-base shadow-xs outline-none transition-colors [field-sizing:content] placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring md:text-sm";
 
 const digits = (v: string) => v.replace(/\D/g, "");
 const toInt = (v: string) => (v ? Number.parseInt(v, 10) : null);

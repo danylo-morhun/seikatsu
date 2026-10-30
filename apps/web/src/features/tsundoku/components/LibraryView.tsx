@@ -226,7 +226,7 @@ export function LibraryView({ books: server, shelves, today }: Props) {
 				))}
 			</div>
 		) : (
-			<ul className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+			<ul className="inset-group">
 				{list.map((b, i) => (
 					<BookRow key={b.id} book={b} index={i} />
 				))}
@@ -234,7 +234,7 @@ export function LibraryView({ books: server, shelves, today }: Props) {
 		);
 
 	const reading = (list: LibraryBook[]) => (
-		<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+		<ol className="inset-group">
 			{list.map((b, i) => (
 				<ReadingRow key={b.id} book={b} index={i} onProgress={actions.progress} />
 			))}

@@ -721,9 +721,7 @@ export function KanbanBoard({
 	return (
 		<div className="flex h-full flex-col">
 			<div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 pt-5 pb-4 sm:px-8">
-				<h1 className="min-w-0 max-w-full truncate text-[1.75rem] leading-tight font-bold tracking-tight">
-					{project.name}
-				</h1>
+				<h1 className="min-w-0 max-w-full truncate title-large">{project.name}</h1>
 				<div className="flex items-center gap-1.5">
 					<FilterMenu
 						filters={filters}

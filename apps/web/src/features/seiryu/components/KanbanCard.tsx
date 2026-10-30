@@ -24,9 +24,9 @@ export const freshCards = new Set<string>();
 // Neighbours make room on the strong ease-out, a beat quicker than a page move.
 export const SORT_TRANSITION = { duration: 220, easing: "cubic-bezier(0.23, 1, 0.32, 1)" };
 
-// Cards sit on the lane (bg-surface) one tone lighter, as in macOS boards.
+// Cards sit one tone above their lane (see --card-bg).
 const TILE =
-	"rounded-xl bg-surface-2 px-3 py-2.5 text-left [-webkit-touch-callout:none] select-none";
+	"rounded-xl bg-(--card-bg) px-3 py-2.5 text-left [-webkit-touch-callout:none] select-none";
 
 interface Props {
 	card: CardData;

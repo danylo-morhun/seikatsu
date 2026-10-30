@@ -58,7 +58,7 @@ export function SettingsShelves({ shelves }: { shelves: ShelfWithCount[] }) {
 					None yet. Make one for a series of picks — “Favourites”, “To lend”, “2026 challenge”.
 				</p>
 			) : (
-				<ul className="animate-rise inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+				<ul className="animate-rise inset-group">
 					{shelves.map((shelf) => (
 						<li key={shelf.id} className="flex items-center gap-3 py-2.5">
 							<span

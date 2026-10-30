@@ -433,7 +433,7 @@ export function AccountsOverview({
 							)}
 						</div>
 
-						<div className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+						<div className="inset-group">
 							{listMode ? (
 								typeAccounts.map((acct) => {
 									const row = rowMap.get(acct.id);
@@ -521,9 +521,9 @@ export function AccountsOverview({
 	return (
 		<section>
 			{!hideHeader && (
-				// The page's large title already names it; only the action stays visible.
-				<div className="mb-4 flex items-center justify-end">
-					<h2 className="sr-only">Accounts</h2>
+				// The page's large title names it; Classic hides that title, so it shows this one.
+				<div className="mb-4 flex items-center justify-end classic:justify-between">
+					<h2 className="sr-only text-sm font-medium classic:not-sr-only">Accounts</h2>
 					<AddAccountModal workspaceId={workspaceId} baseCurrency={currency} />
 				</div>
 			)}

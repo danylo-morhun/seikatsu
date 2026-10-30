@@ -138,8 +138,7 @@ export function DateRangePicker() {
 					<Button
 						variant="outline"
 						className={cn(
-							// A capsule, like the header's other toolbar items.
-							"min-w-0 shrink gap-2 rounded-full px-3.5 font-normal",
+							"min-w-0 shrink gap-2 px-3.5 font-normal",
 							hasFilter && "rounded-r-none pr-2.5",
 						)}
 						aria-label={`Period: ${label}. Change period`}
@@ -152,7 +151,7 @@ export function DateRangePicker() {
 					<Button
 						variant="outline"
 						size="icon"
-						className="shrink-0 rounded-l-none border-l-0 text-muted-foreground hover:text-foreground rounded-r-full"
+						className="shrink-0 rounded-l-none border-l-0 text-muted-foreground hover:text-foreground"
 						aria-label="Reset period to this month"
 						onClick={() => push(undefined, undefined)}
 					>
@@ -206,7 +205,7 @@ export function DateRangePicker() {
 								type="button"
 								aria-pressed={picking === "from"}
 								className={cn(
-									"flex-1 rounded-full border px-2 py-1 text-center text-sm transition-colors",
+									"flex-1 rounded-button border px-2 py-1 text-center text-sm transition-colors",
 									picking === "from"
 										? "border-primary text-foreground"
 										: localFrom
@@ -222,7 +221,7 @@ export function DateRangePicker() {
 								type="button"
 								aria-pressed={picking === "to"}
 								className={cn(
-									"flex-1 rounded-full border px-2 py-1 text-center text-sm transition-colors",
+									"flex-1 rounded-button border px-2 py-1 text-center text-sm transition-colors",
 									picking === "to"
 										? "border-primary text-foreground"
 										: localTo

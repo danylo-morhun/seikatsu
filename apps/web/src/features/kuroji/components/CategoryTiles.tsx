@@ -10,7 +10,7 @@ type Category = { id: string; name: string; parentId: string | null };
 const TILE_COUNT = 5;
 
 const tileClass =
-	"relative flex h-10 min-w-0 items-center rounded-xl border border-input pr-7 pl-2.5 text-left text-sm leading-4 text-muted-foreground outline-none transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring";
+	"relative flex h-10 min-w-0 items-center rounded-field border border-input pr-7 pl-2.5 text-left text-sm leading-4 text-muted-foreground outline-none transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring";
 
 // Lit like the active app in the sidebar: a pigment wash, a pigment edge, label and check in
 // pigment. Light pigments are too pale for text on the wash, so there the label leans to ink.
