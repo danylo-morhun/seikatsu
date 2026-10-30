@@ -1,6 +1,7 @@
 "use client";
 
 import type { ColumnData } from "@/features/seiryu/lib/types";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 import {
 	Button,
 	Dialog,
@@ -40,21 +41,29 @@ export function NewCardDialog({ open, onOpenChange, columns, onAdd, instant = fa
 		if (!columns.some((c) => c.id === columnId)) setColumnId(columns[0]?.id ?? "");
 	}, [columns, columnId]);
 
-	function handleOpenChange(next: boolean) {
-		onOpenChange(next);
-		if (!next) setTitle("");
-	}
+	// Escape or a click outside keeps the title for next time; Cancel and Add start blank.
+	// Cleared on opening, so the closing dialog never shows an empty field.
+	const draft = useKeptDraft();
+	useEffect(() => {
+		if (open && !draft.resume()) setTitle("");
+	}, [open]);
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		const trimmed = title.trim();
 		if (!trimmed || !columnId) return;
 		onAdd(columnId, trimmed);
-		handleOpenChange(false);
+		onOpenChange(false);
 	}
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
+		<Dialog
+			open={open}
+			onOpenChange={(next) => {
+				if (!next) draft.keep();
+				onOpenChange(next);
+			}}
+		>
 			<DialogContent
 				className={cn(
 					"sm:max-w-md max-sm:flex max-sm:flex-col",
@@ -110,7 +119,7 @@ export function NewCardDialog({ open, onOpenChange, columns, onAdd, instant = fa
 							type="button"
 							variant="outline"
 							className="max-sm:flex-1"
-							onClick={() => handleOpenChange(false)}
+							onClick={() => onOpenChange(false)}
 						>
 							Cancel
 						</Button>
