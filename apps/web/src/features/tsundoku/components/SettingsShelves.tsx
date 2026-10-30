@@ -10,6 +10,7 @@ import {
 	deleteShelf,
 	updateShelf,
 } from "@/features/tsundoku/actions/shelves";
+import { useHeld } from "@/hooks/useHeld";
 import { LABEL_COLORS } from "@/lib/pigments";
 import { Delete01Icon, MoreHorizontalIcon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -133,7 +134,7 @@ export function SettingsShelves({ shelves }: { shelves: ShelfWithCount[] }) {
 }
 
 function ShelfDialog({
-	editing,
+	editing: editingProp,
 	count,
 	onOpenChange,
 }: {
@@ -141,6 +142,7 @@ function ShelfDialog({
 	count: number;
 	onOpenChange: (open: boolean) => void;
 }) {
+	const editing = useHeld(editingProp, editingProp != null);
 	const id = useId();
 	const shelf = editing?.shelf ?? null;
 	const [name, setName] = useState("");
@@ -169,7 +171,7 @@ function ShelfDialog({
 	}
 
 	return (
-		<Dialog open={!!editing} onOpenChange={(v) => !isSaving && onOpenChange(v)}>
+		<Dialog open={editingProp != null} onOpenChange={(v) => !isSaving && onOpenChange(v)}>
 			<DialogContent className="sm:max-w-md max-sm:flex max-sm:flex-col">
 				<DialogHeader>
 					<DialogTitle>{shelf ? "Edit Shelf" : "New Shelf"}</DialogTitle>

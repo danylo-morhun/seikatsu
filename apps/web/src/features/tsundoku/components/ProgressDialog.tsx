@@ -2,6 +2,7 @@
 
 import { ProgressField } from "@/features/tsundoku/components/ProgressField";
 import { ProgressMeter } from "@/features/tsundoku/components/ProgressMeter";
+import { useHeld } from "@/hooks/useHeld";
 import {
 	Dialog,
 	DialogContent,
@@ -28,11 +29,13 @@ interface Props {
 }
 
 /** The library's quick progress update: where you are now, in pages or percent. */
-export function ProgressDialog({ book, onOpenChange, onSave, instant = false }: Props) {
+export function ProgressDialog({ book: bookProp, onOpenChange, onSave, instant = false }: Props) {
 	const id = useId();
+	// Keeps its title and meter while it fades out.
+	const book = useHeld(bookProp, bookProp != null);
 
 	return (
-		<Dialog open={!!book} onOpenChange={onOpenChange}>
+		<Dialog open={bookProp != null} onOpenChange={onOpenChange}>
 			<DialogContent
 				className={cn(
 					"sm:max-w-md",
