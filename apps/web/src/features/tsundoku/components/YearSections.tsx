@@ -168,7 +168,7 @@ export function MonthRows({ stats, lastMonth }: { stats: YearStats; lastMonth: n
 
 	return (
 		<>
-			<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+			<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 				{rows.map((row, i) => {
 					if (row.kind === "gap") {
 						return (
@@ -305,7 +305,7 @@ export function TopRated({ books }: { books: YearBook[] }) {
 	if (rated.length === 0)
 		return <p className="py-6 text-sm text-muted-foreground">No ratings yet.</p>;
 	return (
-		<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+		<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 			{rated.map((b, i) => (
 				<li key={b.id} className="pb-1">
 					<Link
@@ -337,7 +337,7 @@ export function QuoteFeed({ quotes }: { quotes: FeedQuote[] }) {
 		return <p className="py-6 text-sm text-muted-foreground">No quotes saved this year.</p>;
 	}
 	return (
-		<ul className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+		<ul className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 			{quotes.map((q) => (
 				<li key={q.id} className="py-3">
 					<blockquote className="border-l-2 border-primary/40 pl-3">
@@ -382,7 +382,7 @@ export function Records({ stats }: { stats: YearStats }) {
 	].filter((r): r is { label: string; book: YearBook; value: string } => !!r);
 	if (rows.length === 0) return null;
 	return (
-		<ul className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+		<ul className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 			{rows.map((r) => (
 				<li key={r.label}>
 					<Link

@@ -99,7 +99,7 @@ export function CaptureInbox({
 					<h2 id="capture-inbox-title" className="mb-2 text-xs text-muted-foreground">
 						Apple Pay · {shown.length} to add
 					</h2>
-					<ul className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+					<ul className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 						{shown.map((c) => (
 							<li key={c.id} className="flex items-center gap-2">
 								<button

@@ -63,7 +63,7 @@ export function SettingsLabels({ labels }: { labels: Row[] }) {
 					style={{ "--i": gi } as React.CSSProperties}
 				>
 					<h3 className="mb-2 text-sm font-semibold">{group.name}</h3>
-					<ul className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+					<ul className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 						{group.rows.map((label) => (
 							<li key={label.id} className="flex items-center gap-3 py-2.5">
 								<span

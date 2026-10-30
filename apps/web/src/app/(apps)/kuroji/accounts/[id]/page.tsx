@@ -160,7 +160,7 @@ export default async function AccountDetailPage({
 							<h2 id="subs-title" className="mb-3 text-sm font-medium">
 								Sub-accounts
 							</h2>
-							<ul className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+							<ul className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 								{subAccounts.map((sub) => {
 									const subBalance = displayBalance(sub.type, Number(sub.balance));
 									return (

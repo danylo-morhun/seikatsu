@@ -37,7 +37,7 @@ export function ArchivedAccountsList({ accounts }: { accounts: Account[] }) {
 			description="Off the overview and out of totals; their transactions stay."
 			meta={accounts.length}
 		>
-			<div className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+			<div className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 				{accounts.map((a) => (
 					<div key={a.id} className="flex items-center justify-between gap-3 py-1.5">
 						<div className="flex items-center gap-2 text-sm text-muted-foreground">
