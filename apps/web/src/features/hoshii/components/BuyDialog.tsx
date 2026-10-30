@@ -11,6 +11,7 @@ import { buyItem } from "@/features/hoshii/actions/items";
 import { CurrencySelect } from "@/features/hoshii/components/Parts";
 import { AccountPicker } from "@/features/kuroji/components/AccountSelect";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
+import { useHeld } from "@/hooks/useHeld";
 import {
 	Button,
 	Dialog,
@@ -54,7 +55,7 @@ export function BuyDialog({
 	onOpenChange,
 	instant,
 	chrome,
-	item,
+	item: itemProp,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -62,6 +63,7 @@ export function BuyDialog({
 	chrome: ChromeData;
 	item: HoshiiItem | null;
 }) {
+	const item = useHeld(itemProp, open);
 	const id = useId();
 	const [form, setForm] = useState(() => formOf(item, chrome));
 	const [error, setError] = useState<{ field?: keyof Form; message: string } | null>(null);
