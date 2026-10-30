@@ -10,9 +10,7 @@ export default async function KurojiSettingsLayout({ children }: { children: Rea
 	return (
 		<>
 			{children}
-			{workspace && (
-				<KurojiNavTabs workspaceId={workspace.id} baseCurrency={workspace.baseCurrency} />
-			)}
+			{workspace && <KurojiNavTabs workspaceId={workspace.id} />}
 		</>
 	);
 }
