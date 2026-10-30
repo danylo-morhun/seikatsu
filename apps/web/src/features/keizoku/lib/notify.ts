@@ -38,7 +38,9 @@ export const notifyKeizoku: Notifier = async ({ workspaceId, prefs, clock }) => 
 	if (left.length === 0) return 0;
 
 	const names = left.map(({ habit }) => `${habit.emoji} ${habit.name}`);
-	const sent = await sendOnce(workspaceId, `keizoku:${clock.day}`, {
+	// Keyed by time too: moving the reminder later the same day sends at the new time.
+	const key = `keizoku:${clock.day}:${prefs.keizokuTime.slice(0, 5)}`;
+	const sent = await sendOnce(workspaceId, key, {
 		title: left.length === 1 ? "One habit left today" : `${left.length} habits left today`,
 		body: names.join(" · "),
 		url: "/keizoku",
