@@ -55,7 +55,7 @@ export function YearFigures({ stats, isCurrent }: { stats: YearStats; isCurrent:
 	return (
 		<section
 			aria-label="Summary"
-			className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-[1.4fr_1fr_1fr_1fr] md:divide-x md:divide-rule md:gap-0 md:[&>*]:px-6 md:[&>*:first-child]:pl-0"
+			className="grid grid-cols-2 gap-3 md:grid-cols-[1.4fr_1fr_1fr_1fr] md:gap-4 [&>*]:rounded-2xl [&>*]:bg-surface [&>*]:px-4 [&>*]:py-3.5"
 		>
 			<div className="col-span-2 md:col-span-1">
 				<Figure
@@ -168,7 +168,7 @@ export function MonthRows({ stats, lastMonth }: { stats: YearStats; lastMonth: n
 
 	return (
 		<>
-			<ol className="divide-y divide-rule">
+			<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 				{rows.map((row, i) => {
 					if (row.kind === "gap") {
 						return (
@@ -305,7 +305,7 @@ export function TopRated({ books }: { books: YearBook[] }) {
 	if (rated.length === 0)
 		return <p className="py-6 text-sm text-muted-foreground">No ratings yet.</p>;
 	return (
-		<ol className="divide-y divide-rule">
+		<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 			{rated.map((b, i) => (
 				<li key={b.id} className="pb-1">
 					<Link
@@ -337,7 +337,7 @@ export function QuoteFeed({ quotes }: { quotes: FeedQuote[] }) {
 		return <p className="py-6 text-sm text-muted-foreground">No quotes saved this year.</p>;
 	}
 	return (
-		<ul className="divide-y divide-rule">
+		<ul className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 			{quotes.map((q) => (
 				<li key={q.id} className="py-3">
 					<blockquote className="border-l-2 border-primary/40 pl-3">
@@ -382,7 +382,7 @@ export function Records({ stats }: { stats: YearStats }) {
 	].filter((r): r is { label: string; book: YearBook; value: string } => !!r);
 	if (rows.length === 0) return null;
 	return (
-		<ul className="divide-y divide-rule">
+		<ul className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 			{rows.map((r) => (
 				<li key={r.label}>
 					<Link
