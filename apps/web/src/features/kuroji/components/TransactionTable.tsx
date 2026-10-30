@@ -36,6 +36,7 @@ import {
 	type TransactionFilters,
 } from "@/features/kuroji/lib/transaction-filters";
 import { usePendingOps } from "@/features/pwa/lib/use-outbox";
+import { useHeld } from "@/hooks/useHeld";
 import {
 	Alert01Icon,
 	ArrowDown02Icon,
@@ -154,6 +155,8 @@ export function TransactionTable({
 	const [isExporting, setIsExporting] = useState(false);
 	const [pendingId, setPendingId] = useState<string | null>(null);
 	const [editTarget, setEditTarget] = useState<RecentTransaction | null>(null);
+	// Stays mounted after closing so the dialog can fade out; a new transaction remounts it.
+	const editShown = useHeld(editTarget, editTarget != null);
 	const [localQuery, setLocalQuery] = useState(searchQuery ?? "");
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 	// Phones have no checkbox column until you ask for it.
@@ -769,11 +772,12 @@ export function TransactionTable({
 				/>
 			)}
 
-			{editTarget && (
+			{editShown && (
 				<EditTransactionModal
-					transaction={editTarget}
+					key={editShown.id}
+					transaction={editShown}
 					workspaceId={workspaceId}
-					open={!!editTarget}
+					open={editTarget != null}
 					onOpenChange={(v) => {
 						if (!v) setEditTarget(null);
 					}}
