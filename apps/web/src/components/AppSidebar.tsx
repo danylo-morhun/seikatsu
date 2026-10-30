@@ -64,7 +64,7 @@ export function AppSidebar({ workspaceName, hiddenApps, user }: Props) {
 	}, [pathname]);
 
 	return (
-		<Sidebar collapsible="icon" variant="inset">
+		<Sidebar collapsible="icon" variant="floating">
 			<SidebarHeader>
 				<SidebarMenu>
 					<SidebarMenuItem>
