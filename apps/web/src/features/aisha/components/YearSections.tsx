@@ -102,7 +102,7 @@ export function MonthRows({
 
 	return (
 		<>
-			<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+			<ol className="inset-group">
 				{rows.map((row, i) => {
 					if (row.kind === "gap") {
 						return (
@@ -163,7 +163,7 @@ export function YearServices({ services }: { services: ServiceWithItems[] }) {
 		return <p className="py-6 text-sm text-muted-foreground">No services this year.</p>;
 	}
 	return (
-		<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+		<ol className="inset-group">
 			{services.map((s) => (
 				<li key={s.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 py-2.5">
 					<span className="min-w-0">

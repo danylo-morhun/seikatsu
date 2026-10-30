@@ -302,7 +302,10 @@ export function TodayView({
 				}
 			>
 				<div className="mt-10 animate-rise" style={{ "--i": 3 } as React.CSSProperties}>
-					<div aria-hidden className={`${ROW_GRID} items-end gap-y-1 px-4 pb-2`}>
+					<div
+						aria-hidden
+						className={`${ROW_GRID} items-end gap-y-1 border-b border-(--head-rule) px-(--group-px) pb-2`}
+					>
 						<span />
 						<h2 className="text-sm font-medium">Habits</h2>
 						<span className={`${RUN_COL} text-[11px] text-muted-foreground`}>Run</span>
@@ -321,10 +324,7 @@ export function TodayView({
 							))}
 						</span>
 					</div>
-					<ol
-						aria-label="Due today"
-						className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent"
-					>
+					<ol aria-label="Due today" className="inset-group">
 						{due.map((item, i) => (
 							<HabitRow key={item.habit.id} item={item} index={i} onToggle={toggle} />
 						))}
@@ -337,11 +337,11 @@ export function TodayView({
 						<section aria-labelledby="keizoku-not-today" className="mt-8">
 							<h2
 								id="keizoku-not-today"
-								className="px-1 pb-2 text-sm font-medium text-muted-foreground"
+								className="border-b border-(--head-rule) px-(--head-inset) pb-2 text-sm font-medium text-muted-foreground"
 							>
 								Not due today
 							</h2>
-							<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+							<ol className="inset-group">
 								{notDue.map((item, i) => (
 									<HabitRow
 										key={item.habit.id}

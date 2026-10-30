@@ -58,7 +58,7 @@ export function ResumeUploadField({ fileUrl, fileName, resumeFiles, onChange }: 
 				onChange={handleFileChange}
 			/>
 			{fileUrl && fileName ? (
-				<div className="flex items-center gap-2 rounded-xl border px-3 py-2 text-sm min-w-0 w-full overflow-hidden">
+				<div className="flex items-center gap-2 rounded-field border px-3 py-2 text-sm min-w-0 w-full overflow-hidden">
 					<span className="flex-1 min-w-0 truncate" title={fileName}>
 						{fileName}
 					</span>

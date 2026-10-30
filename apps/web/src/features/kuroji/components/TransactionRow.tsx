@@ -149,7 +149,7 @@ export const TransactionRow = memo(
 			<li
 				className={cn(
 					// Separators inset from the group's edges, as in macOS lists.
-					"group/row relative grid items-center px-4 py-2.5 not-first:before:absolute not-first:before:inset-x-4 not-first:before:top-0 not-first:before:h-px not-first:before:bg-rule",
+					"group/row relative grid items-center px-(--group-px) py-2.5 not-first:before:absolute not-first:before:inset-x-(--group-px) not-first:before:top-0 not-first:before:h-px not-first:before:bg-rule",
 					rowCols(selectMode),
 					selected && "bg-surface-2",
 				)}

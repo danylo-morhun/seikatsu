@@ -65,10 +65,7 @@ export function OverviewFigures({
 	const net = income - expenses;
 
 	return (
-		<section
-			aria-label="Summary"
-			className="grid grid-cols-2 gap-3 md:grid-cols-[1.4fr_1fr_1fr_1fr] md:gap-4 [&>*]:rounded-2xl [&>*]:bg-surface [&>*]:px-4 [&>*]:py-3.5"
-		>
+		<section aria-label="Summary" className="figure-row md:grid-cols-[1.4fr_1fr_1fr_1fr]">
 			<div className="col-span-2 md:col-span-1">
 				<Figure
 					lead

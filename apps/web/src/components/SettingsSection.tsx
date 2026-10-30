@@ -19,7 +19,7 @@ export function SettingsPage({
 }) {
 	return (
 		<div className={cn("max-w-3xl px-4 pt-6 sm:px-8 md:pt-8 md:pb-8", appNav ? "pb-28" : "pb-8")}>
-			<h1 className="text-[1.75rem] leading-tight font-bold tracking-tight">{title}</h1>
+			<h1 className="title-large">{title}</h1>
 			{tabs && <div className="mt-4">{tabs}</div>}
 			<div className="mt-6 space-y-8">{children}</div>
 		</div>
@@ -49,7 +49,7 @@ export function SettingsSection({
 	const id = useId();
 	return (
 		<section aria-labelledby={title ? id : undefined} className={className}>
-			<div className="flex items-start justify-between gap-4 px-1">
+			<div className="flex items-start justify-between gap-4 px-(--head-inset)">
 				<div className="min-w-0">
 					{title && (
 						<h2 id={id} className="text-sm font-semibold">
@@ -68,15 +68,8 @@ export function SettingsSection({
 				)}
 			</div>
 			{children && (
-				<div
-					className={cn(
-						// The section is the group: lists inside drop their own (see INSET_GROUP).
-						"rounded-2xl bg-surface p-4 [&_.inset-group]:rounded-none [&_.inset-group]:bg-transparent [&_.inset-group]:px-0",
-						(title || description) && "mt-3",
-					)}
-				>
-					{children}
-				</div>
+				// The section is the group: lists inside are its rows (see group-card).
+				<div className={cn("group-card", (title || description) && "mt-3")}>{children}</div>
 			)}
 		</section>
 	);

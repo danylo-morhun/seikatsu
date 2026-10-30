@@ -490,7 +490,7 @@ export function TransactionTable({
 			>
 				<div className="min-w-0">
 					{largeTitle ? (
-						<h1 className="text-[1.75rem] leading-tight font-bold tracking-tight">Transactions</h1>
+						<h1 className="title-large">Transactions</h1>
 					) : (
 						<h2 className="text-sm font-medium">Transactions</h2>
 					)}
@@ -557,7 +557,7 @@ export function TransactionTable({
 							type="search"
 							aria-label="Search transactions"
 							placeholder="Search, then Enter"
-							className="rounded-full border-transparent bg-surface pl-9"
+							className="rounded-button border-(--search-border) bg-(--search-bg) pl-9"
 							value={localQuery}
 							onChange={(e) => {
 								setLocalQuery(e.target.value);
@@ -568,7 +568,7 @@ export function TransactionTable({
 					</form>
 					<Button
 						variant="outline"
-						className="rounded-full md:hidden"
+						className="md:hidden"
 						aria-pressed={selectMode}
 						onClick={() => {
 							setSelectMode(!selectMode);
@@ -580,7 +580,6 @@ export function TransactionTable({
 					<Button
 						variant="outline"
 						size="icon"
-						className="rounded-full"
 						onClick={handleExport}
 						disabled={isExporting}
 						aria-label="Export CSV"
@@ -596,7 +595,7 @@ export function TransactionTable({
 			</div>
 
 			{/* Column header: select-all and sorting. Desktop only; phones sort by date. */}
-			<div className="hidden grid-cols-[1.25rem_minmax(0,1fr)_minmax(0,18rem)_8.5rem_2.25rem] items-center gap-x-4 px-4 pb-1 text-xs text-muted-foreground md:grid">
+			<div className="hidden grid-cols-[1.25rem_minmax(0,1fr)_minmax(0,18rem)_8.5rem_2.25rem] items-center gap-x-4 px-(--group-px) pb-1 text-xs text-muted-foreground md:grid">
 				<Checkbox
 					checked={transactions.length > 0 && selectedIds.size === transactions.length}
 					onCheckedChange={toggleSelectAll}
@@ -628,7 +627,7 @@ export function TransactionTable({
 									// Same columns as the rows, so the day's net sits in the amount column.
 									<header
 										className={cn(
-											"grid items-baseline px-4 pt-5 pb-2 text-xs text-muted-foreground",
+											"grid items-baseline border-b border-(--head-rule) px-(--group-px) pt-5 pb-2 text-xs text-muted-foreground",
 											rowCols(selectMode),
 										)}
 									>
@@ -651,7 +650,7 @@ export function TransactionTable({
 									</header>
 								)}
 								{/* Inset grouped, like a macOS list: each day is one rounded group. */}
-								<ul className="overflow-hidden rounded-2xl bg-surface">
+								<ul className="overflow-hidden rounded-group bg-(--group-bg)">
 									{g.rows.map((txn) => (
 										<TransactionRow
 											key={txn.id}

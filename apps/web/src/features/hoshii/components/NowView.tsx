@@ -354,7 +354,7 @@ function Section({
 }) {
 	return (
 		<section aria-labelledby={id} className="animate-rise" style={rise(index)}>
-			<div className="flex items-baseline justify-between gap-3 px-1 pb-2">
+			<div className="flex items-baseline justify-between gap-3 border-b border-(--head-rule) px-(--head-inset) pb-2">
 				<div className="min-w-0 truncate text-sm">
 					<h2 id={id} className="inline font-medium">
 						{title}
@@ -364,9 +364,7 @@ function Section({
 				<span className="font-figures text-xs text-muted-foreground">{count}</span>
 			</div>
 			{count > 0 ? (
-				<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
-					{children}
-				</ol>
+				<ol className="inset-group">{children}</ol>
 			) : (
 				<p className="pt-3 text-sm text-muted-foreground">{empty}</p>
 			)}

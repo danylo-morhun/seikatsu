@@ -145,13 +145,13 @@ export function NextView({
 	const section = (title: string, list: Queued<QueueEntry>[], id: string) =>
 		list.length > 0 && (
 			<section aria-labelledby={id} className="animate-rise" style={rise(4 + index++)}>
-				<div className="flex items-baseline justify-between gap-3 px-1 pb-2">
+				<div className="flex items-baseline justify-between gap-3 border-b border-(--head-rule) px-(--head-inset) pb-2">
 					<h2 id={id} className="text-sm font-medium">
 						{title}
 					</h2>
 					<span className="font-figures text-xs text-muted-foreground">{list.length}</span>
 				</div>
-				<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+				<ol className="inset-group">
 					{list.map((q) => (
 						<QueueRow
 							key={keyOf(q.entry)}

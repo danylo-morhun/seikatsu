@@ -2,7 +2,8 @@ import { cn } from "@seikatsu/ui";
 
 /**
  * A screen's large title, as in macOS and iOS: bold 28px, an optional muted line under it, and
- * the screen's own actions at right.
+ * the screen's own actions at right. Classic names the screen for screen readers only, as it
+ * always did (the header's tabs already say where you are).
  */
 export function PageTitle({
 	title,
@@ -16,21 +17,17 @@ export function PageTitle({
 	className?: string;
 }) {
 	return (
-		<div className={cn("mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-3", className)}>
+		<div
+			className={cn(
+				"mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-3 classic:sr-only",
+				className,
+			)}
+		>
 			<div className="min-w-0">
-				<h1 className="text-[1.75rem] leading-tight font-bold tracking-tight">{title}</h1>
+				<h1 className="title-large">{title}</h1>
 				{subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
 			</div>
 			{actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
 		</div>
 	);
 }
-
-/**
- * A macOS inset grouped list: one rounded group on a slightly lighter tone, separators inset
- * from its edges. A hovered row hides the separators on both sides of it, as macOS lists do,
- * so its highlight reads as one clean pill, inset 8px on every side (so its 6.4px corners stay
- * concentric with the group's). Content, so it never takes glass.
- */
-export const INSET_GROUP =
-	"inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent";

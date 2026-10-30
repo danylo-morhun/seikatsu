@@ -134,11 +134,11 @@ function Block({
 }) {
 	return (
 		<section className={cn("min-w-0 animate-rise", className)} style={rise(index)}>
-			<div className="mb-2 flex items-baseline justify-between gap-3 px-1">
+			<div className="mb-2 flex items-baseline justify-between gap-3 px-(--head-inset)">
 				<h2 className="text-sm font-medium">{title}</h2>
 				{note && <p className="truncate text-xs text-muted-foreground">{note}</p>}
 			</div>
-			<div className="rounded-2xl bg-surface p-4">{children}</div>
+			<div className="group-card">{children}</div>
 		</section>
 	);
 }
