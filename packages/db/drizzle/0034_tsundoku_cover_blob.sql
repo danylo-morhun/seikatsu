@@ -1,0 +1,1 @@
+ALTER TABLE "tsundoku_books" ADD COLUMN "cover_blob" text;
