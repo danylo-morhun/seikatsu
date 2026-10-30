@@ -99,7 +99,6 @@ export function AllView({
 
 	return (
 		<ApplicationArea rows={rows}>
-			<h1 className="sr-only">Kyuu — applications</h1>
 			<SegmentedTabs label="Views">
 				{VIEWS.map((v) => (
 					<SegmentedTab
@@ -128,12 +127,7 @@ export function AllView({
 			{view === "waiting" && ghostDue.length > 0 && <GhostBar ids={ghostDue} />}
 
 			<div className="mt-6">
-				<div
-					className={cn(
-						TABLE_GRID,
-						"border-b border-rule pb-2 text-xs text-muted-foreground md:-mx-2 md:px-2",
-					)}
-				>
+				<div className={cn(TABLE_GRID, "px-4 pb-2 text-xs text-muted-foreground")}>
 					{header("date", "Sent", "max-sm:hidden")}
 					{header("company", "Company")}
 					<span className="max-md:hidden">Role</span>
@@ -149,7 +143,7 @@ export function AllView({
 							: (VIEWS.find((v) => v.value === view)?.empty ?? "")}
 					</p>
 				) : (
-					<ol className="divide-y divide-rule">
+					<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 						{rows.map((row) => (
 							<ApplicationRowItem key={row.id} row={row} today={today} />
 						))}

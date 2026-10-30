@@ -76,7 +76,7 @@ export function MailInbox({
 					</Button>
 				)}
 			</div>
-			<ul className="mt-2 divide-y divide-rule">
+			<ul className="mt-2 inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 				{[...review, ...applied].map((item) => (
 					<MailRow key={item.id} item={item} choices={choices} today={today} />
 				))}

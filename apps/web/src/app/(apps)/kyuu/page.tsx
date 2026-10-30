@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/PageTitle";
 import {
 	getApplicationsPage,
 	getGhostDue,
@@ -43,7 +44,8 @@ export default async function KyuuPage({
 	}
 
 	return (
-		<div className="px-4 pt-2 pb-28 sm:px-8 md:pt-4 md:pb-8">
+		<div className="px-4 pt-6 pb-28 sm:px-8 md:py-8">
+			<PageTitle title="Applications" />
 			<MailInbox items={mail.items} choices={mail.choices} today={today} />
 			<AllView
 				rows={rows}
