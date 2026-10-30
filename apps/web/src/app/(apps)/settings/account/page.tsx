@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { AppearancePicker } from "@/components/AppearancePicker";
 import { SettingsPage, SettingsSection } from "@/components/SettingsSection";
 import { ChangeEmailForm } from "@/features/auth/components/ChangeEmailForm";
 import { ChangePasswordForm } from "@/features/auth/components/ChangePasswordForm";
@@ -27,6 +28,10 @@ export default async function AccountSettingsPage() {
 
 	return (
 		<SettingsPage title="Account">
+			<SettingsSection title="Appearance" description="How seikatsu looks on this device.">
+				<AppearancePicker />
+			</SettingsSection>
+
 			<SettingsSection
 				title="Profile"
 				description="Your name and photo, as the sidebar shows them."
