@@ -84,7 +84,7 @@ export function KyuuFilters({ sources }: { sources: string[] }) {
 					aria-label="Search company or role"
 					aria-keyshortcuts="/"
 					placeholder="Company or role"
-					className="pl-8"
+					className="rounded-full border-transparent bg-surface pl-8"
 					value={query}
 					onChange={(e) => setQuery(e.target.value)}
 					onKeyDown={(e) => {
