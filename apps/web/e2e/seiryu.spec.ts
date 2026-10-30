@@ -170,3 +170,26 @@ test("? lists the board's shortcuts", async ({ page }) => {
 	}).toPass();
 	await expect(dialog.getByText("Move to the previous or next column")).toBeVisible();
 });
+
+test("a dismissed new card keeps its title; Cancel drops it", async ({ page }) => {
+	await page.goto(`/seiryu/${projectId}`);
+	const dialog = page.getByRole("dialog", { name: "New Card" });
+	const open = async () => {
+		await expect(async () => {
+			await page.keyboard.press("n");
+			await expect(dialog).toBeVisible({ timeout: 500 });
+		}).toPass();
+	};
+	await open();
+	await dialog.getByLabel("Title").fill("Half a thought");
+	await page.keyboard.press("Escape");
+	await expect(dialog).toBeHidden();
+
+	await open();
+	await expect(dialog.getByLabel("Title")).toHaveValue("Half a thought");
+	await dialog.getByRole("button", { name: "Cancel" }).click();
+	await expect(dialog).toBeHidden();
+
+	await open();
+	await expect(dialog.getByLabel("Title")).toHaveValue("");
+});

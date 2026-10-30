@@ -22,3 +22,25 @@ test("New Transaction adds an expense", async ({ page }) => {
 		page.locator("header").getByRole("button", { name: "New Transaction" }),
 	).toBeEnabled();
 });
+
+test("a dismissed transaction keeps its draft; Cancel drops it", async ({ page }) => {
+	await page.goto("/kuroji?tab=transactions");
+	const trigger = page.locator("header").getByRole("button", { name: "New Transaction" });
+	const dialog = page.getByRole("dialog", { name: "New Transaction" });
+
+	await trigger.click();
+	await dialog.getByLabel("Amount").fill("7,50");
+	await dialog.getByLabel("Description").fill("Coffee");
+	await page.keyboard.press("Escape");
+	await expect(dialog).toBeHidden();
+
+	await trigger.click();
+	await expect(dialog.getByLabel("Amount")).toHaveValue("7,50");
+	await expect(dialog.getByLabel("Description")).toHaveValue("Coffee");
+	await dialog.getByRole("button", { name: "Cancel" }).click();
+	await expect(dialog).toBeHidden();
+
+	await trigger.click();
+	await expect(dialog.getByLabel("Amount")).toHaveValue("");
+	await expect(dialog.getByLabel("Description")).toHaveValue("");
+});
