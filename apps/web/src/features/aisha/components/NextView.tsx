@@ -2,6 +2,7 @@
 
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
+import { PageTitle } from "@/components/PageTitle";
 import { QuietAdd } from "@/components/QuietAdd";
 import { Spinner } from "@/components/Spinner";
 import type {
@@ -144,13 +145,13 @@ export function NextView({
 	const section = (title: string, list: Queued<QueueEntry>[], id: string) =>
 		list.length > 0 && (
 			<section aria-labelledby={id} className="animate-rise" style={rise(4 + index++)}>
-				<div className="flex items-baseline justify-between gap-3 border-b border-rule pb-2">
+				<div className="flex items-baseline justify-between gap-3 px-1 pb-2">
 					<h2 id={id} className="text-sm font-medium">
 						{title}
 					</h2>
 					<span className="font-figures text-xs text-muted-foreground">{list.length}</span>
 				</div>
-				<ol className="divide-y divide-rule">
+				<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 					{list.map((q) => (
 						<QueueRow
 							key={keyOf(q.entry)}
@@ -166,9 +167,7 @@ export function NextView({
 
 	return (
 		<>
-			<h1 className="sr-only">
-				Aisha — {vehicle.make} {vehicle.model}, what's next
-			</h1>
+			<PageTitle title="Next" subtitle={`${vehicle.make} ${vehicle.model}`} />
 			<section
 				aria-label="The car at a glance"
 				className={`${FIGURES_ROW} md:grid-cols-[1.4fr_1fr_1fr]`}
