@@ -2,18 +2,21 @@
 
 [![CI](https://github.com/danylo-morhun/seikatsu/actions/workflows/ci.yml/badge.svg)](https://github.com/danylo-morhun/seikatsu/actions/workflows/ci.yml)
 
-One app for daily life: money, tasks, books, habits, job search, car.
+One app for daily life: money, tasks, books, habits, job search, car, wishlist.
 
 [seikatsu.danylomorhun.com](https://seikatsu.danylomorhun.com)
 
 ## Apps
 
-- **Kuroji** — finance: double-entry ledger, multi-currency, recurring transactions, bank sync, charts
+- **Kuroji** — finance: double-entry ledger, multi-currency, recurring transactions, bank sync, Apple Pay capture, charts
 - **Seiryu** — kanban: projects, cards, checklists, labels, due dates
-- **Tsundoku** — books: search, shelves, quotes, reading sessions, yearly goal
-- **Keizoku** — habits: streaks, heatmap, photo log
-- **Kyū** — job search: pipeline, stats, paste a posting and Gemini fills the form
-- **Aisha** — car care: service log, reminders by mileage and date
+- **Tsundoku** — books: search, shelves, quotes, reading sessions, year review
+- **Keizoku** — habits: week view, streaks, photo log, year page
+- **Kyū** — job search: what to do next, stats, Gmail sync where Gemini turns replies into events
+- **Aisha** — car care: service log, reminders by mileage and date, documents
+- **Hoshii** — wishlist: wants cool off by price, then one ranked plan funded from a Kuroji savings account
+
+Installable as a PWA: works offline, push reminders, share links straight into Hoshii.
 
 ## How it works
 
@@ -27,7 +30,7 @@ One app for daily life: money, tasks, books, habits, job search, car.
 
 ## Stack
 
-Next.js 15, React 19, Turborepo, Drizzle, Neon Postgres, NextAuth v5, Tailwind 4, Vercel.
+Next.js 16, React 19, Turborepo, Drizzle, Neon Postgres, NextAuth v5, Tailwind 4, Vercel.
 
 ## Run locally
 
