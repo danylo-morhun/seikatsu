@@ -42,7 +42,7 @@ export function SettingsProjects({ projects }: { projects: Row[] }) {
 
 	return (
 		<>
-			<ul className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+			<ul className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 				{projects.map((p, i) => (
 					<li
 						key={p.id}

@@ -13,7 +13,7 @@ export function DangerZone() {
 
 	return (
 		<>
-			<ul className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+			<ul className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 				<li className="flex items-center gap-4 py-3">
 					<div className="min-w-0 flex-1">
 						<p className="text-sm">Sign out everywhere</p>

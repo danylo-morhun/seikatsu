@@ -84,7 +84,7 @@ export function SettingsHabits({ habits: saved }: { habits: KeizokuHabit[] }) {
 					</button>
 				</p>
 			) : (
-				<ul className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+				<ul className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 					{habits.map((h, i) => (
 						<li key={h.id} className="flex animate-rise items-center gap-3 py-2.5" style={rise(i)}>
 							<span aria-hidden className="w-6 shrink-0 text-center text-base">
@@ -165,7 +165,7 @@ export function ArchivedHabits({ habits: saved }: { habits: ArchivedHabit[] }) {
 
 	return (
 		<>
-			<ul className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+			<ul className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 				{habits.map((h, i) => (
 					<li key={h.id} className="flex animate-rise items-center gap-3 py-2.5" style={rise(i)}>
 						<span aria-hidden className="w-6 shrink-0 text-center text-base">

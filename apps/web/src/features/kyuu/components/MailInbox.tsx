@@ -76,7 +76,7 @@ export function MailInbox({
 					</Button>
 				)}
 			</div>
-			<ul className="mt-2 inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+			<ul className="mt-2 inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 				{[...review, ...applied].map((item) => (
 					<MailRow key={item.id} item={item} choices={choices} today={today} />
 				))}

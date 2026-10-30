@@ -77,7 +77,7 @@ export function SummaryMonths({
 	const max = Math.max(1, ...summary.months.map((m) => Math.max(m.bought, m.released)));
 	return (
 		<>
-			<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+			<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 				{months.map((m, i) => {
 					const { bought, released } = summary.months[m];
 					return (
@@ -140,7 +140,7 @@ export function SummaryWants({
 		return <p className="py-6 text-sm text-muted-foreground">None this year.</p>;
 	}
 	return (
-		<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+		<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 			{items.map((i) => {
 				const bought = i.state === "bought";
 				const day = (bought ? i.boughtOn : i.releasedOn) ?? today;

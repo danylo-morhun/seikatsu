@@ -214,7 +214,7 @@ export function PlanView({ data, workspaceId, empty }: Props) {
 												</RowGroup>
 											</>
 										) : (
-											<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+											<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 												{data.expense.map((r) => (
 													<CategoryRow
 														key={r.accountId}
@@ -238,7 +238,7 @@ export function PlanView({ data, workspaceId, empty }: Props) {
 									<p className="mb-2 text-xs text-muted-foreground">
 										Spending in categories without a plan. Tap one to plan it.
 									</p>
-									<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+									<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 										{data.unplanned.map((u) => {
 											const category = data.categories.find((c) => c.id === u.accountId);
 											return (
@@ -281,7 +281,7 @@ export function PlanView({ data, workspaceId, empty }: Props) {
 									<h2 id="plan-income" className="mb-3 text-sm font-medium">
 										Income
 									</h2>
-									<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+									<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 										{data.income.map((r) => (
 											<IncomeRow
 												key={r.accountId}
@@ -315,7 +315,7 @@ export function PlanView({ data, workspaceId, empty }: Props) {
 										Put money aside for a date — a trip, a big purchase.
 									</p>
 								) : (
-									<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+									<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 										{data.funds.map((f) => (
 											<li key={f.id}>
 												<button
@@ -369,7 +369,7 @@ export function PlanView({ data, workspaceId, empty }: Props) {
 										No recurring transactions left in {monthName(month)}.
 									</p>
 								) : (
-									<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+									<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 										{data.upcoming.map((u) => (
 											<li
 												key={u.id}
@@ -460,7 +460,7 @@ function RowGroup({ title, children }: { title: string; children: ReactNode }) {
 	return (
 		<div>
 			<h3 className="text-xs text-muted-foreground">{title}</h3>
-			<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+			<ol className="inset-group rounded-2xl bg-surface px-4 py-2 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 				{children}
 			</ol>
 		</div>
