@@ -257,7 +257,7 @@ export function ApplicationPage({
 			</Section>
 
 			<Section title="Details" index={3}>
-				<dl className="divide-y divide-rule">
+				<dl className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 					<Detail
 						label="Contact"
 						value={app.contact}

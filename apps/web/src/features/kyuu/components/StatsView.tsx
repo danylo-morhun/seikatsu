@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/PageTitle";
 import { FIGURES_ROW, Figure } from "@/features/keizoku/components/Figure";
 import { BAR_FILL, barClip } from "@/lib/bar";
 import { cn } from "@seikatsu/ui";
@@ -24,7 +25,7 @@ export function StatsView({ stats, sources }: { stats: KyuuStats; sources: strin
 	const ghosted = stats.closed.ghosted;
 	return (
 		<>
-			<h1 className="sr-only">Kyuu — stats</h1>
+			<PageTitle title="Stats" />
 			<KyuuFilters sources={sources} />
 
 			<section
