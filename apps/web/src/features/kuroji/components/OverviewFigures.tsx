@@ -12,7 +12,7 @@ interface Props {
 	expenses: number;
 }
 
-function Figure({
+export function Figure({
 	label,
 	value,
 	currency,

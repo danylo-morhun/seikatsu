@@ -5,7 +5,7 @@ import {
 	Add01Icon,
 	Chart01Icon,
 	Clock01Icon,
-	Settings01Icon,
+	Target02Icon,
 	Wallet01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -50,10 +50,12 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 
 	// Grid column of the lit item (the add button holds column 2); -1 lights nothing.
 	const litColumn = isSettings
-		? 4
+		? -1
 		: displayTab === "transactions"
 			? 3
-			: TABS.findIndex((t) => t.value === displayTab);
+			: displayTab === "plan"
+				? 4
+				: TABS.findIndex((t) => t.value === displayTab);
 
 	function tabHref(tab: KurojiTab) {
 		return buildTabHref(tab, searchParams.toString());
@@ -127,7 +129,14 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 					displayTab === "transactions" && !isSettings,
 					"transactions",
 				)}
-				{navItem("/settings/kuroji", "Settings", Settings01Icon, isSettings)}
+				{/* Settings stay a key (,) and a sidebar link away; the plan is checked every week. */}
+				{navItem(
+					tabHref("plan"),
+					"Plan",
+					Target02Icon,
+					displayTab === "plan" && !isSettings,
+					"plan",
+				)}
 			</div>
 		</nav>
 	);

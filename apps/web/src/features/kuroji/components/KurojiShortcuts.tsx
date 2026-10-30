@@ -10,6 +10,7 @@ const TAB_KEYS: Record<string, KurojiTab> = {
 	"1": "expense",
 	"2": "accounts",
 	"3": "transactions",
+	"4": "plan",
 };
 
 const SEARCH_SELECTOR = 'input[aria-label="Search transactions"]';
