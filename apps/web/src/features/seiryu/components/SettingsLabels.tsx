@@ -63,7 +63,7 @@ export function SettingsLabels({ labels }: { labels: Row[] }) {
 					style={{ "--i": gi } as React.CSSProperties}
 				>
 					<h3 className="mb-2 text-sm font-semibold">{group.name}</h3>
-					<ul className="divide-y divide-rule">
+					<ul className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 						{group.rows.map((label) => (
 							<li key={label.id} className="flex items-center gap-3 py-2.5">
 								<span

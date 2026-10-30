@@ -24,7 +24,9 @@ export const freshCards = new Set<string>();
 // Neighbours make room on the strong ease-out, a beat quicker than a page move.
 export const SORT_TRANSITION = { duration: 220, easing: "cubic-bezier(0.23, 1, 0.32, 1)" };
 
-const TILE = "rounded-lg bg-surface px-3 py-2.5 text-left [-webkit-touch-callout:none] select-none";
+// Cards sit on the lane (bg-surface) one tone lighter, as in macOS boards.
+const TILE =
+	"rounded-xl bg-surface-2 px-3 py-2.5 text-left [-webkit-touch-callout:none] select-none";
 
 interface Props {
 	card: CardData;
@@ -63,7 +65,7 @@ export const KanbanCard = memo(function KanbanCard({ card, today, onOpen }: Prop
 			}}
 			className={cn(
 				TILE,
-				"cursor-grab outline-none transition-[background-color,opacity] duration-150 hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
+				"cursor-grab outline-none transition-[box-shadow,opacity] duration-150 hover:ring-1 hover:ring-foreground/10 focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
 				fresh && "animate-drop",
 				// The lifted card travels in the overlay; its place stays as an empty slot.
 				isDragging && "bg-transparent ring-1 ring-rule ring-inset [&>*]:opacity-0",
@@ -78,7 +80,7 @@ export const KanbanCard = memo(function KanbanCard({ card, today, onOpen }: Prop
 /** The card as it travels under the pointer: lifted off the lane by a soft shadow. */
 export function KanbanCardOverlay({ card, today }: { card: CardData; today: string }) {
 	return (
-		<div className={cn(TILE, "animate-lift cursor-grabbing bg-surface-2")}>
+		<div className={cn(TILE, "animate-lift cursor-grabbing shadow-lg")}>
 			<CardBody card={card} today={today} />
 		</div>
 	);

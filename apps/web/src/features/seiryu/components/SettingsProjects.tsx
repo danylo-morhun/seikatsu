@@ -42,7 +42,7 @@ export function SettingsProjects({ projects }: { projects: Row[] }) {
 
 	return (
 		<>
-			<ul className="divide-y divide-rule">
+			<ul className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 				{projects.map((p, i) => (
 					<li
 						key={p.id}

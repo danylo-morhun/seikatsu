@@ -142,9 +142,9 @@ export const KanbanColumn = memo(function KanbanColumn({
 			style={
 				{ transform: CSS.Translate.toString(transform), transition, "--i": index } as CSSProperties
 			}
-			className={cn(LANE, "animate-rise", isDragging && "opacity-40")}
+			className={cn(LANE, "animate-rise rounded-2xl bg-surface px-2", isDragging && "opacity-40")}
 		>
-			<header className="flex h-11 items-center gap-2 border-b border-rule">
+			<header className="flex h-11 items-center gap-2 px-1">
 				{renaming ? (
 					<Input
 						autoFocus
@@ -387,7 +387,7 @@ export function KanbanColumnOverlay({
 	cardCount,
 }: { column: ColumnData; cardCount: number }) {
 	return (
-		<div className={cn(LANE, "animate-lift cursor-grabbing rounded-lg bg-surface-2 px-3")}>
+		<div className={cn(LANE, "animate-lift cursor-grabbing rounded-2xl bg-surface-2 px-3")}>
 			<div className="flex h-11 items-center gap-2">
 				{column.color && (
 					<span
