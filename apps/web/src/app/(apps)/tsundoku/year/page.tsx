@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/PageTitle";
 import { YearSwitch } from "@/components/YearSwitch";
 import { getGoal } from "@/features/tsundoku/actions/goals";
 import { getYearQuotes } from "@/features/tsundoku/actions/quotes";
@@ -42,7 +43,7 @@ export default async function TsundokuYearPage({
 
 	return (
 		<div className="space-y-10 px-4 pt-6 pb-28 sm:px-8 md:py-8">
-			<h1 className="sr-only">Tsundoku — {year} in books</h1>
+			<PageTitle title={`${year} in books`} />
 			<div className="space-y-6">
 				{stats.years.length > 1 && (
 					<YearSwitch years={stats.years} year={year} base="/tsundoku/year" />

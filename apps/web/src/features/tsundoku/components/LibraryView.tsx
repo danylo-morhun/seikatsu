@@ -3,6 +3,7 @@
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
 import { startNavigationProgress } from "@/components/NavigationProgress";
+import { PageTitle } from "@/components/PageTitle";
 import { usePendingOps } from "@/features/pwa/lib/use-outbox";
 import { type LibraryBook, deleteBook, setBookShelves } from "@/features/tsundoku/actions/books";
 import type { TsundokuShelf } from "@/features/tsundoku/actions/shelves";
@@ -225,7 +226,7 @@ export function LibraryView({ books: server, shelves, today }: Props) {
 				))}
 			</div>
 		) : (
-			<ul className="divide-y divide-rule">
+			<ul className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 				{list.map((b, i) => (
 					<BookRow key={b.id} book={b} index={i} />
 				))}
@@ -233,7 +234,7 @@ export function LibraryView({ books: server, shelves, today }: Props) {
 		);
 
 	const reading = (list: LibraryBook[]) => (
-		<ol className="divide-y divide-rule">
+		<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 			{list.map((b, i) => (
 				<ReadingRow key={b.id} book={b} index={i} onProgress={actions.progress} />
 			))}
@@ -242,7 +243,7 @@ export function LibraryView({ books: server, shelves, today }: Props) {
 
 	return (
 		<div className="space-y-6">
-			<h1 className="sr-only">Tsundoku — Library</h1>
+			<PageTitle title="Library" className="mb-0" />
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<SegmentSwitch
 					value={filters.segment}
