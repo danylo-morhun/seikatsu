@@ -484,7 +484,7 @@ export function SeriesSection({
 							href={`/tsundoku/${b.id}`}
 							prefetch={false}
 							aria-current={b.id === currentId ? "page" : undefined}
-							className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-baseline gap-x-3 rounded-md py-2.5 outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring md:-mx-2 md:px-2"
+							className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-baseline gap-x-3 rounded-md py-2.5 outline-none transition-colors hover:bg-(--row-hover) focus-visible:ring-2 focus-visible:ring-ring md:-mx-2 md:px-2"
 						>
 							<span className="font-figures text-sm text-muted-foreground">
 								{b.seriesPosition ?? "–"}

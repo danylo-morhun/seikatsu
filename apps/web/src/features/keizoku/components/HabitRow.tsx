@@ -226,7 +226,7 @@ export const HabitRow = memo(
 				data-habit-row
 				className={cn(
 					ROW_GRID,
-					"items-center py-1.5 max-md:pb-0.5 md:-mx-2 md:px-2 md:hover:bg-surface-2 md:rounded-md",
+					"items-center py-1.5 max-md:pb-0.5 md:-mx-2 md:px-2 md:hover:bg-(--row-hover) md:rounded-md",
 					fresh ? "animate-drop" : "animate-rise",
 				)}
 				style={stagger(index)}

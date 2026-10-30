@@ -373,7 +373,7 @@ function Section({
 }
 
 const ROW =
-	"group relative grid items-center gap-x-3 rounded-md transition-colors duration-150 hover:bg-surface-2 md:-mx-2 md:px-2";
+	"group relative grid items-center gap-x-3 rounded-md transition-colors duration-150 hover:bg-(--row-hover) md:-mx-2 md:px-2";
 
 /** The row's main button: what it is, a detail line; it opens the want. */
 function RowMain({

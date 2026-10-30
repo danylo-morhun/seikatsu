@@ -345,7 +345,7 @@ export function HabitPage({ habit, summary, days: server, journal, today }: Prop
 									type="button"
 									disabled={archived}
 									onClick={() => openNote(d.date)}
-									className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 rounded-md py-3 text-left outline-none transition-colors enabled:hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring md:-mx-2 md:w-[calc(100%+1rem)] md:px-2"
+									className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 rounded-md py-3 text-left outline-none transition-colors enabled:hover:bg-(--row-hover) focus-visible:ring-2 focus-visible:ring-ring md:-mx-2 md:w-[calc(100%+1rem)] md:px-2"
 								>
 									<span className="min-w-0">
 										<span className="block text-xs text-muted-foreground">{formatDay(d.date)}</span>

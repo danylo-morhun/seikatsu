@@ -398,7 +398,7 @@ function QueueRow({
 	return (
 		<li
 			data-aisha-row
-			className="group grid grid-cols-[1.375rem_minmax(0,1fr)_auto] items-center gap-x-3 rounded-md transition-colors duration-150 hover:bg-surface-2 md:-mx-2 md:px-2"
+			className="group grid grid-cols-[1.375rem_minmax(0,1fr)_auto] items-center gap-x-3 rounded-md transition-colors duration-150 hover:bg-(--row-hover) md:-mx-2 md:px-2"
 		>
 			<button
 				type="button"

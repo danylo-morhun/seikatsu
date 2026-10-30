@@ -22,7 +22,7 @@ import { toast } from "sonner";
 
 const FAILED = { error: "Couldn't save. Check your connection." };
 const ROW =
-	"group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 transition-colors duration-150 hover:bg-surface-2";
+	"group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 transition-colors duration-150 hover:bg-(--row-hover)";
 const LIST = "inset-group";
 
 /** /settings/aisha: the car, its maintenance plan, its paperwork, and where costs go in Kuroji. */
