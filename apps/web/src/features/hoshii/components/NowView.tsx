@@ -280,20 +280,21 @@ export function NowView({ data, chrome, today }: Props) {
 						))}
 					</Section>
 
-					<Section
-						id="hoshii-plan"
-						title="Plan"
-						hint={plan.length > 1 ? "Drag to change what gets money first" : undefined}
-						count={plan.length}
-						index={3 + index++}
-						empty="Keep a want after it cools and it joins the Plan."
+					{/* Outside the list: dnd-kit adds its screen-reader nodes where the context sits. */}
+					<DndContext
+						id={dndId}
+						sensors={sensors}
+						collisionDetection={closestCenter}
+						modifiers={[restrictToVerticalAxis]}
+						onDragEnd={onDragEnd}
 					>
-						<DndContext
-							id={dndId}
-							sensors={sensors}
-							collisionDetection={closestCenter}
-							modifiers={[restrictToVerticalAxis]}
-							onDragEnd={onDragEnd}
+						<Section
+							id="hoshii-plan"
+							title="Plan"
+							hint={plan.length > 1 ? "Drag to change what gets money first" : undefined}
+							count={plan.length}
+							index={3 + index++}
+							empty="Keep a want after it cools and it joins the Plan."
 						>
 							<SortableContext
 								items={plan.map((p) => p.item.id)}
@@ -309,8 +310,8 @@ export function NowView({ data, chrome, today }: Props) {
 									/>
 								))}
 							</SortableContext>
-						</DndContext>
-					</Section>
+						</Section>
+					</DndContext>
 
 					<Section
 						id="hoshii-cooling"
@@ -363,7 +364,9 @@ function Section({
 				<span className="font-figures text-xs text-muted-foreground">{count}</span>
 			</div>
 			{count > 0 ? (
-				<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">{children}</ol>
+				<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
+					{children}
+				</ol>
 			) : (
 				<p className="pt-3 text-sm text-muted-foreground">{empty}</p>
 			)}
