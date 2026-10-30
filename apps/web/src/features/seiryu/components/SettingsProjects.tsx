@@ -46,7 +46,7 @@ export function SettingsProjects({ projects }: { projects: Row[] }) {
 				{projects.map((p, i) => (
 					<li
 						key={p.id}
-						className="animate-rise group relative flex items-center gap-3 py-2.5 transition-colors hover:bg-surface"
+						className="animate-rise group relative flex items-center gap-3 py-2.5 transition-colors hover:bg-surface-2"
 						style={{ "--i": Math.min(i, 8) } as React.CSSProperties}
 					>
 						<span

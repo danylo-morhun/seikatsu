@@ -398,7 +398,7 @@ function QueueRow({
 	return (
 		<li
 			data-aisha-row
-			className="group grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-x-3 rounded-md transition-colors duration-150 hover:bg-surface md:-mx-2 md:px-2"
+			className="group grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-x-3 rounded-md transition-colors duration-150 hover:bg-surface-2 md:-mx-2 md:px-2"
 		>
 			<button
 				type="button"
@@ -409,11 +409,11 @@ function QueueRow({
 			>
 				<span
 					aria-hidden
-					className="flex size-7 items-center justify-center rounded-full text-transparent shadow-[inset_0_0_0_1.5px_color-mix(in_oklch,var(--muted-foreground)_60%,transparent)] transition-[background-color,box-shadow,color,transform] duration-150 ease-out group-hover/act:bg-primary/10 group-hover/act:text-primary group-hover/act:shadow-[inset_0_0_0_1.5px_var(--primary)] group-active/act:scale-[0.94]"
+					className="flex size-[22px] items-center justify-center rounded-full text-transparent shadow-[inset_0_0_0_1.5px_color-mix(in_oklch,var(--muted-foreground)_60%,transparent)] transition-[background-color,box-shadow,color,transform] duration-150 ease-out group-hover/act:bg-primary/10 group-hover/act:text-primary group-hover/act:shadow-[inset_0_0_0_1.5px_var(--primary)] group-active/act:scale-[0.94]"
 				>
 					<HugeiconsIcon
 						icon={entry.kind === "item" ? Tick02Icon : RefreshIcon}
-						className="size-3.5"
+						className="size-3"
 						strokeWidth={2}
 					/>
 				</span>
