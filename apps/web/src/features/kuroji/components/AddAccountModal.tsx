@@ -5,6 +5,7 @@ import { createAccount, type getAccounts } from "@/features/kuroji/actions/accou
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { optionalAmountSchema, parseAmount } from "@/features/kuroji/lib/transaction-schema";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
@@ -69,10 +70,11 @@ export function AddAccountModal({
 
 	const selectedType = watch("type");
 
-	const onOpenChange = (val: boolean) => {
-		setOpen(val);
-		if (!val) reset();
-	};
+	// Escape, a click outside or × keep the draft; Cancel and Create start the next one blank.
+	const draft = useKeptDraft();
+	React.useEffect(() => {
+		if (open && !draft.resume()) reset();
+	}, [open]);
 
 	const onSubmit = async (values: FormValues) => {
 		try {
@@ -85,15 +87,20 @@ export function AddAccountModal({
 				values.currency,
 			);
 			toast.success(`"${values.name}" created`);
-			// Through onOpenChange so the next account starts from a blank form.
-			onOpenChange(false);
+			setOpen(false);
 		} catch {
 			toast.error("Failed to create account");
 		}
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog
+			open={open}
+			onOpenChange={(v) => {
+				if (!v) draft.keep();
+				setOpen(v);
+			}}
+		>
 			<DialogTrigger asChild>
 				<Button variant="outline">Add Account</Button>
 			</DialogTrigger>
@@ -208,7 +215,7 @@ export function AddAccountModal({
 					</div>
 
 					<div className="flex justify-end gap-2 pt-2">
-						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+						<Button type="button" variant="outline" onClick={() => setOpen(false)}>
 							Cancel
 						</Button>
 						<Button type="submit" disabled={isSubmitting} className="gap-1.5">

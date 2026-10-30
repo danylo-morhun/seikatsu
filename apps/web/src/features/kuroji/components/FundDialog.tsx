@@ -5,6 +5,7 @@ import { Spinner } from "@/components/Spinner";
 import { createFund, deleteFund, updateFund } from "@/features/kuroji/actions/plan";
 import { parseAmount } from "@/features/kuroji/lib/transaction-schema";
 import { NEEDS_CONNECTION, offlineError } from "@/features/pwa/lib/run";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 import {
 	Button,
 	Dialog,
@@ -48,9 +49,11 @@ export function FundDialog({ open, onOpenChange, workspaceId, fund, accounts }: 
 	const [accountId, setAccountId] = useState("");
 	const [confirming, setConfirming] = useState(false);
 	const [pending, startTransition] = useTransition();
+	// A new fund's draft survives Escape or a click outside.
+	const draft = useKeptDraft();
 
 	useEffect(() => {
-		if (!open) return;
+		if (!open || draft.resume(!fund)) return;
 		setName(fund?.name ?? "");
 		setTarget(fund ? String(Math.round(fund.target)) : "");
 		setDueDate(fund?.dueDate ?? "");
@@ -82,7 +85,13 @@ export function FundDialog({ open, onOpenChange, workspaceId, fund, accounts }: 
 
 	return (
 		<>
-			<Dialog open={open && !confirming} onOpenChange={onOpenChange}>
+			<Dialog
+				open={open && !confirming}
+				onOpenChange={(v) => {
+					if (!v) draft.keep(!fund);
+					onOpenChange(v);
+				}}
+			>
 				<DialogContent className="sm:max-w-sm">
 					<DialogHeader>
 						<DialogTitle>{fund ? fund.name : "New fund"}</DialogTitle>
