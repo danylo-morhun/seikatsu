@@ -42,7 +42,7 @@ const DropdownMenuSubContent = React.forwardRef<
 	<DropdownMenuPrimitive.SubContent
 		ref={ref}
 		className={cn(
-			"z-50 min-w-[8rem] overflow-hidden glass glass-thick rounded-xl p-1.5 text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 origin-(--radix-dropdown-menu-content-transform-origin) duration-150 ease-out data-[state=closed]:duration-100",
+			"z-50 min-w-[8rem] overflow-hidden glass glass-thick rounded-menu p-1.5 text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 origin-(--radix-dropdown-menu-content-transform-origin) duration-150 ease-out data-[state=closed]:duration-100",
 			className,
 		)}
 		{...props}
@@ -59,7 +59,7 @@ const DropdownMenuContent = React.forwardRef<
 			ref={ref}
 			sideOffset={sideOffset}
 			className={cn(
-				"z-50 min-w-[8rem] overflow-hidden glass glass-thick rounded-xl p-1.5 text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 origin-(--radix-dropdown-menu-content-transform-origin) duration-150 ease-out data-[state=closed]:duration-100",
+				"z-50 min-w-[8rem] overflow-hidden glass glass-thick rounded-menu p-1.5 text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 origin-(--radix-dropdown-menu-content-transform-origin) duration-150 ease-out data-[state=closed]:duration-100",
 				className,
 			)}
 			{...props}
