@@ -260,7 +260,6 @@ export function HabitPage({ habit, summary, days: server, journal, today }: Prop
 						done={doneToday}
 						label={doneToday ? "Done today — clear" : "Mark done today"}
 						onClick={() => onToggle(today)}
-						className="-ml-1.5"
 					/>
 				)}
 				<div className="min-w-0">
