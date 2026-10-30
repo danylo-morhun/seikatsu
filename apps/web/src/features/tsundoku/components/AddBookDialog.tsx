@@ -10,6 +10,7 @@ import { markFresh } from "@/features/tsundoku/lib/fresh";
 import { genreFromSubjects } from "@/features/tsundoku/lib/genre";
 import { coverThumb } from "@/features/tsundoku/lib/open-library";
 import { searchBooks } from "@/features/tsundoku/lib/search-client";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -76,9 +77,14 @@ export function AddBookDialog({ open, onOpenChange, instant = false, defaultStat
 	const [saving, setSaving] = useState(false);
 	const reqId = useRef(0);
 
+	// Escape or a click outside keeps the search (or the typed book) for next time; Cancel and
+	// adding start blank. Reset on opening, so the closing dialog doesn't jump back to search.
+	const draft = useKeptDraft();
 	useEffect(() => {
-		if (open) setStatus(defaultStatus ?? "want");
-	}, [open, defaultStatus]);
+		if (!open || draft.resume()) return;
+		reset();
+		setStatus(defaultStatus ?? "want");
+	}, [open]);
 
 	// Search as you type, cancelling the previous request; a failure is said, not hidden.
 	useEffect(() => {
@@ -116,14 +122,13 @@ export function AddBookDialog({ open, onOpenChange, instant = false, defaultStat
 
 	function handleOpenChange(next: boolean) {
 		if (saving || pendingKey) return;
+		if (!next) draft.keep();
 		onOpenChange(next);
-		if (!next) reset();
 	}
 
 	function added(bookId: string, title: string) {
 		markFresh(bookId);
 		onOpenChange(false);
-		reset();
 		toast.success(`Added “${title}”`, {
 			action: { label: "Open", onClick: () => router.push(`/tsundoku/${bookId}`) },
 		});
@@ -375,7 +380,7 @@ export function AddBookDialog({ open, onOpenChange, instant = false, defaultStat
 							variant="outline"
 							className="max-sm:flex-1"
 							disabled={busy}
-							onClick={() => handleOpenChange(false)}
+							onClick={() => onOpenChange(false)}
 						>
 							Cancel
 						</Button>
