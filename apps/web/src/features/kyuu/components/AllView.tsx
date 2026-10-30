@@ -2,7 +2,7 @@
 
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { startNavigationProgress } from "@/components/NavigationProgress";
-import { UnderlineTab, UnderlineTabs } from "@/components/UnderlineTabs";
+import { SegmentedTab, SegmentedTabs } from "@/components/SegmentedTabs";
 import { Button, cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -100,9 +100,9 @@ export function AllView({
 	return (
 		<ApplicationArea rows={rows}>
 			<h1 className="sr-only">Kyuu — applications</h1>
-			<UnderlineTabs label="Views">
+			<SegmentedTabs label="Views">
 				{VIEWS.map((v) => (
-					<UnderlineTab
+					<SegmentedTab
 						key={v.value}
 						href={href({ view: v.value === "all" ? null : v.value, page: null })}
 						current={view === v.value}
@@ -111,9 +111,9 @@ export function AllView({
 						<span className="ml-1.5 font-figures text-xs text-muted-foreground">
 							{counts[v.value]}
 						</span>
-					</UnderlineTab>
+					</SegmentedTab>
 				))}
-			</UnderlineTabs>
+			</SegmentedTabs>
 
 			<div className="mt-5 flex flex-wrap items-center justify-between gap-3">
 				<div className="min-w-0 flex-1">

@@ -1,5 +1,5 @@
+import { SegmentedTab, SegmentedTabs } from "@/components/SegmentedTabs";
 import { SettingsPage, SettingsSection } from "@/components/SettingsSection";
-import { UnderlineTab, UnderlineTabs } from "@/components/UnderlineTabs";
 import { getWorkspaceArchivedCards } from "@/features/seiryu/actions/cards";
 import { getWorkspaceLabels } from "@/features/seiryu/actions/labels";
 import { getOpenCardCounts, getProjects } from "@/features/seiryu/actions/projects";
@@ -75,17 +75,17 @@ export default async function SeiryuSettingsPage({
 			title="清 Seiryu"
 			appNav
 			tabs={
-				<UnderlineTabs label="Seiryu settings">
+				<SegmentedTabs label="Seiryu settings">
 					{SECTIONS.map((s) => (
-						<UnderlineTab
+						<SegmentedTab
 							key={s.id}
 							href={s.id === "projects" ? "/settings/seiryu" : `/settings/seiryu?section=${s.id}`}
 							current={section === s.id}
 						>
 							{s.label}
-						</UnderlineTab>
+						</SegmentedTab>
 					))}
-				</UnderlineTabs>
+				</SegmentedTabs>
 			}
 		>
 			{body}

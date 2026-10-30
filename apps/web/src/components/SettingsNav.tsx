@@ -1,6 +1,6 @@
 "use client";
 
-import { UnderlineTab, UnderlineTabs } from "@/components/UnderlineTabs";
+import { SegmentedTab, SegmentedTabs } from "@/components/SegmentedTabs";
 import { APPS_CONFIG } from "@/lib/app-themes";
 import { usePathname } from "next/navigation";
 
@@ -29,13 +29,13 @@ export function SettingsNav() {
 
 	return (
 		<div className="max-w-3xl px-4 pt-2 sm:px-8 md:pt-4">
-			<UnderlineTabs label="Settings">
+			<SegmentedTabs label="Settings">
 				{links.map(({ href, label }) => (
-					<UnderlineTab key={href} href={href} current={pathname === href}>
+					<SegmentedTab key={href} href={href} current={pathname === href}>
 						{label}
-					</UnderlineTab>
+					</SegmentedTab>
 				))}
-			</UnderlineTabs>
+			</SegmentedTabs>
 		</div>
 	);
 }
