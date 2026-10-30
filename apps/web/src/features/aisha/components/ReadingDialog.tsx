@@ -8,6 +8,7 @@ import { formatKm, parseNumber } from "@/features/aisha/lib/format";
 import { QUEUED_TOAST, saveReading } from "@/features/aisha/lib/offline";
 import { localToday } from "@/features/aisha/lib/today";
 import { useHeld } from "@/hooks/useHeld";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 import {
 	Button,
 	Dialog,
@@ -46,8 +47,10 @@ export function ReadingDialog({
 	const [error, setError] = useState<string | null>(null);
 	const [isSaving, startSave] = useTransition();
 
+	// A new one's draft survives Escape, a click outside or ×; Cancel and Save start blank.
+	const draft = useKeptDraft();
 	useEffect(() => {
-		if (!open) return;
+		if (!open || draft.resume(!reading)) return;
 		setDate(reading?.date ?? localToday());
 		setKm(reading ? String(reading.km) : "");
 		setError(null);
@@ -78,7 +81,14 @@ export function ReadingDialog({
 	}
 
 	return (
-		<Dialog open={open} onOpenChange={(v) => !isSaving && onOpenChange(v)}>
+		<Dialog
+			open={open}
+			onOpenChange={(v) => {
+				if (isSaving) return;
+				if (!v) draft.keep(!reading);
+				onOpenChange(v);
+			}}
+		>
 			<DialogContent
 				className={cn("sm:max-w-sm max-sm:flex max-sm:flex-col", instantClass(instant))}
 				onOpenAutoFocus={(e) => {
