@@ -433,7 +433,7 @@ export function AccountsOverview({
 							)}
 						</div>
 
-						<div className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
+						<div className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 							{listMode ? (
 								typeAccounts.map((acct) => {
 									const row = rowMap.get(acct.id);

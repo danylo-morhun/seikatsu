@@ -51,7 +51,7 @@ export function SettingsSources({ sources }: { sources: { source: string; count:
 					No sources yet. They come from each application's Source field.
 				</p>
 			) : (
-				<ul className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
+				<ul className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 					{sources.map((s, i) => (
 						<li
 							key={s.source}

@@ -143,7 +143,7 @@ export function AllView({
 							: (VIEWS.find((v) => v.value === view)?.empty ?? "")}
 					</p>
 				) : (
-					<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
+					<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 						{rows.map((row) => (
 							<ApplicationRowItem key={row.id} row={row} today={today} />
 						))}

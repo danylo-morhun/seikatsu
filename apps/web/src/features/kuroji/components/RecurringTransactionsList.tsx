@@ -75,7 +75,7 @@ export function RecurringTransactionsList({
 
 	return (
 		<>
-			<div className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
+			<div className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 				{items.map((rt) => (
 					<div
 						key={rt.id}

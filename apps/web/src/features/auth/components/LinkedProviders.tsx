@@ -56,7 +56,7 @@ export function LinkedProviders({
 	const canUnlink = providers.length + (hasPassword ? 1 : 0) > 1;
 
 	return (
-		<ul className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
+		<ul className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 			{providers.map((provider) => (
 				<ProviderRow key={provider} provider={provider} canUnlink={canUnlink} />
 			))}

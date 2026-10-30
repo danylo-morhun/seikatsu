@@ -323,7 +323,7 @@ export function TodayView({
 					</div>
 					<ol
 						aria-label="Due today"
-						className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule"
+						className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent"
 					>
 						{due.map((item, i) => (
 							<HabitRow key={item.habit.id} item={item} index={i} onToggle={toggle} />
@@ -341,7 +341,7 @@ export function TodayView({
 							>
 								Not due today
 							</h2>
-							<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
+							<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 								{notDue.map((item, i) => (
 									<HabitRow
 										key={item.habit.id}

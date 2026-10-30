@@ -171,7 +171,7 @@ export function HistoryView({
 								bill.
 							</p>
 						) : (
-							<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
+							<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 								{services.map((s) => (
 									<ServiceRow
 										key={s.id}
@@ -205,7 +205,7 @@ export function HistoryView({
 							</h2>
 							<span className="font-figures text-xs text-muted-foreground">{readings.length}</span>
 						</div>
-						<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
+						<ol className="inset-group rounded-2xl bg-surface px-4 py-1 divide-y divide-rule [&>*:hover]:border-transparent [&>*:has(+*:hover)]:border-transparent">
 							{readings.map((r) => (
 								<ReadingRow
 									key={r.id}
