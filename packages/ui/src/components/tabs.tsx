@@ -48,7 +48,7 @@ const TabsList = React.forwardRef<
 		<TabsPrimitive.List
 			ref={listRef}
 			className={cn(
-				"bg-muted text-muted-foreground relative inline-flex h-9 items-center justify-center rounded-full p-1",
+				"bg-muted text-muted-foreground relative inline-flex h-9 items-center justify-center rounded-button p-1",
 				className,
 			)}
 			{...props}
@@ -57,7 +57,7 @@ const TabsList = React.forwardRef<
 				<span
 					aria-hidden
 					className={cn(
-						"bg-background pointer-events-none absolute inset-y-1 left-0 rounded-full shadow",
+						"bg-background pointer-events-none absolute inset-y-1 left-0 rounded-button shadow",
 						chip.moved &&
 							"transition-[translate,width] duration-250 ease-in-out motion-reduce:transition-none",
 					)}
@@ -77,7 +77,7 @@ const TabsTrigger = React.forwardRef<
 	<TabsPrimitive.Trigger
 		ref={ref}
 		className={cn(
-			"ring-offset-background focus-visible:ring-ring data-[state=active]:text-foreground relative inline-flex items-center justify-center whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium transition-[color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+			"ring-offset-background focus-visible:ring-ring data-[state=active]:text-foreground relative inline-flex items-center justify-center whitespace-nowrap rounded-button px-3 py-1 text-sm font-medium transition-[color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
 			className,
 		)}
 		{...props}
