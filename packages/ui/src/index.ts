@@ -72,15 +72,6 @@ export {
 export { Calendar } from "./components/calendar";
 export type { CalendarProps } from "./components/calendar";
 export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from "./components/popover";
-export {
-	ChartContainer,
-	ChartTooltip,
-	ChartTooltipContent,
-	ChartLegend,
-	ChartLegendContent,
-	ChartStyle,
-} from "./components/chart";
-export type { ChartConfig } from "./components/chart";
 export { Progress } from "./components/progress";
 export { Separator } from "./components/separator";
 export { Skeleton } from "./components/skeleton";
