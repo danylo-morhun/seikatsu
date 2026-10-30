@@ -69,6 +69,11 @@ const KUROJI_TABS: { value: KurojiTab; label: string }[] = [
 	{ value: "plan", label: "Plan" },
 ];
 
+// The app's capture: a labelled button on wide screens; on phones an accent glyph in the
+// header's glass capsule, like iOS Mail's compose — the tab bar below holds only tabs.
+const CAPTURE =
+	"lg:w-auto lg:gap-2 lg:px-3 max-md:bg-transparent max-md:text-primary max-md:shadow-none max-md:hover:bg-surface-2 max-md:active:bg-surface-2 max-md:[&_svg]:size-5 max-md:[&_svg]:stroke-[2]";
+
 interface Props {
 	workspaceId?: string;
 	baseCurrency?: string;
@@ -202,37 +207,40 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 			{(app || pathname === "/") && (
 				<div className="ml-auto flex min-w-0 items-center gap-1.5">
 					<OfflinePill />
-					{isKuroji && workspaceId && baseCurrency && (
-						<>
-							{/* The plan picks its own month. */}
-							{!(isKurojiHome && activeTab === "plan") && <DateRangePicker />}
-							<span className="hidden md:contents">
-								<AddTransactionModal
-									workspaceId={workspaceId}
-									baseCurrency={baseCurrency}
-									shortcut
-								/>
-							</span>
-						</>
+					{/* The plan picks its own month. */}
+					{isKuroji && workspaceId && baseCurrency && !(isKurojiHome && activeTab === "plan") && (
+						<DateRangePicker />
 					)}
-					{isSeiryuBoard && (
-						<span className="hidden md:contents">
+					{/* Phones: capture and theme share one glass capsule, like iOS 26 bar buttons. */}
+					<div className="flex items-center max-md:glass max-md:rounded-full max-md:p-0.5 max-md:[&_button]:size-9 max-md:[&_button]:rounded-full md:contents">
+						{isKuroji && workspaceId && baseCurrency && (
+							<AddTransactionModal
+								workspaceId={workspaceId}
+								baseCurrency={baseCurrency}
+								shortcut
+								trigger={
+									<Button size="icon" className={CAPTURE} aria-label="New transaction">
+										<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
+										<span className="hidden lg:inline">New Transaction</span>
+									</Button>
+								}
+							/>
+						)}
+						{isSeiryuBoard && (
 							<Button
 								size="icon"
-								className="lg:w-auto lg:gap-2 lg:px-3"
+								className={CAPTURE}
 								aria-label="New card"
 								onClick={requestNewCard}
 							>
 								<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
 								<span className="hidden lg:inline">New Card</span>
 							</Button>
-						</span>
-					)}
-					{isTsundoku && (
-						<span className="hidden md:contents">
+						)}
+						{isTsundoku && (
 							<Button
 								size="icon"
-								className="lg:w-auto lg:gap-2 lg:px-3"
+								className={CAPTURE}
 								aria-label="Add book"
 								aria-keyshortcuts="N"
 								onClick={requestNewBook}
@@ -240,13 +248,11 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 								<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
 								<span className="hidden lg:inline">Add Book</span>
 							</Button>
-						</span>
-					)}
-					{isKeizoku && (
-						<span className="hidden md:contents">
+						)}
+						{isKeizoku && (
 							<Button
 								size="icon"
-								className="lg:w-auto lg:gap-2 lg:px-3"
+								className={CAPTURE}
 								aria-label="New habit"
 								aria-keyshortcuts="N"
 								onClick={requestNewHabit}
@@ -254,13 +260,11 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 								<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
 								<span className="hidden lg:inline">New Habit</span>
 							</Button>
-						</span>
-					)}
-					{isKyuu && (
-						<span className="hidden md:contents">
+						)}
+						{isKyuu && (
 							<Button
 								size="icon"
-								className="lg:w-auto lg:gap-2 lg:px-3"
+								className={CAPTURE}
 								aria-label="New application"
 								aria-keyshortcuts="N"
 								onClick={requestNewApplication}
@@ -268,13 +272,11 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 								<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
 								<span className="hidden lg:inline">New Application</span>
 							</Button>
-						</span>
-					)}
-					{isAisha && (
-						<span className="hidden md:contents">
+						)}
+						{isAisha && (
 							<Button
 								size="icon"
-								className="lg:w-auto lg:gap-2 lg:px-3"
+								className={CAPTURE}
 								aria-label="Log service"
 								aria-keyshortcuts="N"
 								onClick={() => requestLogService()}
@@ -282,13 +284,11 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 								<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
 								<span className="hidden lg:inline">Log Service</span>
 							</Button>
-						</span>
-					)}
-					{isHoshii && (
-						<span className="hidden md:contents">
+						)}
+						{isHoshii && (
 							<Button
 								size="icon"
-								className="lg:w-auto lg:gap-2 lg:px-3"
+								className={CAPTURE}
 								aria-label="Add a want"
 								aria-keyshortcuts="N"
 								onClick={() => requestAdd()}
@@ -296,10 +296,10 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 								<HugeiconsIcon icon={Add01Icon} className="h-4 w-4 shrink-0" />
 								<span className="hidden lg:inline">Add a Want</span>
 							</Button>
-						</span>
-					)}
-					<ShortcutsButton />
-					<ThemeToggle />
+						)}
+						<ShortcutsButton />
+						<ThemeToggle />
+					</div>
 				</div>
 			)}
 		</header>
