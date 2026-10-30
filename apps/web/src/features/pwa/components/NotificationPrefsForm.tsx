@@ -3,7 +3,7 @@
 import { type PrefsInput, saveNotificationPrefs } from "@/features/pwa/actions/push";
 import type { NotificationPrefs } from "@seikatsu/db";
 import { Checkbox, Input, Label } from "@seikatsu/ui";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type BoolKey = {
@@ -102,15 +102,36 @@ export function NotificationPrefsForm({ prefs }: { prefs: NotificationPrefs | nu
 		saved.current = withZone;
 	}
 
+	// Saved shortly after the last change, not on blur: iOS's time wheel blurs before its final
+	// change lands, which saved a half-turned time (minutes moved, hour not yet).
+	const pendingTime = useRef<{ timer: ReturnType<typeof setTimeout>; next: PrefsInput }>(undefined);
+	// Leaving the page mid-wait still saves.
+	useEffect(
+		() => () => {
+			if (!pendingTime.current) return;
+			clearTimeout(pendingTime.current.timer);
+			save(pendingTime.current.next);
+		},
+		[],
+	);
+
 	const timeInput = (key: TimeKey, label: string, disabled = false) => (
 		<Input
 			type="time"
 			aria-label={label}
 			value={values[key]}
 			disabled={disabled}
-			onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
-			onBlur={() => {
-				if (values[key] && values[key] !== saved.current[key]) save(values);
+			onChange={(e) => {
+				const next = { ...values, [key]: e.target.value };
+				setValues(next);
+				clearTimeout(pendingTime.current?.timer);
+				pendingTime.current = undefined;
+				if (!next[key] || next[key] === saved.current[key]) return;
+				const timer = setTimeout(() => {
+					pendingTime.current = undefined;
+					save(next);
+				}, 600);
+				pendingTime.current = { timer, next };
 			}}
 			className="w-28 shrink-0"
 		/>
