@@ -31,7 +31,9 @@ export function CheckButton({
 			aria-keyshortcuts="X"
 			onClick={onClick}
 			className={cn(
-				"group/check relative flex size-10 shrink-0 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring",
+				// The circle is the whole box, so rows inset it like any other content; the hit area
+				// still reaches 40px through ::before.
+				"group/check relative flex size-[22px] shrink-0 items-center justify-center rounded-full outline-none before:absolute before:-inset-[9px] before:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
 				className,
 			)}
 		>
@@ -85,8 +87,8 @@ export function DayLetter({ date }: { date: string }) {
  * and the week grows with the screen.
  */
 export const ROW_GRID =
-	"grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-3 md:grid-cols-[2.5rem_minmax(0,1fr)_7.5rem_auto] md:gap-x-6 lg:grid-cols-[2.5rem_minmax(0,1fr)_9rem_auto]";
-export const RUN_COL = "max-md:hidden text-right";
+	"grid grid-cols-[1.375rem_minmax(0,1fr)] gap-x-3 md:grid-cols-[1.375rem_minmax(0,1fr)_7.5rem_auto] lg:grid-cols-[1.375rem_minmax(0,1fr)_9rem_auto]";
+export const RUN_COL = "max-md:hidden text-right md:pr-3";
 export const STRIP =
 	"grid grid-cols-7 gap-0.5 max-md:col-start-2 max-md:w-full max-md:max-w-64 md:w-[15rem] md:gap-1 lg:w-[20rem] xl:w-[24rem]";
 
