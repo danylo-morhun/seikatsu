@@ -8,6 +8,7 @@ import { createItem, updateItem } from "@/features/aisha/actions/items";
 import { FOOTER, FieldError, instantClass } from "@/features/aisha/components/DialogParts";
 import { parseNumber } from "@/features/aisha/lib/format";
 import { localToday } from "@/features/aisha/lib/today";
+import { useHeld } from "@/hooks/useHeld";
 import {
 	Button,
 	Dialog,
@@ -57,7 +58,7 @@ export function ItemDialog({
 	onOpenChange,
 	instant,
 	vehicleId,
-	item = null,
+	item: itemProp = null,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -66,6 +67,7 @@ export function ItemDialog({
 	/** null = a new item. */
 	item?: AishaItem | null;
 }) {
+	const item = useHeld(itemProp, open);
 	const id = useId();
 	const [form, setForm] = useState(() => formOf(item));
 	const [error, setError] = useState<{ field?: keyof Form; message: string } | null>(null);

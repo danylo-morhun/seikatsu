@@ -17,6 +17,7 @@ import {
 } from "@/features/aisha/lib/constants";
 import { addMonths } from "@/features/aisha/lib/due";
 import { localToday } from "@/features/aisha/lib/today";
+import { useHeld } from "@/hooks/useHeld";
 import {
 	Button,
 	Dialog,
@@ -56,8 +57,8 @@ export function DocumentDialog({
 	onOpenChange,
 	instant,
 	vehicleId,
-	doc = null,
-	renew = false,
+	doc: docProp = null,
+	renew: renewProp = false,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -66,6 +67,8 @@ export function DocumentDialog({
 	doc?: AishaDocument | null;
 	renew?: boolean;
 }) {
+	const doc = useHeld(docProp, open);
+	const renew = useHeld(renewProp, open);
 	const id = useId();
 	const [form, setForm] = useState(() => formOf(doc, renew));
 	const [error, setError] = useState<{ field?: keyof Form; message: string } | null>(null);
