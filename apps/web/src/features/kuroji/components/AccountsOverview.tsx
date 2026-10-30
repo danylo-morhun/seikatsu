@@ -278,7 +278,7 @@ export function AccountsOverview({
 				>
 					<div
 						className={cn(
-							"relative flex items-center gap-2 py-2.5 pr-1 pl-1 transition-colors hover:bg-surface",
+							"relative flex items-center gap-2 py-2.5 pr-1 pl-1 transition-colors hover:bg-surface-2",
 							isChild && "pl-7",
 						)}
 					>

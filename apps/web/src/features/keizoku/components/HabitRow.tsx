@@ -11,7 +11,7 @@ import { type CSSProperties, memo, useState } from "react";
 
 const stagger = (index: number) => ({ "--i": Math.min(index, 8) }) as CSSProperties;
 
-/** The one daily action: a round check, the pigment when done, the tick drawn in. */
+/** The one daily action: a 22px round check as in Reminders (40px to tap), the pigment when done, the tick drawn in. */
 export function CheckButton({
 	done,
 	label,
@@ -38,7 +38,7 @@ export function CheckButton({
 			<span
 				aria-hidden
 				className={cn(
-					"flex size-7 items-center justify-center rounded-full transition-[background-color,box-shadow,transform] duration-150 ease-out group-active/check:scale-[0.94]",
+					"flex size-[22px] items-center justify-center rounded-full transition-[background-color,box-shadow,transform] duration-150 ease-out group-active/check:scale-[0.94]",
 					done
 						? "bg-primary text-primary-foreground"
 						: "shadow-[inset_0_0_0_1.5px_color-mix(in_oklch,var(--muted-foreground)_60%,transparent)] group-hover/check:bg-primary/10 group-hover/check:shadow-[inset_0_0_0_1.5px_var(--primary)]",
@@ -47,7 +47,7 @@ export function CheckButton({
 				{done && (
 					<svg
 						viewBox="0 0 12 12"
-						className="size-3.5"
+						className="size-3"
 						fill="none"
 						stroke="currentColor"
 						strokeWidth="1.75"
@@ -224,7 +224,7 @@ export const HabitRow = memo(
 				data-habit-row
 				className={cn(
 					ROW_GRID,
-					"items-center py-1.5 max-md:pb-0.5 md:-mx-2 md:px-2 md:hover:bg-surface/60 md:rounded-md",
+					"items-center py-1.5 max-md:pb-0.5 md:-mx-2 md:px-2 md:hover:bg-surface-2 md:rounded-md",
 					fresh ? "animate-drop" : "animate-rise",
 				)}
 				style={stagger(index)}

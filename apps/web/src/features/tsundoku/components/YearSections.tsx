@@ -388,7 +388,7 @@ export function Records({ stats }: { stats: YearStats }) {
 					<Link
 						href={`/tsundoku/${r.book.id}`}
 						prefetch={false}
-						className="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-baseline gap-x-3 rounded-md py-2.5 outline-none transition-colors hover:bg-surface focus-visible:ring-2 focus-visible:ring-ring md:-mx-2 md:px-2"
+						className="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-baseline gap-x-3 rounded-md py-2.5 outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring md:-mx-2 md:px-2"
 					>
 						<span className="text-xs text-muted-foreground">{r.label}</span>
 						<span className="truncate text-sm">{r.book.title}</span>

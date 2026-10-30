@@ -96,7 +96,7 @@ export const BookRow = memo(function BookRow({
 				href={`/tsundoku/${book.id}`}
 				prefetch={false}
 				data-book-id={book.id}
-				className="flex items-center gap-3 rounded-md py-2.5 outline-none transition-colors hover:bg-surface focus-visible:ring-2 focus-visible:ring-ring md:-mx-2 md:px-2"
+				className="flex items-center gap-3 rounded-md py-2.5 outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring md:-mx-2 md:px-2"
 			>
 				<BookCover
 					coverUrl={book.coverUrl}

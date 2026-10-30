@@ -36,7 +36,7 @@ export type HistoryReading = AishaReading & { delta: number | null };
 type Target = { kind: "service"; id: string } | { kind: "reading"; id: string };
 
 const ROW =
-	"group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 rounded-md transition-colors duration-150 hover:bg-surface md:-mx-2 md:px-2";
+	"group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 rounded-md transition-colors duration-150 hover:bg-surface-2 md:-mx-2 md:px-2";
 const MAIN =
 	"min-w-0 rounded-md py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring after:absolute after:inset-0";
 

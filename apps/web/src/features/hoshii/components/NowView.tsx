@@ -373,7 +373,7 @@ function Section({
 }
 
 const ROW =
-	"group relative grid items-center gap-x-3 rounded-md transition-colors duration-150 hover:bg-surface md:-mx-2 md:px-2";
+	"group relative grid items-center gap-x-3 rounded-md transition-colors duration-150 hover:bg-surface-2 md:-mx-2 md:px-2";
 
 /** The row's main button: what it is, a detail line; it opens the want. */
 function RowMain({
@@ -483,7 +483,7 @@ function PlanRow({
 		>
 			<span
 				aria-hidden
-				className="absolute top-1/2 -left-7 hidden w-4 -translate-y-1/2 text-right font-figures text-[11px] text-muted-foreground/70 xl:block"
+				className="absolute top-1/2 left-0 hidden w-2 -translate-y-1/2 text-center font-figures text-[11px] text-muted-foreground/70 xl:block"
 			>
 				{rank}
 			</span>
@@ -497,13 +497,13 @@ function PlanRow({
 				<span
 					aria-hidden
 					className={cn(
-						"flex size-7 items-center justify-center rounded-full transition-[background-color,box-shadow,color,transform] duration-150 ease-out group-hover/act:bg-primary/10 group-hover/act:text-primary group-hover/act:shadow-[inset_0_0_0_1.5px_var(--primary)] group-active/act:scale-[0.94]",
+						"flex size-[22px] items-center justify-center rounded-full transition-[background-color,box-shadow,color,transform] duration-150 ease-out group-hover/act:bg-primary/10 group-hover/act:text-primary group-hover/act:shadow-[inset_0_0_0_1.5px_var(--primary)] group-active/act:scale-[0.94]",
 						ready
 							? "text-primary shadow-[inset_0_0_0_1.5px_var(--primary)]"
 							: "text-transparent shadow-[inset_0_0_0_1.5px_color-mix(in_oklch,var(--muted-foreground)_60%,transparent)]",
 					)}
 				>
-					<HugeiconsIcon icon={Tick02Icon} className="size-3.5" strokeWidth={2} />
+					<HugeiconsIcon icon={Tick02Icon} className="size-3" strokeWidth={2} />
 				</span>
 			</button>
 			<Thumb src={item.imageUrl} className="size-11 max-sm:hidden" />
