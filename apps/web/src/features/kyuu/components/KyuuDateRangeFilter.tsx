@@ -226,7 +226,7 @@ export function KyuuDateRangeFilter() {
 							defaultMonth={localFrom ? parseLocal(localFrom) : undefined}
 							onSelect={() => {}}
 							onDayClick={handleDayClick}
-							initialFocus
+							autoFocus
 						/>
 					</div>
 				</div>
