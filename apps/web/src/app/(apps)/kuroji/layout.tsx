@@ -21,7 +21,9 @@ export default async function KurojiLayout({ children }: { children: React.React
 			)}
 			{children}
 			<KurojiShortcuts />
-			{workspace && <KurojiNavTabs workspaceId={workspace.id} />}
+			{workspace && (
+				<KurojiNavTabs workspaceId={workspace.id} baseCurrency={workspace.baseCurrency} />
+			)}
 		</>
 	);
 }

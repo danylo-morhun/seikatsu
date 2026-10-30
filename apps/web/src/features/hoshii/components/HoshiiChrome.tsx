@@ -1,12 +1,13 @@
 "use client";
 
-import { GlassTabBar } from "@/components/GlassTabBar";
 import { startNavigationProgress } from "@/components/NavigationProgress";
+import { TabBar, TabBarAction } from "@/components/TabBar";
 import type { ChromeData } from "@/features/hoshii/actions/data";
 import { ItemDialog } from "@/features/hoshii/components/ItemDialog";
-import { ADD_EVENT } from "@/features/hoshii/lib/events";
+import { ADD_EVENT, requestAdd } from "@/features/hoshii/lib/events";
 import { pageKey } from "@/lib/capture-shortcut";
 import {
+	Add01Icon,
 	ChartHistogramIcon,
 	GridViewIcon,
 	InboxIcon,
@@ -75,7 +76,7 @@ export function HoshiiChrome({ chrome }: { chrome: ChromeData }) {
 
 	return (
 		<>
-			<GlassTabBar
+			<TabBar
 				label="Hoshii sections"
 				active={lit}
 				items={[
@@ -84,6 +85,9 @@ export function HoshiiChrome({ chrome }: { chrome: ChromeData }) {
 					{ label: "Summary", icon: ChartHistogramIcon, href: "/hoshii/summary" },
 					{ label: "Settings", icon: Settings01Icon, href: "/settings/hoshii" },
 				]}
+				action={
+					<TabBarAction icon={Add01Icon} aria-label="Add a want" onClick={() => requestAdd()} />
+				}
 			/>
 
 			<ItemDialog

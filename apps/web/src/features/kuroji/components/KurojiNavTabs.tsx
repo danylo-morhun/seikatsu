@@ -1,7 +1,14 @@
 "use client";
 
-import { GlassTabBar } from "@/components/GlassTabBar";
-import { Chart01Icon, Clock01Icon, Target02Icon, Wallet01Icon } from "@hugeicons/core-free-icons";
+import { TabBar, TabBarAction } from "@/components/TabBar";
+import { AddTransactionModal } from "@/features/kuroji/components/AddTransactionModal";
+import {
+	Add01Icon,
+	Chart01Icon,
+	Clock01Icon,
+	Target02Icon,
+	Wallet01Icon,
+} from "@hugeicons/core-free-icons";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -18,9 +25,10 @@ const TABS: { value: KurojiTab; label: string; icon: typeof Chart01Icon }[] = [
 
 interface Props {
 	workspaceId: string;
+	baseCurrency: string;
 }
 
-export function KurojiNavTabs({ workspaceId }: Props) {
+export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 	const searchParams = useSearchParams();
 	const pathname = usePathname();
 	// Highlight the tapped tab immediately; the URL catches up when navigation commits.
@@ -43,7 +51,7 @@ export function KurojiNavTabs({ workspaceId }: Props) {
 
 	return (
 		// Settings stay a key (,) and a sidebar link away; the plan is checked every week.
-		<GlassTabBar
+		<TabBar
 			label="Kuroji sections"
 			active={lit}
 			items={TABS.map(({ value, label, icon }) => ({
@@ -52,6 +60,13 @@ export function KurojiNavTabs({ workspaceId }: Props) {
 				href: buildTabHref(value, searchParams.toString()),
 				onClick: () => setPendingTab(value),
 			}))}
+			action={
+				<AddTransactionModal
+					workspaceId={workspaceId}
+					baseCurrency={baseCurrency}
+					trigger={<TabBarAction icon={Add01Icon} aria-label="New transaction" />}
+				/>
+			}
 		/>
 	);
 }

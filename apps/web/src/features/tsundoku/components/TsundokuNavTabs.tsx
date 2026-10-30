@@ -1,12 +1,13 @@
 "use client";
 
-import { GlassTabBar } from "@/components/GlassTabBar";
 import { startNavigationProgress } from "@/components/NavigationProgress";
+import { TabBar, TabBarAction } from "@/components/TabBar";
 import { AddBookDialog } from "@/features/tsundoku/components/AddBookDialog";
 import type { BookStatus } from "@/features/tsundoku/lib/constants";
-import { NEW_BOOK_EVENT } from "@/features/tsundoku/lib/events";
+import { NEW_BOOK_EVENT, requestNewBook } from "@/features/tsundoku/lib/events";
 import { pageKey } from "@/lib/capture-shortcut";
 import {
+	Add01Icon,
 	Book01Icon,
 	Calendar03Icon,
 	Layers01Icon,
@@ -60,7 +61,7 @@ export function TsundokuNavTabs() {
 
 	return (
 		<>
-			<GlassTabBar
+			<TabBar
 				label="Tsundoku sections"
 				active={lit}
 				items={[
@@ -69,6 +70,7 @@ export function TsundokuNavTabs() {
 					{ label: "Year", icon: Calendar03Icon, href: "/tsundoku/year" },
 					{ label: "Settings", icon: Settings01Icon, href: "/settings/tsundoku" },
 				]}
+				action={<TabBarAction icon={Add01Icon} aria-label="Add book" onClick={requestNewBook} />}
 			/>
 
 			<AddBookDialog

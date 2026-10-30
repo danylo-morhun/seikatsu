@@ -1,15 +1,25 @@
 "use client";
 
 import { ConfirmDelete } from "@/components/ConfirmDelete";
-import { GlassTabBar } from "@/components/GlassTabBar";
 import { startNavigationProgress } from "@/components/NavigationProgress";
+import { TabBar, TabBarAction } from "@/components/TabBar";
 import { pageKey } from "@/lib/capture-shortcut";
-import { ChartLineData01Icon, Settings01Icon, TaskDone01Icon } from "@hugeicons/core-free-icons";
+import {
+	Add01Icon,
+	ChartLineData01Icon,
+	Settings01Icon,
+	TaskDone01Icon,
+} from "@hugeicons/core-free-icons";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createApplication, deleteApplication } from "../actions/applications";
-import { DELETE_APPLICATION_EVENT, type DeleteRequest, NEW_APPLICATION_EVENT } from "../lib/events";
+import {
+	DELETE_APPLICATION_EVENT,
+	type DeleteRequest,
+	NEW_APPLICATION_EVENT,
+	requestNewApplication,
+} from "../lib/events";
 import type { ResumeFile } from "../lib/types";
 import { ApplicationDialog } from "./ApplicationDialog";
 
@@ -63,7 +73,7 @@ export function KyuuChrome({
 
 	return (
 		<>
-			<GlassTabBar
+			<TabBar
 				label="Kyuu sections"
 				active={isTable ? 0 : isStats ? 1 : 2}
 				items={[
@@ -71,6 +81,13 @@ export function KyuuChrome({
 					{ label: "Stats", icon: ChartLineData01Icon, href: "/kyuu/stats" },
 					{ label: "Settings", icon: Settings01Icon, href: "/settings/kyuu" },
 				]}
+				action={
+					<TabBarAction
+						icon={Add01Icon}
+						aria-label="New application"
+						onClick={requestNewApplication}
+					/>
+				}
 			/>
 
 			<ApplicationDialog
