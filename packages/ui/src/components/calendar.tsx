@@ -20,15 +20,16 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
 				month: "flex flex-col gap-4",
 				month_caption: "flex h-7 justify-center items-center w-full",
 				caption_label: "text-sm font-medium",
-				// The nav sits beside the months, not inside the caption: pin it over the caption row.
-				nav: "absolute inset-x-0 top-0 flex items-center justify-between",
+				// The nav sits beside the months, not inside the caption: pin it over the caption row,
+				// its chevrons as tall as the row at every breakpoint so they centre on the label.
+				nav: "absolute inset-x-0 top-0 flex h-7 items-center justify-between",
 				button_previous: cn(
-					buttonVariants({ variant: "outline" }),
-					"z-10 h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+					buttonVariants({ variant: "ghost", size: "icon" }),
+					"z-10 size-7 p-0 text-muted-foreground hover:text-foreground md:size-7",
 				),
 				button_next: cn(
-					buttonVariants({ variant: "outline" }),
-					"z-10 h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+					buttonVariants({ variant: "ghost", size: "icon" }),
+					"z-10 size-7 p-0 text-muted-foreground hover:text-foreground md:size-7",
 				),
 				month_grid: "w-full border-collapse",
 				weekdays: "flex",
