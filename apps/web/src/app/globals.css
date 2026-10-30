@@ -106,12 +106,13 @@
 	--negative: oklch(0.52 0.19 30);
 	--flow: oklch(0.6 0.11 80);
 	--figures-font: var(--font-sans);
-	/* Liquid glass: floating chrome over content (tab bar), never content itself. */
+	/* Liquid glass: floating chrome over content (tab bar, menus, toasts), never content itself. */
 	--glass-tint: oklch(0.975 0.006 75 / 62%);
 	--glass-edge: oklch(1 0 0 / 70%);
 	--glass-rim: oklch(0.2 0.015 40 / 8%);
 	--glass-shadow: oklch(0.2 0.015 40 / 22%);
 	--glass-lens: oklch(0.2 0.015 40 / 7%);
+	--glass-tint-thick: oklch(0.99 0.004 75 / 80%);
 }
 
 .dark {
@@ -158,11 +159,12 @@
 	--glass-rim: oklch(1 0 0 / 7%);
 	--glass-shadow: oklch(0 0 0 / 55%);
 	--glass-lens: oklch(1 0 0 / 10%);
+	--glass-tint-thick: oklch(0.19 0.011 40 / 80%);
 }
 
 /* Blurred, saturated backdrop + a specular top edge and hairline rim, like iOS liquid glass. */
 @utility glass {
-	background-color: var(--glass-tint);
+	background-color: var(--glass-fill, var(--glass-tint));
 	-webkit-backdrop-filter: blur(18px) saturate(1.8);
 	backdrop-filter: blur(18px) saturate(1.8);
 	box-shadow:
@@ -177,6 +179,11 @@
 		-webkit-backdrop-filter: none;
 		backdrop-filter: none;
 	}
+}
+
+/* Menus and popovers carry text over busy content: denser glass keeps it readable. */
+@utility glass-thick {
+	--glass-fill: var(--glass-tint-thick);
 }
 
 @layer base {
@@ -297,31 +304,33 @@
 /* ── Urushi signatures ─────────────────────────────────────────────────────── */
 
 /* Raised surfaces are flat lacquer with a deep shadow beneath. */
-[role="dialog"],
-[role="alertdialog"],
-[data-radix-popper-content-wrapper] > :not([data-slot="tooltip-content"]),
-[data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
+[role="dialog"]:not(.glass),
+[role="alertdialog"]:not(.glass),
+[data-radix-popper-content-wrapper] > :not([data-slot="tooltip-content"], .glass) {
 	box-shadow: 0 24px 48px -16px oklch(0 0 0 / 55%);
 }
 
-/* Toasts: a small lacquer slip, flat like a dialog (above). Status is told by the
-   icon alone (see AppToaster); the surface never takes a status colour. Selectors out-rank
-   sonner's own stylesheet. */
+/* Toasts: a glass slip, like the menus (see `glass`). Status is told by the icon alone
+   (see AppToaster); the surface never takes a status colour. Selectors out-rank sonner's own
+   stylesheet. */
 [data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
 	align-items: center;
 	gap: 10px;
 	padding: 12px 40px 12px 14px;
-	border: 1px solid var(--rule);
-	border-radius: 0.7rem;
-	background-color: var(--popover);
+	border: 0;
+	border-radius: 1rem;
+	background-color: var(--glass-tint-thick);
+	-webkit-backdrop-filter: blur(18px) saturate(1.8);
+	backdrop-filter: blur(18px) saturate(1.8);
+	box-shadow:
+		inset 0 1px 0 0 var(--glass-edge),
+		inset 0 0 0 1px var(--glass-rim),
+		0 12px 32px -12px var(--glass-shadow),
+		0 1px 2px var(--glass-shadow);
 	color: var(--popover-foreground);
 	font-size: 0.875rem;
 	transition-duration: 200ms;
 	transition-timing-function: var(--ease-out);
-}
-/* On paper the lacquer's deep shadow reads as a smudge; a stack of slips needs a lighter one. */
-:root:not(.dark) [data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
-	box-shadow: 0 12px 32px -12px oklch(0.2 0.015 40 / 22%);
 }
 [data-sonner-toaster] [data-sonner-toast][data-styled="true"] > * {
 	transition-duration: 200ms;
