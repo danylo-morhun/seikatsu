@@ -246,3 +246,37 @@ export const transactionTagsRelations = relations(transactionTags, ({ one }) => 
 	}),
 	tag: one(tags, { fields: [transactionTags.tagId], references: [tags.id] }),
 }));
+
+/** A category's plan for one month, overriding its default `budget`. Base currency. */
+export const kurojiBudgetMonths = pgTable(
+	"kuroji_budget_months",
+	{
+		accountId: uuid("account_id")
+			.notNull()
+			.references(() => accounts.id, { onDelete: "cascade" }),
+		/** First day of the month. */
+		month: date("month").notNull(),
+		amount: numeric("amount", { precision: 19, scale: 4 }).notNull(),
+	},
+	(t) => [primaryKey({ columns: [t.accountId, t.month] })],
+);
+
+/** Money put aside for a dated goal (a trip). Several funds may share one ASSET account. */
+export const kurojiFunds = pgTable(
+	"kuroji_funds",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		workspaceId: uuid("workspace_id")
+			.notNull()
+			.references(() => workspaces.id, { onDelete: "cascade" }),
+		accountId: uuid("account_id")
+			.notNull()
+			.references(() => accounts.id, { onDelete: "cascade" }),
+		name: text("name").notNull(),
+		/** Base currency. */
+		target: numeric("target", { precision: 19, scale: 4 }).notNull(),
+		dueDate: date("due_date").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+	},
+	(t) => [index("kuroji_funds_workspace_id_idx").on(t.workspaceId)],
+);
