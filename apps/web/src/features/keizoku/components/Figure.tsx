@@ -44,6 +44,6 @@ export function Figure({
 	);
 }
 
-/** The figures row: the lead spans both phone columns, rules between figures from md. */
+/** The figures row: one rounded tile per figure, as in macOS; the lead spans both phone columns. */
 export const FIGURES_ROW =
-	"grid grid-cols-2 gap-x-6 gap-y-4 md:divide-x md:divide-rule md:gap-0 md:[&>*]:px-6 md:[&>*:first-child]:pl-0";
+	"grid grid-cols-2 gap-3 md:gap-4 [&>*]:rounded-2xl [&>*]:bg-surface [&>*]:px-4 [&>*]:py-3.5";

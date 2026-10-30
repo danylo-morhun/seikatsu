@@ -3,6 +3,7 @@
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
 import { startNavigationProgress } from "@/components/NavigationProgress";
+import { PageTitle } from "@/components/PageTitle";
 import type { TodayHabit } from "@/features/keizoku/actions/logs";
 import { DayNoteDialog, type DayNoteTarget } from "@/features/keizoku/components/DayNoteDialog";
 import { FIGURES_ROW, Figure } from "@/features/keizoku/components/Figure";
@@ -208,7 +209,7 @@ export function TodayView({
 
 	return (
 		<>
-			<h1 className="sr-only">Keizoku — today</h1>
+			<PageTitle title="Today" />
 			<section
 				aria-label="Today at a glance"
 				className={`${FIGURES_ROW} md:grid-cols-[1.4fr_1fr_1fr]`}
@@ -301,10 +302,7 @@ export function TodayView({
 				}
 			>
 				<div className="mt-10 animate-rise" style={{ "--i": 3 } as React.CSSProperties}>
-					<div
-						aria-hidden
-						className={`${ROW_GRID} items-end gap-y-1 border-b border-rule pb-2 md:-mx-2 md:px-2`}
-					>
+					<div aria-hidden className={`${ROW_GRID} items-end gap-y-1 px-4 pb-2`}>
 						<span />
 						<h2 className="text-sm font-medium">Habits</h2>
 						<span className={`${RUN_COL} text-[11px] text-muted-foreground`}>Run</span>
@@ -323,7 +321,10 @@ export function TodayView({
 							))}
 						</span>
 					</div>
-					<ol aria-label="Due today" className="divide-y divide-rule">
+					<ol
+						aria-label="Due today"
+						className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule"
+					>
 						{due.map((item, i) => (
 							<HabitRow key={item.habit.id} item={item} index={i} onToggle={toggle} />
 						))}
@@ -336,11 +337,11 @@ export function TodayView({
 						<section aria-labelledby="keizoku-not-today" className="mt-8">
 							<h2
 								id="keizoku-not-today"
-								className="border-b border-rule pb-2 text-sm font-medium text-muted-foreground"
+								className="px-1 pb-2 text-sm font-medium text-muted-foreground"
 							>
 								Not due today
 							</h2>
-							<ol className="divide-y divide-rule">
+							<ol className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 								{notDue.map((item, i) => (
 									<HabitRow
 										key={item.habit.id}

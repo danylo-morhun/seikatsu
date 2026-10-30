@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/PageTitle";
 import { YearSwitch } from "@/components/YearSwitch";
 import { getYearStats } from "@/features/keizoku/actions/stats";
 import { Heatmap } from "@/features/keizoku/components/Heatmap";
@@ -23,7 +24,7 @@ export default async function KeizokuYearPage({
 
 	return (
 		<div className="space-y-10 px-4 pt-6 pb-28 sm:px-8 md:py-8">
-			<h1 className="sr-only">Keizoku — {year} in habits</h1>
+			<PageTitle title={`${year} in habits`} />
 			<div className="space-y-6">
 				{stats.years.length > 1 && (
 					<YearSwitch years={stats.years} year={year} base="/keizoku/year" />
