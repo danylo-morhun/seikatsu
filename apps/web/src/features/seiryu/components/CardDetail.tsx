@@ -23,7 +23,7 @@ import { useId, useState } from "react";
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 const FIELD_TEXTAREA =
-	"w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs outline-none transition-colors [field-sizing:content] placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring md:text-sm";
+	"w-full resize-none rounded-xl border border-input bg-transparent px-3 py-2 text-base shadow-xs outline-none transition-colors [field-sizing:content] placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring md:text-sm";
 
 interface Props {
 	card: CardData;

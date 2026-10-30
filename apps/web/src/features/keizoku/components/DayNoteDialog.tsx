@@ -20,7 +20,7 @@ import {
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 
 export const FIELD_TEXTAREA =
-	"w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs outline-none transition-colors [field-sizing:content] placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring md:text-sm";
+	"w-full resize-none rounded-xl border border-input bg-transparent px-3 py-2 text-base shadow-xs outline-none transition-colors [field-sizing:content] placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring md:text-sm";
 
 const PHOTO_MAX = 5 * 1024 * 1024;
 export interface DayNoteTarget {

@@ -413,7 +413,7 @@ export function AddTransactionModal({
 			<Label htmlFor={isSplit ? undefined : "add-amount"}>{isSplit ? "Total" : "Amount"}</Label>
 			<div className="flex gap-2">
 				{isSplit ? (
-					<p className="flex h-10 flex-1 items-center rounded-md border border-input bg-surface md:h-9 px-3 font-figures text-lg font-semibold">
+					<p className="flex h-10 flex-1 items-center rounded-xl border border-input bg-surface md:h-9 px-3 font-figures text-lg font-semibold">
 						{formatCurrency(splitTotal, watchCurrency)}
 					</p>
 				) : (
