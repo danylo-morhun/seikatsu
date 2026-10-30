@@ -13,6 +13,7 @@ import { localToday } from "@/features/aisha/lib/today";
 import { AccountPicker } from "@/features/kuroji/components/AccountSelect";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { useHeld } from "@/hooks/useHeld";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 import {
 	Button,
 	Dialog,
@@ -104,8 +105,10 @@ export function ServiceDialog({
 		setError(null);
 	};
 
+	// A new one's draft survives Escape, a click outside or ×; Cancel and Save start blank.
+	const draft = useKeptDraft();
 	useEffect(() => {
-		if (open) {
+		if (open && !draft.resume(!service && preselected.length === 0)) {
 			setForm(formOf(service, preselected, currentKm, kurojiDefaults));
 			setError(null);
 		}
@@ -173,7 +176,14 @@ export function ServiceDialog({
 	const invalid = (field: keyof Form) => error?.field === field || undefined;
 
 	return (
-		<Dialog open={open} onOpenChange={(v) => !isSaving && onOpenChange(v)}>
+		<Dialog
+			open={open}
+			onOpenChange={(v) => {
+				if (isSaving) return;
+				if (!v) draft.keep(!service && preselected.length === 0);
+				onOpenChange(v);
+			}}
+		>
 			<DialogContent
 				className={cn("sm:max-w-lg max-sm:flex max-sm:flex-col", instantClass(instant))}
 				onOpenAutoFocus={(e) => {

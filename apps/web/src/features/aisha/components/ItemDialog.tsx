@@ -9,6 +9,7 @@ import { FOOTER, FieldError, instantClass } from "@/features/aisha/components/Di
 import { parseNumber } from "@/features/aisha/lib/format";
 import { localToday } from "@/features/aisha/lib/today";
 import { useHeld } from "@/hooks/useHeld";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 import {
 	Button,
 	Dialog,
@@ -77,8 +78,10 @@ export function ItemDialog({
 		setError(null);
 	};
 
+	// A new one's draft survives Escape, a click outside or ×; Cancel and Save start blank.
+	const draft = useKeptDraft();
 	useEffect(() => {
-		if (open) {
+		if (open && !draft.resume(!item)) {
 			setForm(formOf(item));
 			setError(null);
 		}
@@ -124,7 +127,14 @@ export function ItemDialog({
 	const invalid = (field: keyof Form) => error?.field === field || undefined;
 
 	return (
-		<Dialog open={open} onOpenChange={(v) => !isSaving && onOpenChange(v)}>
+		<Dialog
+			open={open}
+			onOpenChange={(v) => {
+				if (isSaving) return;
+				if (!v) draft.keep(!item);
+				onOpenChange(v);
+			}}
+		>
 			<DialogContent
 				className={cn("sm:max-w-md max-sm:flex max-sm:flex-col", instantClass(instant))}
 				onOpenAutoFocus={(e) => {
