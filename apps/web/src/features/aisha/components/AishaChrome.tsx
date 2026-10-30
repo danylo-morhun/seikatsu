@@ -1,12 +1,18 @@
 "use client";
 
-import { GlassTabBar } from "@/components/GlassTabBar";
 import { startNavigationProgress } from "@/components/NavigationProgress";
+import { TabBar, TabBarAction } from "@/components/TabBar";
 import { ReadingDialog } from "@/features/aisha/components/ReadingDialog";
 import { type KurojiDefaults, ServiceDialog } from "@/features/aisha/components/ServiceDialog";
-import { LOG_SERVICE_EVENT, MILEAGE_EVENT } from "@/features/aisha/lib/events";
+import { LOG_SERVICE_EVENT, MILEAGE_EVENT, requestLogService } from "@/features/aisha/lib/events";
 import { pageKey } from "@/lib/capture-shortcut";
-import { Calendar03Icon, Car01Icon, Settings01Icon, Time04Icon } from "@hugeicons/core-free-icons";
+import {
+	Calendar03Icon,
+	Car01Icon,
+	Settings01Icon,
+	Time04Icon,
+	Wrench01Icon,
+} from "@hugeicons/core-free-icons";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -77,7 +83,7 @@ export function AishaChrome({ car }: { car: ChromeData | null }) {
 
 	return (
 		<>
-			<GlassTabBar
+			<TabBar
 				label="Aisha sections"
 				active={lit}
 				items={[
@@ -86,6 +92,14 @@ export function AishaChrome({ car }: { car: ChromeData | null }) {
 					{ label: "Year", icon: Calendar03Icon, href: "/aisha/year" },
 					{ label: "Settings", icon: Settings01Icon, href: "/settings/aisha" },
 				]}
+				action={
+					<TabBarAction
+						icon={Wrench01Icon}
+						aria-label="Log service"
+						disabled={!car}
+						onClick={() => requestLogService()}
+					/>
+				}
 			/>
 
 			{car && (

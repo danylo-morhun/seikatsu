@@ -1,14 +1,15 @@
 "use client";
 
-import { GlassTabBar } from "@/components/GlassTabBar";
 import { startNavigationProgress } from "@/components/NavigationProgress";
+import { TabBar, TabBarAction } from "@/components/TabBar";
 import { createHabit } from "@/features/keizoku/actions/habits";
 import { HabitDialog } from "@/features/keizoku/components/HabitDialog";
-import { NEW_HABIT_EVENT } from "@/features/keizoku/lib/events";
+import { NEW_HABIT_EVENT, requestNewHabit } from "@/features/keizoku/lib/events";
 import { markFresh } from "@/features/keizoku/lib/habit-nav";
 import type { HabitFormValues } from "@/features/keizoku/lib/keizoku-schemas";
 import { pageKey } from "@/lib/capture-shortcut";
 import {
+	Add01Icon,
 	Archive01Icon,
 	Calendar03Icon,
 	CheckListIcon,
@@ -74,7 +75,7 @@ export function KeizokuNavTabs() {
 
 	return (
 		<>
-			<GlassTabBar
+			<TabBar
 				label="Keizoku sections"
 				active={lit}
 				items={[
@@ -83,6 +84,7 @@ export function KeizokuNavTabs() {
 					{ label: "Archive", icon: Archive01Icon, href: "/keizoku/archive" },
 					{ label: "Settings", icon: Settings01Icon, href: "/settings/keizoku" },
 				]}
+				action={<TabBarAction icon={Add01Icon} aria-label="New habit" onClick={requestNewHabit} />}
 			/>
 
 			<HabitDialog
