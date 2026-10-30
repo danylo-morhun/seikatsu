@@ -40,7 +40,7 @@ export function SettingsLabels({ labels }: { labels: Row[] }) {
 
 	if (labels.length === 0) {
 		return (
-			<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+			<p className="py-4 text-sm text-muted-foreground">
 				No labels yet. Make them from a card, under Labels.
 			</p>
 		);
@@ -63,7 +63,7 @@ export function SettingsLabels({ labels }: { labels: Row[] }) {
 					style={{ "--i": gi } as React.CSSProperties}
 				>
 					<h3 className="mb-2 text-sm font-semibold">{group.name}</h3>
-					<ul className="divide-y divide-rule border-y border-rule">
+					<ul className="divide-y divide-rule">
 						{group.rows.map((label) => (
 							<li key={label.id} className="flex items-center gap-3 py-2.5">
 								<span

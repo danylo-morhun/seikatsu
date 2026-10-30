@@ -335,11 +335,11 @@ export function HabitPage({ habit, summary, days: server, journal, today }: Prop
 					Notes & photos
 				</h2>
 				{journal.length === 0 ? (
-					<p className="border-y border-rule py-6 text-sm text-muted-foreground">
+					<p className="py-6 text-sm text-muted-foreground">
 						Nothing written yet. A done day can carry a note or a photo — press M for today's.
 					</p>
 				) : (
-					<ul className="divide-y divide-rule border-y border-rule">
+					<ul className="divide-y divide-rule">
 						{journal.map((d) => (
 							<li key={d.date}>
 								<button

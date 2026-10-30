@@ -68,12 +68,12 @@ export function BankConnectionsSection({
 	return (
 		<>
 			{connections.length === 0 ? (
-				<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+				<p className="py-4 text-sm text-muted-foreground">
 					None yet. A connected bank sends its transactions here every day, filed by your import
 					rules.
 				</p>
 			) : (
-				<div className="divide-y divide-rule border-y border-rule">
+				<div className="divide-y divide-rule">
 					{connections.map((conn) => (
 						<ConnectionCard
 							key={conn.id}

@@ -47,11 +47,11 @@ export function SettingsSources({ sources }: { sources: { source: string; count:
 			meta={sources.length}
 		>
 			{sources.length === 0 ? (
-				<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+				<p className="py-4 text-sm text-muted-foreground">
 					No sources yet. They come from each application's Source field.
 				</p>
 			) : (
-				<ul className="divide-y divide-rule border-y border-rule">
+				<ul className="divide-y divide-rule">
 					{sources.map((s, i) => (
 						<li
 							key={s.source}

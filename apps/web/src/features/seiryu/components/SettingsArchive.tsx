@@ -28,7 +28,7 @@ export function SettingsArchive({ cards, today, grouped = true }: Props) {
 
 	if (cards.length === 0) {
 		return (
-			<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+			<p className="py-4 text-sm text-muted-foreground">
 				Nothing archived{grouped ? "" : " in this project"}. Archive a card from its menu to clear
 				it off the board without losing it.
 			</p>
@@ -61,7 +61,7 @@ export function SettingsArchive({ cards, today, grouped = true }: Props) {
 					style={{ "--i": gi } as React.CSSProperties}
 				>
 					{grouped && <h3 className="mb-2 text-sm font-semibold">{group.name}</h3>}
-					<ul className="divide-y divide-rule border-y border-rule">
+					<ul className="divide-y divide-rule">
 						{group.rows.map((card) => (
 							<li key={card.id} className="flex items-center gap-3 py-2.5">
 								<HugeiconsIcon

@@ -382,7 +382,7 @@ export function Records({ stats }: { stats: YearStats }) {
 	].filter((r): r is { label: string; book: YearBook; value: string } => !!r);
 	if (rows.length === 0) return null;
 	return (
-		<ul className="divide-y divide-rule border-y border-rule">
+		<ul className="divide-y divide-rule">
 			{rows.map((r) => (
 				<li key={r.label}>
 					<Link

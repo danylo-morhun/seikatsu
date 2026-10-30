@@ -111,7 +111,7 @@ export function SettingsHoshii({
 				title="Cooling"
 				description="How long a new want waits before Hoshii asks if you still want it, by its price. A changed price while cooling re-times it."
 			>
-				<div className="max-w-lg divide-y divide-rule border-y border-rule text-sm">
+				<div className="max-w-lg divide-y divide-rule text-sm">
 					<TierRow
 						label={
 							<>
@@ -240,7 +240,7 @@ function Lists({ lists }: { lists: HoshiiList[] }) {
 			meta={lists.length}
 		>
 			{lists.length > 0 && (
-				<ul className="max-w-lg divide-y divide-rule border-y border-rule">
+				<ul className="max-w-lg divide-y divide-rule">
 					{lists.map((list) => (
 						<ListRow key={list.id} list={list} onDelete={() => setDeleting(list)} />
 					))}

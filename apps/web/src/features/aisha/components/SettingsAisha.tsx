@@ -23,7 +23,7 @@ import { toast } from "sonner";
 const FAILED = { error: "Couldn't save. Check your connection." };
 const ROW =
 	"group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 transition-colors duration-150 hover:bg-surface";
-const LIST = "divide-y divide-rule border-y border-rule";
+const LIST = "divide-y divide-rule";
 
 /** /settings/aisha: the car, its maintenance plan, its paperwork, and where costs go in Kuroji. */
 export function SettingsAisha({
@@ -100,7 +100,7 @@ export function SettingsAisha({
 				meta={documents.length || undefined}
 			>
 				{documents.length === 0 ? (
-					<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+					<p className="py-4 text-sm text-muted-foreground">
 						None yet. Add the insurance and the inspection first.
 					</p>
 				) : (

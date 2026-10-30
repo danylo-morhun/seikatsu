@@ -73,7 +73,7 @@ export function SettingsHabits({ habits: saved }: { habits: KeizokuHabit[] }) {
 			}
 		>
 			{habits.length === 0 ? (
-				<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+				<p className="py-4 text-sm text-muted-foreground">
 					No habits yet.{" "}
 					<button
 						type="button"
@@ -84,7 +84,7 @@ export function SettingsHabits({ habits: saved }: { habits: KeizokuHabit[] }) {
 					</button>
 				</p>
 			) : (
-				<ul className="divide-y divide-rule border-y border-rule">
+				<ul className="divide-y divide-rule">
 					{habits.map((h, i) => (
 						<li key={h.id} className="flex animate-rise items-center gap-3 py-2.5" style={rise(i)}>
 							<span aria-hidden className="w-6 shrink-0 text-center text-base">
@@ -157,7 +157,7 @@ export function ArchivedHabits({ habits: saved }: { habits: ArchivedHabit[] }) {
 
 	if (habits.length === 0) {
 		return (
-			<p className="border-y border-rule py-4 text-sm text-muted-foreground">
+			<p className="py-4 text-sm text-muted-foreground">
 				Nothing archived. Archiving a habit takes it off Today and keeps its history.
 			</p>
 		);
@@ -165,7 +165,7 @@ export function ArchivedHabits({ habits: saved }: { habits: ArchivedHabit[] }) {
 
 	return (
 		<>
-			<ul className="divide-y divide-rule border-y border-rule">
+			<ul className="divide-y divide-rule">
 				{habits.map((h, i) => (
 					<li key={h.id} className="flex animate-rise items-center gap-3 py-2.5" style={rise(i)}>
 						<span aria-hidden className="w-6 shrink-0 text-center text-base">
