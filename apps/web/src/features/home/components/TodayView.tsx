@@ -205,7 +205,7 @@ function Habits({
 						done={h.done}
 						label={`${h.name}: ${h.done ? "done today" : "mark done today"}`}
 						onClick={() => toggle(h)}
-						className="-ml-2.5"
+						className="mr-1.5"
 					/>
 					<span aria-hidden className="shrink-0">
 						{h.emoji}
