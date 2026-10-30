@@ -15,6 +15,7 @@ import {
 	WEEK_ORDER,
 } from "@/features/keizoku/lib/constants";
 import type { HabitFormValues, HabitPatch } from "@/features/keizoku/lib/keizoku-schemas";
+import { useHeld } from "@/hooks/useHeld";
 import {
 	Button,
 	Dialog,
@@ -183,7 +184,7 @@ function EmojiGrid({
  * sends only what changed.
  */
 export function HabitDialog({
-	habit,
+	habit: habitProp,
 	open,
 	onOpenChange,
 	onSave,
@@ -198,6 +199,7 @@ export function HabitDialog({
 	/** Opened by a key: no entrance motion. */
 	instant?: boolean;
 }) {
+	const habit = useHeld(habitProp, open);
 	const id = useId();
 	const [form, setForm] = useState(() => formOf(habit));
 	const [error, setError] = useState<string | null>(null);

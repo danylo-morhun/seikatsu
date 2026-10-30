@@ -4,6 +4,7 @@ import { Spinner } from "@/components/Spinner";
 import { FOOTER } from "@/features/keizoku/components/HabitDialog";
 import { Photo } from "@/features/keizoku/components/Photo";
 import { formatDay } from "@/features/keizoku/lib/constants";
+import { useHeld } from "@/hooks/useHeld";
 import { Camera01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -36,7 +37,7 @@ export interface DayNoteTarget {
  * clear it; an unchanged photo stays as it is.
  */
 export function DayNoteDialog({
-	target,
+	target: targetProp,
 	onOpenChange,
 	onSave,
 	instant = false,
@@ -47,8 +48,9 @@ export function DayNoteDialog({
 	onSave: (formData: FormData) => Promise<string | undefined>;
 	instant?: boolean;
 }) {
+	const target = useHeld(targetProp, targetProp != null);
 	const id = useId();
-	const open = target != null;
+	const open = targetProp != null;
 	const [note, setNote] = useState("");
 	const [file, setFile] = useState<File | null>(null);
 	const [preview, setPreview] = useState<string | null>(null);
