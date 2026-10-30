@@ -2,9 +2,11 @@
 
 import { AppHeader } from "@/components/AppHeader";
 import { AppSidebar } from "@/components/AppSidebar";
+import { DesignProvider } from "@/components/DesignProvider";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { OfflineWarmup } from "@/features/pwa/components/OfflineWarmup";
 import { APP_THEMES, getThemeForPath } from "@/lib/app-themes";
+import type { Design } from "@/lib/design";
 import { SidebarInset, SidebarProvider } from "@seikatsu/ui";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
@@ -24,6 +26,7 @@ interface Props {
 	workspaceId?: string;
 	baseCurrency?: string;
 	sidebarDefaultOpen?: boolean;
+	design: Design;
 	user?: User | null;
 	children: React.ReactNode;
 }
@@ -34,6 +37,7 @@ export function AppShell({
 	workspaceId,
 	baseCurrency,
 	sidebarDefaultOpen = true,
+	design,
 	user,
 	children,
 }: Props) {
@@ -65,14 +69,16 @@ export function AppShell({
 	}, [pathname]);
 
 	return (
-		<SidebarProvider defaultOpen={sidebarDefaultOpen} className={theme}>
-			<AppSidebar workspaceName={workspaceName} hiddenApps={hiddenApps} user={user} />
-			<SidebarInset className="min-w-0">
-				<AppHeader workspaceId={workspaceId} baseCurrency={baseCurrency} />
-				{children}
-			</SidebarInset>
-			<KeyboardShortcuts />
-			<OfflineWarmup />
-		</SidebarProvider>
+		<DesignProvider initial={design}>
+			<SidebarProvider defaultOpen={sidebarDefaultOpen} className={theme}>
+				<AppSidebar workspaceName={workspaceName} hiddenApps={hiddenApps} user={user} />
+				<SidebarInset className="min-w-0">
+					<AppHeader workspaceId={workspaceId} baseCurrency={baseCurrency} />
+					{children}
+				</SidebarInset>
+				<KeyboardShortcuts />
+				<OfflineWarmup />
+			</SidebarProvider>
+		</DesignProvider>
 	);
 }

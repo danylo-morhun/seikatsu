@@ -5,6 +5,7 @@ import { TimezoneSync } from "@/components/TimezoneSync";
 import { OutboxSync } from "@/features/pwa/components/OutboxSync";
 import { ServiceWorker } from "@/features/pwa/components/ServiceWorker";
 import splashScreens from "@/features/pwa/lib/splash-screens.json";
+import { DESIGN_SCRIPT } from "@/lib/design";
 import { TooltipProvider } from "@seikatsu/ui";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
@@ -49,6 +50,9 @@ export default function RootLayout({
 }) {
 	return (
 		<html lang="en" className={geistSans.variable} suppressHydrationWarning>
+			<head>
+				<script dangerouslySetInnerHTML={{ __html: DESIGN_SCRIPT }} />
+			</head>
 			<body className="antialiased">
 				<ThemeProvider>
 					<Suspense>
