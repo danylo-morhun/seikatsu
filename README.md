@@ -1,48 +1,49 @@
 # seikatsu
 
-[![CI](https://github.com/danylo-morhun/seikatsu/actions/workflows/ci.yml/badge.svg)](https://github.com/danylo-morhun/seikatsu/actions/workflows/ci.yml)
-
-One app for daily life: money, tasks, books, habits, job search, car, wishlist.
+Personal life-OS: seven small apps behind one auth shell, one Postgres, one deploy.
+Kuroji · Seiryu · Tsundoku · Keizoku · Kyū · Aisha · Hoshii.
 
 [seikatsu.danylomorhun.com](https://seikatsu.danylomorhun.com)
 
-## Apps
+## Layout
 
-- **Kuroji** — finance: double-entry ledger, multi-currency, recurring transactions, bank sync, Apple Pay capture, charts
-- **Seiryu** — kanban: projects, cards, checklists, labels, due dates
-- **Tsundoku** — books: search, shelves, quotes, reading sessions, year review
-- **Keizoku** — habits: week view, streaks, photo log, year page
-- **Kyū** — job search: what to do next, stats, Gmail sync where Gemini turns replies into events
-- **Aisha** — car care: service log, reminders by mileage and date, documents
-- **Hoshii** — wishlist: wants cool off by price, then one ranked plan funded from a Kuroji savings account
+```
+apps/web          Next.js 16 (App Router, RSC), one feature slice per app
+  src/features/<app>/{actions,components,lib}
+  src/app/api/cron  daily jobs: recurring, bank sync, notifications
+  public/sw.js      service worker: offline shell + push
+packages/db       Drizzle schema + SQL migrations (Neon Postgres)
+packages/ui       shadcn/Radix primitives, Tailwind 4 tokens
+```
 
-Installable as a PWA: works offline, push reminders, share links straight into Hoshii.
+## Design notes
 
-## How it works
+- **Server-first.** Pages are server components that read the DB directly; mutations are
+  server actions that revalidate. No client cache, no global store; URL params hold UI state.
+- **Ownership on every call.** Each action checks session → workspace → every foreign ID it receives.
+- **Double-entry ledger.** A transaction is ≥ 2 entries summing to zero in base currency, written atomically;
+  rounding goes to the last entry. Historical FX rates are cached per day.
+- **Idempotent imports.** PSD2 bank sync and statement parsing share one pipeline keyed by external ID.
+- **Offline writes.** Mutations go through an outbox with a replay registry; queued ops are replay-safe.
+- **Ordering.** Fractional-index keys: a drag updates one row.
+- **Time zones.** The browser zone rides in a cookie, so "today" is computed on the server.
 
-- **Ledger** — every transaction is a set of entries that sum to zero, written in one DB transaction; rounding drift goes to the last entry
-- **Bank import** — Enable Banking (PSD2) sync and a Privat24 .xlsx parser share one core; a unique external ID makes re-imports safe
-- **Exchange rates** — cached per day in Postgres; UAH pairs from PrivatBank, the rest from ECB via Frankfurter
-- **Ordering** — fractional indexing, so drag-and-drop updates one row
-- **Time zones** — the browser's zone goes into a cookie, so "today" renders on the server
-- **Tests** — business logic lives in pure functions; DB tests run real migrations on in-memory Postgres (PGlite); Playwright for E2E
-- **Deploy** — GitHub Actions runs migrations only when they changed (with approval), deploys, smoke-tests, and rolls back on failure
+## Pipeline
 
-## Stack
-
-Next.js 16, React 19, Turborepo, Drizzle, Neon Postgres, NextAuth v5, Tailwind 4, Vercel.
+```
+PR   → Biome + tsc → Vitest (PGlite, real migrations) + next build → Playwright on the build
+main → migrations (only if changed, manual approval) → Vercel prod (fra1) → smoke → auto-rollback
+```
 
 ## Run locally
 
-Needs Node 24 and pnpm 10.
+Node 24, pnpm 10.
 
 ```bash
 pnpm install
-cp .env.example apps/web/.env.local   # DATABASE_URL, AUTH_SECRET, and keys for one sign-in method
-DATABASE_URL=... pnpm --filter @seikatsu/db db:push
-pnpm dev                              # http://localhost:3010
+cp .env.example apps/web/.env.local
+DATABASE_URL=... pnpm --filter @seikatsu/db db:migrate
+pnpm dev   # :3010
 ```
-
-## License
 
 MIT
