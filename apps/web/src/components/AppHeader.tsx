@@ -170,7 +170,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 		// the page scrolls under it, like a macOS toolbar.
 		<header
 			data-scrolled={scrolled || undefined}
-			className="box-content flex h-14 shrink-0 items-center gap-1 border-transparent bg-background px-2 pt-[env(safe-area-inset-top)] md:top-0 md:z-30 md:border-b md:transition-[background-color,border-color] md:duration-200 md:pointer-fine:sticky md:data-scrolled:border-rule md:data-scrolled:bg-background/70 md:data-scrolled:backdrop-blur-xl md:data-scrolled:backdrop-saturate-150"
+			className="box-content flex h-14 shrink-0 items-center gap-1 bg-background px-2 pt-[env(safe-area-inset-top)] md:top-0 md:z-30 md:transition-[background-color,box-shadow] md:duration-200 md:pointer-fine:sticky md:data-scrolled:bg-background/70 md:data-scrolled:shadow-[0_1px_0_var(--rule)] md:data-scrolled:backdrop-blur-xl md:data-scrolled:backdrop-saturate-150"
 		>
 			<SidebarTrigger className="size-10 max-md:-ml-2 md:size-8 [&>svg]:h-4 [&>svg]:w-4" />
 			<div aria-hidden className="h-4 w-px shrink-0 bg-border" />
