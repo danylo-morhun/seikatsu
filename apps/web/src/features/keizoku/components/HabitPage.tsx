@@ -264,7 +264,7 @@ export function HabitPage({ habit, summary, days: server, journal, today }: Prop
 					/>
 				)}
 				<div className="min-w-0">
-					<h1 className="flex items-center gap-2 text-xl font-semibold">
+					<h1 className="flex items-center gap-2 text-[1.75rem] leading-tight font-bold tracking-tight">
 						<span aria-hidden className="shrink-0">
 							{habit.emoji}
 						</span>
@@ -339,7 +339,7 @@ export function HabitPage({ habit, summary, days: server, journal, today }: Prop
 						Nothing written yet. A done day can carry a note or a photo — press M for today's.
 					</p>
 				) : (
-					<ul className="divide-y divide-rule">
+					<ul className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 						{journal.map((d) => (
 							<li key={d.date}>
 								<button
