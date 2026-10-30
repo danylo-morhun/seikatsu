@@ -133,7 +133,7 @@ export function DateRangePicker() {
 	return (
 		<Popover open={open} onOpenChange={handleOpenChange}>
 			{/* The period always shows — on phones too — since every number on the page depends on it. */}
-			<div className="flex min-w-0 items-center">
+			<div className="flex min-w-10 items-center">
 				<PopoverTrigger asChild>
 					<Button
 						variant="outline"
