@@ -16,6 +16,7 @@ import {
 } from "@/features/keizoku/lib/constants";
 import type { HabitFormValues, HabitPatch } from "@/features/keizoku/lib/keizoku-schemas";
 import { useHeld } from "@/hooks/useHeld";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 import {
 	Button,
 	Dialog,
@@ -208,8 +209,10 @@ export function HabitDialog({
 	const set = <K extends keyof Form>(key: K, value: Form[K]) =>
 		setForm((f) => ({ ...f, [key]: value }));
 
+	// A new habit's draft survives Escape, a click outside or ×; Cancel and Add start blank.
+	const draft = useKeptDraft();
 	useEffect(() => {
-		if (open) {
+		if (open && !draft.resume(!habit)) {
 			setForm(formOf(habit));
 			setError(null);
 			setNameError(false);
@@ -243,7 +246,14 @@ export function HabitDialog({
 	}
 
 	return (
-		<Dialog open={open} onOpenChange={(v) => !isSaving && onOpenChange(v)}>
+		<Dialog
+			open={open}
+			onOpenChange={(v) => {
+				if (isSaving) return;
+				if (!v) draft.keep(!habit);
+				onOpenChange(v);
+			}}
+		>
 			<DialogContent
 				className={cn(
 					"sm:max-w-md max-sm:flex max-sm:flex-col",
