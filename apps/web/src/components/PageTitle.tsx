@@ -30,4 +30,4 @@ export function PageTitle({
  * A macOS inset grouped list: one rounded group on a slightly lighter tone, separators inset
  * from its edges. Content, so it never takes glass.
  */
-export const INSET_GROUP = "rounded-2xl bg-surface px-4 divide-y divide-rule";
+export const INSET_GROUP = "inset-group rounded-2xl bg-surface px-4 divide-y divide-rule";

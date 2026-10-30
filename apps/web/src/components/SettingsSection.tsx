@@ -68,7 +68,13 @@ export function SettingsSection({
 				)}
 			</div>
 			{children && (
-				<div className={cn("rounded-2xl bg-surface p-4", (title || description) && "mt-3")}>
+				<div
+					className={cn(
+						// The section is the group: lists inside drop their own (see INSET_GROUP).
+						"rounded-2xl bg-surface p-4 [&_.inset-group]:rounded-none [&_.inset-group]:bg-transparent [&_.inset-group]:px-0",
+						(title || description) && "mt-3",
+					)}
+				>
 					{children}
 				</div>
 			)}
