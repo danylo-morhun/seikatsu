@@ -24,6 +24,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@seikatsu/ui";
+import { format } from "date-fns";
 import * as React from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -71,7 +72,7 @@ export function AddRecurringModal({
 			currency: toCurrency(baseCurrency),
 			description: "",
 			frequency: "monthly",
-			startDate: new Date().toISOString().slice(0, 10),
+			startDate: format(new Date(), "yyyy-MM-dd"),
 			endDate: "",
 		},
 	});
