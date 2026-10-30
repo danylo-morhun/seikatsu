@@ -13,7 +13,7 @@ export function DangerZone() {
 
 	return (
 		<>
-			<ul className="divide-y divide-rule">
+			<ul className="inset-group rounded-2xl bg-surface px-4 divide-y divide-rule">
 				<li className="flex items-center gap-4 py-3">
 					<div className="min-w-0 flex-1">
 						<p className="text-sm">Sign out everywhere</p>
