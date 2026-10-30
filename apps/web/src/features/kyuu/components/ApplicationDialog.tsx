@@ -32,7 +32,7 @@ import type { ResumeFile } from "../lib/types";
 import { ResumeUploadField } from "./ResumeUploadField";
 
 export const FIELD_TEXTAREA =
-	"w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs outline-none transition-colors [field-sizing:content] placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring md:text-sm";
+	"w-full resize-none rounded-xl border border-input bg-transparent px-3 py-2 text-base shadow-xs outline-none transition-colors [field-sizing:content] placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring md:text-sm";
 
 /** A paste this long is a job posting, not a company name. */
 const MIN_PASTE_LENGTH = 200;

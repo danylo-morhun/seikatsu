@@ -190,7 +190,7 @@ export function KyuuDateRangeFilter() {
 						<div className="mb-3 flex w-full items-center gap-2">
 							<span
 								className={cn(
-									"flex-1 cursor-pointer rounded-md border px-2 py-1 text-center text-sm transition-colors",
+									"flex-1 cursor-pointer rounded-full border px-2 py-1 text-center text-sm transition-colors",
 									picking === "from"
 										? "border-primary bg-primary/10 text-foreground"
 										: localFrom
@@ -204,7 +204,7 @@ export function KyuuDateRangeFilter() {
 							<span className="shrink-0 text-xs text-muted-foreground">–</span>
 							<span
 								className={cn(
-									"flex-1 cursor-pointer rounded-md border px-2 py-1 text-center text-sm transition-colors",
+									"flex-1 cursor-pointer rounded-full border px-2 py-1 text-center text-sm transition-colors",
 									picking === "to"
 										? "border-primary bg-primary/10 text-foreground"
 										: localTo

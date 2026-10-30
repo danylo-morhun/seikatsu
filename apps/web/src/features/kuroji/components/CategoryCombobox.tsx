@@ -91,7 +91,7 @@ export function CategoryCombobox({
 				id={id}
 				aria-label={ariaLabel}
 				aria-invalid={invalid || undefined}
-				className="flex h-10 w-full items-center md:h-9 justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive"
+				className="flex h-10 w-full items-center md:h-9 justify-between gap-2 rounded-xl border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive"
 			>
 				<span className={cn("flex-1 truncate text-left", !current && "text-muted-foreground")}>
 					{current?.name ?? placeholder}

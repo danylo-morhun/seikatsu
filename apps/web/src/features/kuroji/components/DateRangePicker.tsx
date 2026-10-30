@@ -206,7 +206,7 @@ export function DateRangePicker() {
 								type="button"
 								aria-pressed={picking === "from"}
 								className={cn(
-									"flex-1 rounded-md border px-2 py-1 text-center text-sm transition-colors",
+									"flex-1 rounded-full border px-2 py-1 text-center text-sm transition-colors",
 									picking === "from"
 										? "border-primary text-foreground"
 										: localFrom
@@ -222,7 +222,7 @@ export function DateRangePicker() {
 								type="button"
 								aria-pressed={picking === "to"}
 								className={cn(
-									"flex-1 rounded-md border px-2 py-1 text-center text-sm transition-colors",
+									"flex-1 rounded-full border px-2 py-1 text-center text-sm transition-colors",
 									picking === "to"
 										? "border-primary text-foreground"
 										: localTo
