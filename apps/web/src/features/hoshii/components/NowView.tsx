@@ -299,11 +299,10 @@ export function NowView({ data, chrome, today }: Props) {
 								items={plan.map((p) => p.item.id)}
 								strategy={verticalListSortingStrategy}
 							>
-								{plan.map((entry, i) => (
+								{plan.map((entry) => (
 									<PlanRow
 										key={entry.item.id}
 										entry={entry}
-										rank={i + 1}
 										currency={currency}
 										funding={piggy != null}
 										actions={actions}
@@ -449,13 +448,11 @@ function DecideRow({ item, actions }: { item: HoshiiItem; actions: ItemActions }
 
 function PlanRow({
 	entry,
-	rank,
 	currency,
 	funding,
 	actions,
 }: {
 	entry: PlanEntry;
-	rank: number;
 	currency: string;
 	funding: boolean;
 	actions: ItemActions;
@@ -477,22 +474,16 @@ function PlanRow({
 			style={{ transform: CSS.Translate.toString(transform), transition }}
 			className={cn(
 				ROW,
-				"grid-cols-[2.5rem_minmax(0,1fr)_auto] touch-manipulation sm:grid-cols-[2.5rem_2.75rem_minmax(0,1fr)_auto]",
+				"grid-cols-[1.375rem_minmax(0,1fr)_auto] touch-manipulation sm:grid-cols-[1.375rem_2.75rem_minmax(0,1fr)_auto]",
 				isDragging && "z-10 bg-surface-2 shadow-lg",
 			)}
 		>
-			<span
-				aria-hidden
-				className="absolute top-1/2 left-0 hidden w-2 -translate-y-1/2 text-center font-figures text-[11px] text-muted-foreground/70 xl:block"
-			>
-				{rank}
-			</span>
 			<button
 				type="button"
 				aria-label={`${item.title}: bought it`}
 				aria-keyshortcuts="B"
 				onClick={() => actions.buy(item)}
-				className="group/act flex size-10 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+				className="group/act relative flex size-[22px] shrink-0 items-center justify-center rounded-full outline-none before:absolute before:-inset-[9px] before:content-[''] focus-visible:ring-2 focus-visible:ring-ring"
 			>
 				<span
 					aria-hidden
