@@ -26,6 +26,7 @@ import { QUEUED_TOAST, saveNewItem } from "@/features/hoshii/lib/offline";
 import { shopOf } from "@/features/hoshii/lib/product";
 import { NEEDS_CONNECTION } from "@/features/pwa/lib/run";
 import { useHeld } from "@/hooks/useHeld";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 import {
 	Button,
 	Dialog,
@@ -116,12 +117,18 @@ export function ItemDialog({
 
 	useEffect(() => setLists(chrome.lists), [chrome.lists]);
 
+	// A new want's draft (photos too) survives Escape, a click outside or ×; Cancel and Save
+	// start blank, and only then do unsaved photos go.
+	const draft = useKeptDraft();
+
 	useEffect(() => {
 		if (!open) {
+			if (draft.isKept()) return;
 			for (const url of uploads.current) void discardPhoto(url).catch(() => {});
 			uploads.current.clear();
 			return;
 		}
+		if (draft.resume(!item && !initialUrl)) return;
 		setForm(formOf(item, chrome));
 		setError(null);
 		setNewList(null);
@@ -317,7 +324,14 @@ export function ItemDialog({
 	const invalid = (field: keyof Form) => error?.field === field || undefined;
 
 	return (
-		<Dialog open={open} onOpenChange={(v) => !isSaving && onOpenChange(v)}>
+		<Dialog
+			open={open}
+			onOpenChange={(v) => {
+				if (isSaving) return;
+				if (!v) draft.keep(!item && !initialUrl);
+				onOpenChange(v);
+			}}
+		>
 			<DialogContent
 				className={cn("sm:max-w-lg max-sm:flex max-sm:flex-col", instantClass(instant))}
 			>
