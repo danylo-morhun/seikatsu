@@ -278,7 +278,7 @@ export function BookPage({ book: server, sessions, quotes, shelves, seriesBooks,
 										e.currentTarget.blur();
 									}
 								}}
-								className="-mx-2 block w-[calc(100%+1rem)] resize-none rounded-md bg-transparent px-2 py-1 text-xl leading-snug font-semibold tracking-tight break-words outline-none transition-colors duration-150 [field-sizing:content] hover:bg-surface focus-visible:bg-transparent focus-visible:ring-2 focus-visible:ring-ring"
+								className="-mx-2 block w-[calc(100%+1rem)] resize-none rounded-md bg-transparent px-2 py-1 text-[1.75rem] leading-tight font-bold tracking-tight break-words outline-none transition-colors duration-150 [field-sizing:content] hover:bg-surface focus-visible:bg-transparent focus-visible:ring-2 focus-visible:ring-ring"
 							/>
 							{book.authors && book.authors.length > 0 && (
 								<p className="text-sm break-words">{book.authors.join(", ")}</p>
