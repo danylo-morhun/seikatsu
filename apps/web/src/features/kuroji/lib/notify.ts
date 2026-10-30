@@ -11,6 +11,7 @@ import {
 	gte,
 	inArray,
 	isNull,
+	kurojiBudgetMonths,
 	lte,
 	recurringTransactions,
 	sum,
@@ -111,10 +112,18 @@ export const notifyKurojiBudget: Notifier = async ({ workspaceId, prefs, clock }
 		})
 		.from(accounts)
 		.where(and(eq(accounts.workspaceId, workspaceId), isNull(accounts.archivedAt)));
-	const budgeted = all.filter((a) => a.type === "EXPENSE" && Number(a.budget) > 0);
+	const month = clock.day.slice(0, 7);
+	// This month's own plan (Kuroji Plan) wins over the default budget.
+	const overrides = await db
+		.select({ accountId: kurojiBudgetMonths.accountId, amount: kurojiBudgetMonths.amount })
+		.from(kurojiBudgetMonths)
+		.innerJoin(accounts, eq(accounts.id, kurojiBudgetMonths.accountId))
+		.where(and(eq(accounts.workspaceId, workspaceId), eq(kurojiBudgetMonths.month, `${month}-01`)));
+	const planOf = new Map(all.map((a) => [a.accountId, Number(a.budget ?? 0)]));
+	for (const o of overrides) planOf.set(o.accountId, Number(o.amount));
+	const budgeted = all.filter((a) => a.type === "EXPENSE" && (planOf.get(a.accountId) ?? 0) > 0);
 	if (budgeted.length === 0) return 0;
 
-	const month = clock.day.slice(0, 7);
 	const scopes = budgeted.map((a) => accountScope(a.accountId, a.type as AccountType, all));
 	const spentRows = await db
 		.select({ accountId: transactionEntries.accountId, total: sum(transactionEntries.baseAmount) })
@@ -132,7 +141,7 @@ export const notifyKurojiBudget: Notifier = async ({ workspaceId, prefs, clock }
 	const currency = await baseCurrencyOf(workspaceId);
 
 	const crossed = budgeted.flatMap((a, i) => {
-		const budget = Number(a.budget);
+		const budget = planOf.get(a.accountId) ?? 0;
 		const spent = scopes[i].reduce((s, id) => s + (spentBy.get(id) ?? 0), 0);
 		const pct = (spent / budget) * 100;
 		const mark = BUDGET_MARKS.find((m) => pct >= m);
@@ -149,7 +158,7 @@ export const notifyKurojiBudget: Notifier = async ({ workspaceId, prefs, clock }
 	const sent = await sendNew(workspaceId, crossed, (fresh) => ({
 		title: fresh.some((c) => c.mark === 100) ? "Over budget" : "Budget nearly used",
 		body: fresh.map((c) => c.line).join(" · "),
-		url: "/kuroji?tab=accounts",
+		url: "/kuroji?tab=plan",
 		tag: "kuroji-budget",
 	}));
 	return sent ? 1 : 0;
