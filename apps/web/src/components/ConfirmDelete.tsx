@@ -1,6 +1,7 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
+import { useHeld } from "@/hooks/useHeld";
 import { Alert01Icon, Delete01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -39,15 +40,18 @@ export function ConfirmDelete({
 	confirmLabel = "Delete",
 }: Props) {
 	const [isPending, startTransition] = useTransition();
-	const pendingLabel = confirmLabel.startsWith("Delete")
+	// The subject is usually cleared as it closes: keep its words through the exit.
+	const shown = useHeld({ title, description, children, confirmLabel }, open);
+	const label = shown.confirmLabel;
+	const pendingLabel = label.startsWith("Delete")
 		? "Deleting…"
-		: confirmLabel.startsWith("Clear")
+		: label.startsWith("Clear")
 			? "Clearing…"
-			: confirmLabel.startsWith("Turn off")
+			: label.startsWith("Turn off")
 				? "Turning off…"
-				: confirmLabel.startsWith("Close")
+				: label.startsWith("Close")
 					? "Closing…"
-					: `${confirmLabel}…`;
+					: `${label}…`;
 
 	function handleConfirm(e: React.MouseEvent) {
 		e.preventDefault();
@@ -63,11 +67,11 @@ export function ConfirmDelete({
 				<AlertDialogHeader>
 					<AlertDialogTitle className="flex items-center gap-2">
 						<HugeiconsIcon icon={Alert01Icon} className="h-5 w-5 shrink-0 text-destructive" />
-						<span className="min-w-0 break-words">{title}</span>
+						<span className="min-w-0 break-words">{shown.title}</span>
 					</AlertDialogTitle>
-					<AlertDialogDescription>{description}</AlertDialogDescription>
+					<AlertDialogDescription>{shown.description}</AlertDialogDescription>
 				</AlertDialogHeader>
-				{children}
+				{shown.children}
 				<AlertDialogFooter>
 					<AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
 					<AlertDialogAction
@@ -76,7 +80,7 @@ export function ConfirmDelete({
 						onClick={handleConfirm}
 					>
 						{isPending ? <Spinner /> : <HugeiconsIcon icon={Delete01Icon} className="h-4 w-4" />}
-						{isPending ? pendingLabel : confirmLabel}
+						{isPending ? pendingLabel : label}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>
