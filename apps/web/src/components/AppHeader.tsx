@@ -72,7 +72,7 @@ const KUROJI_TABS: { value: KurojiTab; label: string }[] = [
 // The app's capture: a labelled button on wide screens; on phones an accent glyph in the
 // header's glass capsule, like iOS Mail's compose — the tab bar below holds only tabs.
 const CAPTURE =
-	"lg:w-auto lg:gap-2 lg:px-3 max-md:bg-transparent max-md:text-primary max-md:shadow-none max-md:hover:bg-surface-2 max-md:active:bg-surface-2 max-md:[&_svg]:size-5 max-md:[&_svg]:stroke-[2]";
+	"md:rounded-full lg:w-auto lg:gap-2 lg:px-3 max-md:bg-transparent max-md:text-primary max-md:shadow-none max-md:hover:bg-surface-2 max-md:active:bg-surface-2 max-md:[&_svg]:size-5 max-md:[&_svg]:stroke-[2]";
 
 interface Props {
 	workspaceId?: string;
@@ -112,6 +112,15 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 	// Highlight the clicked tab immediately; the URL catches up when navigation commits.
 	const [pendingTab, setPendingTab] = useState<string | null>(null);
 	const displayTab = pendingTab ?? activeTab;
+
+	// The page has scrolled under the header (it only sticks with a mouse; see below).
+	const [scrolled, setScrolled] = useState(false);
+	useEffect(() => {
+		const onScroll = () => setScrolled(window.scrollY > 4);
+		onScroll();
+		window.addEventListener("scroll", onScroll, { passive: true });
+		return () => window.removeEventListener("scroll", onScroll);
+	}, []);
 
 	useEffect(() => {
 		setPendingTab(null);
@@ -156,9 +165,13 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 
 	return (
 		// Solid fill: iOS 26 tints the status bar from it; no hairline on phones, as in iOS 26.
-		// Not sticky — in the Home Screen app a sticky header under the status bar swallowed every
-		// tap on the page below it.
-		<header className="box-content flex h-14 shrink-0 items-center gap-1 border-border bg-background md:border-b px-2 pt-[env(safe-area-inset-top)]">
+		// Not sticky on touch — in the Home Screen app a sticky header under the status bar
+		// swallowed every tap on the page below it. With a mouse it sticks and turns to glass once
+		// the page scrolls under it, like a macOS toolbar.
+		<header
+			data-scrolled={scrolled || undefined}
+			className="box-content flex h-14 shrink-0 items-center gap-1 border-transparent bg-background px-2 pt-[env(safe-area-inset-top)] md:top-0 md:z-30 md:border-b md:transition-[background-color,border-color] md:duration-200 md:pointer-fine:sticky md:data-scrolled:border-rule md:data-scrolled:bg-background/70 md:data-scrolled:backdrop-blur-xl md:data-scrolled:backdrop-saturate-150"
+		>
 			<SidebarTrigger className="size-10 max-md:-ml-2 md:size-8 [&>svg]:h-4 [&>svg]:w-4" />
 			<div aria-hidden className="h-4 w-px shrink-0 bg-border" />
 
@@ -298,8 +311,11 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 								<span className="hidden lg:inline">Add a Want</span>
 							</Button>
 						)}
-						<ShortcutsButton />
-						<ThemeToggle />
+						{/* Wide screens: the quiet buttons share a capsule; capture stands beside it. */}
+						<div className="max-md:contents md:glass md:flex md:items-center md:rounded-full md:p-0.5 md:[&_button]:rounded-full">
+							<ShortcutsButton />
+							<ThemeToggle />
+						</div>
 					</div>
 				</div>
 			)}
