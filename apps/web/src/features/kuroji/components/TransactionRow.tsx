@@ -148,9 +148,10 @@ export const TransactionRow = memo(
 			// The description button stretches over the row; controls inside sit above it.
 			<li
 				className={cn(
-					"group/row relative grid items-center py-2.5",
+					// Separators inset from the group's edges, as in macOS lists.
+					"group/row relative grid items-center px-4 py-2.5 not-first:before:absolute not-first:before:inset-x-4 not-first:before:top-0 not-first:before:h-px not-first:before:bg-rule",
 					rowCols(selectMode),
-					selected && "bg-surface",
+					selected && "bg-surface-2",
 				)}
 			>
 				<span className={cn("relative z-10 md:flex", selectMode ? "flex" : "hidden")}>

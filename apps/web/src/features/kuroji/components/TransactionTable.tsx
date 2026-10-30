@@ -104,6 +104,8 @@ interface Props {
 	dateTo?: string;
 	sortField?: string;
 	sortDir?: string;
+	/** The screen's own list: a large page title instead of a section heading. */
+	largeTitle?: boolean;
 }
 
 export function TransactionTable({
@@ -123,6 +125,7 @@ export function TransactionTable({
 	dateTo,
 	sortField = "date",
 	sortDir = "desc",
+	largeTitle = false,
 }: Props) {
 	const router = useRouter();
 	const pathname = usePathname();
@@ -479,9 +482,18 @@ export function TransactionTable({
 
 	return (
 		<section>
-			<div className="mb-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+			<div
+				className={cn(
+					"flex flex-col gap-3 md:flex-row md:items-end md:justify-between",
+					largeTitle ? "mb-5" : "mb-3",
+				)}
+			>
 				<div className="min-w-0">
-					<h2 className="text-sm font-medium">Transactions</h2>
+					{largeTitle ? (
+						<h1 className="text-[1.75rem] leading-tight font-bold tracking-tight">Transactions</h1>
+					) : (
+						<h2 className="text-sm font-medium">Transactions</h2>
+					)}
 					<p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
 						<span>
 							{total} {total === 1 ? "transaction" : "transactions"}
@@ -545,7 +557,7 @@ export function TransactionTable({
 							type="search"
 							aria-label="Search transactions"
 							placeholder="Search, then Enter"
-							className="pl-9"
+							className="rounded-full border-transparent bg-surface pl-9"
 							value={localQuery}
 							onChange={(e) => {
 								setLocalQuery(e.target.value);
@@ -556,7 +568,7 @@ export function TransactionTable({
 					</form>
 					<Button
 						variant="outline"
-						className="md:hidden"
+						className="rounded-full md:hidden"
 						aria-pressed={selectMode}
 						onClick={() => {
 							setSelectMode(!selectMode);
@@ -568,6 +580,7 @@ export function TransactionTable({
 					<Button
 						variant="outline"
 						size="icon"
+						className="rounded-full"
 						onClick={handleExport}
 						disabled={isExporting}
 						aria-label="Export CSV"
@@ -583,7 +596,7 @@ export function TransactionTable({
 			</div>
 
 			{/* Column header: select-all and sorting. Desktop only; phones sort by date. */}
-			<div className="hidden grid-cols-[1.25rem_minmax(0,1fr)_minmax(0,18rem)_8.5rem_2.25rem] items-center gap-x-4 border-b border-rule py-2 text-xs text-muted-foreground md:grid">
+			<div className="hidden grid-cols-[1.25rem_minmax(0,1fr)_minmax(0,18rem)_8.5rem_2.25rem] items-center gap-x-4 px-4 pb-1 text-xs text-muted-foreground md:grid">
 				<Checkbox
 					checked={transactions.length > 0 && selectedIds.size === transactions.length}
 					onCheckedChange={toggleSelectAll}
@@ -615,13 +628,13 @@ export function TransactionTable({
 									// Same columns as the rows, so the day's net sits in the amount column.
 									<header
 										className={cn(
-											"grid items-baseline border-b border-rule pt-4 pb-1.5 text-xs text-muted-foreground",
+											"grid items-baseline px-4 pt-5 pb-2 text-xs text-muted-foreground",
 											rowCols(selectMode),
 										)}
 									>
 										<span
 											className={cn(
-												"font-medium text-foreground/80 md:col-span-3",
+												"font-semibold text-foreground/80 md:col-span-3",
 												selectMode && "col-span-2",
 											)}
 										>
@@ -637,7 +650,8 @@ export function TransactionTable({
 										</span>
 									</header>
 								)}
-								<ul className="divide-y divide-rule">
+								{/* Inset grouped, like a macOS list: each day is one rounded group. */}
+								<ul className="overflow-hidden rounded-2xl bg-surface">
 									{g.rows.map((txn) => (
 										<TransactionRow
 											key={txn.id}
@@ -682,7 +696,7 @@ export function TransactionTable({
 				</div>
 			)}
 			{(page > 0 || hasMore) && (
-				<div className="mt-4 flex items-center justify-between border-t border-rule pt-4">
+				<div className="mt-5 flex items-center justify-between">
 					<Button variant="outline" disabled={page === 0} onClick={() => navigate(page - 1)}>
 						Previous
 					</Button>

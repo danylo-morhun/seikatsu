@@ -269,9 +269,9 @@ export default async function KurojiPage({
 	return (
 		<div className="flex flex-col pb-28 md:pb-0">
 			<div className="animate-rise px-4 py-6 sm:px-6">
-				<h1 className="sr-only">Kuroji — Transactions</h1>
 				{bankProblem && <BankSyncNotice problem={bankProblem} className="mb-4" />}
 				<TransactionTable
+					largeTitle
 					transactions={recentTransactions.rows}
 					currency={workspace.baseCurrency}
 					workspaceId={workspace.id}
