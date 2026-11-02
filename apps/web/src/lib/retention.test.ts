@@ -35,6 +35,7 @@ describe("pruneOldRows", () => {
 		await testDb.insert(schema.notificationLog).values([
 			{ workspaceId: ws.id, key: "old", sentAt: daysAgo(91) },
 			{ workspaceId: ws.id, key: "new", sentAt: daysAgo(89) },
+			{ workspaceId: ws.id, key: "aisha:item:1:overdue::", sentAt: daysAgo(400) },
 		]);
 
 		expect(await pruneOldRows(NOW)).toEqual({ outboxReceipts: 1, notificationLog: 1 });
@@ -42,6 +43,6 @@ describe("pruneOldRows", () => {
 		const receipts = await testDb.select().from(schema.outboxReceipts);
 		const keys = await testDb.select().from(schema.notificationLog);
 		expect(receipts.map((r) => r.name)).toEqual(["new"]);
-		expect(keys.map((k) => k.key)).toEqual(["new"]);
+		expect(keys.map((k) => k.key).sort()).toEqual(["aisha:item:1:overdue::", "new"]);
 	});
 });
