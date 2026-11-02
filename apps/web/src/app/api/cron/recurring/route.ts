@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/nextjs";
 import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
 import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
 import { pruneOldRows } from "@/lib/retention";
@@ -14,6 +13,7 @@ import {
 	recurringTransactions,
 	workspaces,
 } from "@seikatsu/db";
+import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 
 // Daily Vercel Cron (see vercel.json): materializes recurring transactions due today and
