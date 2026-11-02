@@ -1,4 +1,5 @@
-"use server";
+// Read-side query. Not a "use server" module, so nothing here is callable from the
+// client — import only from RSC pages or server actions.
 
 import { accounts, and, db, eq, isNull, sql, transactionEntries, transactions } from "@seikatsu/db";
 import { auth } from "@/auth";

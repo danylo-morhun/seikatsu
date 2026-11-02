@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { PageTab, PageTabs } from "@/components/PageTabs";
 import { SettingsPage, SettingsSection } from "@/components/SettingsSection";
 import { getBalances } from "@/features/kuroji/actions/balances";
-import { getCaptureKeyStatus } from "@/features/kuroji/actions/capture";
+import { getCaptureKeyStatus } from "@/features/kuroji/actions/capture-data";
 import {
 	getAccounts,
 	getBankConnections,

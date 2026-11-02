@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { getPendingCaptures } from "@/features/kuroji/actions/capture";
+import { getPendingCaptures } from "@/features/kuroji/actions/capture-data";
 import { getWorkspace } from "@/features/kuroji/actions/data";
 import { CaptureInbox } from "@/features/kuroji/components/CaptureInbox";
 import { KurojiNavTabs } from "@/features/kuroji/components/KurojiNavTabs";

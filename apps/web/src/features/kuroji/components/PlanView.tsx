@@ -13,7 +13,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useState } from "react";
 import { startNavigationProgress } from "@/components/NavigationProgress";
-import type { PlanData } from "@/features/kuroji/actions/plan";
+import type { PlanData } from "@/features/kuroji/actions/plan-data";
 import { FundDialog, type FundTarget } from "@/features/kuroji/components/FundDialog";
 import { Figure } from "@/features/kuroji/components/OverviewFigures";
 import { PlanAmountDialog, type PlanTarget } from "@/features/kuroji/components/PlanAmountDialog";
