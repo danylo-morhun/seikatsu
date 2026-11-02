@@ -10,7 +10,6 @@ import {
 } from "@/features/kuroji/actions/transactions";
 import type { RecentTransaction } from "@/features/kuroji/actions/transactions";
 import { CategoryPicker } from "@/features/kuroji/components/CategoryPicker";
-import { EditTransactionModal } from "@/features/kuroji/components/EditTransactionModal";
 import { PeriodEmptyActions } from "@/features/kuroji/components/PeriodEmptyActions";
 import {
 	type RowEvent,
@@ -68,6 +67,7 @@ import {
 	Input,
 	cn,
 } from "@seikatsu/ui";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
 	useCallback,
@@ -79,6 +79,13 @@ import {
 	useTransition,
 } from "react";
 import { toast } from "sonner";
+
+// Mounted only once a row is edited.
+const EditTransactionModal = dynamic(
+	() =>
+		import("@/features/kuroji/components/EditTransactionModal").then((m) => m.EditTransactionModal),
+	{ ssr: false },
+);
 
 const today = localToday();
 
