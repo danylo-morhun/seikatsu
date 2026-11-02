@@ -13,7 +13,7 @@ import {
 	hasAnyTransactions,
 	initializeWorkspace,
 } from "@/features/kuroji/actions/data";
-import { getPlan, getPlanSuggestions } from "@/features/kuroji/actions/plan";
+import { getPlan, getPlanSuggestions } from "@/features/kuroji/actions/plan-data";
 import { getMonthlyTrends } from "@/features/kuroji/actions/trends";
 import { AccountsOverview } from "@/features/kuroji/components/AccountsOverview";
 import { BankSyncNotice } from "@/features/kuroji/components/BankSyncNotice";

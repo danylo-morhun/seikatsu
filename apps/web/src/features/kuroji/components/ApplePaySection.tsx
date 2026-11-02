@@ -6,11 +6,8 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { Spinner } from "@/components/Spinner";
-import {
-	type CaptureKeyStatus,
-	createCaptureKey,
-	deleteCaptureKey,
-} from "@/features/kuroji/actions/capture";
+import { createCaptureKey, deleteCaptureKey } from "@/features/kuroji/actions/capture";
+import type { CaptureKeyStatus } from "@/features/kuroji/actions/capture-data";
 
 const FAILED = { error: "Couldn't save. Check your connection." } as const;
 
