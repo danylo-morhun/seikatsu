@@ -1,6 +1,6 @@
-"use server";
+// Read-side queries. Not a "use server" module, so nothing here is callable from the
+// client — import only from RSC pages or server actions.
 
-import { auth } from "@/auth";
 import { getOwnedWorkspace } from "@/lib/session";
 import {
 	accounts,
@@ -28,9 +28,6 @@ export async function getMonthlyTrends(
 	to?: string,
 	months = 6,
 ): Promise<MonthlyTrend[]> {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Unauthorized");
-
 	const ws = await getOwnedWorkspace(workspaceId);
 
 	if (!ws) throw new Error("Forbidden");
