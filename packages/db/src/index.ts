@@ -15,6 +15,7 @@ export {
 	max,
 	ne,
 	notInArray,
+	notLike,
 	or,
 	sql,
 	sum,
