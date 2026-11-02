@@ -14,6 +14,7 @@ const card = (id: string, columnId: string, position: string): CardData => ({
 	projectId: "p",
 	title: id,
 	description: null,
+	hasDescription: false,
 	priority: null,
 	dueDate: null,
 	position,

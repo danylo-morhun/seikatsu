@@ -2,7 +2,11 @@
 // Pure, so a change made offline shows right away and after a reload, until the server has it.
 
 import type { OfflineOps, Op } from "@/features/pwa/lib/ops";
-import type { CardData, ChecklistItemData } from "@/features/seiryu/lib/types";
+import {
+	type CardData,
+	type ChecklistItemData,
+	withCardUpdates,
+} from "@/features/seiryu/lib/types";
 import { generateKeyBetween } from "fractional-indexing";
 
 const byPosition = (a: { position: string }, b: { position: string }) =>
@@ -62,6 +66,7 @@ export function overlayCards(cards: CardData[], ops: Op[], projectId: string): C
 					projectId,
 					title: a.title,
 					description: null,
+					hasDescription: false,
 					priority: null,
 					dueDate: null,
 					position,
@@ -72,7 +77,7 @@ export function overlayCards(cards: CardData[], ops: Op[], projectId: string): C
 		}
 		if (op.name === "seiryu.updateCard") {
 			const { cardId, ...updates } = op.args as OfflineOps["seiryu.updateCard"];
-			list = list.map((c) => (c.id === cardId ? { ...c, ...updates } : c));
+			list = list.map((c) => (c.id === cardId ? withCardUpdates(c, updates) : c));
 		}
 		if (op.name === "seiryu.moveCard") {
 			const a = op.args as OfflineOps["seiryu.moveCard"];

@@ -1,6 +1,4 @@
-import { getCards, getWorkspaceArchivedCards } from "@/features/seiryu/actions/cards";
-import { getColumns } from "@/features/seiryu/actions/columns";
-import { getLabels } from "@/features/seiryu/actions/labels";
+import { getBoard } from "@/features/seiryu/actions/cards";
 import { getProjects } from "@/features/seiryu/actions/projects";
 import { KanbanBoard } from "@/features/seiryu/components/KanbanBoard";
 import { toArchivedRows } from "@/features/seiryu/lib/archive";
@@ -14,30 +12,27 @@ export default async function SeiryuProjectPage({
 	params: Promise<{ projectId: string }>;
 }) {
 	const { projectId } = await params;
-	const projects = await getProjects();
-	const project = projects.find((p) => p.id === projectId);
-
-	// Stale links (a deleted project) land on the Seiryu index instead of a 404.
-	if (!project) redirect("/seiryu");
-
-	const [columns, cards, projectLabels, archived, today, timeZone] = await Promise.all([
-		getColumns(projectId),
-		getCards(projectId),
-		getLabels(projectId),
-		getWorkspaceArchivedCards(projectId),
+	const [projects, board, today, timeZone] = await Promise.all([
+		getProjects(),
+		getBoard(projectId),
 		getUserToday(),
 		getUserTimeZone(),
 	]);
+	const project = projects.find((p) => p.id === projectId);
+
+	// Stale links (a deleted project) land on the Seiryu index instead of a 404.
+	if (!project || !board) redirect("/seiryu");
 
 	return (
 		<Suspense>
 			<KanbanBoard
 				project={{ id: project.id, name: project.name }}
 				today={today}
-				columns={columns}
-				cards={cards}
-				projectLabels={projectLabels}
-				archived={toArchivedRows(archived, timeZone)}
+				columns={board.columns}
+				cards={board.cards}
+				projectLabels={board.labels}
+				archived={toArchivedRows(board.archived, timeZone)}
+				archivedTotal={board.archivedTotal}
 			/>
 		</Suspense>
 	);

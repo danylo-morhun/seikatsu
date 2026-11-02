@@ -1,6 +1,7 @@
 "use client";
 
 import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { getCardDescription } from "@/features/seiryu/actions/cards";
 import { CardDetail } from "@/features/seiryu/components/CardDetail";
 import type { CardData, CardFieldUpdates, LabelData } from "@/features/seiryu/lib/types";
 import {
@@ -23,7 +24,8 @@ import {
 	SheetTitle,
 } from "@seikatsu/ui";
 import Link from "next/link";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { toast } from "sonner";
 
 interface Props {
 	card: CardData | null;
@@ -60,6 +62,37 @@ export function CardSheet({
 	const lastCard = useRef(card);
 	if (card) lastCard.current = card;
 	const shown = card ?? lastCard.current;
+
+	// The board leaves descriptions on the server; an opened card fetches its own, once.
+	const [descriptions, setDescriptions] = useState<Record<string, string | null>>({});
+	const shownId = shown?.id;
+	const fetchDescription =
+		open &&
+		shown != null &&
+		shown.description === undefined &&
+		shown.hasDescription &&
+		!(shown.id in descriptions);
+	useEffect(() => {
+		if (!fetchDescription || !shownId) return;
+		let current = true;
+		getCardDescription(shownId)
+			.catch(() => ({ error: "Couldn't load the description. Check your connection." }))
+			.then((result) => {
+				if (!current) return;
+				if ("error" in result) toast.error(result.error);
+				else setDescriptions((d) => ({ ...d, [shownId]: result.data }));
+			});
+		return () => {
+			current = false;
+		};
+	}, [fetchDescription, shownId]);
+	// Undefined while it loads. A fresh board drops what the sheet saved, so the sheet keeps it.
+	const description =
+		shown?.description !== undefined
+			? shown.description
+			: shown?.hasDescription
+				? descriptions[shown.id]
+				: null;
 
 	return (
 		<>
@@ -122,12 +155,18 @@ export function CardSheet({
 							<div className="flex-1 overflow-y-auto px-4 pt-14 pb-10 [scrollbar-width:thin] sm:px-6 sm:pt-18">
 								<CardDetail
 									key={shown.id}
-									card={shown}
+									card={{ ...shown, description: description ?? null }}
+									descriptionLoading={description === undefined}
 									titleId={titleId}
 									today={today}
 									columns={columns}
 									projectLabels={projectLabels}
-									onSave={(updates) => onSave(shown.id, updates)}
+									onSave={(updates) => {
+										if ("description" in updates) {
+											setDescriptions((d) => ({ ...d, [shown.id]: updates.description ?? null }));
+										}
+										onSave(shown.id, updates);
+									}}
 									onMove={(columnId) => onMove(shown.id, columnId)}
 									onChange={(updates) => onChange(shown.id, updates)}
 									onProjectLabelsChange={onProjectLabelsChange}

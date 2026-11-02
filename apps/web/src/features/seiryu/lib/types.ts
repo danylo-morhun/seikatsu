@@ -32,7 +32,10 @@ export type CardData = {
 	columnId: string;
 	projectId: string;
 	title: string;
-	description: string | null;
+	/** Undefined on the board, which leaves the text on the server until the card opens. */
+	description?: string | null;
+	/** Whether it has a description, loaded or not: the board's note marker. */
+	hasDescription: boolean;
 	priority: Priority | null;
 	dueDate: string | null;
 	position: string;
@@ -45,6 +48,13 @@ export type CardData = {
 export type CardFieldUpdates = Partial<
 	Pick<CardData, "title" | "description" | "priority" | "dueDate">
 >;
+
+/** The card with saved field changes; a new description moves its marker too. */
+export function withCardUpdates(card: CardData, updates: CardFieldUpdates): CardData {
+	return "description" in updates
+		? { ...card, ...updates, hasDescription: !!updates.description }
+		: { ...card, ...updates };
+}
 
 export type ActionResult = { error: string } | { success: true };
 

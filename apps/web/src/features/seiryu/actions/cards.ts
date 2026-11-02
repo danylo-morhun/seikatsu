@@ -1,5 +1,6 @@
 "use server";
 
+import { getColumns } from "@/features/seiryu/actions/columns";
 import {
 	getOwnedCard,
 	getOwnedColumn,
@@ -7,6 +8,7 @@ import {
 	isUuid,
 	requireWorkspace,
 } from "@/features/seiryu/actions/guard";
+import { getLabels } from "@/features/seiryu/actions/labels";
 import {
 	archiveCardSchema,
 	createCardSchema,
@@ -20,6 +22,7 @@ import { generateKeyBetween } from "@/lib/position";
 import {
 	and,
 	asc,
+	count,
 	db,
 	desc,
 	eq,
@@ -32,7 +35,9 @@ import {
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
-type CardRow = typeof seiryuCards.$inferSelect & {
+type CardRow = Omit<typeof seiryuCards.$inferSelect, "description"> & {
+	description?: string | null;
+	hasDescription?: boolean;
 	checklistItems: (typeof seiryuChecklistItems.$inferSelect)[];
 	cardLabels: { label: { id: string; name: string; color: string } }[];
 };
@@ -42,9 +47,10 @@ const cardWith = {
 	cardLabels: { with: { label: true } },
 } as const;
 
-function toCardData({ cardLabels, checklistItems, ...rest }: CardRow) {
+function toCardData({ cardLabels, checklistItems, hasDescription, ...rest }: CardRow) {
 	return {
 		...rest,
+		hasDescription: hasDescription ?? rest.description != null,
 		checklistItems: checklistItems.map(({ id, title, isCompleted, position }) => ({
 			id,
 			title,
@@ -77,23 +83,66 @@ export async function getCard(cardId: string) {
 	return row ? toCardData(row) : null;
 }
 
-export async function getCards(projectId: string) {
-	const workspace = await requireWorkspace();
-	if (!(await isOwnedProject(projectId, workspace.id))) throw new Error("Forbidden");
+/** The newest archived cards the board's archive sheet lists; the rest are in settings. */
+const BOARD_ARCHIVED_LIMIT = 50;
 
-	const rows = await db.query.seiryuCards.findMany({
-		where: and(eq(seiryuCards.projectId, projectId), isNull(seiryuCards.archivedAt)),
-		orderBy: asc(seiryuCards.position),
-		with: cardWith,
-	});
-	return rows.map(toCardData);
+/**
+ * Everything one project's board shows, or null if the project isn't the user's: one
+ * ownership check (getColumns and getLabels reuse its cached answer), then all at once.
+ * Card descriptions stay here until a card is opened (getCardDescription).
+ */
+export async function getBoard(projectId: string) {
+	const workspace = await requireWorkspace();
+	if (!isUuid(projectId) || !(await isOwnedProject(projectId, workspace.id))) return null;
+
+	const [columns, rows, labels, archived, [archivedTotal]] = await Promise.all([
+		getColumns(projectId),
+		db.query.seiryuCards.findMany({
+			columns: { description: false },
+			extras: (card, { sql }) => ({
+				hasDescription: sql<boolean>`${card.description} is not null`.as("has_description"),
+			}),
+			where: and(eq(seiryuCards.projectId, projectId), isNull(seiryuCards.archivedAt)),
+			orderBy: asc(seiryuCards.position),
+			with: cardWith,
+		}),
+		getLabels(projectId),
+		getWorkspaceArchivedCards(projectId, BOARD_ARCHIVED_LIMIT),
+		db
+			.select({ total: count() })
+			.from(seiryuCards)
+			.where(and(eq(seiryuCards.projectId, projectId), isNotNull(seiryuCards.archivedAt))),
+	]);
+	return {
+		columns,
+		cards: rows.map(toCardData),
+		labels,
+		archived,
+		archivedTotal: archivedTotal?.total ?? 0,
+	};
 }
 
-/** Every archived card in the workspace, newest first, with where it lived (settings). */
-/** Archived cards across the workspace, or in one of its projects. */
-export async function getWorkspaceArchivedCards(projectId?: string) {
+/** One card's description, which the board leaves out until the card is opened. */
+export async function getCardDescription(
+	cardId: string,
+): Promise<{ error: string } | { success: true; data: string | null }> {
 	const workspace = await requireWorkspace();
-	return db
+	if (!isUuid(cardId)) return { error: "Card not found" };
+
+	const [card] = await db
+		.select({ description: seiryuCards.description })
+		.from(seiryuCards)
+		.innerJoin(seiryuProjects, eq(seiryuProjects.id, seiryuCards.projectId))
+		.where(and(eq(seiryuCards.id, cardId), eq(seiryuProjects.workspaceId, workspace.id)))
+		.limit(1);
+	if (!card) return { error: "Card not found" };
+	return { success: true, data: card.description };
+}
+
+/** Archived cards across the workspace, or in one of its projects, with where they lived. */
+export async function getWorkspaceArchivedCards(projectId?: string, limit?: number) {
+	const workspace = await requireWorkspace();
+	const query = db
 		.select({
 			id: seiryuCards.id,
 			title: seiryuCards.title,
@@ -113,6 +162,7 @@ export async function getWorkspaceArchivedCards(projectId?: string) {
 			),
 		)
 		.orderBy(asc(seiryuProjects.position), desc(seiryuCards.archivedAt));
+	return limit ? query.limit(limit) : query;
 }
 
 export async function createCard(

@@ -2,6 +2,7 @@
 
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
+import { NOTE_LINK } from "@/components/SettingsSection";
 import { usePendingOps } from "@/features/pwa/lib/use-outbox";
 import { deleteCard, restoreCard } from "@/features/seiryu/actions/cards";
 import { deleteColumn, reorderColumns, updateColumn } from "@/features/seiryu/actions/columns";
@@ -34,6 +35,7 @@ import {
 	type ColumnUpdates,
 	type LabelData,
 	isTempId,
+	withCardUpdates,
 } from "@/features/seiryu/lib/types";
 import { pageKey } from "@/lib/capture-shortcut";
 import { generateKeyBetween, generateNKeysBetween } from "@/lib/position";
@@ -73,6 +75,7 @@ import {
 	SheetTitle,
 	cn,
 } from "@seikatsu/ui";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -85,6 +88,8 @@ interface Props {
 	/** The user's calendar day (tz cookie), so "overdue" matches on server and client. */
 	today: string;
 	archived: ArchivedCardRow[];
+	/** All archived cards; `archived` holds the newest of them. */
+	archivedTotal: number;
 }
 
 const byPosition = (a: { position: string }, b: { position: string }) =>
@@ -109,6 +114,7 @@ export function KanbanBoard({
 	projectLabels: serverLabels,
 	today,
 	archived,
+	archivedTotal,
 }: Props) {
 	const projectId = project.id;
 	// Changes queued offline show until the server has them (lib/overlay.ts).
@@ -269,6 +275,7 @@ export function KanbanBoard({
 				projectId,
 				title,
 				description: null,
+				hasDescription: false,
 				priority: null,
 				dueDate: null,
 				position: generateKeyBetween(last?.position ?? null, null),
@@ -331,7 +338,7 @@ export function KanbanBoard({
 
 	function handleCardSave(cardId: string, updates: CardFieldUpdates) {
 		const title = cardsRef.current.find((c) => c.id === cardId)?.title ?? "card";
-		setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, ...updates } : c)));
+		setCards((prev) => prev.map((c) => (c.id === cardId ? withCardUpdates(c, updates) : c)));
 		trackCards(saveCard(cardId, updates.title ?? title, updates)).then((result) => {
 			if ("error" in result) {
 				toast.error(result.error);
@@ -738,8 +745,8 @@ export function KanbanBoard({
 					>
 						<HugeiconsIcon icon={Archive01Icon} className="h-4 w-4" />
 						Archived
-						{archived.length > 0 && (
-							<span className="font-figures text-xs tabular-nums">{archived.length}</span>
+						{archivedTotal > 0 && (
+							<span className="font-figures text-xs tabular-nums">{archivedTotal}</span>
 						)}
 					</Button>
 				</div>
@@ -874,6 +881,15 @@ export function KanbanBoard({
 					</SheetHeader>
 					<div className="flex-1 overflow-y-auto px-4 pt-2 pb-10 [scrollbar-width:thin] sm:px-6">
 						<SettingsArchive cards={archived} today={today} grouped={false} />
+						{archivedTotal > archived.length && (
+							<p className="mt-4 text-sm text-muted-foreground">
+								{archivedTotal - archived.length} older in{" "}
+								<Link href="/settings/seiryu" prefetch className={NOTE_LINK}>
+									Settings
+								</Link>
+								.
+							</p>
+						)}
 					</div>
 				</SheetContent>
 			</Sheet>
