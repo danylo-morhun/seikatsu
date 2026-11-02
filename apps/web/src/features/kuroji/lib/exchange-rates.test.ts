@@ -1,24 +1,50 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// getExchangeRate always caches through the `exchangeRates` table. No real DB
-// is available in this test, so the cache lookup/insert are stubbed out —
-// only the currency-routing logic under test is exercised.
+// No real DB here: `stored` stands in for the `exchangeRates` table. Exact-date lookups
+// (`select … limit`) and latest-on-or-before lookups (`selectDistinctOn … orderBy`) read it.
+type Row = { from: string; to: string; date: string; rate: string };
+const stored: Row[] = [];
+const inserts: Row[] = [];
+const afterTasks: (() => Promise<unknown>)[] = [];
+
 vi.mock("@seikatsu/db", () => {
-	const selectChain = {
-		from: () => selectChain,
-		where: () => selectChain,
-		limit: async () => [],
+	const exact = { from: () => exact, where: () => exact, limit: async () => [] };
+	const latest = {
+		from: () => latest,
+		where: () => latest,
+		orderBy: async () => {
+			const best = new Map<string, Row>();
+			for (const r of stored) {
+				const prev = best.get(r.from);
+				if (!prev || r.date > prev.date) best.set(r.from, r);
+			}
+			return [...best.values()];
+		},
 	};
 	return {
 		db: {
-			select: () => selectChain,
-			insert: () => ({ values: () => ({ onConflictDoNothing: async () => {} }) }),
+			select: () => exact,
+			selectDistinctOn: () => latest,
+			insert: () => ({
+				values: (v: { date: string; fromCurrency: string; toCurrency: string; rate: string }) => ({
+					onConflictDoNothing: async () => {
+						inserts.push({ from: v.fromCurrency, to: v.toCurrency, date: v.date, rate: v.rate });
+					},
+				}),
+			}),
 		},
 		and: (...args: unknown[]) => args,
 		eq: (...args: unknown[]) => args,
+		lte: (...args: unknown[]) => args,
+		desc: (...args: unknown[]) => args,
+		inArray: (...args: unknown[]) => args,
 		exchangeRates: {},
 	};
 });
+
+vi.mock("next/server", () => ({
+	after: (task: () => Promise<unknown>) => afterTasks.push(task),
+}));
 
 describe("getExchangeRate", () => {
 	let fetchMock: ReturnType<typeof vi.fn>;
@@ -87,5 +113,67 @@ describe("getExchangeRate", () => {
 		expect(rate).toBe(48.2);
 		expect(fetchMock).toHaveBeenCalledTimes(2);
 		expect(fetchMock.mock.calls[1][0]).toContain("date=24.10.2026");
+	});
+});
+
+describe("getRates", () => {
+	let fetchMock: ReturnType<typeof vi.fn>;
+
+	beforeEach(() => {
+		fetchMock = vi.fn();
+		vi.stubGlobal("fetch", fetchMock);
+		stored.length = 0;
+		inserts.length = 0;
+		afterTasks.length = 0;
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		vi.useRealTimers();
+		vi.resetModules();
+	});
+
+	it("uses the latest stored rate and fetches the day after the response", async () => {
+		stored.push({ from: "USD", to: "PLN", date: "2026-10-30", rate: "3.9" });
+		fetchMock.mockResolvedValue({ ok: true, json: async () => ({ rates: { PLN: 3.95 } }) });
+
+		const { getRates } = await import("./exchange-rates");
+		const rates = await getRates(["USD", "PLN"], "PLN", "2026-11-02");
+
+		expect(rates.get("USD")).toBe(3.9);
+		expect(rates.get("PLN")).toBe(1);
+		expect(fetchMock).not.toHaveBeenCalled();
+		expect(afterTasks).toHaveLength(1);
+
+		await afterTasks[0]?.();
+		expect(inserts).toEqual([{ from: "USD", to: "PLN", date: "2026-11-02", rate: "3.95" }]);
+		// Now known for the day: no lookup, no new refresh.
+		expect((await getRates(["USD"], "PLN", "2026-11-02")).get("USD")).toBe(3.95);
+		expect(afterTasks).toHaveLength(1);
+	});
+
+	it("fetches inline only when the pair has no stored rate", async () => {
+		fetchMock.mockResolvedValue({ ok: true, json: async () => ({ rates: { PLN: 4.25 } }) });
+
+		const { getRates } = await import("./exchange-rates");
+		const rates = await getRates(["EUR"], "PLN", "2026-11-02");
+
+		expect(rates.get("EUR")).toBe(4.25);
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		expect(afterTasks).toHaveLength(0);
+	});
+
+	it("remembers a failure for a while instead of retrying every render", async () => {
+		vi.useFakeTimers();
+		fetchMock.mockRejectedValue(new Error("down"));
+
+		const { getRates } = await import("./exchange-rates");
+		expect((await getRates(["EUR"], "PLN", "2026-11-02")).get("EUR")).toBeNull();
+		expect((await getRates(["EUR"], "PLN", "2026-11-02")).get("EUR")).toBeNull();
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+
+		vi.advanceTimersByTime(11 * 60 * 1000);
+		await getRates(["EUR"], "PLN", "2026-11-02");
+		expect(fetchMock).toHaveBeenCalledTimes(2);
 	});
 });
