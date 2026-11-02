@@ -9,6 +9,7 @@ export {
 	sql,
 	gte,
 	lte,
+	lt,
 	inArray,
 	notInArray,
 	ilike,
