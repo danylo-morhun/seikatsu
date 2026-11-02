@@ -9,10 +9,7 @@ export default async function HoshiiPage() {
 	const workspace = await getCurrentWorkspace();
 	if (!workspace) redirect("/");
 	const today = await getUserToday();
-	const [data, chrome] = await Promise.all([
-		getHoshii(workspace, today),
-		getChromeData(workspace, today),
-	]);
+	const [data, chrome] = await Promise.all([getHoshii(workspace, today), getChromeData(workspace)]);
 
 	return (
 		<div className="px-4 pt-6 pb-28 sm:px-8 md:py-8">

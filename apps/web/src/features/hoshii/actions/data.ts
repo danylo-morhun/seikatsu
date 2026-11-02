@@ -37,6 +37,10 @@ export type HoshiiData = {
 };
 
 const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
+// Compared in JS: fractional keys are case-sensitive, a DB collation may not be.
+const byPosition = (a: { position: string }, b: { position: string }) =>
+	a.position < b.position ? -1 : a.position > b.position ? 1 : 0;
+
 /** Everything the pages show, computed once per request. */
 export const getHoshii = cache(async (ws: Workspace, today: string): Promise<HoshiiData> => {
 	const [settings, lists, rows] = await Promise.all([
@@ -79,7 +83,7 @@ export const getHoshii = cache(async (ws: Workspace, today: string): Promise<Hos
 				position: l.position,
 				count: items.filter((i) => i.listId === l.id && live(i)).length,
 			}))
-			.sort((a, b) => (a.position < b.position ? -1 : a.position > b.position ? 1 : 0)),
+			.sort(byPosition),
 		items,
 		piggy,
 		budget,
@@ -175,12 +179,19 @@ export type ChromeData = {
 	kuroji: { walletId: string | null; categoryId: string | null };
 };
 
-export async function getChromeData(ws: Workspace, today: string): Promise<ChromeData> {
-	const { settings, lists } = await getHoshii(ws, today);
+/** What layouts need: settings and list names, without items, rates or balances. */
+export const getChromeData = cache(async (ws: Workspace): Promise<ChromeData> => {
+	const [settings, lists] = await Promise.all([
+		getSettings(ws.id),
+		db
+			.select({ id: hoshiiLists.id, name: hoshiiLists.name, position: hoshiiLists.position })
+			.from(hoshiiLists)
+			.where(eq(hoshiiLists.workspaceId, ws.id)),
+	]);
 	return {
 		workspaceId: ws.id,
 		currency: ws.baseCurrency,
-		lists: lists.map(({ id, name }) => ({ id, name })),
+		lists: lists.sort(byPosition).map(({ id, name }) => ({ id, name })),
 		tiers: {
 			smallBelow: settings.smallBelow,
 			largeFrom: settings.largeFrom,
@@ -193,4 +204,4 @@ export async function getChromeData(ws: Workspace, today: string): Promise<Chrom
 			categoryId: settings.categoryId,
 		},
 	};
-}
+});
