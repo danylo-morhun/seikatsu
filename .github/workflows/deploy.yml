@@ -100,7 +100,7 @@ jobs:
         id: deploy
         run: |
           set -o pipefail
-          VERCEL_GUIDANCE_DISABLED=1 npx -y vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN" | tee "$RUNNER_TEMP/deploy.log"
+          VERCEL_GUIDANCE_DISABLED=1 npx -y vercel@65.9.0 deploy --prod --yes --token "$VERCEL_TOKEN" | tee "$RUNNER_TEMP/deploy.log"
           # stdout may still carry hints besides the URL — take the last deployment URL
           url=$(grep -oE 'https://[a-z0-9-]+\.vercel\.app' "$RUNNER_TEMP/deploy.log" | tail -1)
           [ -n "$url" ] || { echo "No deployment URL in vercel output"; exit 1; }
@@ -119,7 +119,7 @@ jobs:
             echo "Domains already on the new deployment"
           else
             echo "Domains on ${live:-none} — promoting"
-            npx -y vercel@latest promote "$DEPLOY_URL" --yes --token "$VERCEL_TOKEN"
+            npx -y vercel@65.9.0 promote "$DEPLOY_URL" --yes --token "$VERCEL_TOKEN"
           fi
       - name: Smoke test
         id: smoke
@@ -137,4 +137,4 @@ jobs:
           exit $fail
       - name: Roll back on failed smoke test
         if: failure() && steps.smoke.outcome == 'failure' && steps.previous.outputs.url != ''
-        run: npx -y vercel@latest rollback "${{ steps.previous.outputs.url }}" --yes --token "$VERCEL_TOKEN"
+        run: npx -y vercel@65.9.0 rollback "${{ steps.previous.outputs.url }}" --yes --token "$VERCEL_TOKEN"
