@@ -1,5 +1,5 @@
-import { finalizeConnection } from "@/features/kuroji/actions/bank";
 import { type NextRequest, NextResponse } from "next/server";
+import { finalizeConnection } from "@/features/kuroji/actions/bank";
 
 // Enable Banking redirects the end user here after bank authentication with
 // `code` (authorization code) + `state` (the per-connection token we set).

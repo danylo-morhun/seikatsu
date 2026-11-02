@@ -1,37 +1,11 @@
 "use client";
 
-import { AutoHeight } from "@/components/AutoHeight";
-import { Spinner } from "@/components/Spinner";
-import type { getAccounts } from "@/features/kuroji/actions/data";
-import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
-import { CategorySelect } from "@/features/kuroji/components/CategoryCombobox";
-import { CategoryTiles } from "@/features/kuroji/components/CategoryTiles";
-import { TagSelect } from "@/features/kuroji/components/TagSelect";
-import { readCaptureMemory, rememberCapture } from "@/features/kuroji/lib/capture-memory";
-import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
-import { addTagToFormOptions, useFormOptions } from "@/features/kuroji/lib/form-options-store";
-import { formatCurrency } from "@/features/kuroji/lib/format";
-import {
-	QUEUED_TOAST,
-	captureTransaction,
-	editTransaction,
-	isQueued,
-} from "@/features/kuroji/lib/offline";
-import {
-	type AddTransactionFormValues,
-	DESCRIPTION_PLACEHOLDER,
-	type SplitItem,
-	type TxType,
-	addTransactionFormSchema,
-	parseAmount,
-} from "@/features/kuroji/lib/transaction-schema";
-import { useKeptDraft } from "@/hooks/useKeptDraft";
-import { OVERLAY_SELECTOR, isEditable, shouldOpenCapture } from "@/lib/capture-shortcut";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Add01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogHeader,
@@ -47,13 +21,39 @@ import {
 	Tabs,
 	TabsList,
 	TabsTrigger,
-	cn,
 } from "@seikatsu/ui";
 import { format } from "date-fns";
 import * as React from "react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
 import type { Control } from "react-hook-form";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { AutoHeight } from "@/components/AutoHeight";
+import { Spinner } from "@/components/Spinner";
+import type { getAccounts } from "@/features/kuroji/actions/data";
+import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
+import { CategorySelect } from "@/features/kuroji/components/CategoryCombobox";
+import { CategoryTiles } from "@/features/kuroji/components/CategoryTiles";
+import { TagSelect } from "@/features/kuroji/components/TagSelect";
+import { readCaptureMemory, rememberCapture } from "@/features/kuroji/lib/capture-memory";
+import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
+import { addTagToFormOptions, useFormOptions } from "@/features/kuroji/lib/form-options-store";
+import { formatCurrency } from "@/features/kuroji/lib/format";
+import {
+	captureTransaction,
+	editTransaction,
+	isQueued,
+	QUEUED_TOAST,
+} from "@/features/kuroji/lib/offline";
+import {
+	type AddTransactionFormValues,
+	addTransactionFormSchema,
+	DESCRIPTION_PLACEHOLDER,
+	parseAmount,
+	type SplitItem,
+	type TxType,
+} from "@/features/kuroji/lib/transaction-schema";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
+import { isEditable, OVERLAY_SELECTOR, shouldOpenCapture } from "@/lib/capture-shortcut";
 
 type Account = Awaited<ReturnType<typeof getAccounts>>[number];
 type SplitField = SplitItem & { id: string };
@@ -423,7 +423,9 @@ export function AddTransactionModal({
 						name={amountField(txType) as never}
 						render={({
 							field,
-						}: { field: { onChange: (v: unknown) => void; ref: React.Ref<HTMLInputElement> } }) => (
+						}: {
+							field: { onChange: (v: unknown) => void; ref: React.Ref<HTMLInputElement> };
+						}) => (
 							<Input
 								id="add-amount"
 								{...amountInputProps}

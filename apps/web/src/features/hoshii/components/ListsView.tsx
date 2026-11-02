@@ -1,5 +1,8 @@
 "use client";
 
+import { cn } from "@seikatsu/ui";
+import Link from "next/link";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
 import { PageTitle } from "@/components/PageTitle";
 import { QuietAdd } from "@/components/QuietAdd";
@@ -11,9 +14,6 @@ import { requestAdd } from "@/features/hoshii/lib/events";
 import { formatMoney } from "@/features/hoshii/lib/format";
 import { moveRowFocus, targetRow } from "@/features/hoshii/lib/keys";
 import { pageKey } from "@/lib/capture-shortcut";
-import { cn } from "@seikatsu/ui";
-import Link from "next/link";
-import { type CSSProperties, useEffect, useRef, useState } from "react";
 
 const rise = (i: number) => ({ "--i": i }) as CSSProperties;
 

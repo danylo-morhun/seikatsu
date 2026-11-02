@@ -1,10 +1,12 @@
 // Read-side queries for hoshii. Not a "use server" module, so nothing here is
 // callable from the client — import only from RSC pages or server actions.
 
+import { accounts, and, asc, db, eq, hoshiiItems, hoshiiLists } from "@seikatsu/db";
+import { cache } from "react";
 import {
+	getSettings,
 	type HoshiiItemRow,
 	type HoshiiSettingsRow,
-	getSettings,
 } from "@/features/hoshii/actions/guard";
 import type { CoolingTiers } from "@/features/hoshii/lib/cooling";
 import { type Funded, fundPlan, splitQueue } from "@/features/hoshii/lib/queue";
@@ -13,8 +15,6 @@ import { getBalances } from "@/features/kuroji/actions/balances";
 import { accountScope, displayBalance } from "@/features/kuroji/lib/balance";
 import { getRates } from "@/features/kuroji/lib/exchange-rates";
 import type { Workspace } from "@/lib/session";
-import { accounts, and, asc, db, eq, hoshiiItems, hoshiiLists } from "@seikatsu/db";
-import { cache } from "react";
 
 export type HoshiiItem = HoshiiItemRow & {
 	/** The price in the base currency (today's rate); null if unknown. */

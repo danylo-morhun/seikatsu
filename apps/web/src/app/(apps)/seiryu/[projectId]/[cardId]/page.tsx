@@ -1,10 +1,10 @@
+import { notFound } from "next/navigation";
 import { getCard } from "@/features/seiryu/actions/cards";
 import { getColumns } from "@/features/seiryu/actions/columns";
 import { getLabels } from "@/features/seiryu/actions/labels";
 import { getProjects } from "@/features/seiryu/actions/projects";
 import { CardPage } from "@/features/seiryu/components/CardPage";
 import { getUserToday } from "@/lib/timezone";
-import { notFound } from "next/navigation";
 
 export default async function CardDetailPage({
 	params,

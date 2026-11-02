@@ -1,12 +1,9 @@
 "use client";
 
-import { QuietAdd } from "@/components/QuietAdd";
-import { Spinner } from "@/components/Spinner";
-import { FOOTER } from "@/features/keizoku/components/HabitDialog";
-import { useKeptDraft } from "@/hooks/useKeptDraft";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -19,15 +16,18 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-	cn,
 } from "@seikatsu/ui";
 import { useCallback, useEffect, useId, useState, useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { QuietAdd } from "@/components/QuietAdd";
+import { Spinner } from "@/components/Spinner";
+import { FOOTER } from "@/features/keizoku/components/HabitDialog";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 import { extractApplicationFromText } from "../actions/extract";
 import { localToday } from "../lib/format";
 import { type ApplicationFormValues, applicationSchema } from "../lib/kyuu-schemas";
-import { STATUSES, STATUS_CONFIG } from "../lib/stages";
+import { STATUS_CONFIG, STATUSES } from "../lib/stages";
 import type { ResumeFile } from "../lib/types";
 import { ResumeUploadField } from "./ResumeUploadField";
 

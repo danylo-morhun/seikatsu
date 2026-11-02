@@ -1,11 +1,11 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import type { ProjectSummary } from "@/features/seiryu/components/ProjectDialog";
 import { ProjectList } from "@/features/seiryu/components/ProjectList";
 import { SeiryuNavTabs } from "@/features/seiryu/components/SeiryuNavTabs";
 import { rememberAppEntry } from "@/lib/app-entry";
-import { usePathname } from "next/navigation";
-import { useEffect } from "react";
 
 type Project = ProjectSummary & { position: string };
 

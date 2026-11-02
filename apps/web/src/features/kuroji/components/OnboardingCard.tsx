@@ -1,8 +1,8 @@
 "use client";
 
+import { Button } from "@seikatsu/ui";
 import { AppWelcome } from "@/components/AppWelcome";
 import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTransactionModal";
-import { Button } from "@seikatsu/ui";
 
 interface Props {
 	workspaceId: string;

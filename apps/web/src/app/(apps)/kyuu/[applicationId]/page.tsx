@@ -1,8 +1,8 @@
+import { notFound } from "next/navigation";
 import { getApplication } from "@/features/kyuu/actions/applications";
 import { ApplicationPage } from "@/features/kyuu/components/ApplicationPage";
 import { EVENT_KINDS, type EventKind } from "@/features/kyuu/lib/stages";
 import { getUserToday } from "@/lib/timezone";
-import { notFound } from "next/navigation";
 
 export default async function KyuuApplicationPage({
 	params,

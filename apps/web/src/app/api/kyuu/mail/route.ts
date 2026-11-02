@@ -1,9 +1,9 @@
-import { fillCountries } from "@/features/kyuu/actions/country-fill";
-import { syncMail, workspaceOfMailKey } from "@/features/kyuu/actions/mail-sync";
 import { db, eq, kyuuMailKeys } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
-import { type NextRequest, NextResponse, after } from "next/server";
+import { after, type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { fillCountries } from "@/features/kyuu/actions/country-fill";
+import { syncMail, workspaceOfMailKey } from "@/features/kyuu/actions/mail-sync";
 
 // The Gmail script (Settings → Kyuu → Mail) posts the last few days of mail here every
 // 30 minutes with `Authorization: Bearer <key>`. Mail already read is skipped; the rest is

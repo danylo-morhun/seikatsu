@@ -1,5 +1,25 @@
 "use client";
 
+import {
+	Archive01Icon,
+	CheckmarkCircle02Icon,
+	Note01Icon,
+	PencilEdit01Icon,
+	SidebarRightIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ContextMenuItem, ContextMenuSeparator, ContextMenuShortcut } from "@seikatsu/ui";
+import { useRouter } from "next/navigation";
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useOptimistic,
+	useRef,
+	useState,
+	useTransition,
+} from "react";
+import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
 import { startNavigationProgress } from "@/components/NavigationProgress";
@@ -22,26 +42,6 @@ import { overlayToday } from "@/features/keizoku/lib/overlay";
 import { rate, runUnit, tally } from "@/features/keizoku/lib/streak";
 import { usePendingOps } from "@/features/pwa/lib/use-outbox";
 import { pageKey } from "@/lib/capture-shortcut";
-import {
-	Archive01Icon,
-	CheckmarkCircle02Icon,
-	Note01Icon,
-	PencilEdit01Icon,
-	SidebarRightIcon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ContextMenuItem, ContextMenuSeparator, ContextMenuShortcut } from "@seikatsu/ui";
-import { useRouter } from "next/navigation";
-import {
-	useCallback,
-	useEffect,
-	useMemo,
-	useOptimistic,
-	useRef,
-	useState,
-	useTransition,
-} from "react";
-import { toast } from "sonner";
 
 type Patch = { habitId: string; date: string; done: boolean } | { habitId: string; remove: true };
 

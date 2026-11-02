@@ -1,7 +1,7 @@
-import { syncConnection } from "@/features/kuroji/lib/bank-sync";
 import { bankConnections, db, inArray } from "@seikatsu/db";
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
+import { syncConnection } from "@/features/kuroji/lib/bank-sync";
 
 // Daily Vercel Cron (see vercel.json). Syncs every live connection. Guarded by
 // CRON_SECRET: Vercel Cron sends `Authorization: Bearer $CRON_SECRET`.

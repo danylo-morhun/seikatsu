@@ -1,15 +1,44 @@
 "use client";
 
+import {
+	ArrowLeft01Icon,
+	Calendar03Icon,
+	Delete01Icon,
+	Link01Icon,
+	MoreHorizontalIcon,
+	PencilEdit01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+	Button,
+	cn,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuShortcut,
+	DropdownMenuTrigger,
+	Input,
+	Label,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@seikatsu/ui";
+import Link from "next/link";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { QuietAdd } from "@/components/QuietAdd";
 import { usePendingOps } from "@/features/pwa/lib/use-outbox";
 import {
-	type SeriesBook,
-	type TsundokuBook,
 	deleteBook,
+	type SeriesBook,
 	setBookShelves,
 	setFinishedAt,
 	setStartedAt,
+	type TsundokuBook,
 	updateBook,
 } from "@/features/tsundoku/actions/books";
 import type { TsundokuQuote } from "@/features/tsundoku/actions/quotes";
@@ -43,35 +72,6 @@ import { finishDatePatch, progressPatch, statusPatch } from "@/features/tsundoku
 import { daysBetween } from "@/features/tsundoku/lib/streak";
 import { useDraft } from "@/hooks/useDraft";
 import { pageKey } from "@/lib/capture-shortcut";
-import {
-	ArrowLeft01Icon,
-	Calendar03Icon,
-	Delete01Icon,
-	Link01Icon,
-	MoreHorizontalIcon,
-	PencilEdit01Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-	Button,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuShortcut,
-	DropdownMenuTrigger,
-	Input,
-	Label,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-	cn,
-} from "@seikatsu/ui";
-import Link from "next/link";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 
 interface Props {
 	book: TsundokuBook;

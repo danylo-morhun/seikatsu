@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { GeminiError, askGemini, outputText } from "./gemini";
+import { askGemini, GeminiError, outputText } from "./gemini";
 
 const answer = (value: unknown) => ({
 	ok: true,
@@ -26,7 +26,6 @@ describe("askGemini", () => {
 	afterEach(() => {
 		vi.unstubAllGlobals();
 		vi.useRealTimers();
-		// biome-ignore lint/performance/noDelete: process.env assignment stringifies undefined, unlike a real delete
 		delete process.env.GEMINI_API_KEY;
 	});
 

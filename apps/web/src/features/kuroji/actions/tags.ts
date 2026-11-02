@@ -1,8 +1,8 @@
 "use server";
 
-import { getOwnedWorkspace } from "@/lib/session";
 import { db, tags } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
+import { getOwnedWorkspace } from "@/lib/session";
 
 export type Tag = { id: string; name: string; color: string | null };
 

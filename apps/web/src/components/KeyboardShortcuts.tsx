@@ -1,12 +1,10 @@
 "use client";
 
-import { Kbd } from "@/components/Kbd";
-import { pageKey } from "@/lib/capture-shortcut";
-import { SHORTCUTS_EVENT, hasAppShortcuts, shortcutsFor } from "@/lib/shortcuts";
 import { KeyboardIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -15,10 +13,12 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
-	cn,
 } from "@seikatsu/ui";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Kbd } from "@/components/Kbd";
+import { pageKey } from "@/lib/capture-shortcut";
+import { hasAppShortcuts, SHORTCUTS_EVENT, shortcutsFor } from "@/lib/shortcuts";
 
 /** The header's way in to the "?" sheet, so the key is found without knowing it. Desktop only. */
 export function ShortcutsButton() {

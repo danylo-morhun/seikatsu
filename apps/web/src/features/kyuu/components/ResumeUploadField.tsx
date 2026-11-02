@@ -1,6 +1,5 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
 import { Delete01Icon, Download01Icon, ImageUpload01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -14,6 +13,7 @@ import {
 } from "@seikatsu/ui";
 import * as React from "react";
 import { toast } from "sonner";
+import { Spinner } from "@/components/Spinner";
 import { uploadResumeFile } from "../actions/resume";
 import type { ResumeFile } from "../lib/types";
 

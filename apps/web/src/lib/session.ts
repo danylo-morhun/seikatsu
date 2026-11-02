@@ -2,10 +2,10 @@
 // `cache()` memoizes per server request, so layouts, pages and the data functions they
 // call share one auth() decode and one workspace query instead of repeating them.
 
-import { auth } from "@/auth";
 import { accounts, db, eq, workspaces } from "@seikatsu/db";
 import { cache } from "react";
 import { z } from "zod";
+import { auth } from "@/auth";
 
 export type Workspace = typeof workspaces.$inferSelect;
 

@@ -1,5 +1,5 @@
-import { isUncategorized } from "@/features/kuroji/lib/quick-categorize";
 import { cn } from "@seikatsu/ui";
+import { isUncategorized } from "@/features/kuroji/lib/quick-categorize";
 
 interface Props {
 	fromId: string;

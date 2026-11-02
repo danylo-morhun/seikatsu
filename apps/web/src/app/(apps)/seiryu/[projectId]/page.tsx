@@ -1,10 +1,10 @@
+import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { getBoard } from "@/features/seiryu/actions/cards";
 import { getProjects } from "@/features/seiryu/actions/projects";
 import { KanbanBoard } from "@/features/seiryu/components/KanbanBoard";
 import { toArchivedRows } from "@/features/seiryu/lib/archive";
 import { getUserTimeZone, getUserToday } from "@/lib/timezone";
-import { redirect } from "next/navigation";
-import { Suspense } from "react";
 
 export default async function SeiryuProjectPage({
 	params,

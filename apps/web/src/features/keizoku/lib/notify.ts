@@ -1,9 +1,9 @@
+import { and, db, gte, inArray, keizokuHabitLogs, lte } from "@seikatsu/db";
 import { listDueToday } from "@/features/keizoku/lib/due-today";
 import { mondayOf } from "@/features/keizoku/lib/streak";
 import type { Notifier } from "@/features/pwa/lib/notifiers";
 import { sendOnce } from "@/features/pwa/lib/push";
 import { isTimeDue } from "@/features/pwa/lib/schedule";
-import { and, db, gte, inArray, keizokuHabitLogs, lte } from "@seikatsu/db";
 
 /** Evening reminder: the habits still open today, once a day at the chosen time. */
 export const notifyKeizoku: Notifier = async ({ workspaceId, prefs, clock }) => {

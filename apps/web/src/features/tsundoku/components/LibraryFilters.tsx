@@ -1,14 +1,5 @@
 "use client";
 
-import type { TsundokuShelf } from "@/features/tsundoku/actions/shelves";
-import { formatStars } from "@/features/tsundoku/components/Stars";
-import { SEGMENTS, type Segment } from "@/features/tsundoku/lib/constants";
-import {
-	type LibraryFilters,
-	SORTS,
-	type Sort,
-	menuFilterCount,
-} from "@/features/tsundoku/lib/filters";
 import {
 	Cancel01Icon,
 	FilterHorizontalIcon,
@@ -19,6 +10,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
+	cn,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuLabel,
@@ -30,9 +22,17 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 	Input,
-	cn,
 } from "@seikatsu/ui";
 import { forwardRef } from "react";
+import type { TsundokuShelf } from "@/features/tsundoku/actions/shelves";
+import { formatStars } from "@/features/tsundoku/components/Stars";
+import { SEGMENTS, type Segment } from "@/features/tsundoku/lib/constants";
+import {
+	type LibraryFilters,
+	menuFilterCount,
+	SORTS,
+	type Sort,
+} from "@/features/tsundoku/lib/filters";
 
 const ALL = "all";
 
@@ -115,7 +115,10 @@ export const SearchBox = forwardRef<
 export function ViewSwitch({
 	view,
 	onChange,
-}: { view: "grid" | "list"; onChange: (view: "grid" | "list") => void }) {
+}: {
+	view: "grid" | "list";
+	onChange: (view: "grid" | "list") => void;
+}) {
 	return (
 		<div
 			role="radiogroup"

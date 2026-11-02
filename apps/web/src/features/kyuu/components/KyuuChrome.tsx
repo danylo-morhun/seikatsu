@@ -1,9 +1,5 @@
 "use client";
 
-import { ConfirmDelete } from "@/components/ConfirmDelete";
-import { startNavigationProgress } from "@/components/NavigationProgress";
-import { TabBar, TabBarAction } from "@/components/TabBar";
-import { pageKey } from "@/lib/capture-shortcut";
 import {
 	Add01Icon,
 	ChartLineData01Icon,
@@ -13,6 +9,10 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { startNavigationProgress } from "@/components/NavigationProgress";
+import { TabBar, TabBarAction } from "@/components/TabBar";
+import { pageKey } from "@/lib/capture-shortcut";
 import { createApplication, deleteApplication } from "../actions/applications";
 import {
 	DELETE_APPLICATION_EVENT,

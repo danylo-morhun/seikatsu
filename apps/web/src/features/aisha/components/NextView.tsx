@@ -1,5 +1,21 @@
 "use client";
 
+import {
+	Delete01Icon,
+	PencilEdit01Icon,
+	RefreshIcon,
+	Tick02Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+	Button,
+	ContextMenuItem,
+	ContextMenuSeparator,
+	ContextMenuShortcut,
+	cn,
+} from "@seikatsu/ui";
+import { type CSSProperties, useEffect, useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
 import { PageTitle } from "@/components/PageTitle";
@@ -31,22 +47,6 @@ import {
 import { moveRowFocus, targetRow } from "@/features/aisha/lib/keys";
 import type { Queued } from "@/features/aisha/lib/queue";
 import { pageKey } from "@/lib/capture-shortcut";
-import {
-	Delete01Icon,
-	PencilEdit01Icon,
-	RefreshIcon,
-	Tick02Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-	Button,
-	ContextMenuItem,
-	ContextMenuSeparator,
-	ContextMenuShortcut,
-	cn,
-} from "@seikatsu/ui";
-import { type CSSProperties, useEffect, useRef, useState, useTransition } from "react";
-import { toast } from "sonner";
 
 const rise = (i: number) => ({ "--i": i }) as CSSProperties;
 const FAILED = { error: "Couldn't save. Check your connection." };

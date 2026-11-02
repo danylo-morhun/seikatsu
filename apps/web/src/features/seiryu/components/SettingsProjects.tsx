@@ -1,8 +1,5 @@
 "use client";
 
-import { ConfirmDelete } from "@/components/ConfirmDelete";
-import { deleteProject } from "@/features/seiryu/actions/projects";
-import { ProjectDialog, type ProjectSummary } from "@/features/seiryu/components/ProjectDialog";
 import { Delete01Icon, MoreHorizontalIcon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -16,6 +13,9 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { deleteProject } from "@/features/seiryu/actions/projects";
+import { ProjectDialog, type ProjectSummary } from "@/features/seiryu/components/ProjectDialog";
 
 type Row = ProjectSummary & { openCards: number };
 

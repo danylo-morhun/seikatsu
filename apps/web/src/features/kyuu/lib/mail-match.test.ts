@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-	type MailCandidate,
-	type MailMessage,
 	companyWords,
 	fromHiringPlatform,
+	type MailCandidate,
+	type MailMessage,
 	mailCandidates,
 } from "./mail-match";
 

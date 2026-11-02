@@ -1,12 +1,12 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
-import { requestEmailChange } from "@/features/auth/actions/settings";
-import type { SettingsState } from "@/features/auth/actions/settings";
 import { Button } from "@seikatsu/ui/button";
 import { Input } from "@seikatsu/ui/input";
 import { Label } from "@seikatsu/ui/label";
 import { useActionState, useId, useState } from "react";
+import { Spinner } from "@/components/Spinner";
+import type { SettingsState } from "@/features/auth/actions/settings";
+import { requestEmailChange } from "@/features/auth/actions/settings";
 
 interface Props {
 	pendingEmail: string | null;

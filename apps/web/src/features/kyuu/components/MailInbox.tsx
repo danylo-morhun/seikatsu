@@ -1,25 +1,25 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
 import { LinkSquare02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
+	cn,
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-	cn,
 } from "@seikatsu/ui";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { Spinner } from "@/components/Spinner";
 import {
-	type MailChoice,
-	type MailItem,
 	confirmMail,
 	dismissMail,
+	type MailChoice,
+	type MailItem,
 	markMailSeen,
 	undoMail,
 } from "../actions/mail";

@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import type { CSSProperties } from "react";
 import { PageTitle } from "@/components/PageTitle";
 import { YearSwitch } from "@/components/YearSwitch";
 import { getCar, getCurrentVehicle } from "@/features/aisha/actions/data";
@@ -5,8 +7,6 @@ import { MonthRows, YearFigures, YearServices } from "@/features/aisha/component
 import { CURRENCY } from "@/features/aisha/lib/constants";
 import { carYear, carYears } from "@/features/aisha/lib/year";
 import { getUserToday } from "@/lib/timezone";
-import { redirect } from "next/navigation";
-import type { CSSProperties } from "react";
 
 const rise = (i: number) => ({ "--i": i }) as CSSProperties;
 

@@ -1,15 +1,15 @@
 "use client";
 
+import { Book01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { cn } from "@seikatsu/ui";
+import { useState } from "react";
 import {
 	coverSrc,
 	coverSrcSet,
 	storedCoverSrc,
 	storedCoverSrcSet,
 } from "@/features/tsundoku/lib/cover";
-import { Book01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { cn } from "@seikatsu/ui";
-import { useState } from "react";
 
 interface Props {
 	coverUrl: string | null;

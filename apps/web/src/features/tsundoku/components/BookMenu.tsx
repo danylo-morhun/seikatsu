@@ -1,9 +1,5 @@
 "use client";
 
-import type { LibraryBook } from "@/features/tsundoku/actions/books";
-import type { TsundokuShelf } from "@/features/tsundoku/actions/shelves";
-import { formatStars } from "@/features/tsundoku/components/Stars";
-import { BOOK_STATUSES, type BookStatus, STATUS_CONFIG } from "@/features/tsundoku/lib/constants";
 import {
 	BookOpen01Icon,
 	Bookshelf01Icon,
@@ -26,6 +22,10 @@ import {
 	ContextMenuSubTrigger,
 } from "@seikatsu/ui";
 import Link from "next/link";
+import type { LibraryBook } from "@/features/tsundoku/actions/books";
+import type { TsundokuShelf } from "@/features/tsundoku/actions/shelves";
+import { formatStars } from "@/features/tsundoku/components/Stars";
+import { BOOK_STATUSES, type BookStatus, STATUS_CONFIG } from "@/features/tsundoku/lib/constants";
 
 export interface BookActions {
 	open: (bookId: string) => void;

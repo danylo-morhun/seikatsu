@@ -1,8 +1,8 @@
+import { aishaVehicles, db, eq } from "@seikatsu/db";
 import { getCar } from "@/features/aisha/actions/data";
 import type { Notifier } from "@/features/pwa/lib/notifiers";
 import { sendNew } from "@/features/pwa/lib/push";
 import { isTimeDue } from "@/features/pwa/lib/schedule";
-import { aishaVehicles, db, eq } from "@seikatsu/db";
 
 /** Days-left marks a document is announced at; each mark once per expiry date. */
 const DOCUMENT_MARKS = [30, 7, 1, 0] as const;

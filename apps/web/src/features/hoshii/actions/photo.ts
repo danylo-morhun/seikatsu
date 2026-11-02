@@ -1,9 +1,9 @@
 // A want's photos (its own and each link's), copied from the shops into our blob store:
 // shop links rot. Not a "use server" module — runs inside actions (often in `after()`).
 
-import { fetchImage, publicUrl } from "@/features/hoshii/lib/fetch-web";
-import { type HoshiiLink, db, eq, hoshiiItems } from "@seikatsu/db";
+import { db, eq, type HoshiiLink, hoshiiItems } from "@seikatsu/db";
 import { del, put } from "@vercel/blob";
+import { fetchImage, publicUrl } from "@/features/hoshii/lib/fetch-web";
 
 type Photos = { imageUrl: string | null; links: HoshiiLink[] };
 

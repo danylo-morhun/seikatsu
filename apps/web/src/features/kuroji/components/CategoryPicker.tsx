@@ -1,8 +1,8 @@
 "use client";
 
-import { CategoryList } from "@/features/kuroji/components/CategoryList";
 import { Popover, PopoverAnchor, PopoverContent } from "@seikatsu/ui";
 import { type RefObject, useState } from "react";
+import { CategoryList } from "@/features/kuroji/components/CategoryList";
 
 type Category = { id: string; name: string };
 

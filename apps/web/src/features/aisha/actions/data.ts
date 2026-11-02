@@ -1,19 +1,6 @@
 // Read-side queries for aisha. Not a "use server" module, so nothing here is
 // callable from the client — import only from RSC pages or server actions.
 
-import type { AishaVehicle } from "@/features/aisha/actions/vehicles";
-import type { ChromeData } from "@/features/aisha/components/AishaChrome";
-import {
-	type DueStatus,
-	type MaintenanceDue,
-	compareUrgency,
-	documentDue,
-	kmPerDay,
-	maintenanceDue,
-} from "@/features/aisha/lib/due";
-import { currentKm } from "@/features/aisha/lib/odometer";
-import { type Queued, buildQueue } from "@/features/aisha/lib/queue";
-import { getCurrentWorkspace } from "@/lib/session";
 import {
 	aishaDocuments,
 	aishaMaintenanceItems,
@@ -27,6 +14,19 @@ import {
 	eq,
 } from "@seikatsu/db";
 import { cache } from "react";
+import type { AishaVehicle } from "@/features/aisha/actions/vehicles";
+import type { ChromeData } from "@/features/aisha/components/AishaChrome";
+import {
+	compareUrgency,
+	type DueStatus,
+	documentDue,
+	kmPerDay,
+	type MaintenanceDue,
+	maintenanceDue,
+} from "@/features/aisha/lib/due";
+import { currentKm } from "@/features/aisha/lib/odometer";
+import { buildQueue, type Queued } from "@/features/aisha/lib/queue";
+import { getCurrentWorkspace } from "@/lib/session";
 
 export type AishaItem = typeof aishaMaintenanceItems.$inferSelect;
 export type AishaDocument = typeof aishaDocuments.$inferSelect;

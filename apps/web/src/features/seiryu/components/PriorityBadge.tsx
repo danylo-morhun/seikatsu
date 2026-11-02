@@ -1,5 +1,5 @@
-import { PRIORITY_CONFIG, type Priority } from "@/features/seiryu/lib/constants";
 import { cn } from "@seikatsu/ui";
+import { PRIORITY_CONFIG, type Priority } from "@/features/seiryu/lib/constants";
 
 interface Props {
 	priority: Priority;

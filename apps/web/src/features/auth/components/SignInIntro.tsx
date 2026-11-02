@@ -1,6 +1,6 @@
-import { APPS_CONFIG } from "@/lib/app-themes";
 import { cn } from "@seikatsu/ui";
 import type { CSSProperties } from "react";
+import { APPS_CONFIG } from "@/lib/app-themes";
 
 /** Beside the sign-in: what seikatsu is, and the apps inside, for someone who has never seen it. */
 export function SignInIntro() {

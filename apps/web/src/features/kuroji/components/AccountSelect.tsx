@@ -1,6 +1,5 @@
 "use client";
 
-import type { getAccounts } from "@/features/kuroji/actions/data";
 import {
 	Select,
 	SelectContent,
@@ -10,8 +9,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@seikatsu/ui";
-import { Controller } from "react-hook-form";
 import type { Control } from "react-hook-form";
+import { Controller } from "react-hook-form";
+import type { getAccounts } from "@/features/kuroji/actions/data";
 
 type Account = Awaited<ReturnType<typeof getAccounts>>[number];
 

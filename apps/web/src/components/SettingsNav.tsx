@@ -1,8 +1,8 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { PageTab, PageTabs } from "@/components/PageTabs";
 import { APPS_CONFIG } from "@/lib/app-themes";
-import { usePathname } from "next/navigation";
 
 // Only apps that have a settings page (app/(apps)/settings/<app>); others would 404.
 const APPS_WITH_SETTINGS = new Set([

@@ -1,10 +1,10 @@
+import { redirect } from "next/navigation";
 import { getCar, getCurrentVehicle } from "@/features/aisha/actions/data";
 import { AishaWelcome } from "@/features/aisha/components/AishaWelcome";
 import { NextView } from "@/features/aisha/components/NextView";
 import { CURRENCY } from "@/features/aisha/lib/constants";
 import { getCurrentWorkspace } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
-import { redirect } from "next/navigation";
 
 export default async function AishaPage() {
 	const [workspace, vehicle, today] = await Promise.all([

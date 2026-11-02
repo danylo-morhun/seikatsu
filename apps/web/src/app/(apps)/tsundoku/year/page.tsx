@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { PageTitle } from "@/components/PageTitle";
 import { YearSwitch } from "@/components/YearSwitch";
 import { getGoal } from "@/features/tsundoku/actions/goals";
@@ -14,7 +15,6 @@ import {
 	YearFigures,
 } from "@/features/tsundoku/components/YearSections";
 import { getUserToday } from "@/lib/timezone";
-import type { CSSProperties } from "react";
 
 const rise = (i: number) => ({ "--i": i }) as CSSProperties;
 

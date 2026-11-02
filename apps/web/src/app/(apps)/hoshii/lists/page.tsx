@@ -1,8 +1,8 @@
+import { redirect } from "next/navigation";
 import { getChromeData, getHoshii, live } from "@/features/hoshii/actions/data";
 import { ListsView } from "@/features/hoshii/components/ListsView";
 import { getCurrentWorkspace } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
-import { redirect } from "next/navigation";
 
 const ORDER = { decide: 0, plan: 1, cooling: 2, bought: 3, released: 4 } as const;
 

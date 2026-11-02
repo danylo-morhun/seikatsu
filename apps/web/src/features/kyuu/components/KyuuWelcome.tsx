@@ -1,8 +1,8 @@
 "use client";
 
+import { Button } from "@seikatsu/ui";
 import { AppWelcome } from "@/components/AppWelcome";
 import { requestNewApplication } from "@/features/kyuu/lib/events";
-import { Button } from "@seikatsu/ui";
 
 const STEPS = [
 	{

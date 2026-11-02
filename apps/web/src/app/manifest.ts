@@ -1,5 +1,5 @@
-import { APPS_CONFIG } from "@/lib/app-themes";
 import type { MetadataRoute } from "next";
+import { APPS_CONFIG } from "@/lib/app-themes";
 
 export default function manifest(): MetadataRoute.Manifest {
 	return {

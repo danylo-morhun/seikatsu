@@ -1,13 +1,13 @@
 "use client";
 
+import { Button, cn } from "@seikatsu/ui";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { AppWelcome } from "@/components/AppWelcome";
 import { Spinner } from "@/components/Spinner";
 import { createHabit } from "@/features/keizoku/actions/habits";
 import { requestNewHabit } from "@/features/keizoku/lib/events";
 import type { HabitFormValues } from "@/features/keizoku/lib/keizoku-schemas";
-import { Button, cn } from "@seikatsu/ui";
-import { useState, useTransition } from "react";
-import { toast } from "sonner";
 
 const STEPS = [
 	{

@@ -1,10 +1,5 @@
 "use client";
 
-import { useDesign } from "@/components/DesignProvider";
-import { signOutAction } from "@/features/auth/actions/auth";
-import { readAppEntry } from "@/lib/app-entry";
-import { APPS_CONFIG } from "@/lib/app-themes";
-import { SHORTCUTS_EVENT } from "@/lib/shortcuts";
 import {
 	ArrowUpDownIcon,
 	KeyboardIcon,
@@ -14,6 +9,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Avatar,
+	cn,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -30,11 +26,15 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
-	cn,
 } from "@seikatsu/ui";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useDesign } from "@/components/DesignProvider";
+import { signOutAction } from "@/features/auth/actions/auth";
+import { readAppEntry } from "@/lib/app-entry";
+import { APPS_CONFIG } from "@/lib/app-themes";
+import { SHORTCUTS_EVENT } from "@/lib/shortcuts";
 
 interface User {
 	id: string;

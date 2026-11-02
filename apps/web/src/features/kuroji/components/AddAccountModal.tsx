@@ -1,12 +1,5 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
-import { createAccount } from "@/features/kuroji/actions/accounts";
-import type { getAccounts } from "@/features/kuroji/actions/data";
-import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
-import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
-import { optionalAmountSchema, parseAmount } from "@/features/kuroji/lib/transaction-schema";
-import { useKeptDraft } from "@/hooks/useKeptDraft";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
@@ -28,6 +21,12 @@ import * as React from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Spinner } from "@/components/Spinner";
+import { createAccount } from "@/features/kuroji/actions/accounts";
+import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
+import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
+import { optionalAmountSchema, parseAmount } from "@/features/kuroji/lib/transaction-schema";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 
 const ACCOUNT_TYPES = ["ASSET", "LIABILITY", "INCOME", "EXPENSE"] as const;
 /** The parent picker's top-level choice: Radix Select can't hold an empty value. */
@@ -42,12 +41,14 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-type Account = Awaited<ReturnType<typeof getAccounts>>[number];
 
 export function AddAccountModal({
 	workspaceId,
 	baseCurrency,
-}: { workspaceId: string; baseCurrency?: string }) {
+}: {
+	workspaceId: string;
+	baseCurrency?: string;
+}) {
 	const [open, setOpen] = React.useState(false);
 	const { accounts } = useFormOptions(workspaceId, open);
 

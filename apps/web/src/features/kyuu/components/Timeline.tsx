@@ -1,11 +1,11 @@
 "use client";
 
+import { Mail01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Button, cn, Input, Label } from "@seikatsu/ui";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { QuietAdd } from "@/components/QuietAdd";
 import { Spinner } from "@/components/Spinner";
-import { Mail01Icon, SentIcon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Button, Input, Label, cn } from "@seikatsu/ui";
-import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { deleteEvent, updateEvent } from "../actions/progress";
 import { formatDay, formatWhen, localToday } from "../lib/format";
 import { addEvent } from "../lib/offline";

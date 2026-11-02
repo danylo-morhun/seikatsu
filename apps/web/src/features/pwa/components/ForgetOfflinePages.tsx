@@ -1,8 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { clearOutbox } from "@/features/pwa/lib/outbox";
 import { forgetPages } from "@/features/pwa/lib/sw-client";
-import { useEffect } from "react";
 
 /**
  * Rendered on the signed-out landing: cached pages and queued changes belong to the last

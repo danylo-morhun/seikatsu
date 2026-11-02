@@ -1,11 +1,10 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
-import { updateWorkspace } from "@/features/kuroji/actions/workspace";
-import { CURRENCIES } from "@/features/kuroji/lib/constants";
 import { Button, Input, Label } from "@seikatsu/ui";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { Spinner } from "@/components/Spinner";
+import { updateWorkspace } from "@/features/kuroji/actions/workspace";
 
 interface Props {
 	workspaceId: string;

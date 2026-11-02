@@ -1,10 +1,10 @@
 "use client";
 
-import { startNavigationProgress } from "@/components/NavigationProgress";
-import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
-import { pageKey } from "@/lib/capture-shortcut";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { startNavigationProgress } from "@/components/NavigationProgress";
+import { buildTabHref, type KurojiTab } from "@/features/kuroji/lib/tabs";
+import { pageKey } from "@/lib/capture-shortcut";
 
 const TAB_KEYS: Record<string, KurojiTab> = {
 	"1": "expense",

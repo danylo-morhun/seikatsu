@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-	type PlanAccount,
 	allocateFunds,
 	buildPlan,
 	forecastOf,
 	monthBounds,
 	monthProgress,
 	occurrencesBetween,
+	type PlanAccount,
 	shiftMonth,
 } from "./plan";
 

@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Suspense } from "react";
 import { StartHere } from "@/features/home/components/StartHere";
 import {
 	type AppHref,
@@ -15,7 +17,6 @@ import {
 } from "@/features/home/components/TodayIslands";
 import { km, longDate, money, plural } from "@/features/home/lib/format";
 import {
-	type Started,
 	loadCar,
 	loadCards,
 	loadHabits,
@@ -23,13 +24,12 @@ import {
 	loadMoney,
 	loadReading,
 	loadWants,
+	type Started,
 } from "@/features/home/lib/today";
 import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTransactionModal";
 import { ProgressMeter } from "@/features/tsundoku/components/ProgressMeter";
 import { APPS_CONFIG } from "@/lib/app-themes";
 import type { Workspace } from "@/lib/session";
-import Link from "next/link";
-import { Suspense } from "react";
 
 const APP_HREFS = Object.keys(APPS_CONFIG) as AppHref[];
 

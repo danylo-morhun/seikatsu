@@ -1,35 +1,19 @@
 "use client";
 
-import { ContextArea, openContextMenu } from "@/components/ContextArea";
-import { PageTitle } from "@/components/PageTitle";
-import { QuietAdd } from "@/components/QuietAdd";
-import { FIGURES_ROW, Figure } from "@/features/aisha/components/Figure";
-import type { ChromeData, HoshiiData, HoshiiItem, PlanEntry } from "@/features/hoshii/actions/data";
-import { type ItemActions, stageOf, useItemLayer } from "@/features/hoshii/components/ItemLayer";
-import { Thumb } from "@/features/hoshii/components/Thumb";
-import { daysBetween, formatDay } from "@/features/hoshii/lib/dates";
-import { requestAdd } from "@/features/hoshii/lib/events";
-import { formatMoney, plural } from "@/features/hoshii/lib/format";
-import { moveRowFocus, targetRow } from "@/features/hoshii/lib/keys";
-import { QUEUED_TOAST, sendReorder } from "@/features/hoshii/lib/offline";
-import { linksText } from "@/features/hoshii/lib/product";
-import { fundPlan } from "@/features/hoshii/lib/queue";
-import { pageKey } from "@/lib/capture-shortcut";
-import { generateKeyBetween } from "@/lib/position";
 import {
+	closestCenter,
 	DndContext,
 	type DragEndEvent,
 	KeyboardSensor,
 	type Modifier,
 	MouseSensor,
 	TouchSensor,
-	closestCenter,
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
 import {
-	SortableContext,
 	arrayMove,
+	SortableContext,
 	sortableKeyboardCoordinates,
 	useSortable,
 	verticalListSortingStrategy,
@@ -54,6 +38,22 @@ import {
 import Link from "next/link";
 import { type CSSProperties, useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ContextArea, openContextMenu } from "@/components/ContextArea";
+import { PageTitle } from "@/components/PageTitle";
+import { QuietAdd } from "@/components/QuietAdd";
+import { FIGURES_ROW, Figure } from "@/features/aisha/components/Figure";
+import type { ChromeData, HoshiiData, HoshiiItem, PlanEntry } from "@/features/hoshii/actions/data";
+import { type ItemActions, stageOf, useItemLayer } from "@/features/hoshii/components/ItemLayer";
+import { Thumb } from "@/features/hoshii/components/Thumb";
+import { daysBetween, formatDay } from "@/features/hoshii/lib/dates";
+import { requestAdd } from "@/features/hoshii/lib/events";
+import { formatMoney, plural } from "@/features/hoshii/lib/format";
+import { moveRowFocus, targetRow } from "@/features/hoshii/lib/keys";
+import { QUEUED_TOAST, sendReorder } from "@/features/hoshii/lib/offline";
+import { linksText } from "@/features/hoshii/lib/product";
+import { fundPlan } from "@/features/hoshii/lib/queue";
+import { pageKey } from "@/lib/capture-shortcut";
+import { generateKeyBetween } from "@/lib/position";
 
 const rise = (i: number) => ({ "--i": i }) as CSSProperties;
 const SORT_TRANSITION = { duration: 220, easing: "cubic-bezier(0.23, 1, 0.32, 1)" };

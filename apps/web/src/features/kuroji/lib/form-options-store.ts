@@ -5,8 +5,8 @@
 // (stale-while-revalidate) so edits made elsewhere show up without blocking the form.
 // The last copy is also kept in localStorage, so the capture form opens offline after a restart.
 
-import { type FormOptions, getFormOptions } from "@/features/kuroji/actions/form-options";
 import { useEffect, useSyncExternalStore } from "react";
+import { type FormOptions, getFormOptions } from "@/features/kuroji/actions/form-options";
 
 let cache: { workspaceId: string; data: FormOptions } | null = null;
 let inflight: { workspaceId: string; promise: Promise<FormOptions> } | null = null;

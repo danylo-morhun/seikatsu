@@ -1,9 +1,9 @@
 "use client";
 
-import { CategoryPopover } from "@/features/kuroji/components/CategoryCombobox";
-import { type CategoryUsage, categoryTiles } from "@/features/kuroji/lib/category-tiles";
 import { cn } from "@seikatsu/ui";
 import * as React from "react";
+import { CategoryPopover } from "@/features/kuroji/components/CategoryCombobox";
+import { type CategoryUsage, categoryTiles } from "@/features/kuroji/lib/category-tiles";
 
 type Category = { id: string; name: string; parentId: string | null };
 

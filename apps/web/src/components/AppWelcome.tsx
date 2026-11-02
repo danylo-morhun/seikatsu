@@ -1,7 +1,7 @@
-import { APPS_CONFIG } from "@/lib/app-themes";
 import { Button } from "@seikatsu/ui";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
+import { APPS_CONFIG } from "@/lib/app-themes";
 
 const rise = (i: number) => ({ "--i": i }) as CSSProperties;
 

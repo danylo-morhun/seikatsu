@@ -1,10 +1,10 @@
+import { cn } from "@seikatsu/ui";
 import { FIGURES_ROW, Figure } from "@/features/aisha/components/Figure";
 import type { HoshiiItem } from "@/features/hoshii/actions/data";
 import { formatDay } from "@/features/hoshii/lib/dates";
 import { formatMoney, plural } from "@/features/hoshii/lib/format";
 import type { YearSummary } from "@/features/hoshii/lib/summary";
 import { BAR_FILL, barClip } from "@/lib/bar";
-import { cn } from "@seikatsu/ui";
 
 const MONTH = new Intl.DateTimeFormat("en", { month: "short", timeZone: "UTC" });
 const monthName = (year: number, m: number) => MONTH.format(new Date(Date.UTC(year, m, 1)));

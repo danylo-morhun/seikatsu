@@ -1,8 +1,8 @@
-import type { BankProblem } from "@/features/kuroji/lib/bank-health";
 import { RefreshCwOffIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
+import type { BankProblem } from "@/features/kuroji/lib/bank-health";
 
 export const BANK_SETTINGS_HREF = "/settings/kuroji?section=banks";
 
@@ -10,7 +10,10 @@ export const BANK_SETTINGS_HREF = "/settings/kuroji?section=banks";
 export function BankSyncNotice({
 	problem,
 	className,
-}: { problem: BankProblem; className?: string }) {
+}: {
+	problem: BankProblem;
+	className?: string;
+}) {
 	const expired = problem.kind === "expired";
 	return (
 		<p

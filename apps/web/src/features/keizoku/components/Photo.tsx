@@ -13,7 +13,11 @@ export function Photo({
 	src,
 	alt = "",
 	className,
-}: { src: string; alt?: string; className?: string }) {
+}: {
+	src: string;
+	alt?: string;
+	className?: string;
+}) {
 	const [state, setState] = useState<"loading" | "loaded" | "failed">("loading");
 	return (
 		<span className={cn("relative block overflow-hidden bg-surface-2", className)}>

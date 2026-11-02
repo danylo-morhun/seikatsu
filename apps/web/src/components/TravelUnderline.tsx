@@ -1,7 +1,7 @@
 "use client";
 
-import type { Indicator } from "@/hooks/useIndicator";
 import { cn } from "@seikatsu/ui";
+import type { Indicator } from "@/hooks/useIndicator";
 
 /** The 2px pigment underline under the current tab, gliding when the tab changes. */
 export function TravelUnderline({ indicator }: { indicator: Indicator | null }) {

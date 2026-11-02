@@ -1,11 +1,11 @@
 "use client";
 
+import { Alert02Icon, WifiDisconnected01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Button, cn, Popover, PopoverContent, PopoverTrigger } from "@seikatsu/ui";
 import { OUTBOX_EVENT, removeOp, updateOp } from "@/features/pwa/lib/outbox";
 import { useOnline } from "@/features/pwa/lib/use-online";
 import { useOutbox } from "@/features/pwa/lib/use-outbox";
-import { Alert02Icon, WifiDisconnected01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Button, Popover, PopoverContent, PopoverTrigger, cn } from "@seikatsu/ui";
 
 const PILL = "flex h-7 animate-rise items-center gap-1.5 rounded-full bg-muted px-2.5 text-xs";
 

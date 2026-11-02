@@ -1,8 +1,8 @@
 "use server";
 
-import { getOwnedWorkspace } from "@/lib/session";
 import { db, eq, workspaces } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
+import { getOwnedWorkspace } from "@/lib/session";
 
 export async function updateWorkspace(
 	workspaceId: string,

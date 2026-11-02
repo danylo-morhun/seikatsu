@@ -1,6 +1,6 @@
-import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { cn } from "@seikatsu/ui";
 import type { CSSProperties } from "react";
+import { AnimatedNumber } from "@/components/AnimatedNumber";
 
 const rise = (i: number) => ({ "--i": i }) as CSSProperties;
 

@@ -2,7 +2,9 @@
 	"name": "@seikatsu/ui",
 	"version": "0.0.0",
 	"private": true,
-	"sideEffects": ["*.css"],
+	"sideEffects": [
+		"*.css"
+	],
 	"exports": {
 		".": "./src/index.ts",
 		"./button": "./src/components/button.tsx",

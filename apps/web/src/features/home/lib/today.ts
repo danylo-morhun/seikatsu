@@ -2,18 +2,6 @@
 // module — import only from server components. Each summary fails alone, so one app's error
 // leaves the rest of the day readable, and each tile streams in as soon as its own is ready.
 
-import { getCar as getAishaCar, getCurrentVehicle } from "@/features/aisha/actions/data";
-import { getHoshii } from "@/features/hoshii/actions/data";
-import { getHabits as getAllHabits } from "@/features/keizoku/actions/habits";
-import { getDueToday } from "@/features/keizoku/actions/logs";
-import { getBalances } from "@/features/kuroji/actions/balances";
-import { hasAnyTransactions } from "@/features/kuroji/actions/data";
-import { displayBalance, rollupRoots } from "@/features/kuroji/lib/balance";
-import { getGhostDue, getViewCounts } from "@/features/kyuu/actions/applications";
-import { getProjects } from "@/features/seiryu/actions/projects";
-import { getBooks } from "@/features/tsundoku/actions/books";
-import type { APPS_CONFIG } from "@/lib/app-themes";
-import type { Workspace } from "@/lib/session";
 import {
 	and,
 	asc,
@@ -30,6 +18,18 @@ import {
 	tsundokuBooks,
 } from "@seikatsu/db";
 import { cache } from "react";
+import { getCar as getAishaCar, getCurrentVehicle } from "@/features/aisha/actions/data";
+import { getHoshii } from "@/features/hoshii/actions/data";
+import { getHabits as getAllHabits } from "@/features/keizoku/actions/habits";
+import { getDueToday } from "@/features/keizoku/actions/logs";
+import { getBalances } from "@/features/kuroji/actions/balances";
+import { hasAnyTransactions } from "@/features/kuroji/actions/data";
+import { displayBalance, rollupRoots } from "@/features/kuroji/lib/balance";
+import { getGhostDue, getViewCounts } from "@/features/kyuu/actions/applications";
+import { getProjects } from "@/features/seiryu/actions/projects";
+import { getBooks } from "@/features/tsundoku/actions/books";
+import type { APPS_CONFIG } from "@/lib/app-themes";
+import type { Workspace } from "@/lib/session";
 
 async function safely<T>(load: () => Promise<T>): Promise<T | null> {
 	try {

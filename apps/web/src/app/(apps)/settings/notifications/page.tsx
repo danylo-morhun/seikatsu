@@ -1,10 +1,10 @@
+import { redirect } from "next/navigation";
 import { SettingsPage, SettingsSection } from "@/components/SettingsSection";
 import { getNotificationSettings } from "@/features/pwa/actions/push";
 import { DeviceList } from "@/features/pwa/components/DeviceList";
 import { NotificationPrefsForm } from "@/features/pwa/components/NotificationPrefsForm";
 import { ThisDevice } from "@/features/pwa/components/ThisDevice";
 import { getCurrentWorkspace } from "@/lib/session";
-import { redirect } from "next/navigation";
 
 export default async function NotificationSettingsPage() {
 	const workspace = await getCurrentWorkspace();

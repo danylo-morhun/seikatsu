@@ -1,7 +1,7 @@
-import { APPS_CONFIG } from "@/lib/app-themes";
 import { Button, cn } from "@seikatsu/ui";
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { APPS_CONFIG } from "@/lib/app-themes";
 
 export type AppHref = keyof typeof APPS_CONFIG;
 

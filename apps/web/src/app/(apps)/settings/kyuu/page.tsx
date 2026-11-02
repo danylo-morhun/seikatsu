@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { NOTE_LINK, SettingsNote, SettingsPage } from "@/components/SettingsSection";
 import { getSources } from "@/features/kyuu/actions/applications";
 import { countMissingCountries } from "@/features/kyuu/actions/countries";
@@ -6,8 +8,6 @@ import { SettingsCountries } from "@/features/kyuu/components/SettingsCountries"
 import { SettingsMail } from "@/features/kyuu/components/SettingsMail";
 import { SettingsSources } from "@/features/kyuu/components/SettingsSources";
 import { getCurrentWorkspace } from "@/lib/session";
-import Link from "next/link";
-import { redirect } from "next/navigation";
 
 export default async function KyuuSettingsPage() {
 	const workspace = await getCurrentWorkspace();

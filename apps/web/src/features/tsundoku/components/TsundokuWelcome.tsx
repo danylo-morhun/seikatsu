@@ -1,8 +1,8 @@
 "use client";
 
+import { Button } from "@seikatsu/ui";
 import { AppWelcome } from "@/components/AppWelcome";
 import { requestNewBook } from "@/features/tsundoku/lib/events";
-import { Button } from "@seikatsu/ui";
 
 const STEPS = [
 	{

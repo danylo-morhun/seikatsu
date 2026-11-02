@@ -1,41 +1,5 @@
 "use client";
 
-import { startNavigationProgress } from "@/components/NavigationProgress";
-import { Spinner } from "@/components/Spinner";
-import { createBankRule } from "@/features/kuroji/actions/bank";
-import { exportTransactionsCsv } from "@/features/kuroji/actions/export";
-import {
-	deleteTransactions,
-	recategorizeTransactions,
-} from "@/features/kuroji/actions/transactions";
-import type { RecentTransaction } from "@/features/kuroji/actions/transactions";
-import { CategoryPicker } from "@/features/kuroji/components/CategoryPicker";
-import { PeriodEmptyActions } from "@/features/kuroji/components/PeriodEmptyActions";
-import {
-	type RowEvent,
-	TransactionRow,
-	flowOf,
-	fmtDate,
-	rowCols,
-} from "@/features/kuroji/components/TransactionRow";
-import { buildPeriodLabel, formatDayDate, localToday } from "@/features/kuroji/lib/dates";
-import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
-import { formatCurrency } from "@/features/kuroji/lib/format";
-import { QUEUED_TOAST, isQueued, removeTransaction } from "@/features/kuroji/lib/offline";
-import { type ShownTransaction, overlayTransactions } from "@/features/kuroji/lib/overlay";
-import {
-	categoryEnd,
-	pickableCategories,
-	recentCategoryIds,
-	withCategory,
-} from "@/features/kuroji/lib/quick-categorize";
-import { ruleKeyword } from "@/features/kuroji/lib/rule-keyword";
-import {
-	TRANSACTIONS_PAGE_SIZE,
-	type TransactionFilters,
-} from "@/features/kuroji/lib/transaction-filters";
-import { usePendingOps } from "@/features/pwa/lib/use-outbox";
-import { useHeld } from "@/hooks/useHeld";
 import {
 	Alert01Icon,
 	ArrowDown02Icon,
@@ -59,13 +23,13 @@ import {
 	AlertDialogTitle,
 	Button,
 	Checkbox,
+	cn,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuLabel,
 	DropdownMenuTrigger,
 	Input,
-	cn,
 } from "@seikatsu/ui";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -79,6 +43,42 @@ import {
 	useTransition,
 } from "react";
 import { toast } from "sonner";
+import { startNavigationProgress } from "@/components/NavigationProgress";
+import { Spinner } from "@/components/Spinner";
+import { createBankRule } from "@/features/kuroji/actions/bank";
+import { exportTransactionsCsv } from "@/features/kuroji/actions/export";
+import type { RecentTransaction } from "@/features/kuroji/actions/transactions";
+import {
+	deleteTransactions,
+	recategorizeTransactions,
+} from "@/features/kuroji/actions/transactions";
+import { CategoryPicker } from "@/features/kuroji/components/CategoryPicker";
+import { PeriodEmptyActions } from "@/features/kuroji/components/PeriodEmptyActions";
+import {
+	flowOf,
+	fmtDate,
+	type RowEvent,
+	rowCols,
+	TransactionRow,
+} from "@/features/kuroji/components/TransactionRow";
+import { buildPeriodLabel, formatDayDate, localToday } from "@/features/kuroji/lib/dates";
+import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
+import { formatCurrency } from "@/features/kuroji/lib/format";
+import { isQueued, QUEUED_TOAST, removeTransaction } from "@/features/kuroji/lib/offline";
+import { overlayTransactions, type ShownTransaction } from "@/features/kuroji/lib/overlay";
+import {
+	categoryEnd,
+	pickableCategories,
+	recentCategoryIds,
+	withCategory,
+} from "@/features/kuroji/lib/quick-categorize";
+import { ruleKeyword } from "@/features/kuroji/lib/rule-keyword";
+import {
+	TRANSACTIONS_PAGE_SIZE,
+	type TransactionFilters,
+} from "@/features/kuroji/lib/transaction-filters";
+import { usePendingOps } from "@/features/pwa/lib/use-outbox";
+import { useHeld } from "@/hooks/useHeld";
 
 // Mounted only once a row is edited.
 const EditTransactionModal = dynamic(

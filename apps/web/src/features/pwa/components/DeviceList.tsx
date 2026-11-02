@@ -1,13 +1,13 @@
 "use client";
 
-import { type PushDevice, removeDevice } from "@/features/pwa/actions/push";
-import { currentSubscription } from "@/features/pwa/lib/push-client";
 import { Delete02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@seikatsu/ui";
 import { formatDistanceToNow } from "date-fns";
 import { useEffect, useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { type PushDevice, removeDevice } from "@/features/pwa/actions/push";
+import { currentSubscription } from "@/features/pwa/lib/push-client";
 
 /** "iPhone · Safari" from a user agent — enough to tell devices apart. */
 function deviceName(ua: string | null): string {

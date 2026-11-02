@@ -1,9 +1,9 @@
 // Shared ownership guards for keizoku server actions.
 // Not a "use server" module — these are helpers called inside server actions.
 
-import { getCurrentWorkspace, isUuid } from "@/lib/session";
 import { and, db, eq, keizokuHabits } from "@seikatsu/db";
 import { cache } from "react";
+import { getCurrentWorkspace, isUuid } from "@/lib/session";
 
 export type KeizokuHabit = typeof keizokuHabits.$inferSelect;
 

@@ -1,9 +1,5 @@
 "use client";
 
-import { ColorSwatches } from "@/components/ColorSwatches";
-import { ConfirmDelete } from "@/components/ConfirmDelete";
-import { Spinner } from "@/components/Spinner";
-import { deleteLabel, updateLabel } from "@/features/seiryu/actions/labels";
 import { Delete01Icon, MoreHorizontalIcon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -23,6 +19,10 @@ import {
 } from "@seikatsu/ui";
 import { useEffect, useId, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { ColorSwatches } from "@/components/ColorSwatches";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { Spinner } from "@/components/Spinner";
+import { deleteLabel, updateLabel } from "@/features/seiryu/actions/labels";
 
 type Row = {
 	id: string;

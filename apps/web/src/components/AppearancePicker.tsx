@@ -1,9 +1,9 @@
 "use client";
 
-import { useDesign } from "@/components/DesignProvider";
-import type { Design } from "@/lib/design";
 import { cn } from "@seikatsu/ui";
 import { useRef } from "react";
+import { useDesign } from "@/components/DesignProvider";
+import type { Design } from "@/lib/design";
 
 const OPTIONS: { value: Design; name: string; note: string }[] = [
 	{ value: "glass", name: "Liquid Glass", note: "macOS and iOS 26: glass bars, rounded groups" },

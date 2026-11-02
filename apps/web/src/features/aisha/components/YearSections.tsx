@@ -1,9 +1,9 @@
+import { cn } from "@seikatsu/ui";
 import type { ServiceWithItems } from "@/features/aisha/actions/data";
 import { FIGURES_ROW, Figure } from "@/features/aisha/components/Figure";
 import { formatDate, formatKm, formatMoney, formatNumber } from "@/features/aisha/lib/format";
 import type { CarYear } from "@/features/aisha/lib/year";
 import { BAR_FILL, barClip } from "@/lib/bar";
-import { cn } from "@seikatsu/ui";
 
 /** The year at a glance: what the car cost leads, then how far it went. */
 export function YearFigures({ year, currency }: { year: CarYear; currency: string }) {

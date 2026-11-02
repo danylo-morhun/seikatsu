@@ -1,17 +1,5 @@
 "use client";
 
-import { ConfirmDelete } from "@/components/ConfirmDelete";
-import { Spinner } from "@/components/Spinner";
-import {
-	connectBank,
-	deleteBankConnection,
-	linkBankAccount,
-	listBankInstitutions,
-	resetAndResync,
-	syncBankConnection,
-} from "@/features/kuroji/actions/bank";
-import type { getAccounts, getBankConnections } from "@/features/kuroji/actions/data";
-import { formatDateTime } from "@/features/kuroji/lib/dates";
 import { Delete01Icon, MoreHorizontalIcon, RefreshIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -37,6 +25,18 @@ import {
 } from "@seikatsu/ui";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { Spinner } from "@/components/Spinner";
+import {
+	connectBank,
+	deleteBankConnection,
+	linkBankAccount,
+	listBankInstitutions,
+	resetAndResync,
+	syncBankConnection,
+} from "@/features/kuroji/actions/bank";
+import type { getAccounts, getBankConnections } from "@/features/kuroji/actions/data";
+import { formatDateTime } from "@/features/kuroji/lib/dates";
 
 type Account = Awaited<ReturnType<typeof getAccounts>>[number];
 type Connection = Awaited<ReturnType<typeof getBankConnections>>[number];

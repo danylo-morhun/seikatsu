@@ -1,13 +1,5 @@
 "use client";
 
-import { startNavigationProgress } from "@/components/NavigationProgress";
-import { TabBar, TabBarAction } from "@/components/TabBar";
-import { createHabit } from "@/features/keizoku/actions/habits";
-import { NEW_HABIT_EVENT, requestNewHabit } from "@/features/keizoku/lib/events";
-import { markFresh } from "@/features/keizoku/lib/habit-nav";
-import type { HabitFormValues } from "@/features/keizoku/lib/keizoku-schemas";
-import { useOpenedOnce } from "@/hooks/useOpenedOnce";
-import { pageKey } from "@/lib/capture-shortcut";
 import {
 	Add01Icon,
 	Archive01Icon,
@@ -19,6 +11,14 @@ import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { startNavigationProgress } from "@/components/NavigationProgress";
+import { TabBar, TabBarAction } from "@/components/TabBar";
+import { createHabit } from "@/features/keizoku/actions/habits";
+import { NEW_HABIT_EVENT, requestNewHabit } from "@/features/keizoku/lib/events";
+import { markFresh } from "@/features/keizoku/lib/habit-nav";
+import type { HabitFormValues } from "@/features/keizoku/lib/keizoku-schemas";
+import { useOpenedOnce } from "@/hooks/useOpenedOnce";
+import { pageKey } from "@/lib/capture-shortcut";
 
 // The form loads on first open; hovering the add button starts it early.
 const loadHabitDialog = () =>

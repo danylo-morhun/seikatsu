@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Leg, editFormValues } from "./transaction-edit";
+import { editFormValues, type Leg } from "./transaction-edit";
 
 const leg = (
 	accountId: string,

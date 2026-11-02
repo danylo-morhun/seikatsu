@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { genreFromSubjects } from "./genre";
 import {
-	type ProgressState,
 	finishDatePatch,
+	type ProgressState,
 	pageCountPatch,
 	pagesLeft,
 	parseProgressInput,

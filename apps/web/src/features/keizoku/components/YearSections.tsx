@@ -1,9 +1,8 @@
-import type { YearDay, YearStats } from "@/features/keizoku/actions/stats";
-import { FIGURES_ROW, Figure } from "@/features/keizoku/components/Figure";
-import { runUnit } from "@/features/keizoku/lib/streak";
-import { BAR_FILL, barClip } from "@/lib/bar";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
+import type { YearStats } from "@/features/keizoku/actions/stats";
+import { FIGURES_ROW, Figure } from "@/features/keizoku/components/Figure";
+import { BAR_FILL, barClip } from "@/lib/bar";
 
 /** The year at a glance: check-ins lead, then full days, the rate and the best run. */
 export function YearFigures({ stats }: { stats: YearStats }) {

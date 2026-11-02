@@ -1,9 +1,5 @@
 "use client";
 
-import { ContextArea, openContextMenu } from "@/components/ContextArea";
-import { startNavigationProgress } from "@/components/NavigationProgress";
-import { usePendingOps } from "@/features/pwa/lib/use-outbox";
-import { pageKey } from "@/lib/capture-shortcut";
 import {
 	Archive01Icon,
 	ArchiveArrowUpIcon,
@@ -40,10 +36,14 @@ import {
 	useTransition,
 } from "react";
 import { toast } from "sonner";
+import { ContextArea, openContextMenu } from "@/components/ContextArea";
+import { startNavigationProgress } from "@/components/NavigationProgress";
+import { usePendingOps } from "@/features/pwa/lib/use-outbox";
+import { pageKey } from "@/lib/capture-shortcut";
 import { ghostApplications } from "../actions/progress";
 import { requestDeleteApplication } from "../lib/events";
 import { archiveApplication, changeStatus, logFollowUp, queuedPatches } from "../lib/offline";
-import { STATUSES, STATUS_CONFIG, type Status } from "../lib/stages";
+import { STATUS_CONFIG, STATUSES, type Status } from "../lib/stages";
 import type { ApplicationRow } from "../lib/types";
 import { StatusMark } from "./StatusMark";
 

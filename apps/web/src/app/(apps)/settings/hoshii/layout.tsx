@@ -1,7 +1,7 @@
+import { Suspense } from "react";
 import { getChromeData } from "@/features/hoshii/actions/data";
 import { HoshiiChrome } from "@/features/hoshii/components/HoshiiChrome";
 import { getCurrentWorkspace } from "@/lib/session";
-import { Suspense } from "react";
 
 // Hoshii's settings are a Hoshii tab on phones: keep its bottom navigation (and capture).
 export default async function HoshiiSettingsLayout({ children }: { children: React.ReactNode }) {

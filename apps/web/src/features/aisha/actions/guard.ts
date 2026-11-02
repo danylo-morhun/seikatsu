@@ -1,8 +1,8 @@
 // Shared ownership guards for aisha server actions.
 // Not a "use server" module — these are helpers called inside server actions.
 
-import { getCurrentWorkspace, getSessionUserId, isUuid } from "@/lib/session";
 import { aishaVehicles, and, db, eq } from "@seikatsu/db";
+import { getCurrentWorkspace, getSessionUserId, isUuid } from "@/lib/session";
 
 export { getOwnedWorkspace, isUuid } from "@/lib/session";
 

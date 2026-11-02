@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { PageTitle } from "@/components/PageTitle";
 import { YearSwitch } from "@/components/YearSwitch";
 import { getYearStats } from "@/features/keizoku/actions/stats";
@@ -5,7 +6,6 @@ import { Heatmap } from "@/features/keizoku/components/Heatmap";
 import { HabitRanking, MonthRows, YearFigures } from "@/features/keizoku/components/YearSections";
 import { activityText } from "@/features/keizoku/lib/constants";
 import { getUserToday } from "@/lib/timezone";
-import type { CSSProperties } from "react";
 
 const rise = (i: number) => ({ "--i": i }) as CSSProperties;
 

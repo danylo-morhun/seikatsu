@@ -1,11 +1,5 @@
 "use client";
 
-import { ConfirmDelete } from "@/components/ConfirmDelete";
-import { Spinner } from "@/components/Spinner";
-import { createFund, deleteFund, updateFund } from "@/features/kuroji/actions/plan";
-import { parseAmount } from "@/features/kuroji/lib/transaction-schema";
-import { NEEDS_CONNECTION, offlineError } from "@/features/pwa/lib/run";
-import { useKeptDraft } from "@/hooks/useKeptDraft";
 import {
 	Button,
 	Dialog,
@@ -23,6 +17,12 @@ import {
 } from "@seikatsu/ui";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { Spinner } from "@/components/Spinner";
+import { createFund, deleteFund, updateFund } from "@/features/kuroji/actions/plan";
+import { parseAmount } from "@/features/kuroji/lib/transaction-schema";
+import { NEEDS_CONNECTION, offlineError } from "@/features/pwa/lib/run";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 
 export type FundTarget = {
 	id: string;

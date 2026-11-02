@@ -11,7 +11,10 @@ import { useLayoutEffect, useRef, useState } from "react";
 export function AutoHeight({
 	children,
 	className,
-}: { children: React.ReactNode; className?: string }) {
+}: {
+	children: React.ReactNode;
+	className?: string;
+}) {
 	const innerRef = useRef<HTMLDivElement>(null);
 	const [height, setHeight] = useState<number | null>(null);
 	// The first measurement lands without animating; later changes glide.

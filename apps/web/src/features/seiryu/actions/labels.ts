@@ -1,18 +1,6 @@
 "use server";
 
 import {
-	getOwnedCard,
-	getOwnedLabel,
-	isOwnedProject,
-	requireWorkspace,
-} from "@/features/seiryu/actions/guard";
-import {
-	createLabelSchema,
-	deleteLabelSchema,
-	setCardLabelsSchema,
-	updateLabelSchema,
-} from "@/features/seiryu/lib/seiryu-schemas";
-import {
 	and,
 	asc,
 	count,
@@ -24,6 +12,18 @@ import {
 	seiryuProjects,
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
+import {
+	getOwnedCard,
+	getOwnedLabel,
+	isOwnedProject,
+	requireWorkspace,
+} from "@/features/seiryu/actions/guard";
+import {
+	createLabelSchema,
+	deleteLabelSchema,
+	setCardLabelsSchema,
+	updateLabelSchema,
+} from "@/features/seiryu/lib/seiryu-schemas";
 
 export async function getLabels(projectId: string) {
 	const workspace = await requireWorkspace();

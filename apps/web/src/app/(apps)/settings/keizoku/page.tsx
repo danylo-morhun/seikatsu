@@ -1,9 +1,9 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { NOTE_LINK, SettingsNote, SettingsPage } from "@/components/SettingsSection";
 import { getHabits } from "@/features/keizoku/actions/habits";
 import { SettingsHabits } from "@/features/keizoku/components/HabitLists";
 import { getCurrentWorkspace } from "@/lib/session";
-import Link from "next/link";
-import { redirect } from "next/navigation";
 
 export default async function KeizokuSettingsPage() {
 	const workspace = await getCurrentWorkspace();

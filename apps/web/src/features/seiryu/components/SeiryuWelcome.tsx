@@ -1,13 +1,13 @@
 "use client";
 
-import { AppWelcome } from "@/components/AppWelcome";
-import { Spinner } from "@/components/Spinner";
-import { createProject } from "@/features/seiryu/actions/projects";
-import { LABEL_COLORS } from "@/lib/pigments";
 import { Button, Input } from "@seikatsu/ui";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { AppWelcome } from "@/components/AppWelcome";
+import { Spinner } from "@/components/Spinner";
+import { createProject } from "@/features/seiryu/actions/projects";
+import { LABEL_COLORS } from "@/lib/pigments";
 
 const STEPS = [
 	{

@@ -1,14 +1,5 @@
 "use client";
 
-import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
-import { PRIORITIES, PRIORITY_CONFIG } from "@/features/seiryu/lib/constants";
-import {
-	DUE_FILTERS,
-	type DueFilter,
-	type Filters,
-	filterCount,
-} from "@/features/seiryu/lib/filters";
-import type { LabelData } from "@/features/seiryu/lib/types";
 import { Cancel01Icon, FilterHorizontalIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -22,6 +13,15 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@seikatsu/ui";
+import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
+import { PRIORITIES, PRIORITY_CONFIG } from "@/features/seiryu/lib/constants";
+import {
+	DUE_FILTERS,
+	type DueFilter,
+	type Filters,
+	filterCount,
+} from "@/features/seiryu/lib/filters";
+import type { LabelData } from "@/features/seiryu/lib/types";
 
 interface Props {
 	filters: Filters;

@@ -1,13 +1,13 @@
+import { cn } from "@seikatsu/ui";
+import Link from "next/link";
+import type { CSSProperties } from "react";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import type { FeedQuote } from "@/features/tsundoku/actions/quotes";
 import type { ReadingDay, YearBook, YearStats } from "@/features/tsundoku/actions/stats";
 import { BookCover } from "@/features/tsundoku/components/BookCover";
-import { Stars, formatStars } from "@/features/tsundoku/components/Stars";
+import { formatStars, Stars } from "@/features/tsundoku/components/Stars";
 import { shiftDay } from "@/features/tsundoku/lib/streak";
 import { BAR_FILL, barClip } from "@/lib/bar";
-import { cn } from "@seikatsu/ui";
-import Link from "next/link";
-import type { CSSProperties } from "react";
 
 const rise = (i: number) => ({ "--i": i }) as CSSProperties;
 

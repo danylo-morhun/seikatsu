@@ -1,5 +1,5 @@
-import type { LocalClock } from "@/features/pwa/lib/schedule";
 import type { NotificationPrefs } from "@seikatsu/db";
+import type { LocalClock } from "@/features/pwa/lib/schedule";
 
 /** What one cron tick knows about a subscribed workspace. */
 export interface NotifyContext {

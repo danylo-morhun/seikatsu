@@ -1,11 +1,10 @@
 "use client";
 
-import { type VariantProps, cva } from "class-variance-authority";
-import { Slot } from "radix-ui";
-import * as React from "react";
-
 import { SidebarLeftIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { Slot } from "radix-ui";
+import * as React from "react";
 import { useIsMobile } from "../hooks/use-mobile";
 import { cn } from "../lib/utils";
 import { Button } from "./button";

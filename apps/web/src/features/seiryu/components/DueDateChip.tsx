@@ -1,7 +1,7 @@
-import { formatShortDate, localToday } from "@/features/kuroji/lib/dates";
 import { Calendar03Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
+import { formatShortDate, localToday } from "@/features/kuroji/lib/dates";
 
 interface Props {
 	dueDate: string;

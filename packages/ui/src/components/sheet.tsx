@@ -1,10 +1,9 @@
 "use client";
 
-import { Dialog as SheetPrimitive } from "radix-ui";
-import type * as React from "react";
-
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { Dialog as SheetPrimitive } from "radix-ui";
+import type * as React from "react";
 import { cn } from "../lib/utils";
 import { Button } from "./button";
 
@@ -125,11 +124,11 @@ function SheetDescription({
 
 export {
 	Sheet,
-	SheetTrigger,
 	SheetClose,
 	SheetContent,
-	SheetHeader,
-	SheetFooter,
-	SheetTitle,
 	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
 };

@@ -1,11 +1,11 @@
 "use client";
 
-import { useDesign } from "@/components/DesignProvider";
 import type { Add01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, cn } from "@seikatsu/ui";
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
+import { useDesign } from "@/components/DesignProvider";
 
 type Icon = typeof Add01Icon;
 

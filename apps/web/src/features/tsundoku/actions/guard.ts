@@ -1,7 +1,6 @@
 // Shared ownership guards for tsundoku server actions.
 // Not a "use server" module — these are helpers called inside server actions.
 
-import { isUuid } from "@/lib/session";
 import {
 	and,
 	db,
@@ -13,6 +12,7 @@ import {
 	tsundokuShelves,
 } from "@seikatsu/db";
 import { cache } from "react";
+import { isUuid } from "@/lib/session";
 
 export { isUuid, requireWorkspace } from "@/lib/session";
 

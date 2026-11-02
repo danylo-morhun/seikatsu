@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { PageTab, PageTabs } from "@/components/PageTabs";
 import { SettingsPage, SettingsSection } from "@/components/SettingsSection";
@@ -23,7 +24,6 @@ import { BankRulesManager } from "@/features/kuroji/components/BankRulesManager"
 import { Privat24ImportSection } from "@/features/kuroji/components/Privat24ImportSection";
 import { RecurringTransactionsList } from "@/features/kuroji/components/RecurringTransactionsList";
 import { WorkspaceSettingsForm } from "@/features/kuroji/components/WorkspaceSettingsForm";
-import { redirect } from "next/navigation";
 
 const SECTIONS = [
 	{ id: "general", label: "General" },

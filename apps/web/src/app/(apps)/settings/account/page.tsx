@@ -1,3 +1,5 @@
+import { authAccounts, authUsers, db, eq } from "@seikatsu/db";
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { AppearancePicker } from "@/components/AppearancePicker";
 import { SettingsPage, SettingsSection } from "@/components/SettingsSection";
@@ -6,8 +8,6 @@ import { ChangePasswordForm } from "@/features/auth/components/ChangePasswordFor
 import { DangerZone } from "@/features/auth/components/DangerZone";
 import { LinkedProviders } from "@/features/auth/components/LinkedProviders";
 import { ProfileForm } from "@/features/auth/components/ProfileForm";
-import { authAccounts, authUsers, db, eq } from "@seikatsu/db";
-import { redirect } from "next/navigation";
 
 export default async function AccountSettingsPage() {
 	const session = await auth();

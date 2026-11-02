@@ -1,5 +1,8 @@
 "use client";
 
+import { SidebarInset, SidebarProvider } from "@seikatsu/ui";
+import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { AppSidebar } from "@/components/AppSidebar";
 import { DesignProvider } from "@/components/DesignProvider";
@@ -7,9 +10,6 @@ import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { OfflineWarmup } from "@/features/pwa/components/OfflineWarmup";
 import { APP_THEMES, getThemeForPath } from "@/lib/app-themes";
 import type { Design } from "@/lib/design";
-import { SidebarInset, SidebarProvider } from "@seikatsu/ui";
-import { usePathname } from "next/navigation";
-import { useEffect } from "react";
 
 const ALL_THEMES = Object.values(APP_THEMES);
 

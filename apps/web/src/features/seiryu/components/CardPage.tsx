@@ -1,18 +1,5 @@
 "use client";
 
-import { ConfirmDelete } from "@/components/ConfirmDelete";
-import { Spinner } from "@/components/Spinner";
-import { usePendingOps } from "@/features/pwa/lib/use-outbox";
-import { deleteCard, restoreCard } from "@/features/seiryu/actions/cards";
-import { CardDetail } from "@/features/seiryu/components/CardDetail";
-import { placeCard, saveCard, shelveCard } from "@/features/seiryu/lib/offline";
-import { overlayCards } from "@/features/seiryu/lib/overlay";
-import type {
-	ActionResult,
-	CardData,
-	CardFieldUpdates,
-	LabelData,
-} from "@/features/seiryu/lib/types";
 import {
 	Archive01Icon,
 	ArrowLeft01Icon,
@@ -32,6 +19,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { Spinner } from "@/components/Spinner";
+import { usePendingOps } from "@/features/pwa/lib/use-outbox";
+import { deleteCard, restoreCard } from "@/features/seiryu/actions/cards";
+import { CardDetail } from "@/features/seiryu/components/CardDetail";
+import { placeCard, saveCard, shelveCard } from "@/features/seiryu/lib/offline";
+import { overlayCards } from "@/features/seiryu/lib/overlay";
+import type {
+	ActionResult,
+	CardData,
+	CardFieldUpdates,
+	LabelData,
+} from "@/features/seiryu/lib/types";
 
 interface Props {
 	card: CardData & { archivedAt: Date | null };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_TIERS, coolingDays } from "./cooling";
+import { coolingDays, DEFAULT_TIERS } from "./cooling";
 import { addDays, daysBetween } from "./dates";
 import { fundPlan, sortPlan, splitQueue } from "./queue";
 

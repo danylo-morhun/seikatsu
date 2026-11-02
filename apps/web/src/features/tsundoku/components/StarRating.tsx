@@ -1,8 +1,8 @@
 "use client";
 
-import { Star, fillOf, formatStars } from "@/features/tsundoku/components/Stars";
 import { cn } from "@seikatsu/ui";
 import { useState } from "react";
+import { fillOf, formatStars, Star } from "@/features/tsundoku/components/Stars";
 
 interface Props {
 	value: number | null;

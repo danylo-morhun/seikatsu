@@ -1,13 +1,13 @@
 "use client";
 
-import { setAppHidden } from "@/features/home/actions/apps";
-import { APPS_CONFIG } from "@/lib/app-themes";
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { type CSSProperties, useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
+import { setAppHidden } from "@/features/home/actions/apps";
+import { APPS_CONFIG } from "@/lib/app-themes";
 
 type AppHref = keyof typeof APPS_CONFIG;
 

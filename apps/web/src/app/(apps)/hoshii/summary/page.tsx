@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import type { CSSProperties } from "react";
 import { PageTitle } from "@/components/PageTitle";
 import { YearSwitch } from "@/components/YearSwitch";
 import { getHoshii, getSummaryItems } from "@/features/hoshii/actions/data";
@@ -9,8 +11,6 @@ import {
 import { summaryYears, yearSummary } from "@/features/hoshii/lib/summary";
 import { getCurrentWorkspace } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
-import { redirect } from "next/navigation";
-import type { CSSProperties } from "react";
 
 const rise = (i: number) => ({ "--i": i }) as CSSProperties;
 

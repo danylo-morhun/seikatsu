@@ -1,11 +1,11 @@
 "use client";
 
-import type { getAccounts } from "@/features/kuroji/actions/data";
-import { EditAccountModal } from "@/features/kuroji/components/EditAccountModal";
 import { PencilEdit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@seikatsu/ui";
 import { useState } from "react";
+import type { getAccounts } from "@/features/kuroji/actions/data";
+import { EditAccountModal } from "@/features/kuroji/components/EditAccountModal";
 
 type Account = Awaited<ReturnType<typeof getAccounts>>[number];
 

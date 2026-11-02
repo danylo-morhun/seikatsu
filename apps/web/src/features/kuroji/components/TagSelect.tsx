@@ -1,12 +1,12 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
-import { createTag } from "@/features/kuroji/actions/tags";
-import type { Tag } from "@/features/kuroji/actions/tags";
 import { Add01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Button, Input, cn } from "@seikatsu/ui";
+import { Button, cn, Input } from "@seikatsu/ui";
 import * as React from "react";
+import { Spinner } from "@/components/Spinner";
+import type { Tag } from "@/features/kuroji/actions/tags";
+import { createTag } from "@/features/kuroji/actions/tags";
 
 const TAG_COLORS = [
 	"#6366f1",
