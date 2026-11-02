@@ -63,8 +63,8 @@ export const kyuuApplications = pgTable(
 		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 	},
 	(t) => [
-		index("kyuu_applications_workspace_id_idx").on(t.workspaceId),
-		index("kyuu_applications_status_idx").on(t.status),
+		// Every query is per workspace, most also by status; also serves workspace-only lookups.
+		index("kyuu_applications_workspace_status_idx").on(t.workspaceId, t.status),
 	],
 );
 
