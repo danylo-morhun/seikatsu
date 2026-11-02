@@ -154,12 +154,3 @@ export async function deleteRecurringTransaction(
 	revalidatePath("/kuroji");
 	return { success: true };
 }
-
-export async function generateDueRecurring(workspaceId: string): Promise<{ generated: number }> {
-	const ws = await getOwnedWorkspace(workspaceId);
-	if (!ws) return { generated: 0 };
-
-	const result = await generateDueForWorkspace(ws);
-	if (result.generated > 0) revalidatePath("/kuroji");
-	return result;
-}
