@@ -3,8 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
 	transpilePackages: ["@seikatsu/ui", "@seikatsu/db"],
 	experimental: {
-		// Rewrite barrel imports to per-module imports so a page only ships the UI pieces it
-		// uses (the @seikatsu/ui barrel otherwise drags the calendar into every page).
+		// Rewrite barrel imports of these packages to per-module imports. For @seikatsu/ui this
+		// alone didn't tree-shake under Turbopack; `sideEffects` in its package.json does (without
+		// it the root layout shipped the whole UI lib, calendar included, to every page).
 		optimizePackageImports: ["@seikatsu/ui", "@hugeicons/core-free-icons", "date-fns"],
 		// Keep visited/prefetched pages in the client router cache so tab switches and
 		// back/forward are instant. Server actions that revalidate clear it.
