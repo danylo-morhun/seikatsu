@@ -19,7 +19,6 @@
 		"./separator": "./src/components/separator.tsx"
 	},
 	"scripts": {
-		"build": "tsc --noEmit",
 		"typecheck": "tsc --noEmit"
 	},
 	"peerDependencies": {
