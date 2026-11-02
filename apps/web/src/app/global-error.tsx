@@ -1,12 +1,12 @@
 "use client";
 
-import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
+import { loadSentry } from "@/lib/sentry-browser";
 
 // Last-resort boundary (root layout crashed): report, offer a reload.
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
 	useEffect(() => {
-		Sentry.captureException(error);
+		loadSentry()?.then((Sentry) => Sentry.captureException(error));
 	}, [error]);
 
 	return (
