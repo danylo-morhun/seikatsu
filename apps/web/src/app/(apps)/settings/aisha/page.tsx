@@ -8,9 +8,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export default async function AishaSettingsPage() {
-	const workspace = await getCurrentWorkspace();
+	const [workspace, vehicle] = await Promise.all([getCurrentWorkspace(), getCurrentVehicle()]);
 	if (!workspace) redirect("/");
-	const vehicle = await getCurrentVehicle();
 
 	return (
 		<SettingsPage title="愛 Aisha" appNav>
@@ -33,7 +32,7 @@ async function Settings({
 	vehicle,
 }: { vehicle: NonNullable<Awaited<ReturnType<typeof getCurrentVehicle>>> }) {
 	const [car, accounts] = await Promise.all([
-		getCar(vehicle, await getUserToday()),
+		getUserToday().then((today) => getCar(vehicle, today)),
 		getAccounts(vehicle.workspaceId),
 	]);
 	// The plan in the order it was set up, not by urgency.
