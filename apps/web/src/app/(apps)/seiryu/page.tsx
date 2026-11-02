@@ -1,6 +1,6 @@
+import { redirect } from "next/navigation";
 import { getProjects } from "@/features/seiryu/actions/projects";
 import { SeiryuWelcome } from "@/features/seiryu/components/SeiryuWelcome";
-import { redirect } from "next/navigation";
 
 export default async function SeiryuPage() {
 	const projects = await getProjects();

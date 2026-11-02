@@ -1,8 +1,8 @@
 // A Kuroji expense posted by another app (Aisha service, Hoshii purchase) and linked to its row.
 // Not a "use server" module: helpers called inside server actions. Callers word the warnings.
 
-import { createTransaction, updateTransaction } from "@/features/kuroji/actions/transactions";
 import { db, eq, transactionEntries } from "@seikatsu/db";
+import { createTransaction, updateTransaction } from "@/features/kuroji/actions/transactions";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 

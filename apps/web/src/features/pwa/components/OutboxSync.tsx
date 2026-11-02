@@ -1,9 +1,9 @@
 "use client";
 
-import type { OpResult } from "@/features/pwa/lib/ops";
-import { OUTBOX_EVENT, getOps, loadOutbox, removeOp, updateOp } from "@/features/pwa/lib/outbox";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useTransition } from "react";
+import type { OpResult } from "@/features/pwa/lib/ops";
+import { getOps, loadOutbox, OUTBOX_EVENT, removeOp, updateOp } from "@/features/pwa/lib/outbox";
 
 type Outcome = "done" | "stop";
 

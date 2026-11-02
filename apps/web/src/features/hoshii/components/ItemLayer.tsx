@@ -1,16 +1,5 @@
 "use client";
 
-import { ConfirmDelete } from "@/components/ConfirmDelete";
-import type { ChromeData, HoshiiItem } from "@/features/hoshii/actions/data";
-import { deleteItem } from "@/features/hoshii/actions/items";
-import { BuyDialog } from "@/features/hoshii/components/BuyDialog";
-import { ItemDialog } from "@/features/hoshii/components/ItemDialog";
-import { Thumb } from "@/features/hoshii/components/Thumb";
-import { daysBetween, formatDay } from "@/features/hoshii/lib/dates";
-import { formatMoney, plural } from "@/features/hoshii/lib/format";
-import type { MoveTarget } from "@/features/hoshii/lib/hoshii-schemas";
-import { QUEUED_TOAST, sendMove } from "@/features/hoshii/lib/offline";
-import { shopOf } from "@/features/hoshii/lib/product";
 import {
 	Cancel01Icon,
 	Delete01Icon,
@@ -24,16 +13,27 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
+	cn,
 	Sheet,
 	SheetContent,
 	SheetDescription,
 	SheetHeader,
 	SheetTitle,
-	cn,
 	useIsMobile,
 } from "@seikatsu/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
+import type { ChromeData, HoshiiItem } from "@/features/hoshii/actions/data";
+import { deleteItem } from "@/features/hoshii/actions/items";
+import { BuyDialog } from "@/features/hoshii/components/BuyDialog";
+import { ItemDialog } from "@/features/hoshii/components/ItemDialog";
+import { Thumb } from "@/features/hoshii/components/Thumb";
+import { daysBetween, formatDay } from "@/features/hoshii/lib/dates";
+import { formatMoney, plural } from "@/features/hoshii/lib/format";
+import type { MoveTarget } from "@/features/hoshii/lib/hoshii-schemas";
+import { QUEUED_TOAST, sendMove } from "@/features/hoshii/lib/offline";
+import { shopOf } from "@/features/hoshii/lib/product";
 
 export type Stage = "decide" | "cooling" | "plan" | "bought" | "released";
 
@@ -297,6 +297,7 @@ function ItemSheet({
 									</p>
 									<ul className="space-y-1.5">
 										{it.links.map((link, i) => (
+											// biome-ignore lint/suspicious/noArrayIndexKey: the same url may repeat
 											<li key={`${i}-${link.url}`}>
 												<a
 													href={link.url}

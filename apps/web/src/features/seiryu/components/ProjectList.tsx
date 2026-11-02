@@ -1,26 +1,19 @@
 "use client";
 
-import { ConfirmDelete } from "@/components/ConfirmDelete";
-import { ContextArea } from "@/components/ContextArea";
-import { startNavigationProgress } from "@/components/NavigationProgress";
-import { deleteProject, reorderProject } from "@/features/seiryu/actions/projects";
-import { ProjectDialog, type ProjectSummary } from "@/features/seiryu/components/ProjectDialog";
-import { useServerState } from "@/features/seiryu/lib/server-state";
-import { generateKeyBetween } from "@/lib/position";
 import {
+	closestCenter,
 	DndContext,
 	type DragEndEvent,
 	KeyboardSensor,
 	type Modifier,
 	MouseSensor,
 	TouchSensor,
-	closestCenter,
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
 import {
-	SortableContext,
 	arrayMove,
+	SortableContext,
 	sortableKeyboardCoordinates,
 	useSortable,
 	verticalListSortingStrategy,
@@ -39,17 +32,24 @@ import {
 	Button,
 	ContextMenuItem,
 	ContextMenuSeparator,
+	cn,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-	cn,
 } from "@seikatsu/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { ContextArea } from "@/components/ContextArea";
+import { startNavigationProgress } from "@/components/NavigationProgress";
+import { deleteProject, reorderProject } from "@/features/seiryu/actions/projects";
+import { ProjectDialog, type ProjectSummary } from "@/features/seiryu/components/ProjectDialog";
+import { useServerState } from "@/features/seiryu/lib/server-state";
+import { generateKeyBetween } from "@/lib/position";
 
 type Project = ProjectSummary & { position: string };
 

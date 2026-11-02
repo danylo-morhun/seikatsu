@@ -1,9 +1,9 @@
 "use client";
 
-import { buildPeriodLabel, previousRange } from "@/features/kuroji/lib/dates";
 import { Button } from "@seikatsu/ui";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { buildPeriodLabel, previousRange } from "@/features/kuroji/lib/dates";
 
 interface Props {
 	/** The resolved period on screen; both undefined means all time. */

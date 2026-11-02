@@ -1,9 +1,5 @@
 "use client";
 
-import { SettingsSection } from "@/components/SettingsSection";
-import { Spinner } from "@/components/Spinner";
-import { FOOTER } from "@/features/keizoku/components/HabitDialog";
-import { useHeld } from "@/hooks/useHeld";
 import {
 	Button,
 	Dialog,
@@ -17,6 +13,10 @@ import {
 import Link from "next/link";
 import { type CSSProperties, useEffect, useId, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { SettingsSection } from "@/components/SettingsSection";
+import { Spinner } from "@/components/Spinner";
+import { FOOTER } from "@/features/keizoku/components/HabitDialog";
+import { useHeld } from "@/hooks/useHeld";
 import { renameSource } from "../actions/applications";
 
 const rise = (i: number) => ({ "--i": Math.min(i, 8) }) as CSSProperties;

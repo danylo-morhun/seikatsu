@@ -1,5 +1,10 @@
 "use client";
 
+import { Delete01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Button, Input } from "@seikatsu/ui";
+import { useOptimistic, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { SettingsSection } from "@/components/SettingsSection";
 import { parseNumber } from "@/features/aisha/lib/format";
@@ -9,11 +14,6 @@ import { saveSettings } from "@/features/hoshii/actions/settings";
 import type { SettingsValues } from "@/features/hoshii/lib/hoshii-schemas";
 import type { FormAccount } from "@/features/kuroji/actions/form-options";
 import { AccountPicker } from "@/features/kuroji/components/AccountSelect";
-import { Delete01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Button, Input } from "@seikatsu/ui";
-import { useOptimistic, useState, useTransition } from "react";
-import { toast } from "sonner";
 
 const FAILED = { error: "Couldn't save. Check your connection." };
 type Settings = Omit<SettingsValues, "piggyAccountId" | "walletId" | "categoryId"> & {

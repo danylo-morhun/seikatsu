@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-	type FilterableBook,
 	applyFilters,
 	byFinishedYear,
+	type FilterableBook,
 	readFilters,
 	writeFilters,
 } from "./filters";

@@ -1,19 +1,5 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
-import { createVehicle, updateVehicle } from "@/features/aisha/actions/vehicles";
-import type { AishaVehicle } from "@/features/aisha/actions/vehicles";
-import { FieldError } from "@/features/aisha/components/DialogParts";
-import {
-	FUEL_LABELS,
-	FUEL_TYPES,
-	type FuelType,
-	TRANSMISSIONS,
-	TRANSMISSION_LABELS,
-	type Transmission,
-} from "@/features/aisha/lib/constants";
-import { parseNumber } from "@/features/aisha/lib/format";
-import { localToday } from "@/features/aisha/lib/today";
 import {
 	Button,
 	Checkbox,
@@ -27,6 +13,20 @@ import {
 } from "@seikatsu/ui";
 import { useId, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { Spinner } from "@/components/Spinner";
+import type { AishaVehicle } from "@/features/aisha/actions/vehicles";
+import { createVehicle, updateVehicle } from "@/features/aisha/actions/vehicles";
+import { FieldError } from "@/features/aisha/components/DialogParts";
+import {
+	FUEL_LABELS,
+	FUEL_TYPES,
+	type FuelType,
+	TRANSMISSION_LABELS,
+	TRANSMISSIONS,
+	type Transmission,
+} from "@/features/aisha/lib/constants";
+import { parseNumber } from "@/features/aisha/lib/format";
+import { localToday } from "@/features/aisha/lib/today";
 
 type Form = {
 	make: string;

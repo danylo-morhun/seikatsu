@@ -1,7 +1,6 @@
 "use server";
 
 import { randomBytes } from "node:crypto";
-import { getCurrentWorkspace, isUuid, requireWorkspace } from "@/lib/session";
 import {
 	and,
 	db,
@@ -17,8 +16,9 @@ import {
 	ne,
 	or,
 } from "@seikatsu/db";
-import { type MailKind, isMailKind } from "../lib/mail-verdict";
-import { type Result, getOwnedApplication, revalidateKyuu } from "./guard";
+import { getCurrentWorkspace, isUuid, requireWorkspace } from "@/lib/session";
+import { isMailKind, type MailKind } from "../lib/mail-verdict";
+import { getOwnedApplication, type Result, revalidateKyuu } from "./guard";
 import { hashMailKey, logAnswer, mailNote } from "./mail-sync";
 
 /** Applied answers stay on the table's mail bar this long (or until seen), to be undone. */
@@ -144,8 +144,7 @@ export async function confirmMail(
 	applicationId: string,
 ): Promise<Result<{ logged: boolean }>> {
 	const mail = await getOwnedMail(mailId);
-	if (!mail || mail.state !== "review" || !isMailKind(mail.kind))
-		return { error: "Nothing to confirm" };
+	if (mail?.state !== "review" || !isMailKind(mail.kind)) return { error: "Nothing to confirm" };
 	const app = await getOwnedApplication(applicationId);
 	if (!app) return { error: "Application not found" };
 	const kind: MailKind = mail.kind;
@@ -176,7 +175,7 @@ export async function confirmMail(
 /** Review: not an answer after all. */
 export async function dismissMail(mailId: string): Promise<Result> {
 	const mail = await getOwnedMail(mailId);
-	if (!mail || mail.state !== "review") return { error: "Nothing to dismiss" };
+	if (mail?.state !== "review") return { error: "Nothing to dismiss" };
 	await db.update(kyuuMail).set({ state: "dismissed" }).where(eq(kyuuMail.id, mail.id));
 	revalidateKyuu();
 	return { success: true };
@@ -185,7 +184,7 @@ export async function dismissMail(mailId: string): Promise<Result> {
 /** Takes back an answer applied from mail: its event goes, the status returns. */
 export async function undoMail(mailId: string): Promise<Result> {
 	const mail = await getOwnedMail(mailId);
-	if (!mail || mail.state !== "applied") return { error: "Nothing to undo" };
+	if (mail?.state !== "applied") return { error: "Nothing to undo" };
 	await db.transaction(async (tx) => {
 		if (mail.eventId) await tx.delete(kyuuEvents).where(eq(kyuuEvents.id, mail.eventId));
 		if (mail.applicationId && mail.previousStatus)

@@ -1,10 +1,10 @@
 "use client";
 
-import type { CategoryGroup, CategoryOption } from "@/features/kuroji/lib/category-groups";
 import { Search01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Input, cn } from "@seikatsu/ui";
+import { cn, Input } from "@seikatsu/ui";
 import { useEffect, useId, useState } from "react";
+import type { CategoryGroup, CategoryOption } from "@/features/kuroji/lib/category-groups";
 
 interface Props {
 	/** The groups to show for a search, already filtered and ordered. */

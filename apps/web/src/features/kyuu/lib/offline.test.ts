@@ -1,5 +1,5 @@
-import type { Op, OpName } from "@/features/pwa/lib/ops";
 import { describe, expect, it, vi } from "vitest";
+import type { Op, OpName } from "@/features/pwa/lib/ops";
 
 // The patches are pure; the server actions beside them never run here.
 vi.mock("../actions/progress", () => ({}));

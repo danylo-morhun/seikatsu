@@ -1,9 +1,9 @@
 "use server";
 
-import { sendPasswordResetEmail } from "@/features/auth/lib/email";
 import { authUsers, db, eq, verificationTokens } from "@seikatsu/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { sendPasswordResetEmail } from "@/features/auth/lib/email";
 
 export type ResetState = { error: string } | { success: true } | null;
 

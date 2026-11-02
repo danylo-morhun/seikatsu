@@ -1,5 +1,12 @@
 "use client";
 
+import { Add01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Button, cn, SidebarTrigger } from "@seikatsu/ui";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useDesign } from "@/components/DesignProvider";
 import { ShortcutsButton } from "@/components/KeyboardShortcuts";
 import { SectionNav } from "@/components/SectionNav";
@@ -8,20 +15,13 @@ import { requestLogService } from "@/features/aisha/lib/events";
 import { requestAdd } from "@/features/hoshii/lib/events";
 import { requestNewHabit } from "@/features/keizoku/lib/events";
 import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTransactionModal";
-import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
+import { buildTabHref, type KurojiTab } from "@/features/kuroji/lib/tabs";
 import { CARRY_PARAMS } from "@/features/kyuu/lib/carry-params";
 import { requestNewApplication } from "@/features/kyuu/lib/events";
 import { OfflinePill } from "@/features/pwa/components/OfflinePill";
 import { requestNewCard } from "@/features/seiryu/lib/events";
 import { requestNewBook } from "@/features/tsundoku/lib/events";
 import { getAppForPath } from "@/lib/app-themes";
-import { Add01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Button, SidebarTrigger, cn } from "@seikatsu/ui";
-import dynamic from "next/dynamic";
-import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 // Kuroji-only controls load on demand so the other apps' shells don't ship the
 // form/date-picker code (zod, react-hook-form, react-day-picker).

@@ -4,17 +4,17 @@ import { MoreHorizontalIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
+	cn,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
-	cn,
 } from "@seikatsu/ui";
 import Link from "next/link";
 import { memo } from "react";
 import { formatAge, formatDay, formatWhen } from "../lib/format";
-import { STATUSES, STATUS_CONFIG, type Status } from "../lib/stages";
+import { STATUS_CONFIG, STATUSES, type Status } from "../lib/stages";
 import type { ApplicationRow } from "../lib/types";
 import { useApplicationArea } from "./ApplicationArea";
 import { CountryFlag } from "./CountryFlag";

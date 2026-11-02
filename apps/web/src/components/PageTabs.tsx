@@ -1,12 +1,12 @@
 "use client";
 
-import { useDesign } from "@/components/DesignProvider";
-import { TravelUnderline } from "@/components/TravelUnderline";
-import { useIndicator } from "@/hooks/useIndicator";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useDesign } from "@/components/DesignProvider";
+import { TravelUnderline } from "@/components/TravelUnderline";
+import { useIndicator } from "@/hooks/useIndicator";
 
 /**
  * In-page section tabs (settings sections, Kyuu's views). Liquid Glass: a macOS segmented

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-	type HabitSchedule,
 	addDays,
 	computeStreak,
 	firstDay,
+	type HabitSchedule,
 	isDue,
 	lastDays,
 	mondayOf,

@@ -1,8 +1,8 @@
+import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { AppShell } from "@/components/AppShell";
 import { initializeWorkspace } from "@/features/kuroji/actions/data";
 import { DESIGN_COOKIE, parseDesign } from "@/lib/design";
-import { cookies } from "next/headers";
 
 /** The signed-in shell: sidebar, header and the workspace, for every app and the home. */
 export async function AppFrame({ children }: { children: React.ReactNode }) {

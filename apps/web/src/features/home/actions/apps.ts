@@ -1,10 +1,10 @@
 "use server";
 
-import { APPS_CONFIG } from "@/lib/app-themes";
-import { requireWorkspace } from "@/lib/session";
 import { db, eq, workspaces } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { APPS_CONFIG } from "@/lib/app-themes";
+import { requireWorkspace } from "@/lib/session";
 
 const appSchema = z.enum(Object.keys(APPS_CONFIG) as [keyof typeof APPS_CONFIG]);
 

@@ -1,11 +1,5 @@
 "use client";
 
-import { startNavigationProgress } from "@/components/NavigationProgress";
-import { TabBar, TabBarAction } from "@/components/TabBar";
-import type { ChromeData } from "@/features/hoshii/actions/data";
-import { ItemDialog } from "@/features/hoshii/components/ItemDialog";
-import { ADD_EVENT, requestAdd } from "@/features/hoshii/lib/events";
-import { pageKey } from "@/lib/capture-shortcut";
 import {
 	Add01Icon,
 	ChartHistogramIcon,
@@ -15,6 +9,12 @@ import {
 } from "@hugeicons/core-free-icons";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { startNavigationProgress } from "@/components/NavigationProgress";
+import { TabBar, TabBarAction } from "@/components/TabBar";
+import type { ChromeData } from "@/features/hoshii/actions/data";
+import { ItemDialog } from "@/features/hoshii/components/ItemDialog";
+import { ADD_EVENT, requestAdd } from "@/features/hoshii/lib/events";
+import { pageKey } from "@/lib/capture-shortcut";
 
 /**
  * Hoshii's chrome around every page of the app: the phone's bottom pill (Now, Lists, add,

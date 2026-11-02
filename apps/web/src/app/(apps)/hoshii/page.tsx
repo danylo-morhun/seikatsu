@@ -1,9 +1,9 @@
+import { redirect } from "next/navigation";
 import { getChromeData, getHoshii } from "@/features/hoshii/actions/data";
 import { NowView } from "@/features/hoshii/components/NowView";
 import { HoshiiWelcome } from "@/features/hoshii/components/Welcome";
 import { getCurrentWorkspace } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
-import { redirect } from "next/navigation";
 
 export default async function HoshiiPage() {
 	const workspace = await getCurrentWorkspace();

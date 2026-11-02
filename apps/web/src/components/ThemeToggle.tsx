@@ -1,11 +1,11 @@
 "use client";
 
-import { type Theme, currentTheme, setTheme } from "@/lib/theme";
 import { Moon02Icon, Sun01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@seikatsu/ui";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
+import { currentTheme, setTheme, type Theme } from "@/lib/theme";
 
 export function ThemeToggle() {
 	// Unknown until mounted: the server can't know the saved theme.

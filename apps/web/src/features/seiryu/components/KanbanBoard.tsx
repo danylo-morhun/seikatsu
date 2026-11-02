@@ -1,5 +1,45 @@
 "use client";
 
+import {
+	type CollisionDetection,
+	closestCenter,
+	closestCorners,
+	DndContext,
+	type DragEndEvent,
+	type DragOverEvent,
+	DragOverlay,
+	type DragStartEvent,
+	type DropAnimation,
+	defaultDropAnimationSideEffects,
+	KeyboardSensor,
+	MouseSensor,
+	pointerWithin,
+	TouchSensor,
+	type UniqueIdentifier,
+	useSensor,
+	useSensors,
+} from "@dnd-kit/core";
+import {
+	arrayMove,
+	horizontalListSortingStrategy,
+	SortableContext,
+	sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import { Archive01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+	Button,
+	cn,
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+} from "@seikatsu/ui";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
 import { NOTE_LINK } from "@/components/SettingsSection";
@@ -11,7 +51,7 @@ import { AddColumnButton } from "@/features/seiryu/components/AddColumnButton";
 import { type CardActions, CardMenuItems } from "@/features/seiryu/components/CardMenu";
 import { CardSheet } from "@/features/seiryu/components/CardSheet";
 import { FilterChips, FilterMenu } from "@/features/seiryu/components/FilterMenu";
-import { KanbanCardOverlay, freshCards } from "@/features/seiryu/components/KanbanCard";
+import { freshCards, KanbanCardOverlay } from "@/features/seiryu/components/KanbanCard";
 import { KanbanColumn, KanbanColumnOverlay } from "@/features/seiryu/components/KanbanColumn";
 import { NewCardDialog } from "@/features/seiryu/components/NewCardDialog";
 import { SettingsArchive } from "@/features/seiryu/components/SettingsArchive";
@@ -19,8 +59,8 @@ import type { ArchivedCardRow } from "@/features/seiryu/lib/archive";
 import { PRIORITIES } from "@/features/seiryu/lib/constants";
 import { NEW_CARD_EVENT } from "@/features/seiryu/lib/events";
 import {
-	type Filters,
 	applyFilters,
+	type Filters,
 	filterCount,
 	readFilters,
 	writeFilters,
@@ -33,52 +73,12 @@ import {
 	type CardFieldUpdates,
 	type ColumnData,
 	type ColumnUpdates,
-	type LabelData,
 	isTempId,
+	type LabelData,
 	withCardUpdates,
 } from "@/features/seiryu/lib/types";
 import { pageKey } from "@/lib/capture-shortcut";
 import { generateKeyBetween, generateNKeysBetween } from "@/lib/position";
-import {
-	type CollisionDetection,
-	DndContext,
-	type DragEndEvent,
-	type DragOverEvent,
-	DragOverlay,
-	type DragStartEvent,
-	type DropAnimation,
-	KeyboardSensor,
-	MouseSensor,
-	TouchSensor,
-	type UniqueIdentifier,
-	closestCenter,
-	closestCorners,
-	defaultDropAnimationSideEffects,
-	pointerWithin,
-	useSensor,
-	useSensors,
-} from "@dnd-kit/core";
-import {
-	SortableContext,
-	arrayMove,
-	horizontalListSortingStrategy,
-	sortableKeyboardCoordinates,
-} from "@dnd-kit/sortable";
-import { Archive01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-	Button,
-	Sheet,
-	SheetContent,
-	SheetDescription,
-	SheetHeader,
-	SheetTitle,
-	cn,
-} from "@seikatsu/ui";
-import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
-import { toast } from "sonner";
 
 interface Props {
 	project: { id: string; name: string };

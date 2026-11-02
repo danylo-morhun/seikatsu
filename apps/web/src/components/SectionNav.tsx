@@ -1,11 +1,11 @@
 "use client";
 
-import { useDesign } from "@/components/DesignProvider";
-import { TravelUnderline } from "@/components/TravelUnderline";
-import { useIndicator } from "@/hooks/useIndicator";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { useLayoutEffect, useRef, useState } from "react";
+import { useDesign } from "@/components/DesignProvider";
+import { TravelUnderline } from "@/components/TravelUnderline";
+import { useIndicator } from "@/hooks/useIndicator";
 
 export interface Section {
 	value: string;

@@ -1,9 +1,9 @@
 "use server";
 
+import { db, hoshiiSettings } from "@seikatsu/db";
 import { accountsValid, revalidateHoshii } from "@/features/hoshii/actions/guard";
 import { type SettingsValues, settingsSchema } from "@/features/hoshii/lib/hoshii-schemas";
 import { getCurrentWorkspace } from "@/lib/session";
-import { db, hoshiiSettings } from "@seikatsu/db";
 
 /** The piggy, the purchase accounts and the cooling tiers. */
 export async function saveSettings(

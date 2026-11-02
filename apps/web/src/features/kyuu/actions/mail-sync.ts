@@ -18,10 +18,10 @@ import {
 } from "@seikatsu/db";
 import { askGemini } from "../lib/gemini";
 import {
-	type MailCandidate,
-	type MailMessage,
 	fromHiringPlatform,
 	gmailLink,
+	type MailCandidate,
+	type MailMessage,
 	mailCandidates,
 } from "../lib/mail-match";
 import {
@@ -31,7 +31,7 @@ import {
 	verdictPrompt,
 	verdictSchema,
 } from "../lib/mail-verdict";
-import { type Status, addDays, daysBetween, statusAfterEvent, toStatus } from "../lib/stages";
+import { addDays, daysBetween, type Status, statusAfterEvent, toStatus } from "../lib/stages";
 
 /** Gemini calls per sync: the free tier allows a few a minute. The rest wait for the next run. */
 const MAX_READS = 10;

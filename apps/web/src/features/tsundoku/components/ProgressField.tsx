@@ -1,8 +1,8 @@
 "use client";
 
-import { parseProgressInput } from "@/features/tsundoku/lib/progress";
-import { Button, Input, cn } from "@seikatsu/ui";
+import { Button, cn, Input } from "@seikatsu/ui";
 import { forwardRef, useState } from "react";
+import { parseProgressInput } from "@/features/tsundoku/lib/progress";
 
 interface Props {
 	id: string;

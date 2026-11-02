@@ -1,14 +1,14 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
-import { createBankRule, deleteBankRule } from "@/features/kuroji/actions/bank";
-import type { getAccounts, getBankRules } from "@/features/kuroji/actions/data";
-import { AccountPicker } from "@/features/kuroji/components/AccountSelect";
 import { ArrowRight02Icon, Delete02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Input } from "@seikatsu/ui";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { Spinner } from "@/components/Spinner";
+import { createBankRule, deleteBankRule } from "@/features/kuroji/actions/bank";
+import type { getAccounts, getBankRules } from "@/features/kuroji/actions/data";
+import { AccountPicker } from "@/features/kuroji/components/AccountSelect";
 
 type Account = Awaited<ReturnType<typeof getAccounts>>[number];
 type Rule = Awaited<ReturnType<typeof getBankRules>>[number];

@@ -1,7 +1,7 @@
 "use client";
 
+import { cn, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@seikatsu/ui";
 import { CURRENCIES } from "@/features/kuroji/lib/constants";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, cn } from "@seikatsu/ui";
 
 /** An on/off switch with its label, for a choice inside a form. */
 export function Toggle({

@@ -1,7 +1,7 @@
+import { describe, expect, it } from "vitest";
 import type { KeizokuHabit } from "@/features/keizoku/actions/guard";
 import type { DayCell, TodayHabit } from "@/features/keizoku/actions/logs";
 import type { Op, OpName } from "@/features/pwa/lib/ops";
-import { describe, expect, it } from "vitest";
 import { overlayDays, overlayToday } from "./overlay";
 
 const TODAY = "2026-10-28"; // a Wednesday; the week started Monday 26th

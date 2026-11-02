@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { auth } from "@/auth";
 import { AppFrame } from "@/components/AppFrame";
 import { PageLoader } from "@/components/PageLoader";
@@ -8,7 +9,6 @@ import { getStarted } from "@/features/home/lib/today";
 import { ForgetOfflinePages } from "@/features/pwa/components/ForgetOfflinePages";
 import { getCurrentWorkspace } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
-import { Suspense } from "react";
 
 export default async function HomePage() {
 	const session = await auth();

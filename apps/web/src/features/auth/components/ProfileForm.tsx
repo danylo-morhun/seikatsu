@@ -1,7 +1,5 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
-import { updateProfile } from "@/features/auth/actions/settings";
 import { Camera01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Avatar, cn } from "@seikatsu/ui";
@@ -10,6 +8,8 @@ import { Input } from "@seikatsu/ui/input";
 import { Label } from "@seikatsu/ui/label";
 import { type DragEvent, useEffect, useId, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { Spinner } from "@/components/Spinner";
+import { updateProfile } from "@/features/auth/actions/settings";
 
 const MAX_BYTES = 2 * 1024 * 1024;
 const QUIET =

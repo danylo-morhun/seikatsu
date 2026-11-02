@@ -1,6 +1,6 @@
 import { getSources, getStats } from "@/features/kyuu/actions/applications";
 import { StatsView } from "@/features/kyuu/components/StatsView";
-import { type RawKyuuSearchParams, parseKyuuFilters } from "@/features/kyuu/lib/search-params";
+import { parseKyuuFilters, type RawKyuuSearchParams } from "@/features/kyuu/lib/search-params";
 
 export default async function KyuuStatsPage({
 	searchParams,

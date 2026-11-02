@@ -1,6 +1,6 @@
+import { cn } from "@seikatsu/ui";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { BAR_FILL, barClip } from "@/lib/bar";
-import { cn } from "@seikatsu/ui";
 
 interface Props {
 	/** Spent (expense budget) or earned (income target) so far, never negative. */

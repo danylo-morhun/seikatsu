@@ -28,7 +28,6 @@ describe("extractApplicationFromText", () => {
 	afterEach(() => {
 		vi.unstubAllGlobals();
 		vi.resetModules();
-		// biome-ignore lint/performance/noDelete: process.env assignment stringifies undefined, unlike a real delete
 		delete process.env.GEMINI_API_KEY;
 	});
 

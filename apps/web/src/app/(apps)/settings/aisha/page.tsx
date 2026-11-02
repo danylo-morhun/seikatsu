@@ -1,11 +1,11 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { NOTE_LINK, SettingsPage } from "@/components/SettingsSection";
 import { getCar, getCurrentVehicle } from "@/features/aisha/actions/data";
 import { SettingsAisha } from "@/features/aisha/components/SettingsAisha";
 import { getAccounts } from "@/features/kuroji/actions/data";
 import { getCurrentWorkspace } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
-import Link from "next/link";
-import { redirect } from "next/navigation";
 
 export default async function AishaSettingsPage() {
 	const [workspace, vehicle] = await Promise.all([getCurrentWorkspace(), getCurrentVehicle()]);
@@ -30,7 +30,9 @@ export default async function AishaSettingsPage() {
 
 async function Settings({
 	vehicle,
-}: { vehicle: NonNullable<Awaited<ReturnType<typeof getCurrentVehicle>>> }) {
+}: {
+	vehicle: NonNullable<Awaited<ReturnType<typeof getCurrentVehicle>>>;
+}) {
 	const [car, accounts] = await Promise.all([
 		getUserToday().then((today) => getCar(vehicle, today)),
 		getAccounts(vehicle.workspaceId),

@@ -1,7 +1,7 @@
 "use server";
 
-import { requireWorkspace } from "@/lib/session";
 import { and, count, db, eq, isNull, kyuuApplications } from "@seikatsu/db";
+import { requireWorkspace } from "@/lib/session";
 import { geminiConfigured } from "../lib/gemini";
 import { fillCountries } from "./country-fill";
 import { type Result, revalidateKyuu } from "./guard";

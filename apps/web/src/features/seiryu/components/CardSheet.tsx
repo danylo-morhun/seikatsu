@@ -1,9 +1,5 @@
 "use client";
 
-import { ConfirmDelete } from "@/components/ConfirmDelete";
-import { getCardDescription } from "@/features/seiryu/actions/cards";
-import { CardDetail } from "@/features/seiryu/components/CardDetail";
-import type { CardData, CardFieldUpdates, LabelData } from "@/features/seiryu/lib/types";
 import {
 	Archive01Icon,
 	Delete01Icon,
@@ -26,6 +22,10 @@ import {
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { getCardDescription } from "@/features/seiryu/actions/cards";
+import { CardDetail } from "@/features/seiryu/components/CardDetail";
+import type { CardData, CardFieldUpdates, LabelData } from "@/features/seiryu/lib/types";
 
 interface Props {
 	card: CardData | null;

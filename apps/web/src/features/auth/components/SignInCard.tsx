@@ -1,13 +1,5 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
-import {
-	handleCredentials,
-	signInWithGitHub,
-	signInWithGoogle,
-	signInWithMagicLink,
-} from "@/features/auth/actions/auth";
-import type { AuthState } from "@/features/auth/actions/auth";
 import { Button } from "@seikatsu/ui/button";
 import { Card, CardContent } from "@seikatsu/ui/card";
 import { Input } from "@seikatsu/ui/input";
@@ -17,6 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@seikatsu/ui/tabs";
 import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import { Spinner } from "@/components/Spinner";
+import type { AuthState } from "@/features/auth/actions/auth";
+import {
+	handleCredentials,
+	signInWithGitHub,
+	signInWithGoogle,
+	signInWithMagicLink,
+} from "@/features/auth/actions/auth";
 
 function LogoMark() {
 	return (

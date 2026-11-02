@@ -1,5 +1,17 @@
 "use client";
 
+import {
+	Button,
+	cn,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	Input,
+	Label,
+} from "@seikatsu/ui";
+import { useEffect, useId, useState, useTransition } from "react";
 import { AutoHeight } from "@/components/AutoHeight";
 import { Spinner } from "@/components/Spinner";
 import type { KeizokuHabit } from "@/features/keizoku/actions/guard";
@@ -17,18 +29,6 @@ import {
 import type { HabitFormValues, HabitPatch } from "@/features/keizoku/lib/keizoku-schemas";
 import { useHeld } from "@/hooks/useHeld";
 import { useKeptDraft } from "@/hooks/useKeptDraft";
-import {
-	Button,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	Input,
-	Label,
-	cn,
-} from "@seikatsu/ui";
-import { useEffect, useId, useState, useTransition } from "react";
 
 export const FOOTER =
 	"mt-auto flex justify-end gap-2 pt-2 max-sm:sticky max-sm:bottom-0 max-sm:-mx-6 max-sm:-mb-6 max-sm:border-t max-sm:bg-background max-sm:px-6 max-sm:py-4";
@@ -142,7 +142,11 @@ function EmojiGrid({
 	labelledBy,
 	value,
 	onChange,
-}: { labelledBy: string; value: string; onChange: (emoji: string) => void }) {
+}: {
+	labelledBy: string;
+	value: string;
+	onChange: (emoji: string) => void;
+}) {
 	const preset = (EMOJI_PRESETS as readonly string[]).includes(value);
 	return (
 		<div role="radiogroup" aria-labelledby={labelledBy} className="grid grid-cols-7 gap-2">

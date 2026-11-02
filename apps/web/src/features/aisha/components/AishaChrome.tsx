@@ -1,11 +1,5 @@
 "use client";
 
-import { startNavigationProgress } from "@/components/NavigationProgress";
-import { TabBar, TabBarAction } from "@/components/TabBar";
-import { ReadingDialog } from "@/features/aisha/components/ReadingDialog";
-import { type KurojiDefaults, ServiceDialog } from "@/features/aisha/components/ServiceDialog";
-import { LOG_SERVICE_EVENT, MILEAGE_EVENT, requestLogService } from "@/features/aisha/lib/events";
-import { pageKey } from "@/lib/capture-shortcut";
 import {
 	Calendar03Icon,
 	Car01Icon,
@@ -15,6 +9,12 @@ import {
 } from "@hugeicons/core-free-icons";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { startNavigationProgress } from "@/components/NavigationProgress";
+import { TabBar, TabBarAction } from "@/components/TabBar";
+import { ReadingDialog } from "@/features/aisha/components/ReadingDialog";
+import { type KurojiDefaults, ServiceDialog } from "@/features/aisha/components/ServiceDialog";
+import { LOG_SERVICE_EVENT, MILEAGE_EVENT, requestLogService } from "@/features/aisha/lib/events";
+import { pageKey } from "@/lib/capture-shortcut";
 
 export interface ChromeData {
 	vehicleId: string;

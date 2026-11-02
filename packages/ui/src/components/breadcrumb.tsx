@@ -1,8 +1,7 @@
-import { Slot } from "radix-ui";
-import type * as React from "react";
-
 import { ArrowRight01Icon, MoreHorizontalCircle01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { Slot } from "radix-ui";
+import type * as React from "react";
 import { cn } from "../lib/utils";
 
 function Breadcrumb({ className, ...props }: React.ComponentProps<"nav">) {
@@ -96,10 +95,10 @@ function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<"span"
 
 export {
 	Breadcrumb,
-	BreadcrumbList,
+	BreadcrumbEllipsis,
 	BreadcrumbItem,
 	BreadcrumbLink,
+	BreadcrumbList,
 	BreadcrumbPage,
 	BreadcrumbSeparator,
-	BreadcrumbEllipsis,
 };

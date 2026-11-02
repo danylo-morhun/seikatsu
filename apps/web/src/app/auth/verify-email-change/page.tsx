@@ -1,5 +1,4 @@
-import { authUsers, db, eq, verificationTokens } from "@seikatsu/db";
-import { and } from "@seikatsu/db";
+import { and, authUsers, db, eq, verificationTokens } from "@seikatsu/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@seikatsu/ui/card";
 import Link from "next/link";
 

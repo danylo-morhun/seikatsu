@@ -1,14 +1,16 @@
+import { notFound } from "next/navigation";
 import { getOwnedHabit } from "@/features/keizoku/actions/guard";
 import { getHabitDays, getHabitJournal } from "@/features/keizoku/actions/logs";
 import { getHabitSummary } from "@/features/keizoku/actions/stats";
 import { HabitPage } from "@/features/keizoku/components/HabitPage";
 import { addDays } from "@/features/keizoku/lib/streak";
 import { getUserToday } from "@/lib/timezone";
-import { notFound } from "next/navigation";
 
 export default async function KeizokuHabitPage({
 	params,
-}: { params: Promise<{ habitId: string }> }) {
+}: {
+	params: Promise<{ habitId: string }>;
+}) {
 	const [{ habitId }, today] = await Promise.all([params, getUserToday()]);
 	const habit = await getOwnedHabit(habitId);
 	if (!habit) notFound();

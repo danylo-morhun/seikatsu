@@ -1,10 +1,10 @@
 "use server";
 
-import { signIn, signOut } from "@/auth";
 import { authUsers, db, eq } from "@seikatsu/db";
 import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
 import { z } from "zod";
+import { signIn, signOut } from "@/auth";
 
 export type AuthState = { error: string } | { success: true } | null;
 

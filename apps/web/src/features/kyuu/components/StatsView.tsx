@@ -1,8 +1,8 @@
+import { cn } from "@seikatsu/ui";
+import type { CSSProperties } from "react";
 import { PageTitle } from "@/components/PageTitle";
 import { FIGURES_ROW, Figure } from "@/features/keizoku/components/Figure";
 import { BAR_FILL, barClip } from "@/lib/bar";
-import { cn } from "@seikatsu/ui";
-import type { CSSProperties } from "react";
 import type { KyuuStats, Rate } from "../lib/stats";
 import { KyuuFilters } from "./KyuuFilters";
 import { STATUS_LOOK } from "./StatusMark";

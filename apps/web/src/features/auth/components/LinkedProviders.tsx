@@ -1,10 +1,10 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
-import { unlinkProvider } from "@/features/auth/actions/settings";
-import type { SettingsState } from "@/features/auth/actions/settings";
 import { Button } from "@seikatsu/ui/button";
 import { useActionState } from "react";
+import { Spinner } from "@/components/Spinner";
+import type { SettingsState } from "@/features/auth/actions/settings";
+import { unlinkProvider } from "@/features/auth/actions/settings";
 
 const PROVIDER_LABELS: Record<string, string> = {
 	github: "GitHub",

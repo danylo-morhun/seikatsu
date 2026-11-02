@@ -1,9 +1,5 @@
 "use client";
 
-import { ConfirmDelete } from "@/components/ConfirmDelete";
-import { KanbanCard, SORT_TRANSITION } from "@/features/seiryu/components/KanbanCard";
-import type { CardData, ColumnData, ColumnUpdates } from "@/features/seiryu/lib/types";
-import { LABEL_COLORS } from "@/lib/pigments";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -17,6 +13,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
+	cn,
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
@@ -35,9 +32,12 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-	cn,
 } from "@seikatsu/ui";
 import { type CSSProperties, memo, useId, useMemo, useRef, useState } from "react";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { KanbanCard, SORT_TRANSITION } from "@/features/seiryu/components/KanbanCard";
+import type { CardData, ColumnData, ColumnUpdates } from "@/features/seiryu/lib/types";
+import { LABEL_COLORS } from "@/lib/pigments";
 
 export type { ColumnData } from "@/features/seiryu/lib/types";
 
@@ -389,7 +389,10 @@ function ColumnCount({ shown, total }: { shown: number; total: number }) {
 export function KanbanColumnOverlay({
 	column,
 	cardCount,
-}: { column: ColumnData; cardCount: number }) {
+}: {
+	column: ColumnData;
+	cardCount: number;
+}) {
 	return (
 		<div className={cn(LANE, "animate-lift cursor-grabbing rounded-group bg-surface-2 px-3")}>
 			<div className="flex h-11 items-center gap-2">

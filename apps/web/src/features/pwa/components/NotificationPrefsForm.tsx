@@ -1,10 +1,10 @@
 "use client";
 
-import { type PrefsInput, saveNotificationPrefs } from "@/features/pwa/actions/push";
 import type { NotificationPrefs } from "@seikatsu/db";
 import { Checkbox, Input, Label } from "@seikatsu/ui";
 import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
+import { type PrefsInput, saveNotificationPrefs } from "@/features/pwa/actions/push";
 
 type BoolKey = {
 	[K in keyof PrefsInput]: PrefsInput[K] extends boolean ? K : never;

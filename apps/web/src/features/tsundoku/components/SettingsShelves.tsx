@@ -1,17 +1,5 @@
 "use client";
 
-import { ColorSwatches } from "@/components/ColorSwatches";
-import { ConfirmDelete } from "@/components/ConfirmDelete";
-import { SettingsSection } from "@/components/SettingsSection";
-import { Spinner } from "@/components/Spinner";
-import {
-	type ShelfWithCount,
-	createShelf,
-	deleteShelf,
-	updateShelf,
-} from "@/features/tsundoku/actions/shelves";
-import { useHeld } from "@/hooks/useHeld";
-import { LABEL_COLORS } from "@/lib/pigments";
 import { Delete01Icon, MoreHorizontalIcon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -32,6 +20,18 @@ import {
 import Link from "next/link";
 import { useEffect, useId, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { ColorSwatches } from "@/components/ColorSwatches";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { SettingsSection } from "@/components/SettingsSection";
+import { Spinner } from "@/components/Spinner";
+import {
+	createShelf,
+	deleteShelf,
+	type ShelfWithCount,
+	updateShelf,
+} from "@/features/tsundoku/actions/shelves";
+import { useHeld } from "@/hooks/useHeld";
+import { LABEL_COLORS } from "@/lib/pigments";
 
 type Editing = { shelf: ShelfWithCount | null } | null;
 

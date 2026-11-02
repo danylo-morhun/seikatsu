@@ -1,9 +1,22 @@
 "use client";
 
+import {
+	Button,
+	cn,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	Input,
+	Label,
+} from "@seikatsu/ui";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { AutoHeight } from "@/components/AutoHeight";
 import { QuietAdd } from "@/components/QuietAdd";
 import { Spinner } from "@/components/Spinner";
-import { FOOTER, FieldError, instantClass } from "@/features/aisha/components/DialogParts";
+import { FieldError, FOOTER, instantClass } from "@/features/aisha/components/DialogParts";
 import { parseNumber } from "@/features/aisha/lib/format";
 import { localToday } from "@/features/aisha/lib/today";
 import type { ChromeData, HoshiiItem } from "@/features/hoshii/actions/data";
@@ -12,11 +25,11 @@ import { readLink } from "@/features/hoshii/actions/link";
 import { createList } from "@/features/hoshii/actions/lists";
 import { discardPhoto, uploadPhoto } from "@/features/hoshii/actions/upload";
 import {
+	isLink,
 	type LinkDraft,
 	LinkList,
 	PhotoPicker,
 	type Reading,
-	isLink,
 } from "@/features/hoshii/components/LinkFields";
 import { CurrencySelect, Toggle } from "@/features/hoshii/components/Parts";
 import { coolingDays } from "@/features/hoshii/lib/cooling";
@@ -27,19 +40,6 @@ import { shopOf } from "@/features/hoshii/lib/product";
 import { NEEDS_CONNECTION } from "@/features/pwa/lib/run";
 import { useHeld } from "@/hooks/useHeld";
 import { useKeptDraft } from "@/hooks/useKeptDraft";
-import {
-	Button,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	Input,
-	Label,
-	cn,
-} from "@seikatsu/ui";
-import { useEffect, useId, useRef, useState, useTransition } from "react";
-import { toast } from "sonner";
 
 type Form = {
 	/** Add only: a link or a name, whichever was typed or pasted. */

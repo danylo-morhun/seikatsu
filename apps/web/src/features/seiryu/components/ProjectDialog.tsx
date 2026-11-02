@@ -1,11 +1,5 @@
 "use client";
 
-import { ColorSwatches } from "@/components/ColorSwatches";
-import { Spinner } from "@/components/Spinner";
-import { createProject, updateProject } from "@/features/seiryu/actions/projects";
-import { useHeld } from "@/hooks/useHeld";
-import { useKeptDraft } from "@/hooks/useKeptDraft";
-import { LABEL_COLORS } from "@/lib/pigments";
 import {
 	Button,
 	Dialog,
@@ -19,6 +13,12 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { ColorSwatches } from "@/components/ColorSwatches";
+import { Spinner } from "@/components/Spinner";
+import { createProject, updateProject } from "@/features/seiryu/actions/projects";
+import { useHeld } from "@/hooks/useHeld";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
+import { LABEL_COLORS } from "@/lib/pigments";
 
 export type ProjectSummary = { id: string; name: string; color: string | null };
 

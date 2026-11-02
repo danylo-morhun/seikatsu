@@ -1,6 +1,6 @@
+import { useMemo, useSyncExternalStore } from "react";
 import type { Op, OpName } from "@/features/pwa/lib/ops";
 import { getOps, getServerOps, subscribeOutbox } from "@/features/pwa/lib/outbox";
-import { useMemo, useSyncExternalStore } from "react";
 
 /** Every queued op, oldest first. Empty on the server and before IndexedDB loads. */
 export function useOutbox(): Op[] {

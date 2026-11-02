@@ -1,9 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
 import { warmPages } from "@/features/pwa/lib/sw-client";
 import { readAppEntry } from "@/lib/app-entry";
 import { APPS_CONFIG } from "@/lib/app-themes";
-import { useEffect } from "react";
 
 const KEY = "seikatsu:warmed-at";
 const EVERY_MS = 6 * 60 * 60 * 1000;

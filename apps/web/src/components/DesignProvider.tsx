@@ -1,7 +1,7 @@
 "use client";
 
-import { DESIGN_COOKIE, type Design } from "@/lib/design";
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { DESIGN_COOKIE, type Design } from "@/lib/design";
 
 const DesignContext = createContext<{ design: Design; setDesign: (design: Design) => void }>({
 	design: "glass",

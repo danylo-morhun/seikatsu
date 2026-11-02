@@ -1,7 +1,7 @@
-import { AnimatedAmount } from "@/features/kuroji/components/AnimatedAmount";
-import { formatCurrency } from "@/features/kuroji/lib/format";
 import { cn } from "@seikatsu/ui";
 import type { CSSProperties } from "react";
+import { AnimatedAmount } from "@/features/kuroji/components/AnimatedAmount";
+import { formatCurrency } from "@/features/kuroji/lib/format";
 
 interface Props {
 	currency: string;

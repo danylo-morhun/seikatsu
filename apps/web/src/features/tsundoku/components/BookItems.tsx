@@ -1,5 +1,8 @@
 "use client";
 
+import { Button, cn } from "@seikatsu/ui";
+import Link from "next/link";
+import { type CSSProperties, memo, useState } from "react";
 import type { LibraryBook } from "@/features/tsundoku/actions/books";
 import { BookCover } from "@/features/tsundoku/components/BookCover";
 import { ProgressMeter } from "@/features/tsundoku/components/ProgressMeter";
@@ -7,9 +10,6 @@ import { Stars } from "@/features/tsundoku/components/Stars";
 import { STATUS_CONFIG } from "@/features/tsundoku/lib/constants";
 import { takeFresh } from "@/features/tsundoku/lib/fresh";
 import { progressPercent } from "@/features/tsundoku/lib/pace";
-import { Button, cn } from "@seikatsu/ui";
-import Link from "next/link";
-import { type CSSProperties, memo, useState } from "react";
 
 // Stagger only the first rows: a long wall shouldn't take a second to arrive.
 const stagger = (index: number) => ({ "--i": Math.min(index, 8) }) as CSSProperties;
@@ -38,7 +38,10 @@ function Meta({ book }: { book: LibraryBook }) {
 export const BookTile = memo(function BookTile({
 	book,
 	index,
-}: { book: LibraryBook; index: number }) {
+}: {
+	book: LibraryBook;
+	index: number;
+}) {
 	const entrance = useEntrance(book.id);
 	return (
 		<Link
@@ -88,7 +91,10 @@ export const BookTile = memo(function BookTile({
 export const BookRow = memo(function BookRow({
 	book,
 	index,
-}: { book: LibraryBook; index: number }) {
+}: {
+	book: LibraryBook;
+	index: number;
+}) {
 	const entrance = useEntrance(book.id);
 	return (
 		<li className={entrance} style={stagger(index)}>

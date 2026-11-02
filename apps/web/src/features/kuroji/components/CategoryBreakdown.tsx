@@ -1,11 +1,11 @@
-import type { AccountBalance } from "@/features/kuroji/actions/balances";
-import { displayBalance, rollupRoots } from "@/features/kuroji/lib/balance";
-import { formatCurrency } from "@/features/kuroji/lib/format";
-import { BAR_FILL, barClip } from "@/lib/bar";
 import { ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
+import type { AccountBalance } from "@/features/kuroji/actions/balances";
+import { displayBalance, rollupRoots } from "@/features/kuroji/lib/balance";
+import { formatCurrency } from "@/features/kuroji/lib/format";
+import { BAR_FILL, barClip } from "@/lib/bar";
 
 interface Props {
 	balances: AccountBalance[];

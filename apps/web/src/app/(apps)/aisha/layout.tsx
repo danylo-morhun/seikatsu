@@ -1,7 +1,7 @@
+import { redirect } from "next/navigation";
 import { getChromeData } from "@/features/aisha/actions/data";
 import { AishaChrome } from "@/features/aisha/components/AishaChrome";
 import { getCurrentWorkspace } from "@/lib/session";
-import { redirect } from "next/navigation";
 
 export default async function AishaLayout({ children }: { children: React.ReactNode }) {
 	const workspace = await getCurrentWorkspace();

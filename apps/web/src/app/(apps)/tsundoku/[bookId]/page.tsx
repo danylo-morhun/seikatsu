@@ -1,14 +1,16 @@
+import { notFound } from "next/navigation";
 import { getBook, getSeriesBooks } from "@/features/tsundoku/actions/books";
 import { getQuotes } from "@/features/tsundoku/actions/quotes";
 import { getSessions } from "@/features/tsundoku/actions/sessions";
 import { getShelves } from "@/features/tsundoku/actions/shelves";
 import { BookPage } from "@/features/tsundoku/components/BookPage";
 import { getUserToday } from "@/lib/timezone";
-import { notFound } from "next/navigation";
 
 export default async function TsundokuBookPage({
 	params,
-}: { params: Promise<{ bookId: string }> }) {
+}: {
+	params: Promise<{ bookId: string }>;
+}) {
 	const { bookId } = await params;
 	const book = await getBook(bookId);
 	if (!book) notFound();

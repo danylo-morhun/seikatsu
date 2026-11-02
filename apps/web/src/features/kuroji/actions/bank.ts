@@ -1,14 +1,5 @@
 "use server";
 
-import { auth } from "@/auth";
-import { syncConnection } from "@/features/kuroji/lib/bank-sync";
-import {
-	createSession,
-	listAspsps,
-	newAuthState,
-	startAuth,
-} from "@/features/kuroji/lib/enablebanking";
-import { getOwnedWorkspace } from "@/lib/session";
 import {
 	accounts,
 	and,
@@ -22,6 +13,15 @@ import {
 	transactions,
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+import { syncConnection } from "@/features/kuroji/lib/bank-sync";
+import {
+	createSession,
+	listAspsps,
+	newAuthState,
+	startAuth,
+} from "@/features/kuroji/lib/enablebanking";
+import { getOwnedWorkspace } from "@/lib/session";
 
 type Result<T = unknown> = { error: string } | ({ success: true } & T);
 

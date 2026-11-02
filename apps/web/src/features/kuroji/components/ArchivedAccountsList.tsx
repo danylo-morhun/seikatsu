@@ -1,14 +1,14 @@
 "use client";
 
-import { SettingsSection } from "@/components/SettingsSection";
-import { unarchiveAccount } from "@/features/kuroji/actions/accounts";
-import type { getAccounts } from "@/features/kuroji/actions/data";
 import { Archive01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@seikatsu/ui";
 import * as React from "react";
 import { useTransition } from "react";
 import { toast } from "sonner";
+import { SettingsSection } from "@/components/SettingsSection";
+import { unarchiveAccount } from "@/features/kuroji/actions/accounts";
+import type { getAccounts } from "@/features/kuroji/actions/data";
 
 type Account = Awaited<ReturnType<typeof getAccounts>>[number];
 

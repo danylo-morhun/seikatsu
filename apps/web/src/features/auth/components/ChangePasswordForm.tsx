@@ -1,13 +1,13 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
-import { changePassword } from "@/features/auth/actions/settings";
-import type { SettingsState } from "@/features/auth/actions/settings";
 import { Button } from "@seikatsu/ui/button";
 import { Input } from "@seikatsu/ui/input";
 import { Label } from "@seikatsu/ui/label";
 import { useActionState, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
+import { Spinner } from "@/components/Spinner";
+import type { SettingsState } from "@/features/auth/actions/settings";
+import { changePassword } from "@/features/auth/actions/settings";
 
 interface Props {
 	hasPassword: boolean;

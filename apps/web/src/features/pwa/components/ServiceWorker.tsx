@@ -1,8 +1,8 @@
 "use client";
 
-import { SW_URL, swSupported } from "@/features/pwa/lib/sw-client";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { SW_URL, swSupported } from "@/features/pwa/lib/sw-client";
 
 /**
  * Registers the service worker and offers a reload when a new deploy's worker is waiting.

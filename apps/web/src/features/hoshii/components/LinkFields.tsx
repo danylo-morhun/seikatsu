@@ -1,15 +1,15 @@
 "use client";
 
+import { Camera01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Button, cn, Input } from "@seikatsu/ui";
+import { useRef, useState } from "react";
 import { QuietAdd } from "@/components/QuietAdd";
 import { Spinner } from "@/components/Spinner";
 import { Thumb } from "@/features/hoshii/components/Thumb";
 import { formatMoney } from "@/features/hoshii/lib/format";
 import type { LinkValues } from "@/features/hoshii/lib/hoshii-schemas";
 import { shopOf } from "@/features/hoshii/lib/product";
-import { Camera01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Button, Input, cn } from "@seikatsu/ui";
-import { useRef, useState } from "react";
 
 export type Reading = "idle" | "reading" | "found" | "failed";
 /** A link in the form: what its page said so far, and whether it's still being read. */

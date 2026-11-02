@@ -1,12 +1,12 @@
 "use client";
 
-import { ConfirmDelete } from "@/components/ConfirmDelete";
-import { SettingsSection } from "@/components/SettingsSection";
-import { Spinner } from "@/components/Spinner";
 import { Button } from "@seikatsu/ui";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { type MailKeyStatus, createMailKey, deleteMailKey } from "../actions/mail";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { SettingsSection } from "@/components/SettingsSection";
+import { Spinner } from "@/components/Spinner";
+import { createMailKey, deleteMailKey, type MailKeyStatus } from "../actions/mail";
 import { mailScript } from "../lib/mail-script";
 
 const FAILED = { error: "Couldn't save. Check your connection." } as const;

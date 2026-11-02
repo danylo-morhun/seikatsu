@@ -1,10 +1,10 @@
 "use client";
 
-import { AppWelcome } from "@/components/AppWelcome";
-import { requestAdd } from "@/features/hoshii/lib/events";
 import { Add01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@seikatsu/ui";
+import { AppWelcome } from "@/components/AppWelcome";
+import { requestAdd } from "@/features/hoshii/lib/events";
 
 /** First run: nothing wanted yet. */
 export function HoshiiWelcome({ hasPiggy }: { hasPiggy: boolean }) {

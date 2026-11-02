@@ -1,10 +1,10 @@
 "use client";
 
+import { Button } from "@seikatsu/ui/button";
+import { useState, useTransition } from "react";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { Spinner } from "@/components/Spinner";
 import { deleteAccount, signOutAllDevices } from "@/features/auth/actions/settings";
-import { Button } from "@seikatsu/ui/button";
-import { useState, useTransition } from "react";
 
 /** Signing out everywhere and deleting the account, as two hairline rows. */
 export function DangerZone() {

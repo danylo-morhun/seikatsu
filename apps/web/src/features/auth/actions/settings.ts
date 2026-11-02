@@ -1,12 +1,12 @@
 "use server";
 
-import { auth, signOut } from "@/auth";
-import { sendEmailChangeVerification } from "@/features/auth/lib/email";
 import { and, authAccounts, authUsers, db, eq, verificationTokens, workspaces } from "@seikatsu/db";
 import { put } from "@vercel/blob";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { auth, signOut } from "@/auth";
+import { sendEmailChangeVerification } from "@/features/auth/lib/email";
 
 export type SettingsState = { error: string } | { success: true } | null;
 

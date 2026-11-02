@@ -11,10 +11,10 @@ import { KyuuWelcome } from "@/features/kyuu/components/KyuuWelcome";
 import { MailInbox } from "@/features/kyuu/components/MailInbox";
 import {
 	APPLICATIONS_PAGE_SIZE,
-	type RawKyuuSearchParams,
 	hasActiveKyuuFilters,
 	parseKyuuFilters,
 	parseKyuuSort,
+	type RawKyuuSearchParams,
 } from "@/features/kyuu/lib/search-params";
 import { getUserToday } from "@/lib/timezone";
 

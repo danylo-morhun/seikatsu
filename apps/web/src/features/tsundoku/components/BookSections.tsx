@@ -1,15 +1,5 @@
 "use client";
 
-import { QuietAdd } from "@/components/QuietAdd";
-import { Spinner } from "@/components/Spinner";
-import type { SeriesBook } from "@/features/tsundoku/actions/books";
-import { type TsundokuQuote, createQuote, deleteQuote } from "@/features/tsundoku/actions/quotes";
-import { type TsundokuSession, deleteSession } from "@/features/tsundoku/actions/sessions";
-import { type TsundokuShelf, createShelf } from "@/features/tsundoku/actions/shelves";
-import { FIELD_TEXTAREA } from "@/features/tsundoku/components/BookDialogs";
-import { STATUS_CONFIG } from "@/features/tsundoku/lib/constants";
-import { parseLocal } from "@/lib/dates";
-import { LABEL_COLORS } from "@/lib/pigments";
 import {
 	Copy01Icon,
 	Delete01Icon,
@@ -20,16 +10,26 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
+	cn,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 	Input,
-	cn,
 } from "@seikatsu/ui";
 import Link from "next/link";
 import { forwardRef, useId, useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { QuietAdd } from "@/components/QuietAdd";
+import { Spinner } from "@/components/Spinner";
+import type { SeriesBook } from "@/features/tsundoku/actions/books";
+import { createQuote, deleteQuote, type TsundokuQuote } from "@/features/tsundoku/actions/quotes";
+import { deleteSession, type TsundokuSession } from "@/features/tsundoku/actions/sessions";
+import { createShelf, type TsundokuShelf } from "@/features/tsundoku/actions/shelves";
+import { FIELD_TEXTAREA } from "@/features/tsundoku/components/BookDialogs";
+import { STATUS_CONFIG } from "@/features/tsundoku/lib/constants";
+import { parseLocal } from "@/lib/dates";
+import { LABEL_COLORS } from "@/lib/pigments";
 
 const ROW_MENU =
 	"size-10 shrink-0 text-muted-foreground/50 hover:text-foreground md:size-8 data-[state=open]:text-foreground";
@@ -40,7 +40,11 @@ function SectionTitle({
 	id,
 	children,
 	aside,
-}: { id: string; children: React.ReactNode; aside?: React.ReactNode }) {
+}: {
+	id: string;
+	children: React.ReactNode;
+	aside?: React.ReactNode;
+}) {
 	return (
 		<div className="mb-3 flex items-baseline justify-between gap-3">
 			<h2 id={id} className="text-sm font-medium">

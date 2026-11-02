@@ -2,12 +2,12 @@
 
 import {
 	ANSWER_KINDS,
+	addDays,
 	CLOSED,
+	daysBetween,
 	type EventKind,
 	PRE_APPLICATION,
 	type Status,
-	addDays,
-	daysBetween,
 	waiting,
 } from "./stages";
 

@@ -1,11 +1,5 @@
 "use client";
 
-import { startNavigationProgress } from "@/components/NavigationProgress";
-import { TabBar, TabBarAction } from "@/components/TabBar";
-import type { BookStatus } from "@/features/tsundoku/lib/constants";
-import { NEW_BOOK_EVENT, requestNewBook } from "@/features/tsundoku/lib/events";
-import { useOpenedOnce } from "@/hooks/useOpenedOnce";
-import { pageKey } from "@/lib/capture-shortcut";
 import {
 	Add01Icon,
 	Book01Icon,
@@ -16,6 +10,12 @@ import {
 import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { startNavigationProgress } from "@/components/NavigationProgress";
+import { TabBar, TabBarAction } from "@/components/TabBar";
+import type { BookStatus } from "@/features/tsundoku/lib/constants";
+import { NEW_BOOK_EVENT, requestNewBook } from "@/features/tsundoku/lib/events";
+import { useOpenedOnce } from "@/hooks/useOpenedOnce";
+import { pageKey } from "@/lib/capture-shortcut";
 
 // The search and form load on first open; hovering the add button starts it early.
 const loadAddBook = () =>

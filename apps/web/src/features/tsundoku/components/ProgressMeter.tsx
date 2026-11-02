@@ -1,6 +1,6 @@
+import { cn } from "@seikatsu/ui";
 import { progressPercent } from "@/features/tsundoku/lib/pace";
 import { BAR_FILL, barClip } from "@/lib/bar";
-import { cn } from "@seikatsu/ui";
 
 interface Props {
 	currentPage: number;

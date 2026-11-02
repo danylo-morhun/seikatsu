@@ -1,12 +1,12 @@
 "use client";
 
+import { Button, cn, Input } from "@seikatsu/ui";
+import { useId, useOptimistic, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { QuietAdd } from "@/components/QuietAdd";
 import { Spinner } from "@/components/Spinner";
 import { clearGoal, setGoal } from "@/features/tsundoku/actions/goals";
 import { BAR_FILL, barClip } from "@/lib/bar";
-import { Button, Input, cn } from "@seikatsu/ui";
-import { useId, useOptimistic, useState, useTransition } from "react";
-import { toast } from "sonner";
 
 interface Props {
 	year: number;

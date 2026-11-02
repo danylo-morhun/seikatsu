@@ -1,13 +1,5 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
-import type { getAccounts } from "@/features/kuroji/actions/data";
-import { createRecurringTransaction } from "@/features/kuroji/actions/recurring";
-import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
-import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
-import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
-import { amountSchema, parseAmount } from "@/features/kuroji/lib/transaction-schema";
-import { useKeptDraft } from "@/hooks/useKeptDraft";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
@@ -30,6 +22,13 @@ import * as React from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Spinner } from "@/components/Spinner";
+import { createRecurringTransaction } from "@/features/kuroji/actions/recurring";
+import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
+import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
+import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
+import { amountSchema, parseAmount } from "@/features/kuroji/lib/transaction-schema";
+import { useKeptDraft } from "@/hooks/useKeptDraft";
 
 const FREQUENCIES = ["daily", "weekly", "monthly", "yearly"] as const;
 
@@ -45,7 +44,6 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-type Account = Awaited<ReturnType<typeof getAccounts>>[number];
 
 export function AddRecurringModal({
 	workspaceId,

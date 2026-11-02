@@ -1,5 +1,9 @@
 "use client";
 
+import { Button } from "@seikatsu/ui";
+import Link from "next/link";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { Spinner } from "@/components/Spinner";
 import {
@@ -7,10 +11,6 @@ import {
 	createCaptureKey,
 	deleteCaptureKey,
 } from "@/features/kuroji/actions/capture";
-import { Button } from "@seikatsu/ui";
-import Link from "next/link";
-import { useState, useTransition } from "react";
-import { toast } from "sonner";
 
 const FAILED = { error: "Couldn't save. Check your connection." } as const;
 

@@ -1,13 +1,13 @@
 // Seiryu's offline overlay: server cards + queued ops → what the board and the card show.
 // Pure, so a change made offline shows right away and after a reload, until the server has it.
 
+import { generateKeyBetween } from "fractional-indexing";
 import type { OfflineOps, Op } from "@/features/pwa/lib/ops";
 import {
 	type CardData,
 	type ChecklistItemData,
 	withCardUpdates,
 } from "@/features/seiryu/lib/types";
-import { generateKeyBetween } from "fractional-indexing";
 
 const byPosition = (a: { position: string }, b: { position: string }) =>
 	a.position < b.position ? -1 : a.position > b.position ? 1 : 0;

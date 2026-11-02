@@ -3,6 +3,11 @@
 // The home's interactive bits. The page itself is a server component, so each tile can stream
 // in on its own; these sit inside the tiles (and the header) once their data is there.
 
+import { cn } from "@seikatsu/ui";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { type AppHref, TileAction } from "@/features/home/components/Tile";
 import { greeting } from "@/features/home/lib/format";
 import type { BookToday, HabitToday } from "@/features/home/lib/today";
@@ -12,11 +17,6 @@ import { usePendingOps } from "@/features/pwa/lib/use-outbox";
 import { saveProgress as sendProgress } from "@/features/tsundoku/lib/offline";
 import { useOpenedOnce } from "@/hooks/useOpenedOnce";
 import { pageKey } from "@/lib/capture-shortcut";
-import { cn } from "@seikatsu/ui";
-import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
-import { toast } from "sonner";
 
 // The tiles' dialogs load on first open; hovering their button starts it early.
 const loadReading = () =>

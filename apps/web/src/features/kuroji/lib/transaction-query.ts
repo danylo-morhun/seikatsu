@@ -1,4 +1,3 @@
-import type { TransactionFilters } from "@/features/kuroji/lib/transaction-filters";
 import {
 	and,
 	asc,
@@ -11,9 +10,10 @@ import {
 	lte,
 	sql,
 	transactionEntries,
-	transactionTags,
 	transactions,
+	transactionTags,
 } from "@seikatsu/db";
+import type { TransactionFilters } from "@/features/kuroji/lib/transaction-filters";
 
 /** The rows a filter selects — shared by the list and the CSV export. */
 export function transactionWhere(workspaceId: string, f: TransactionFilters) {

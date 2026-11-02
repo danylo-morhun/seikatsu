@@ -1,9 +1,9 @@
 "use server";
 
-import { requireWorkspace } from "@/features/tsundoku/actions/guard";
-import { setGoalSchema } from "@/features/tsundoku/lib/tsundoku-schemas";
 import { and, db, eq, tsundokuGoals } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
+import { requireWorkspace } from "@/features/tsundoku/actions/guard";
+import { setGoalSchema } from "@/features/tsundoku/lib/tsundoku-schemas";
 
 export type TsundokuGoal = typeof tsundokuGoals.$inferSelect;
 

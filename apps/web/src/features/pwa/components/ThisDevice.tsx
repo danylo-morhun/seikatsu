@@ -1,18 +1,18 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
-import { sendTestNotification, subscribePush, unsubscribePush } from "@/features/pwa/actions/push";
-import {
-	type PushSupport,
-	currentSubscription,
-	pushSupport,
-	subscribeDevice,
-} from "@/features/pwa/lib/push-client";
 import { AddSquareIcon, Share08Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@seikatsu/ui";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { Spinner } from "@/components/Spinner";
+import { sendTestNotification, subscribePush, unsubscribePush } from "@/features/pwa/actions/push";
+import {
+	currentSubscription,
+	type PushSupport,
+	pushSupport,
+	subscribeDevice,
+} from "@/features/pwa/lib/push-client";
 
 const FAILED = { error: "Couldn't save. Check your connection." };
 

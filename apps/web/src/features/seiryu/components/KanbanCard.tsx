@@ -1,17 +1,17 @@
 "use client";
 
-import { formatShortDate } from "@/features/kuroji/lib/dates";
-import { DueDateChip } from "@/features/seiryu/components/DueDateChip";
-import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
-import { PRIORITY_CONFIG } from "@/features/seiryu/lib/constants";
-import { type CardData, isTempId } from "@/features/seiryu/lib/types";
-import { BAR_FILL, barClip } from "@/lib/bar";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { CheckListIcon, Note01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import { memo, useId, useState } from "react";
+import { formatShortDate } from "@/features/kuroji/lib/dates";
+import { DueDateChip } from "@/features/seiryu/components/DueDateChip";
+import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
+import { PRIORITY_CONFIG } from "@/features/seiryu/lib/constants";
+import { type CardData, isTempId } from "@/features/seiryu/lib/types";
+import { BAR_FILL, barClip } from "@/lib/bar";
 
 export type { CardData, ChecklistItemData, LabelData } from "@/features/seiryu/lib/types";
 
@@ -90,7 +90,11 @@ const CardBody = memo(function CardBody({
 	card,
 	today,
 	id,
-}: { card: CardData; today: string; id?: string }) {
+}: {
+	card: CardData;
+	today: string;
+	id?: string;
+}) {
 	const total = card.checklistItems.length;
 	const done = card.checklistItems.filter((i) => i.isCompleted).length;
 	const hasMeta = card.priority || card.dueDate || total > 0 || card.hasDescription;

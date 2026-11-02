@@ -235,7 +235,7 @@ const ratesFor = cache(
 			.orderBy(exchangeRates.fromCurrency, desc(exchangeRates.date));
 		const latest = new Map(rows.map((r) => [r.from, r]));
 		const settled = await Promise.all(missing.map((c) => settle(c, base, date, latest.get(c))));
-		missing.forEach((c, i) => out.set(c, settled[i] ?? null));
+		for (const [i, c] of missing.entries()) out.set(c, settled[i] ?? null);
 		return [...out];
 	},
 );

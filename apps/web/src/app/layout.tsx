@@ -1,3 +1,8 @@
+import { TooltipProvider } from "@seikatsu/ui";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import type { Metadata, Viewport } from "next";
+import { Geist } from "next/font/google";
+import { Suspense } from "react";
 import { AppToaster } from "@/components/AppToaster";
 import { NavigationProgress } from "@/components/NavigationProgress";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -6,11 +11,6 @@ import { OutboxSync } from "@/features/pwa/components/OutboxSync";
 import { ServiceWorker } from "@/features/pwa/components/ServiceWorker";
 import splashScreens from "@/features/pwa/lib/splash-screens.json";
 import { DESIGN_SCRIPT } from "@/lib/design";
-import { TooltipProvider } from "@seikatsu/ui";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
-import { Suspense } from "react";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -43,11 +43,7 @@ export const viewport: Viewport = {
 	themeColor: "#0a0a0a",
 };
 
-export default function RootLayout({
-	children,
-}: {
-	children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en" className={geistSans.variable} suppressHydrationWarning>
 			<head>

@@ -1,27 +1,5 @@
 "use client";
 
-import { ConfirmDelete } from "@/components/ConfirmDelete";
-import { type KeizokuHabit, deleteHabit } from "@/features/keizoku/actions/habits";
-import type { DayCell } from "@/features/keizoku/actions/logs";
-import type { HabitSummary } from "@/features/keizoku/actions/stats";
-import { DayNoteDialog, type DayNoteTarget } from "@/features/keizoku/components/DayNoteDialog";
-import { FIGURES_ROW, Figure } from "@/features/keizoku/components/Figure";
-import { HabitDialog } from "@/features/keizoku/components/HabitDialog";
-import { CheckButton } from "@/features/keizoku/components/HabitRow";
-import { type HeatDay, Heatmap } from "@/features/keizoku/components/Heatmap";
-import { Photo } from "@/features/keizoku/components/Photo";
-import { formatDay } from "@/features/keizoku/lib/constants";
-import { TIME_OF_DAY_LABELS, scheduleLabel } from "@/features/keizoku/lib/constants";
-import { editHabit, saveNote, setArchived, tickDay } from "@/features/keizoku/lib/offline";
-import { overlayDays } from "@/features/keizoku/lib/overlay";
-import {
-	addDays,
-	isScheduled,
-	runUnit,
-	mondayOf as weekStart,
-} from "@/features/keizoku/lib/streak";
-import { usePendingOps } from "@/features/pwa/lib/use-outbox";
-import { pageKey } from "@/lib/capture-shortcut";
 import {
 	Archive01Icon,
 	ArchiveArrowUpIcon,
@@ -53,6 +31,27 @@ import {
 	useTransition,
 } from "react";
 import { toast } from "sonner";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { deleteHabit, type KeizokuHabit } from "@/features/keizoku/actions/habits";
+import type { DayCell } from "@/features/keizoku/actions/logs";
+import type { HabitSummary } from "@/features/keizoku/actions/stats";
+import { DayNoteDialog, type DayNoteTarget } from "@/features/keizoku/components/DayNoteDialog";
+import { FIGURES_ROW, Figure } from "@/features/keizoku/components/Figure";
+import { HabitDialog } from "@/features/keizoku/components/HabitDialog";
+import { CheckButton } from "@/features/keizoku/components/HabitRow";
+import { type HeatDay, Heatmap } from "@/features/keizoku/components/Heatmap";
+import { Photo } from "@/features/keizoku/components/Photo";
+import { formatDay, scheduleLabel, TIME_OF_DAY_LABELS } from "@/features/keizoku/lib/constants";
+import { editHabit, saveNote, setArchived, tickDay } from "@/features/keizoku/lib/offline";
+import { overlayDays } from "@/features/keizoku/lib/overlay";
+import {
+	addDays,
+	isScheduled,
+	runUnit,
+	mondayOf as weekStart,
+} from "@/features/keizoku/lib/streak";
+import { usePendingOps } from "@/features/pwa/lib/use-outbox";
+import { pageKey } from "@/lib/capture-shortcut";
 
 const FAILED = { error: "Couldn't save. Check your connection." };
 const rise = (i: number) => ({ "--i": i }) as CSSProperties;

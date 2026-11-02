@@ -1,7 +1,7 @@
+import { differenceInCalendarMonths, endOfMonth, format } from "date-fns";
 import { type AccountType, displayBalance } from "@/features/kuroji/lib/balance";
 import { parseLocal } from "@/features/kuroji/lib/dates";
-import { type Frequency, advanceDate } from "@/features/kuroji/lib/recurring-dates";
-import { differenceInCalendarMonths, endOfMonth, format } from "date-fns";
+import { advanceDate, type Frequency } from "@/features/kuroji/lib/recurring-dates";
 
 /** "2026-11" → its first and last day and length. */
 export function monthBounds(month: string) {

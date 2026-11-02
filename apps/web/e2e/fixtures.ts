@@ -1,4 +1,4 @@
-import { type Page, test as base, expect } from "@playwright/test";
+import { test as base, expect, type Page } from "@playwright/test";
 import { db, eq, workspaces } from "@seikatsu/db";
 import { E2E_USER } from "./env";
 

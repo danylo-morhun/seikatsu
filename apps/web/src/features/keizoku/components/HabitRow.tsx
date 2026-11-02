@@ -1,13 +1,12 @@
 "use client";
 
-import type { TodayHabit } from "@/features/keizoku/actions/logs";
-import { formatDay } from "@/features/keizoku/lib/constants";
-import { scheduleLabel } from "@/features/keizoku/lib/constants";
-import { takeFresh } from "@/features/keizoku/lib/habit-nav";
-import { isScheduled, runUnit } from "@/features/keizoku/lib/streak";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { type CSSProperties, memo, useState } from "react";
+import type { TodayHabit } from "@/features/keizoku/actions/logs";
+import { formatDay, scheduleLabel } from "@/features/keizoku/lib/constants";
+import { takeFresh } from "@/features/keizoku/lib/habit-nav";
+import { isScheduled, runUnit } from "@/features/keizoku/lib/streak";
 
 const stagger = (index: number) => ({ "--i": Math.min(index, 8) }) as CSSProperties;
 

@@ -1,10 +1,10 @@
 "use client";
 
-import { SettingsSection } from "@/components/SettingsSection";
-import { Spinner } from "@/components/Spinner";
 import { Button } from "@seikatsu/ui";
 import { useTransition } from "react";
 import { toast } from "sonner";
+import { SettingsSection } from "@/components/SettingsSection";
+import { Spinner } from "@/components/Spinner";
 import { fillMissingCountries } from "../actions/countries";
 
 /** Settings: how many applications have no country yet, and a way to work them out. */

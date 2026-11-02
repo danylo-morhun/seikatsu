@@ -1,6 +1,5 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
 import {
 	Alert02Icon,
 	AlertCircleIcon,
@@ -11,6 +10,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useIsMobile } from "@seikatsu/ui";
 import { Toaster } from "sonner";
+import { Spinner } from "@/components/Spinner";
 
 // Status is told by a small icon in the fixed materials; the surface stays lacquer (globals.css).
 const icons = {

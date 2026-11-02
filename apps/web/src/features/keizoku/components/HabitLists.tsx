@@ -1,16 +1,5 @@
 "use client";
 
-import { ConfirmDelete } from "@/components/ConfirmDelete";
-import { SettingsSection } from "@/components/SettingsSection";
-import {
-	type ArchivedHabit,
-	type KeizokuHabit,
-	deleteHabit,
-} from "@/features/keizoku/actions/habits";
-import { HabitDialog } from "@/features/keizoku/components/HabitDialog";
-import { TIME_OF_DAY_LABELS, scheduleLabel } from "@/features/keizoku/lib/constants";
-import { requestNewHabit } from "@/features/keizoku/lib/events";
-import { editHabit, setArchived } from "@/features/keizoku/lib/offline";
 import {
 	Archive01Icon,
 	ArchiveArrowUpIcon,
@@ -30,6 +19,17 @@ import {
 import Link from "next/link";
 import { type CSSProperties, useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { SettingsSection } from "@/components/SettingsSection";
+import {
+	type ArchivedHabit,
+	deleteHabit,
+	type KeizokuHabit,
+} from "@/features/keizoku/actions/habits";
+import { HabitDialog } from "@/features/keizoku/components/HabitDialog";
+import { scheduleLabel, TIME_OF_DAY_LABELS } from "@/features/keizoku/lib/constants";
+import { requestNewHabit } from "@/features/keizoku/lib/events";
+import { editHabit, setArchived } from "@/features/keizoku/lib/offline";
 
 const FAILED = { error: "Couldn't save. Check your connection." };
 const rise = (i: number) => ({ "--i": Math.min(i, 8) }) as CSSProperties;

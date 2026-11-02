@@ -1,8 +1,8 @@
-import type { TransactionFilters } from "@/features/kuroji/lib/transaction-filters";
 import * as schema from "@seikatsu/db/schema";
 import { createTestDb } from "@seikatsu/db/test-utils";
 import * as ops from "drizzle-orm";
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import type { TransactionFilters } from "@/features/kuroji/lib/transaction-filters";
 
 let testDb: Awaited<ReturnType<typeof createTestDb>>;
 

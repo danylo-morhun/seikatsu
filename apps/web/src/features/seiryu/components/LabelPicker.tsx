@@ -1,16 +1,16 @@
 "use client";
 
-import { QuietAdd } from "@/components/QuietAdd";
-import { Spinner } from "@/components/Spinner";
-import { createLabel, setCardLabels } from "@/features/seiryu/actions/labels";
-import { type LabelData, isTempId } from "@/features/seiryu/lib/types";
-import { LABEL_COLORS } from "@/lib/pigments";
 import { Tick02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Button, Input, cn } from "@seikatsu/ui";
+import { Button, cn, Input } from "@seikatsu/ui";
 import Link from "next/link";
 import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
+import { QuietAdd } from "@/components/QuietAdd";
+import { Spinner } from "@/components/Spinner";
+import { createLabel, setCardLabels } from "@/features/seiryu/actions/labels";
+import { isTempId, type LabelData } from "@/features/seiryu/lib/types";
+import { LABEL_COLORS } from "@/lib/pigments";
 
 interface Props {
 	cardId: string;

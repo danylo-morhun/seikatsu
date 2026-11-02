@@ -1,7 +1,7 @@
 "use client";
 
+import { type ComponentProps, lazy, Suspense } from "react";
 import type { AddTransactionModal } from "@/features/kuroji/components/AddTransactionModal";
-import { type ComponentProps, Suspense, lazy } from "react";
 
 // The form (zod, react-hook-form, the pickers) loads in its own chunk, after the page hydrates.
 const Modal = lazy(() =>

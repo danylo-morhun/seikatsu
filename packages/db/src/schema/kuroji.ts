@@ -1,4 +1,5 @@
 import { relations } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
 	boolean,
 	date,
@@ -12,7 +13,6 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { authUsers } from "./auth";
 
 export const frequencyEnum = pgEnum("frequency", ["daily", "weekly", "monthly", "yearly"]);

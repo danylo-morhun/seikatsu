@@ -1,6 +1,6 @@
 // What's next for the car: maintenance and paperwork in one line, most urgent first.
 
-import { type DueStatus, compareUrgency } from "./due";
+import { compareUrgency, type DueStatus } from "./due";
 
 export interface Queued<T> {
 	status: DueStatus;

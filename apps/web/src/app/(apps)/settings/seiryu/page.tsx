@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { PageTab, PageTabs } from "@/components/PageTabs";
 import { SettingsPage, SettingsSection } from "@/components/SettingsSection";
 import { getWorkspaceArchivedCards } from "@/features/seiryu/actions/cards";
@@ -9,7 +10,6 @@ import { NewProjectButton, SettingsProjects } from "@/features/seiryu/components
 import { toArchivedRows } from "@/features/seiryu/lib/archive";
 import { getCurrentWorkspace } from "@/lib/session";
 import { getUserTimeZone, getUserToday } from "@/lib/timezone";
-import { redirect } from "next/navigation";
 
 const SECTIONS = [
 	{ id: "projects", label: "Projects" },

@@ -1,20 +1,6 @@
 "use client";
 
 import {
-	archiveAccount,
-	deleteAccount,
-	toggleAccountDashboardVisibility,
-} from "@/features/kuroji/actions/accounts";
-import type { AccountBalance } from "@/features/kuroji/actions/balances";
-import type { getAccounts } from "@/features/kuroji/actions/data";
-import { AddAccountModal } from "@/features/kuroji/components/AddAccountModal";
-import { BudgetMeter } from "@/features/kuroji/components/BudgetMeter";
-import { EditAccountModal } from "@/features/kuroji/components/EditAccountModal";
-import { displayBalance } from "@/features/kuroji/lib/balance";
-import { formatCurrency } from "@/features/kuroji/lib/format";
-import { periodQuery } from "@/features/kuroji/lib/period";
-import { useHeld } from "@/hooks/useHeld";
-import {
 	Alert01Icon,
 	Archive01Icon,
 	ArrowRight01Icon,
@@ -35,18 +21,32 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 	Button,
+	cn,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-	cn,
 } from "@seikatsu/ui";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
 import { useTransition } from "react";
 import { toast } from "sonner";
+import {
+	archiveAccount,
+	deleteAccount,
+	toggleAccountDashboardVisibility,
+} from "@/features/kuroji/actions/accounts";
+import type { AccountBalance } from "@/features/kuroji/actions/balances";
+import type { getAccounts } from "@/features/kuroji/actions/data";
+import { AddAccountModal } from "@/features/kuroji/components/AddAccountModal";
+import { BudgetMeter } from "@/features/kuroji/components/BudgetMeter";
+import { EditAccountModal } from "@/features/kuroji/components/EditAccountModal";
+import { displayBalance } from "@/features/kuroji/lib/balance";
+import { formatCurrency } from "@/features/kuroji/lib/format";
+import { periodQuery } from "@/features/kuroji/lib/period";
+import { useHeld } from "@/hooks/useHeld";
 
 const TYPE_ORDER = ["ASSET", "LIABILITY", "INCOME", "EXPENSE"] as const;
 
@@ -136,7 +136,11 @@ function BalanceDisplay({
 	row,
 	acct,
 	currency,
-}: { row: AccountRow; acct: Account | undefined; currency: string }) {
+}: {
+	row: AccountRow;
+	acct: Account | undefined;
+	currency: string;
+}) {
 	const acctCurrency = acct?.currency ?? currency;
 	const isMulti = acctCurrency !== currency;
 	const baseAmt = displayBalance(row.type, Number(row.balance));

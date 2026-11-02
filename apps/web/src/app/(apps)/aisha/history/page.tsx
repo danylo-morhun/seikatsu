@@ -1,7 +1,7 @@
+import { redirect } from "next/navigation";
 import { getCar, getChromeData, getCurrentVehicle } from "@/features/aisha/actions/data";
 import { type HistoryReading, HistoryView } from "@/features/aisha/components/HistoryView";
 import { getUserToday } from "@/lib/timezone";
-import { redirect } from "next/navigation";
 
 // Every save re-renders the page and resends the list; the full history is one click away.
 const RECENT_SERVICES = 50;

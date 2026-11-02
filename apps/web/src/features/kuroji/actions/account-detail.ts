@@ -1,7 +1,6 @@
 // Read-side queries. Not a "use server" module, so nothing here is callable from the
 // client — import only from RSC pages or server actions.
 
-import { getOwnedWorkspace } from "@/lib/session";
 import {
 	accounts,
 	and,
@@ -13,6 +12,7 @@ import {
 	transactionEntries,
 	transactions,
 } from "@seikatsu/db";
+import { getOwnedWorkspace } from "@/lib/session";
 
 export type AccountDetail = {
 	id: string;

@@ -1,6 +1,6 @@
 // A year of the car: km driven and money spent, by month. Pure; callers pass the data.
 
-import { type Reading, daysBetween } from "./due";
+import { daysBetween, type Reading } from "./due";
 
 /**
  * The odometer on `iso`, drawn as a straight line between readings. Before the first

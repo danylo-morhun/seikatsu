@@ -1,11 +1,8 @@
 "use client";
 
-import { Spinner } from "@/components/Spinner";
-import type { TsundokuBook } from "@/features/tsundoku/actions/books";
-import { GENRE_OPTIONS } from "@/features/tsundoku/lib/constants";
-import type { UpdateBookValues } from "@/features/tsundoku/lib/tsundoku-schemas";
 import {
 	Button,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -18,9 +15,12 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-	cn,
 } from "@seikatsu/ui";
 import { useEffect, useId, useState, useTransition } from "react";
+import { Spinner } from "@/components/Spinner";
+import type { TsundokuBook } from "@/features/tsundoku/actions/books";
+import { GENRE_OPTIONS } from "@/features/tsundoku/lib/constants";
+import type { UpdateBookValues } from "@/features/tsundoku/lib/tsundoku-schemas";
 
 export const FOOTER =
 	"mt-auto flex justify-end gap-2 pt-2 max-sm:sticky max-sm:bottom-0 max-sm:-mx-6 max-sm:-mb-6 max-sm:border-t max-sm:bg-background max-sm:px-6 max-sm:py-4";

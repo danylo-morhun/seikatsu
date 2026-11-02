@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type StatApp, type StatEvent, computeStats } from "./stats";
+import { computeStats, type StatApp, type StatEvent } from "./stats";
 
 const app = (id: string, over: Partial<StatApp> = {}): StatApp => ({
 	id,
