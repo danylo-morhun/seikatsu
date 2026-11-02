@@ -7,6 +7,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { requestLogService } from "@/features/aisha/lib/events";
 import { requestAdd } from "@/features/hoshii/lib/events";
 import { requestNewHabit } from "@/features/keizoku/lib/events";
+import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTransactionModal";
 import { type KurojiTab, buildTabHref } from "@/features/kuroji/lib/tabs";
 import { CARRY_PARAMS } from "@/features/kyuu/lib/carry-params";
 import { requestNewApplication } from "@/features/kyuu/lib/events";
@@ -27,11 +28,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 const DateRangePicker = dynamic(
 	() => import("@/features/kuroji/components/DateRangePicker").then((m) => m.DateRangePicker),
 	{ loading: () => <div className="h-9 w-32" /> },
-);
-const AddTransactionModal = dynamic(
-	() =>
-		import("@/features/kuroji/components/AddTransactionModal").then((m) => m.AddTransactionModal),
-	{ loading: () => <div className="h-9 w-40" /> },
 );
 
 const TSUNDOKU_TABS = [
@@ -224,7 +220,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 						)}
 					>
 						{isKuroji && workspaceId && baseCurrency && (
-							<AddTransactionModal
+							<LazyAddTransactionModal
 								workspaceId={workspaceId}
 								baseCurrency={baseCurrency}
 								shortcut

@@ -1,7 +1,7 @@
 "use client";
 
 import { type PendingCapture, dismissCapture } from "@/features/kuroji/actions/capture";
-import { AddTransactionModal } from "@/features/kuroji/components/AddTransactionModal";
+import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTransactionModal";
 import { toCurrency } from "@/features/kuroji/lib/constants";
 import { parseLocal } from "@/features/kuroji/lib/dates";
 import { formatCurrency } from "@/features/kuroji/lib/format";
@@ -130,7 +130,7 @@ export function CaptureInbox({
 				</section>
 			)}
 			{prefill && (
-				<AddTransactionModal
+				<LazyAddTransactionModal
 					key={opened}
 					workspaceId={workspaceId}
 					baseCurrency={baseCurrency}
