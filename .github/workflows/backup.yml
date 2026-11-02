@@ -55,7 +55,7 @@ jobs:
           age -r "$RECIPIENT" -o "seikatsu-$(date -u +%F).dump.age" db.dump
           shred -u db.dump
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: db-${{ github.run_id }}
           path: seikatsu-*.dump.age
