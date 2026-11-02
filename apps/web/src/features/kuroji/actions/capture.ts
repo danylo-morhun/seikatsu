@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import { auth } from "@/auth";
 import { cardMarkups } from "@/features/kuroji/lib/apple-pay";
 import { hashCaptureKey } from "@/features/kuroji/lib/capture-intake";
-import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
+import { getRate } from "@/features/kuroji/lib/exchange-rates";
 import { matchRule } from "@/features/kuroji/lib/import-core";
 import { getOwnedWorkspace, isUuid } from "@/lib/session";
 import { dayIn, getUserTimeZone } from "@/lib/timezone";
@@ -116,9 +116,8 @@ export async function getPendingCaptures(workspaceId: string): Promise<PendingCa
 				),
 			),
 	]);
-	// Rates are cached per day, so this is the network only the first time a day is seen.
-	const official = (from: string, to: string, day: string) =>
-		getExchangeRate(from, to, day).catch(() => null);
+	// Display rates: the latest stored on or before the day; the network only on first use.
+	const official = (from: string, to: string, day: string) => getRate(from, to, day);
 
 	// A UAH card paying in PLN: what left the card, against the official rate that day.
 	const converted = history

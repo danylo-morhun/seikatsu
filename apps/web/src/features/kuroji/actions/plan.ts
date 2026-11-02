@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { getBalances } from "@/features/kuroji/actions/balances";
 import { displayBalance } from "@/features/kuroji/lib/balance";
 import { parseLocal } from "@/features/kuroji/lib/dates";
-import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
+import { getRates } from "@/features/kuroji/lib/exchange-rates";
 import {
 	type FundView,
 	type PlanAccount,
@@ -96,19 +96,15 @@ export async function getPlan(workspaceId: string, month: string) {
 	// of a future one. Today's is created by the morning cron, so it's already in the ledger.
 	const tomorrow = format(addDays(parseLocal(today), 1), "yyyy-MM-dd");
 	const windowFrom = from > tomorrow ? from : tomorrow;
-	const rates = new Map<string, number | null>();
-	async function toBase(amount: number, currency: string) {
-		if (currency === ws?.baseCurrency) return amount;
-		if (!rates.has(currency)) {
-			try {
-				rates.set(currency, await getExchangeRate(currency, ws?.baseCurrency ?? currency, today));
-			} catch {
-				rates.set(currency, null);
-			}
-		}
+	const rates = await getRates(
+		recurring.map((r) => r.currency),
+		ws.baseCurrency,
+		today,
+	);
+	const toBase = (amount: number, currency: string) => {
 		const rate = rates.get(currency);
 		return rate != null ? amount * rate : amount;
-	}
+	};
 
 	const upcoming: UpcomingItem[] = [];
 	const upcomingByCategory = new Map<string, number>();
@@ -135,7 +131,7 @@ export async function getPlan(workspaceId: string, month: string) {
 
 		const dates = windowFrom <= to ? occurrencesBetween(rec, windowFrom, to) : [];
 		if (dates.length === 0) continue;
-		const amount = await toBase(Number(rec.amount), rec.currency);
+		const amount = toBase(Number(rec.amount), rec.currency);
 		for (const date of dates) {
 			upcoming.push({
 				id: `${rec.id}:${date}`,
