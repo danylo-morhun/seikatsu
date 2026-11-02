@@ -14,10 +14,7 @@ export default async function HoshiiListsPage({
 	const workspace = await getCurrentWorkspace();
 	if (!workspace) redirect("/");
 	const [params, today] = await Promise.all([searchParams, getUserToday()]);
-	const [data, chrome] = await Promise.all([
-		getHoshii(workspace, today),
-		getChromeData(workspace, today),
-	]);
+	const [data, chrome] = await Promise.all([getHoshii(workspace, today), getChromeData(workspace)]);
 
 	const listId = data.lists.some((l) => l.id === params.list) ? (params.list ?? null) : null;
 	const past = params.past === "1";
