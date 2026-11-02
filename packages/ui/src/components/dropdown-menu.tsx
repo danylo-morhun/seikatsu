@@ -2,7 +2,7 @@
 
 import { CheckIcon, ChevronRightIcon, CircleIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
+import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import * as React from "react";
 
 import { cn } from "../lib/utils";

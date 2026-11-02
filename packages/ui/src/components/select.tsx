@@ -2,7 +2,7 @@
 
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import * as SelectPrimitive from "@radix-ui/react-select";
+import { Select as SelectPrimitive } from "radix-ui";
 import * as React from "react";
 import { cn } from "../lib/utils";
 
