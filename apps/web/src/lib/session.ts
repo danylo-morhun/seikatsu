@@ -46,36 +46,39 @@ export async function getOwnedWorkspace(workspaceId: string): Promise<Workspace 
 }
 
 async function createWorkspace(userId: string): Promise<Workspace> {
-	// Unique index on userId: a concurrent first visit loses the insert and re-reads.
-	const [inserted] = await db
-		.insert(workspaces)
-		.values({ userId, name: "Kuroji", baseCurrency: "PLN" })
-		.onConflictDoNothing()
-		.returning();
+	// One transaction: a workspace never exists without its starter accounts.
+	// Unique index on userId: a concurrent first visit loses the insert (null) and re-reads.
+	const inserted = await db.transaction(async (tx) => {
+		const [row] = await tx
+			.insert(workspaces)
+			.values({ userId, name: "Kuroji", baseCurrency: "PLN" })
+			.onConflictDoNothing()
+			.returning();
+		if (!row) return null;
 
-	if (!inserted) {
-		const [existing] = await db
-			.select()
-			.from(workspaces)
-			.where(eq(workspaces.userId, userId))
-			.limit(1);
-		return existing;
-	}
+		await tx.insert(accounts).values(
+			(
+				[
+					["Wallet", "ASSET"],
+					["Bank Account", "ASSET"],
+					["Savings", "ASSET"],
+					["Salary", "INCOME"],
+					["Groceries", "EXPENSE"],
+					["Transport", "EXPENSE"],
+					["Dining", "EXPENSE"],
+					["Utilities", "EXPENSE"],
+					["Entertainment", "EXPENSE"],
+				] as const
+			).map(([name, type]) => ({ workspaceId: row.id, name, type, currency: "PLN" })),
+		);
+		return row;
+	});
+	if (inserted) return inserted;
 
-	await db.insert(accounts).values(
-		(
-			[
-				["Wallet", "ASSET"],
-				["Bank Account", "ASSET"],
-				["Savings", "ASSET"],
-				["Salary", "INCOME"],
-				["Groceries", "EXPENSE"],
-				["Transport", "EXPENSE"],
-				["Dining", "EXPENSE"],
-				["Utilities", "EXPENSE"],
-				["Entertainment", "EXPENSE"],
-			] as const
-		).map(([name, type]) => ({ workspaceId: inserted.id, name, type, currency: "PLN" })),
-	);
-	return inserted;
+	const [existing] = await db
+		.select()
+		.from(workspaces)
+		.where(eq(workspaces.userId, userId))
+		.limit(1);
+	return existing;
 }
