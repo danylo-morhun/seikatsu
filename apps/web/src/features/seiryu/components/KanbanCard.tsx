@@ -93,7 +93,7 @@ const CardBody = memo(function CardBody({
 }: { card: CardData; today: string; id?: string }) {
 	const total = card.checklistItems.length;
 	const done = card.checklistItems.filter((i) => i.isCompleted).length;
-	const hasMeta = card.priority || card.dueDate || total > 0 || card.description;
+	const hasMeta = card.priority || card.dueDate || total > 0 || card.hasDescription;
 
 	return (
 		<div className="flex flex-col gap-2">
@@ -104,7 +104,7 @@ const CardBody = memo(function CardBody({
 					card.dueDate &&
 						`Due ${formatShortDate(card.dueDate, today)}${card.dueDate < today ? ", overdue" : ""}.`,
 					total > 0 && `${done} of ${total} checklist items done.`,
-					card.description && "Has a description.",
+					card.hasDescription && "Has a description.",
 				]
 					.filter(Boolean)
 					.join(" ")}
@@ -160,7 +160,7 @@ const CardBody = memo(function CardBody({
 							</span>
 						</span>
 					)}
-					{card.description && (
+					{card.hasDescription && (
 						<HugeiconsIcon
 							icon={Note01Icon}
 							aria-label="Has a description"
@@ -188,7 +188,7 @@ function sameCard(
 		a.id === b.id &&
 		a.columnId === b.columnId &&
 		a.title === b.title &&
-		a.description === b.description &&
+		a.hasDescription === b.hasDescription &&
 		a.priority === b.priority &&
 		a.dueDate === b.dueDate &&
 		a.position === b.position &&

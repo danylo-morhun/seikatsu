@@ -38,6 +38,8 @@ interface Props {
 	/** The title is the page's heading on the full page, the sheet's on the board. */
 	titleId?: string;
 	readOnly?: boolean;
+	/** The description is still on its way (the board loads it when the card opens). */
+	descriptionLoading?: boolean;
 	/** The user's calendar day (tz cookie), as on the board. */
 	today: string;
 }
@@ -57,6 +59,7 @@ export function CardDetail({
 	onProjectLabelsChange,
 	titleId,
 	readOnly = false,
+	descriptionLoading = false,
 	today,
 }: Props) {
 	const id = useId();
@@ -160,7 +163,7 @@ export function CardDetail({
 					</div>
 				</div>
 
-				{!description.draft && !writingNotes ? (
+				{!description.draft && !writingNotes && !descriptionLoading ? (
 					!readOnly && <QuietAdd onClick={() => setWritingNotes(true)}>Add notes</QuietAdd>
 				) : (
 					<div className="animate-swap space-y-2">
@@ -168,7 +171,8 @@ export function CardDetail({
 						<textarea
 							id={`${id}-description`}
 							value={description.draft}
-							readOnly={readOnly}
+							readOnly={readOnly || descriptionLoading}
+							aria-busy={descriptionLoading || undefined}
 							maxLength={5000}
 							onChange={(e) => description.change(e.target.value)}
 							autoFocus={writingNotes && !card.description}
@@ -178,7 +182,7 @@ export function CardDetail({
 								description.flush();
 								setWritingNotes(false);
 							}}
-							placeholder="Notes, links, what done looks like…"
+							placeholder={descriptionLoading ? "Loading…" : "Notes, links, what done looks like…"}
 							className={cn(FIELD_TEXTAREA, "min-h-24")}
 						/>
 					</div>
