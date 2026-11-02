@@ -15,6 +15,7 @@
 		"db:studio": "drizzle-kit studio"
 	},
 	"dependencies": {
+		"@opentelemetry/api": "^1.10.0",
 		"drizzle-orm": "^0.45.4",
 		"postgres": "^4.0.0"
 	},
