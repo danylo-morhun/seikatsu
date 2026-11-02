@@ -10,7 +10,7 @@ CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only H
 
 # Only structural changes warrant a wiki update — not every action/component edit
 RELEVANT=$(echo "$CHANGED" | grep -E \
-  '(packages/db/src/schema|src/lib/app-themes\.ts|src/middleware|CLAUDE\.md|docs/)' \
+  '(packages/db/src/schema|src/lib/app-themes\.ts|src/proxy|CLAUDE\.md)' \
   || true)
 
 [ -z "$RELEVANT" ] && exit 0
