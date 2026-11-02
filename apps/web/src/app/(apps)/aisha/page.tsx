@@ -7,10 +7,13 @@ import { getUserToday } from "@/lib/timezone";
 import { redirect } from "next/navigation";
 
 export default async function AishaPage() {
-	const workspace = await getCurrentWorkspace();
+	const [workspace, vehicle, today] = await Promise.all([
+		getCurrentWorkspace(),
+		getCurrentVehicle(),
+		getUserToday(),
+	]);
 	if (!workspace) redirect("/");
 
-	const vehicle = await getCurrentVehicle();
 	if (!vehicle) {
 		return (
 			<div className="px-4 pt-6 pb-28 sm:px-8 md:py-8">
@@ -19,7 +22,6 @@ export default async function AishaPage() {
 		);
 	}
 
-	const today = await getUserToday();
 	const car = await getCar(vehicle, today);
 	const thisYear = car.services.filter((s) => s.date.startsWith(today.slice(0, 4)));
 
