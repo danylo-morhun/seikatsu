@@ -20,10 +20,15 @@ import {
 	itemFormSchema,
 	moveSchema,
 } from "@/features/hoshii/lib/hoshii-schemas";
-import { createTransaction, updateTransaction } from "@/features/kuroji/actions/transactions";
+import {
+	type ExpenseAccounts,
+	type LinkedExpense,
+	recordLinkedExpense,
+	updateLinkedExpense,
+} from "@/features/kuroji/lib/linked-expense";
 import { getCurrentWorkspace } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
-import { db, eq, hoshiiItems, hoshiiSettings, transactionEntries } from "@seikatsu/db";
+import { db, eq, hoshiiItems, hoshiiSettings } from "@seikatsu/db";
 import { after } from "next/server";
 
 type Result = { error: string } | { success: true; warning?: string };
@@ -220,26 +225,17 @@ async function kurojiValid(workspaceId: string, k: { walletId: string; categoryI
 	]);
 }
 
-type Expense = { amount: number; currency: string; date: string; description: string };
-
 /** Posts the purchase to Kuroji and links it; the purchase stands either way. */
 async function recordExpense(
 	workspaceId: string,
 	itemId: string,
-	k: { walletId: string; categoryId: string },
-	expense: Expense,
+	k: ExpenseAccounts,
+	expense: LinkedExpense,
 ): Promise<string | undefined> {
-	const result = await createTransaction({
-		workspaceId,
-		fromAccountId: k.walletId,
-		toAccountId: k.categoryId,
-		...expense,
-	});
-	if ("error" in result) return `Saved, but Kuroji didn't take the expense: ${result.error}`;
-	await db.transaction(async (tx) => {
+	const failed = await recordLinkedExpense(workspaceId, k, expense, async (tx, transactionId) => {
 		await tx
 			.update(hoshiiItems)
-			.set({ kurojiTransactionId: result.data.id })
+			.set({ kurojiTransactionId: transactionId })
 			.where(eq(hoshiiItems.id, itemId));
 		// The next purchase offers the same accounts.
 		await tx
@@ -250,29 +246,16 @@ async function recordExpense(
 				set: { walletId: k.walletId, categoryId: k.categoryId },
 			});
 	});
-	return undefined;
+	return failed && `Saved, but Kuroji didn't take the expense: ${failed.error}`;
 }
 
 /** Same accounts as before; the amount, currency, date and words follow the purchase. */
-async function updateExpense(transactionId: string, expense: Expense) {
-	const legs = await db
-		.select({ accountId: transactionEntries.accountId, amount: transactionEntries.amount })
-		.from(transactionEntries)
-		.where(eq(transactionEntries.transactionId, transactionId));
-	const from = legs.find((l) => Number(l.amount) < 0);
-	const to = legs.find((l) => Number(l.amount) > 0);
-	if (legs.length !== 2 || !from || !to) {
+async function updateExpense(transactionId: string, expense: LinkedExpense) {
+	const failed = await updateLinkedExpense(transactionId, expense);
+	if (failed === "split") {
 		return "Saved. The Kuroji expense has more parts than one purchase, so edit it in Kuroji.";
 	}
-	const result = await updateTransaction({
-		transactionId,
-		fromAccountId: from.accountId,
-		toAccountId: to.accountId,
-		...expense,
-	});
-	return "error" in result
-		? `Saved, but the Kuroji expense wasn't updated: ${result.error}`
-		: undefined;
+	return failed && `Saved, but the Kuroji expense wasn't updated: ${failed.error}`;
 }
 
 /** The want goes for good; a Kuroji expense stays in Kuroji. */
