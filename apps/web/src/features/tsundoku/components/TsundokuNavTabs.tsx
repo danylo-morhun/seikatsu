@@ -2,9 +2,9 @@
 
 import { startNavigationProgress } from "@/components/NavigationProgress";
 import { TabBar, TabBarAction } from "@/components/TabBar";
-import { AddBookDialog } from "@/features/tsundoku/components/AddBookDialog";
 import type { BookStatus } from "@/features/tsundoku/lib/constants";
 import { NEW_BOOK_EVENT, requestNewBook } from "@/features/tsundoku/lib/events";
+import { useOpenedOnce } from "@/hooks/useOpenedOnce";
 import { pageKey } from "@/lib/capture-shortcut";
 import {
 	Add01Icon,
@@ -13,8 +13,14 @@ import {
 	Layers01Icon,
 	Settings01Icon,
 } from "@hugeicons/core-free-icons";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+
+// The search and form load on first open; hovering the add button starts it early.
+const loadAddBook = () =>
+	import("@/features/tsundoku/components/AddBookDialog").then((m) => m.AddBookDialog);
+const AddBookDialog = dynamic(loadAddBook, { ssr: false });
 
 const ADD_AS: Record<string, BookStatus> = { reading: "reading", read: "read" };
 
@@ -27,6 +33,7 @@ export function TsundokuNavTabs() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const [capture, setCapture] = useState({ open: false, instant: false });
+	const mounted = useOpenedOnce(capture.open);
 
 	const segment = pathname === "/tsundoku" ? searchParams.get("s") : null;
 	const isSettings = pathname.startsWith("/settings/tsundoku");
@@ -70,15 +77,25 @@ export function TsundokuNavTabs() {
 					{ label: "Year", icon: Calendar03Icon, href: "/tsundoku/year" },
 					{ label: "Settings", icon: Settings01Icon, href: "/settings/tsundoku" },
 				]}
-				action={<TabBarAction icon={Add01Icon} aria-label="Add book" onClick={requestNewBook} />}
+				action={
+					<TabBarAction
+						icon={Add01Icon}
+						aria-label="Add book"
+						onClick={requestNewBook}
+						onPointerEnter={loadAddBook}
+						onFocus={loadAddBook}
+					/>
+				}
 			/>
 
-			<AddBookDialog
-				open={capture.open}
-				instant={capture.instant}
-				defaultStatus={(segment && ADD_AS[segment]) || "want"}
-				onOpenChange={(open) => setCapture((c) => ({ ...c, open }))}
-			/>
+			{mounted && (
+				<AddBookDialog
+					open={capture.open}
+					instant={capture.instant}
+					defaultStatus={(segment && ADD_AS[segment]) || "want"}
+					onOpenChange={(open) => setCapture((c) => ({ ...c, open }))}
+				/>
+			)}
 		</>
 	);
 }
