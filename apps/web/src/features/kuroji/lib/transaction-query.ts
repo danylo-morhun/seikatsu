@@ -22,7 +22,8 @@ export function transactionWhere(workspaceId: string, f: TransactionFilters) {
 		eq(transactions.workspaceId, workspaceId),
 		f.from ? gte(transactions.date, f.from) : undefined,
 		f.to ? lte(transactions.date, f.to) : undefined,
-		f.q ? ilike(transactions.description, `%${f.q}%`) : undefined,
+		// The user's text is a literal: %, _ and \ match themselves.
+		f.q ? ilike(transactions.description, `%${f.q.replace(/[\\%_]/g, "\\$&")}%`) : undefined,
 		accountIds.length > 0
 			? inArray(
 					transactions.id,
