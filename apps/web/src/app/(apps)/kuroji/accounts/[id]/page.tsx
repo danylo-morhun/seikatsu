@@ -50,9 +50,35 @@ export default async function AccountDetailPage({
 
 	// Same balances (period, sub-account rollup, FX revaluation) as the Accounts tab.
 	const period = resolvePeriod({ from: rawFrom, to: rawTo, all: rawAll }, today);
-	const [balances, allAccounts] = await Promise.all([
+	// The rolled-up scope comes from the account tree alone, so the list and chart don't wait
+	// on the (slower) balances.
+	const scoped = getAccounts(workspace.id).then(async (allAccounts) => {
+		const scope = accountScope(
+			id,
+			account.type,
+			allAccounts.map((a) => ({
+				accountId: a.id,
+				parentId: a.parentId,
+				type: a.type,
+				hidden: a.hiddenFromDashboard,
+			})),
+		);
+		// The list covers what the balance covers: this period, this account and its rolled-up subs.
+		const filters: TransactionFilters = {
+			from: period.from,
+			to: period.to,
+			accountIds: scope,
+			q,
+		};
+		const [txResult, activity] = await Promise.all([
+			getRecentTransactions(workspace.id, filters, page),
+			getAccountActivity(workspace.id, scope),
+		]);
+		return { allAccounts, scope, filters, txResult, activity };
+	});
+	const [balances, { allAccounts, scope, filters, txResult, activity }] = await Promise.all([
 		getBalances(workspace.id, period.from, period.to),
-		getAccounts(workspace.id),
+		scoped,
 	]);
 
 	const isStock = account.type === "ASSET" || account.type === "LIABILITY";
@@ -61,19 +87,7 @@ export default async function AccountDetailPage({
 	const nativeBalance = displayBalance(account.type, Number(row?.nativeBalance ?? 0));
 	const isForeign = account.currency !== workspace.baseCurrency;
 	const subAccounts = balances.filter((b) => b.parentId === id);
-	const scope = accountScope(id, account.type, balances);
 	const rolledUp = scope.length - 1;
-	// The list covers what the balance covers: this period, this account and its rolled-up subs.
-	const filters: TransactionFilters = {
-		from: period.from,
-		to: period.to,
-		accountIds: scope,
-		q,
-	};
-	const [txResult, activity] = await Promise.all([
-		getRecentTransactions(workspace.id, filters, page),
-		getAccountActivity(workspace.id, scope),
-	]);
 
 	const budget = account.budget != null ? Number(account.budget) : null;
 	const showBudget = !isStock && budget != null && budget > 0;
