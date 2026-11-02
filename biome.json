@@ -16,10 +16,13 @@
 				"useFocusableInteractive": "off",
 				"useSemanticElements": "off",
 				"noSvgWithoutTitle": "off",
-				"noAutofocus": "off"
+				"noAutofocus": "off",
+				"noStaticElementInteractions": "off",
+				"useAriaPropsSupportedByRole": "off"
 			},
 			"style": {
-				"noNonNullAssertion": "off"
+				"noNonNullAssertion": "off",
+				"noDescendingSpecificity": "off"
 			},
 			"suspicious": {
 				"noExplicitAny": "off",
@@ -30,7 +33,16 @@
 				"noBlankTarget": "off"
 			},
 			"correctness": {
-				"useExhaustiveDependencies": "off"
+				"useExhaustiveDependencies": "off",
+				"noComponentHookFactories": "off"
+			},
+			"complexity": {
+				"noImportantStyles": "off",
+				"useMathMinMax": "off"
+			},
+			"performance": {
+				"noImgElement": "off",
+				"noDelete": "off"
 			}
 		}
 	},
@@ -62,12 +74,18 @@
 			"!**/playwright-report",
 			"!**/e2e/.auth",
 			"!**/.local",
-			"!**/*.md"
+			"!**/*.md",
+			"!**/shadcn.css"
 		]
 	},
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",
 		"useIgnoreFile": true
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
 	}
 }
