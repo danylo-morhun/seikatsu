@@ -1,18 +1,22 @@
 "use server";
 
-import { getOwnedVehicle } from "@/features/aisha/actions/guard";
+import { getOwnedVehicle, isUuid } from "@/features/aisha/actions/guard";
 import { type DocumentFormValues, documentFormSchema } from "@/features/aisha/lib/aisha-schemas";
-import { aishaDocuments, db, eq } from "@seikatsu/db";
+import { getCurrentWorkspace } from "@/lib/session";
+import { aishaDocuments, aishaVehicles, and, db, eq } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 async function getOwnedDocument(documentId: string) {
-	const [doc] = await db
-		.select()
+	if (!isUuid(documentId)) return null;
+	const ws = await getCurrentWorkspace();
+	if (!ws) return null;
+	const [row] = await db
+		.select({ doc: aishaDocuments })
 		.from(aishaDocuments)
-		.where(eq(aishaDocuments.id, documentId))
+		.innerJoin(aishaVehicles, eq(aishaVehicles.id, aishaDocuments.vehicleId))
+		.where(and(eq(aishaDocuments.id, documentId), eq(aishaVehicles.workspaceId, ws.id)))
 		.limit(1);
-	if (!doc || !(await getOwnedVehicle(doc.vehicleId))) return null;
-	return doc;
+	return row?.doc ?? null;
 }
 
 export async function createDocument(
