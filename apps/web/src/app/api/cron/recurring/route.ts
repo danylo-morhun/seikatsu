@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
 import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
 import { pruneOldRows } from "@/lib/retention";
@@ -41,6 +42,7 @@ export async function GET(req: NextRequest) {
 		try {
 			generated += (await generateDueForWorkspace(ws)).generated;
 		} catch (e) {
+			Sentry.captureException(e, { tags: { cron: "recurring" } });
 			failures.push({ id: ws.id, error: e instanceof Error ? e.message : "unknown" });
 		}
 	}

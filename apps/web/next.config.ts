@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -41,4 +42,12 @@ const nextConfig: NextConfig = {
 	},
 };
 
-export default nextConfig;
+// Source maps go to Sentry only when SENTRY_AUTH_TOKEN is set (Vercel production builds).
+export default withSentryConfig(nextConfig, {
+	org: "danylo-morhun",
+	project: "seikatsu",
+	silent: !process.env.CI,
+	telemetry: false,
+	sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN, deleteSourcemapsAfterUpload: true },
+	widenClientFileUpload: true,
+});
