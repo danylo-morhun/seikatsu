@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
-import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
+import { getRates } from "@/features/kuroji/lib/exchange-rates";
 import { getOwnedWorkspace } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
 import { accounts, and, db, eq, isNull, sql, transactionEntries, transactions } from "@seikatsu/db";
@@ -90,17 +90,7 @@ export async function getBalances(
 				.map((r) => r.currency),
 		),
 	];
-	const rates = new Map(
-		await Promise.all(
-			foreign.map(async (cur) => {
-				try {
-					return [cur, await getExchangeRate(cur, ws.baseCurrency, rateDate)] as const;
-				} catch {
-					return [cur, null] as const;
-				}
-			}),
-		),
-	);
+	const rates = await getRates(foreign, ws.baseCurrency, rateDate);
 
 	// Roll up children's baseAmount into parent balance
 	const mutable = rows.map((r) => {
