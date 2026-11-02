@@ -1,28 +1,33 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-	"organizeImports": {
-		"enabled": true
+	"$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
 	},
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
+			"preset": "recommended",
 			"a11y": {
 				"useKeyWithClickEvents": "off",
 				"useFocusableInteractive": "off",
 				"useSemanticElements": "off",
 				"noSvgWithoutTitle": "off",
-				"noAutofocus": "off",
-				"noBlankTarget": "off"
+				"noAutofocus": "off"
 			},
 			"style": {
 				"noNonNullAssertion": "off"
 			},
 			"suspicious": {
-				"noExplicitAny": "off"
+				"noExplicitAny": "off",
+				"noDocumentCookie": "off"
 			},
 			"security": {
-				"noDangerouslySetInnerHtml": "off"
+				"noDangerouslySetInnerHtml": "off",
+				"noBlankTarget": "off"
 			},
 			"correctness": {
 				"useExhaustiveDependencies": "off"
@@ -41,20 +46,28 @@
 		}
 	},
 	"files": {
-		"ignore": [
-			"node_modules",
-			".next",
-			"dist",
-			".turbo",
-			"*.lock",
-			"graphify-out",
-			".claude",
-			".impeccable",
-			".playwright-mcp",
-			".vercel",
-			"test-results",
-			"playwright-report",
-			"e2e/.auth"
+		"includes": [
+			"**",
+			"!**/node_modules",
+			"!**/.next",
+			"!**/dist",
+			"!**/.turbo",
+			"!**/*.lock",
+			"!**/graphify-out",
+			"!**/.claude",
+			"!**/.impeccable",
+			"!**/.playwright-mcp",
+			"!**/.vercel",
+			"!**/test-results",
+			"!**/playwright-report",
+			"!**/e2e/.auth",
+			"!**/.local",
+			"!**/*.md"
 		]
+	},
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
 	}
 }

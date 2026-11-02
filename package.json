@@ -10,7 +10,7 @@
 		"prepare": "git rev-parse --git-dir >/dev/null 2>&1 && lefthook install || true"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^1.9.4",
+		"@biomejs/biome": "^2.6.4",
 		"@commitlint/cli": "^21.2.4",
 		"@commitlint/config-conventional": "^21.2.4",
 		"lefthook": "^2.2.2",
@@ -29,7 +29,11 @@
 			"js-yaml@4": "^4.3.2",
 			"esbuild@0.28": "^0.28.1"
 		},
-		"onlyBuiltDependencies": ["@biomejs/biome", "esbuild", "sharp"],
+		"onlyBuiltDependencies": [
+			"@biomejs/biome",
+			"esbuild",
+			"sharp"
+		],
 		"packageExtensions": {
 			"@hookform/resolvers": {
 				"peerDependencies": {
