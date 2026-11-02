@@ -1,4 +1,4 @@
-import { type MaintenanceDue, daysBetween } from "./due";
+import { daysBetween } from "./due";
 
 /** "170 100": narrow no-break spaces between thousands, as an odometer reads. */
 export function formatNumber(n: number): string {
@@ -23,20 +23,6 @@ export function formatDays(days: number): string {
 	const abs = Math.abs(days);
 	const unit = abs >= 60 ? `${Math.round(abs / 30)} months` : abs === 1 ? "1 day" : `${abs} days`;
 	return days < 0 ? `${unit} ago` : `in ${unit}`;
-}
-
-/** One line telling the owner what's left, e.g. "2 300 km or 4 months left". */
-export function dueSummary(due: MaintenanceDue, today: string): string {
-	if (due.status === "unknown") return "Log when it was last done";
-	const parts: string[] = [];
-	if (due.kmLeft != null) {
-		parts.push(due.kmLeft <= 0 ? `${formatKm(-due.kmLeft)} over` : `${formatKm(due.kmLeft)} left`);
-	}
-	if (due.dueDate != null) {
-		const days = daysBetween(today, due.dueDate);
-		parts.push(days <= 0 ? `due ${formatDays(days)}` : `by ${formatDate(due.dueDate)}`);
-	}
-	return parts.join(" · ");
 }
 
 export function intervalSummary(intervalKm: number | null, intervalMonths: number | null): string {
