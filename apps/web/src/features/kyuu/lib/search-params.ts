@@ -61,9 +61,6 @@ export function hasActiveKyuuFilters(f: KyuuFilters): boolean {
 	return Boolean(f.source || f.method || f.from || f.to || f.q);
 }
 
-/** Filter params carry between All and Stats; the view, sort and page stay on All. */
-export const CARRY_PARAMS = ["source", "method", "from", "to", "q"] as const;
-
 // One page of the table. The page is resent after every inline edit, and on phones a few
 // hundred rows made the first render and every re-render slow.
 export const APPLICATIONS_PAGE_SIZE = 50;
