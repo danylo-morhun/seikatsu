@@ -1,5 +1,6 @@
 import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
 import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
+import { pruneOldRows } from "@/lib/retention";
 import {
 	accounts,
 	and,
@@ -45,7 +46,9 @@ export async function GET(req: NextRequest) {
 	}
 
 	const rates = await warmRates(today);
-	return NextResponse.json({ workspaces: due.length, generated, failures, rates });
+	// Same daily slot: old outbox receipts and send-once keys go.
+	const pruned = await pruneOldRows();
+	return NextResponse.json({ workspaces: due.length, generated, failures, rates, pruned });
 }
 
 /** Stores today's rate for each foreign currency in use (open accounts, wants). */
