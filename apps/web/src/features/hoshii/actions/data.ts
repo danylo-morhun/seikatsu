@@ -4,7 +4,6 @@
 import {
 	type HoshiiItemRow,
 	type HoshiiSettingsRow,
-	convert,
 	getSettings,
 } from "@/features/hoshii/actions/guard";
 import type { CoolingTiers } from "@/features/hoshii/lib/cooling";
@@ -12,6 +11,7 @@ import { type Funded, fundPlan, splitQueue } from "@/features/hoshii/lib/queue";
 import type { SummaryItem } from "@/features/hoshii/lib/summary";
 import { getBalances } from "@/features/kuroji/actions/balances";
 import { accountScope, displayBalance } from "@/features/kuroji/lib/balance";
+import { getRates } from "@/features/kuroji/lib/exchange-rates";
 import type { Workspace } from "@/lib/session";
 import { accounts, and, asc, db, eq, hoshiiItems, hoshiiLists } from "@seikatsu/db";
 import { cache } from "react";
@@ -37,7 +37,6 @@ export type HoshiiData = {
 };
 
 const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
-
 /** Everything the pages show, computed once per request. */
 export const getHoshii = cache(async (ws: Workspace, today: string): Promise<HoshiiData> => {
 	const [settings, lists, rows] = await Promise.all([
@@ -51,12 +50,14 @@ export const getHoshii = cache(async (ws: Workspace, today: string): Promise<Hos
 	]);
 
 	// One rate per currency, today's: totals in the base currency.
-	const currencies = [...new Set(rows.map((r) => r.currency))];
-	const rates = new Map(
-		await Promise.all(
-			currencies.map(async (c) => [c, await convert(1, c, ws.baseCurrency, today)] as const),
+	const [rates, { piggy, budget }] = await Promise.all([
+		getRates(
+			rows.map((r) => r.currency),
+			ws.baseCurrency,
+			today,
 		),
-	);
+		getPiggyAndBudget(ws, today, settings),
+	]);
 	const names = new Map(lists.map((l) => [l.id, l.name]));
 	const items: HoshiiItem[] = rows.map((r) => {
 		const rate = rates.get(r.currency);
@@ -67,7 +68,6 @@ export const getHoshii = cache(async (ws: Workspace, today: string): Promise<Hos
 		};
 	});
 
-	const { piggy, budget } = await getPiggyAndBudget(ws, today, settings);
 	const queue = splitQueue(items, today);
 	return {
 		currency: ws.baseCurrency,
@@ -144,12 +144,11 @@ async function getPiggyAndBudget(
 /** What the Summary counts, each amount in the base currency. */
 export async function getSummaryItems(ws: Workspace, today: string): Promise<SummaryItem[]> {
 	const { items } = await getHoshii(ws, today);
-	const rates = new Map<string, number | null>();
-	for (const i of items) {
-		if (i.boughtCurrency && !rates.has(i.boughtCurrency)) {
-			rates.set(i.boughtCurrency, await convert(1, i.boughtCurrency, ws.baseCurrency, today));
-		}
-	}
+	const rates = await getRates(
+		items.flatMap((i) => (i.boughtCurrency ? [i.boughtCurrency] : [])),
+		ws.baseCurrency,
+		today,
+	);
 	return items.map((i) => {
 		const paidRate = i.boughtCurrency ? rates.get(i.boughtCurrency) : null;
 		return {

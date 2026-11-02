@@ -2,7 +2,7 @@
 // Not a "use server" module — these are called inside server actions and RSC loaders.
 
 import { DEFAULT_TIERS } from "@/features/hoshii/lib/cooling";
-import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
+import { getRate } from "@/features/kuroji/lib/exchange-rates";
 import { generateKeyBetween } from "@/lib/position";
 import { getCurrentWorkspace } from "@/lib/session";
 import {
@@ -73,12 +73,8 @@ export async function convert(
 	to: string,
 	date: string,
 ): Promise<number | null> {
-	if (from === to) return amount;
-	try {
-		return amount * (await getExchangeRate(from, to, date));
-	} catch {
-		return null;
-	}
+	const rate = await getRate(from, to, date);
+	return rate != null ? amount * rate : null;
 }
 
 /** A position after the last want in the Plan. */
