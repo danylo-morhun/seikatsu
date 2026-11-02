@@ -6,7 +6,11 @@ import type { AishaVehicle } from "@/features/aisha/actions/vehicles";
 import { type ServiceFormValues, serviceFormSchema } from "@/features/aisha/lib/aisha-schemas";
 import { CURRENCY } from "@/features/aisha/lib/constants";
 import { readingConflict } from "@/features/aisha/lib/odometer";
-import { createTransaction, updateTransaction } from "@/features/kuroji/actions/transactions";
+import {
+	type ExpenseAccounts,
+	recordLinkedExpense,
+	updateLinkedExpense,
+} from "@/features/kuroji/lib/linked-expense";
 import { getCurrentWorkspace } from "@/lib/session";
 import {
 	accounts,
@@ -20,11 +24,11 @@ import {
 	eq,
 	inArray,
 	isNull,
-	transactionEntries,
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 type Result = { error: string } | { success: true; warning?: string };
+type VisitExpense = { amount: number; date: string; description: string };
 
 function revalidate() {
 	revalidatePath("/aisha", "layout");
@@ -149,29 +153,26 @@ export async function logService(vehicleId: string, values: ServiceFormValues): 
 async function recordInKuroji(
 	vehicle: AishaVehicle,
 	recordId: string,
-	kuroji: { walletId: string; categoryId: string },
-	expense: { amount: number; date: string; description: string },
+	kuroji: ExpenseAccounts,
+	expense: VisitExpense,
 ): Promise<string | undefined> {
-	const result = await createTransaction({
-		workspaceId: vehicle.workspaceId,
-		fromAccountId: kuroji.walletId,
-		toAccountId: kuroji.categoryId,
-		currency: CURRENCY,
-		...expense,
-	});
-	if ("error" in result) return `Saved, but Kuroji didn't take the expense: ${result.error}`;
-	await db.transaction(async (tx) => {
-		await tx
-			.update(aishaServiceRecords)
-			.set({ kurojiTransactionId: result.data.id })
-			.where(eq(aishaServiceRecords.id, recordId));
-		// The next visit offers the same wallet and category.
-		await tx
-			.update(aishaVehicles)
-			.set({ kurojiWalletId: kuroji.walletId, kurojiCategoryId: kuroji.categoryId })
-			.where(eq(aishaVehicles.id, vehicle.id));
-	});
-	return undefined;
+	const failed = await recordLinkedExpense(
+		vehicle.workspaceId,
+		kuroji,
+		{ currency: CURRENCY, ...expense },
+		async (tx, transactionId) => {
+			await tx
+				.update(aishaServiceRecords)
+				.set({ kurojiTransactionId: transactionId })
+				.where(eq(aishaServiceRecords.id, recordId));
+			// The next visit offers the same wallet and category.
+			await tx
+				.update(aishaVehicles)
+				.set({ kurojiWalletId: kuroji.walletId, kurojiCategoryId: kuroji.categoryId })
+				.where(eq(aishaVehicles.id, vehicle.id));
+		},
+	);
+	return failed && `Saved, but Kuroji didn't take the expense: ${failed.error}`;
 }
 
 /** Any of a visit's details. Its reading moves with it; a linked Kuroji expense follows. */
@@ -240,27 +241,13 @@ export async function updateService(recordId: string, values: ServiceFormValues)
 /** Same wallet and category as before; the amount, date and words follow the visit. */
 async function updateKurojiExpense(
 	transactionId: string,
-	expense: { amount: number; date: string; description: string },
+	expense: VisitExpense,
 ): Promise<string | undefined> {
-	const legs = await db
-		.select({ accountId: transactionEntries.accountId, amount: transactionEntries.amount })
-		.from(transactionEntries)
-		.where(eq(transactionEntries.transactionId, transactionId));
-	const from = legs.find((l) => Number(l.amount) < 0);
-	const to = legs.find((l) => Number(l.amount) > 0);
-	if (legs.length !== 2 || !from || !to) {
+	const failed = await updateLinkedExpense(transactionId, { currency: CURRENCY, ...expense });
+	if (failed === "split") {
 		return "Saved. The Kuroji expense has more parts than one visit, so edit it in Kuroji.";
 	}
-	const result = await updateTransaction({
-		transactionId,
-		fromAccountId: from.accountId,
-		toAccountId: to.accountId,
-		currency: CURRENCY,
-		...expense,
-	});
-	return "error" in result
-		? `Saved, but the Kuroji expense wasn't updated: ${result.error}`
-		: undefined;
+	return failed && `Saved, but the Kuroji expense wasn't updated: ${failed.error}`;
 }
 
 /** The visit and its reading go; a Kuroji expense stays in Kuroji. */
