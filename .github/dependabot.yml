@@ -13,6 +13,9 @@ updates:
       - dependency-name: next-auth
       - dependency-name: next
         update-types: [version-update:semver-major]
+      # types follow the Node runtime (.nvmrc), not the latest Node
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directories: ["/", "/.github/actions/*"]
     schedule: { interval: monthly }
