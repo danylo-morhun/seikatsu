@@ -2,7 +2,7 @@
 
 import { AutoHeight } from "@/components/AutoHeight";
 import { Spinner } from "@/components/Spinner";
-import type { getAccounts } from "@/features/kuroji/actions/accounts";
+import type { getAccounts } from "@/features/kuroji/actions/data";
 import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
 import { CategorySelect } from "@/features/kuroji/components/CategoryCombobox";
 import { CategoryTiles } from "@/features/kuroji/components/CategoryTiles";

@@ -1,7 +1,7 @@
 import { NOTE_LINK, SettingsPage } from "@/components/SettingsSection";
 import { getCar, getCurrentVehicle } from "@/features/aisha/actions/data";
 import { SettingsAisha } from "@/features/aisha/components/SettingsAisha";
-import { getAccounts } from "@/features/kuroji/actions/accounts";
+import { getAccounts } from "@/features/kuroji/actions/data";
 import { getCurrentWorkspace } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
 import Link from "next/link";

@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import { type Frequency, generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
 import { getOwnedWorkspace } from "@/lib/session";
-import { accounts, and, db, eq, or, recurringTransactions } from "@seikatsu/db";
+import { accounts, and, db, eq, recurringTransactions } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 
@@ -23,41 +23,6 @@ export type RecurringTransaction = {
 	endDate: string | null;
 	isActive: boolean;
 };
-
-export async function getRecurringTransactions(
-	workspaceId: string,
-): Promise<RecurringTransaction[]> {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Unauthorized");
-
-	const ws = await getOwnedWorkspace(workspaceId);
-
-	if (!ws) throw new Error("Forbidden");
-
-	const rows = await db.query.recurringTransactions.findMany({
-		where: eq(recurringTransactions.workspaceId, workspaceId),
-		with: {
-			fromAccount: true,
-			toAccount: true,
-		},
-		orderBy: (rt, { desc }) => [desc(rt.createdAt)],
-	});
-
-	return rows.map((r) => ({
-		id: r.id,
-		fromAccountId: r.fromAccountId,
-		fromAccountName: r.fromAccount?.name ?? "—",
-		toAccountId: r.toAccountId,
-		toAccountName: r.toAccount?.name ?? "—",
-		amount: r.amount,
-		currency: r.currency,
-		description: r.description,
-		frequency: r.frequency as Frequency,
-		nextDate: r.nextDate,
-		endDate: r.endDate,
-		isActive: r.isActive,
-	}));
-}
 
 export async function createRecurringTransaction(data: {
 	workspaceId: string;

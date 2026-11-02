@@ -110,7 +110,7 @@ describe("exportTransactionsCsv — same rows as the list", () => {
 
 	it.each(cases)("%s", async (_, make) => {
 		const filters = make();
-		const { getRecentTransactions } = await import("./transactions");
+		const { getRecentTransactions } = await import("./data");
 		const { exportTransactionsCsv } = await import("./export");
 
 		const list = await getRecentTransactions(ids.ws, filters, 0);
@@ -133,7 +133,7 @@ describe("exportTransactionsCsv — same rows as the list", () => {
 	});
 
 	it("a list page past the end shows the last page", async () => {
-		const { getRecentTransactions } = await import("./transactions");
+		const { getRecentTransactions } = await import("./data");
 		const list = await getRecentTransactions(ids.ws, {}, 99);
 		expect(list.page).toBe(0);
 		expect(list.rows).toHaveLength(4);

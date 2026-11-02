@@ -1,7 +1,8 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import { createAccount, type getAccounts } from "@/features/kuroji/actions/accounts";
+import { createAccount } from "@/features/kuroji/actions/accounts";
+import type { getAccounts } from "@/features/kuroji/actions/data";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { optionalAmountSchema, parseAmount } from "@/features/kuroji/lib/transaction-schema";

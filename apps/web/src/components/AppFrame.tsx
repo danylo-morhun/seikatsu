@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { AppShell } from "@/components/AppShell";
-import { initializeWorkspace } from "@/features/kuroji/actions/workspace";
+import { initializeWorkspace } from "@/features/kuroji/actions/data";
 import { DESIGN_COOKIE, parseDesign } from "@/lib/design";
 import { cookies } from "next/headers";
 

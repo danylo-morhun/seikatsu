@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { getWorkspace } from "@/features/kuroji/actions/workspace";
+import { getWorkspace } from "@/features/kuroji/actions/data";
 import { KurojiNavTabs } from "@/features/kuroji/components/KurojiNavTabs";
 
 // Kuroji's settings are a Kuroji tab on phones: keep its bottom navigation here too.

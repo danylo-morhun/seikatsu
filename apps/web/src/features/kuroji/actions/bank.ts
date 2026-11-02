@@ -1,7 +1,6 @@
 "use server";
 
 import { auth } from "@/auth";
-import { type BankProblem, worstBankProblem } from "@/features/kuroji/lib/bank-health";
 import { syncConnection } from "@/features/kuroji/lib/bank-sync";
 import {
 	createSession,
@@ -10,30 +9,24 @@ import {
 	startAuth,
 } from "@/features/kuroji/lib/enablebanking";
 import { getOwnedWorkspace } from "@/lib/session";
-import { getUserTimeZone } from "@/lib/timezone";
 import {
 	accounts,
 	and,
-	asc,
 	bankAccounts,
 	bankConnections,
 	bankRules,
 	db,
-	desc,
 	eq,
 	inArray,
 	transactionEntries,
 	transactions,
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
-import { cache } from "react";
 
 type Result<T = unknown> = { error: string } | ({ success: true } & T);
 
 // Returns an error result if the caller doesn't own the workspace, else null.
 async function ownedWorkspace(workspaceId: string): Promise<{ error: string } | null> {
-	const session = await auth();
-	if (!session?.user?.id) return { error: "Unauthorized" };
 	const ws = await getOwnedWorkspace(workspaceId);
 	if (!ws) return { error: "Forbidden" };
 	return null;
@@ -153,62 +146,6 @@ export async function finalizeConnection(state: string, code: string): Promise<R
 }
 
 // ── Listing for the UI ──────────────────────────────────────────────────────
-
-export async function getBankConnections(workspaceId: string) {
-	const owner = await ownedWorkspace(workspaceId);
-	if (owner) throw new Error(owner.error);
-	return db.query.bankConnections.findMany({
-		where: eq(bankConnections.workspaceId, workspaceId),
-		orderBy: [desc(bankConnections.createdAt)],
-		// Only what the settings list shows: auth state and session ids stay on the server.
-		columns: { id: true, displayName: true, status: true, lastSyncedAt: true, lastError: true },
-		with: {
-			bankAccounts: {
-				columns: { id: true, accountUid: true, name: true, iban: true, accountId: true },
-			},
-		},
-	});
-}
-
-// Request-scoped: any part of a page can ask again without another query.
-const loadConnectionStates = cache((workspaceId: string) =>
-	db.query.bankConnections.findMany({
-		where: eq(bankConnections.workspaceId, workspaceId),
-		columns: {
-			displayName: true,
-			status: true,
-			accessExpiresAt: true,
-			lastSyncedAt: true,
-			createdAt: true,
-		},
-	}),
-);
-
-/** The bank connection that stopped feeding the ledger, if any. */
-export async function getBankProblem(workspaceId: string): Promise<BankProblem | null> {
-	const owner = await ownedWorkspace(workspaceId);
-	if (owner) throw new Error(owner.error);
-	const [connections, timeZone] = await Promise.all([
-		loadConnectionStates(workspaceId),
-		getUserTimeZone(),
-	]);
-	return worstBankProblem(connections, new Date(), timeZone);
-}
-
-export async function getBankRules(workspaceId: string) {
-	const owner = await ownedWorkspace(workspaceId);
-	if (owner) throw new Error(owner.error);
-	return db
-		.select({
-			id: bankRules.id,
-			matchText: bankRules.matchText,
-			accountId: bankRules.accountId,
-			priority: bankRules.priority,
-		})
-		.from(bankRules)
-		.where(eq(bankRules.workspaceId, workspaceId))
-		.orderBy(asc(bankRules.priority), asc(bankRules.createdAt));
-}
 
 // ── Link a bank account to a Kuroji account ─────────────────────────────────
 

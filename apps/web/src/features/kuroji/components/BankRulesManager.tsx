@@ -1,9 +1,8 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import type { getAccounts } from "@/features/kuroji/actions/accounts";
-import type { getBankRules } from "@/features/kuroji/actions/bank";
 import { createBankRule, deleteBankRule } from "@/features/kuroji/actions/bank";
+import type { getAccounts, getBankRules } from "@/features/kuroji/actions/data";
 import { AccountPicker } from "@/features/kuroji/components/AccountSelect";
 import { ArrowRight02Icon, Delete02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
