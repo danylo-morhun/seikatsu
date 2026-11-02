@@ -3,10 +3,10 @@
 import { startNavigationProgress } from "@/components/NavigationProgress";
 import { TabBar, TabBarAction } from "@/components/TabBar";
 import { createHabit } from "@/features/keizoku/actions/habits";
-import { HabitDialog } from "@/features/keizoku/components/HabitDialog";
 import { NEW_HABIT_EVENT, requestNewHabit } from "@/features/keizoku/lib/events";
 import { markFresh } from "@/features/keizoku/lib/habit-nav";
 import type { HabitFormValues } from "@/features/keizoku/lib/keizoku-schemas";
+import { useOpenedOnce } from "@/hooks/useOpenedOnce";
 import { pageKey } from "@/lib/capture-shortcut";
 import {
 	Add01Icon,
@@ -15,9 +15,15 @@ import {
 	CheckListIcon,
 	Settings01Icon,
 } from "@hugeicons/core-free-icons";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
+// The form loads on first open; hovering the add button starts it early.
+const loadHabitDialog = () =>
+	import("@/features/keizoku/components/HabitDialog").then((m) => m.HabitDialog);
+const HabitDialog = dynamic(loadHabitDialog, { ssr: false });
 
 /**
  * Keizoku's chrome around every page of the app: the phone's bottom pill (Today, Year, add,
@@ -27,6 +33,7 @@ export function KeizokuNavTabs() {
 	const pathname = usePathname();
 	const router = useRouter();
 	const [capture, setCapture] = useState({ open: false, instant: false });
+	const mounted = useOpenedOnce(capture.open);
 
 	const isSettings = pathname.startsWith("/settings/keizoku");
 	const isArchive = pathname === "/keizoku/archive";
@@ -84,16 +91,26 @@ export function KeizokuNavTabs() {
 					{ label: "Archive", icon: Archive01Icon, href: "/keizoku/archive" },
 					{ label: "Settings", icon: Settings01Icon, href: "/settings/keizoku" },
 				]}
-				action={<TabBarAction icon={Add01Icon} aria-label="New habit" onClick={requestNewHabit} />}
+				action={
+					<TabBarAction
+						icon={Add01Icon}
+						aria-label="New habit"
+						onClick={requestNewHabit}
+						onPointerEnter={loadHabitDialog}
+						onFocus={loadHabitDialog}
+					/>
+				}
 			/>
 
-			<HabitDialog
-				habit={null}
-				open={capture.open}
-				instant={capture.instant}
-				onOpenChange={(open) => setCapture((c) => ({ ...c, open }))}
-				onSave={(values) => save(values as HabitFormValues)}
-			/>
+			{mounted && (
+				<HabitDialog
+					habit={null}
+					open={capture.open}
+					instant={capture.instant}
+					onOpenChange={(open) => setCapture((c) => ({ ...c, open }))}
+					onSave={(values) => save(values as HabitFormValues)}
+				/>
+			)}
 		</>
 	);
 }
