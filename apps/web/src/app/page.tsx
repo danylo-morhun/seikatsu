@@ -4,7 +4,7 @@ import { PageLoader } from "@/components/PageLoader";
 import { SignInCard } from "@/features/auth/components/SignInCard";
 import { SignInIntro } from "@/features/auth/components/SignInIntro";
 import { TodayView } from "@/features/home/components/TodayView";
-import { getToday } from "@/features/home/lib/today";
+import { getStarted } from "@/features/home/lib/today";
 import { ForgetOfflinePages } from "@/features/pwa/components/ForgetOfflinePages";
 import { getCurrentWorkspace } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
@@ -35,6 +35,7 @@ export default async function HomePage() {
 async function Today({ firstName }: { firstName: string | null }) {
 	const [workspace, today] = await Promise.all([getCurrentWorkspace(), getUserToday()]);
 	if (!workspace) return null;
-	const data = await getToday(workspace, today);
-	return <TodayView data={data} today={today} workspace={workspace} firstName={firstName} />;
+	// Which apps are in use decides the tiles; each tile's figures then stream in on their own.
+	const started = await getStarted(workspace);
+	return <TodayView ws={workspace} today={today} started={started} firstName={firstName} />;
 }
