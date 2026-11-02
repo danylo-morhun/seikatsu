@@ -1,5 +1,6 @@
 import { syncConnection } from "@/features/kuroji/lib/bank-sync";
 import { bankConnections, db, inArray } from "@seikatsu/db";
+import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 
 // Daily Vercel Cron (see vercel.json). Syncs every live connection. Guarded by
@@ -27,6 +28,7 @@ export async function GET(req: NextRequest) {
 			const result = await syncConnection(conn);
 			imported += result.imported;
 		} catch (e) {
+			Sentry.captureException(e, { tags: { cron: "sync-banks" } });
 			failures.push({ id: conn.id, error: e instanceof Error ? e.message : "unknown" });
 		}
 	}
