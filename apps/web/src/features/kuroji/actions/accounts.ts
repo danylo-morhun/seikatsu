@@ -136,37 +136,31 @@ export async function deleteAccount(
 
 	if (!ws) return { error: "Forbidden" };
 
-	const [child] = await db
-		.select({ id: accounts.id })
-		.from(accounts)
-		.where(eq(accounts.parentId, accountId))
-		.limit(1);
+	const [[child], [entry], [recurring]] = await Promise.all([
+		db.select({ id: accounts.id }).from(accounts).where(eq(accounts.parentId, accountId)).limit(1),
+		db
+			.select({ id: transactionEntries.id })
+			.from(transactionEntries)
+			.where(eq(transactionEntries.accountId, accountId))
+			.limit(1),
+		db
+			.select({ id: recurringTransactions.id })
+			.from(recurringTransactions)
+			.where(
+				or(
+					eq(recurringTransactions.fromAccountId, accountId),
+					eq(recurringTransactions.toAccountId, accountId),
+				),
+			)
+			.limit(1),
+	]);
 
 	if (child) {
 		return { error: "This account has sub-accounts. Move or delete them first." };
 	}
-
-	const entries = await db
-		.select({ id: transactionEntries.id })
-		.from(transactionEntries)
-		.where(eq(transactionEntries.accountId, accountId))
-		.limit(1);
-
-	if (entries.length > 0) {
+	if (entry) {
 		return { error: "This account has transactions. Archive it instead to keep its history." };
 	}
-
-	const [recurring] = await db
-		.select({ id: recurringTransactions.id })
-		.from(recurringTransactions)
-		.where(
-			or(
-				eq(recurringTransactions.fromAccountId, accountId),
-				eq(recurringTransactions.toAccountId, accountId),
-			),
-		)
-		.limit(1);
-
 	if (recurring) {
 		return { error: "This account is used by a recurring payment. Delete or change it first." };
 	}
