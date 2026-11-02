@@ -33,7 +33,6 @@ jobs:
 
   unit-test:
     name: Unit Tests (Vitest)
-    needs: lint-and-typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -42,11 +41,15 @@ jobs:
 
   build:
     name: Production Build Verification
-    needs: lint-and-typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
+      - uses: actions/cache@v6
+        with:
+          path: apps/web/.next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('apps/web/src/**', 'packages/*/src/**') }}
+          restore-keys: next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
       - run: pnpm build
       - uses: actions/upload-artifact@v7
         with:
@@ -58,9 +61,13 @@ jobs:
           retention-days: 1
 
   e2e:
-    name: E2E Tests (Playwright)
+    name: E2E Tests (Playwright ${{ matrix.shard }}/2)
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     services:
       postgres:
         image: postgres:17
@@ -89,11 +96,11 @@ jobs:
         run: pnpm -F @seikatsu/web exec playwright install --with-deps --only-shell chromium
       - if: steps.browsers.outputs.cache-hit == 'true'
         run: pnpm -F @seikatsu/web exec playwright install-deps chromium
-      - run: pnpm -F @seikatsu/web test:e2e
+      - run: pnpm -F @seikatsu/web test:e2e --shard=${{ matrix.shard }}/2
       - if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: |
             apps/web/playwright-report
             apps/web/test-results
