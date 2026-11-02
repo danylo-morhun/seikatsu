@@ -496,7 +496,10 @@ export async function getRecentTransactions(
 			orderBy: transactionOrder(filters),
 			limit: TRANSACTIONS_PAGE_SIZE + 1,
 			offset: p * TRANSACTIONS_PAGE_SIZE,
-			with: { entries: { with: { account: true } }, transactionTags: { with: { tag: true } } },
+			with: {
+				entries: { with: { account: { columns: { name: true, type: true } } } },
+				transactionTags: { with: { tag: { columns: { id: true, name: true, color: true } } } },
+			},
 		});
 	const [firstTry, [{ total }]] = await Promise.all([
 		fetchPage(page),
