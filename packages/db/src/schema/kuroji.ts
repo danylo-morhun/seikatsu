@@ -53,7 +53,10 @@ export const accounts = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 	},
-	(t) => [index("accounts_workspace_id_idx").on(t.workspaceId)],
+	(t) => [
+		index("accounts_workspace_id_idx").on(t.workspaceId),
+		index("accounts_parent_id_idx").on(t.parentId),
+	],
 );
 
 export const transactions = pgTable(
@@ -70,7 +73,8 @@ export const transactions = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
 	(t) => [
-		index("transactions_workspace_id_idx").on(t.workspaceId),
+		// Lists and date-range sums filter by workspace and date.
+		index("transactions_workspace_date_idx").on(t.workspaceId, t.date),
 		// Dedupe imports: NULLs are allowed to repeat (manual entries), real ids are unique per workspace.
 		uniqueIndex("transactions_workspace_external_id_idx").on(t.workspaceId, t.externalId),
 	],
@@ -188,7 +192,11 @@ export const transactionTags = pgTable(
 			.notNull()
 			.references(() => tags.id, { onDelete: "cascade" }),
 	},
-	(t) => [primaryKey({ columns: [t.transactionId, t.tagId] })],
+	(t) => [
+		primaryKey({ columns: [t.transactionId, t.tagId] }),
+		// The PK leads with transactionId; the tag filter and tag deletes look up by tagId.
+		index("transaction_tags_tag_id_idx").on(t.tagId),
+	],
 );
 
 export const recurringTransactions = pgTable(
@@ -214,7 +222,11 @@ export const recurringTransactions = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 	},
-	(t) => [index("recurring_transactions_workspace_id_idx").on(t.workspaceId)],
+	(t) => [
+		index("recurring_transactions_workspace_id_idx").on(t.workspaceId),
+		index("recurring_transactions_from_account_id_idx").on(t.fromAccountId),
+		index("recurring_transactions_to_account_id_idx").on(t.toAccountId),
+	],
 );
 
 export const recurringTransactionsRelations = relations(recurringTransactions, ({ one }) => ({

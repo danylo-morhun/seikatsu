@@ -253,6 +253,13 @@
 			"when": 1793384605069,
 			"tag": "0035_kuroji_plan",
 			"breakpoints": true
+		},
+		{
+			"idx": 36,
+			"version": "7",
+			"when": 1793624528177,
+			"tag": "0036_fk_and_filter_indexes",
+			"breakpoints": true
 		}
 	]
 }
