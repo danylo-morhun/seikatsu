@@ -1,7 +1,7 @@
 "use client";
 
 import { TabBar, TabBarAction } from "@/components/TabBar";
-import { AddTransactionModal } from "@/features/kuroji/components/AddTransactionModal";
+import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTransactionModal";
 import {
 	Add01Icon,
 	Chart01Icon,
@@ -61,7 +61,7 @@ export function KurojiNavTabs({ workspaceId, baseCurrency }: Props) {
 				onClick: () => setPendingTab(value),
 			}))}
 			action={
-				<AddTransactionModal
+				<LazyAddTransactionModal
 					workspaceId={workspaceId}
 					baseCurrency={baseCurrency}
 					trigger={<TabBarAction icon={Add01Icon} aria-label="New transaction" />}

@@ -1,7 +1,7 @@
 "use client";
 
 import { AppWelcome } from "@/components/AppWelcome";
-import { AddTransactionModal } from "@/features/kuroji/components/AddTransactionModal";
+import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTransactionModal";
 import { Button } from "@seikatsu/ui";
 
 interface Props {
@@ -40,7 +40,7 @@ export function OnboardingCard({ workspaceId, baseCurrency }: Props) {
 			lead={`Where the money comes from and where it goes, in ${baseCurrency} or any other currency. Every entry moves money from one account to another, so balances always add up. A wallet, a bank account, savings and a few everyday categories are already set up.`}
 			steps={STEPS}
 		>
-			<AddTransactionModal
+			<LazyAddTransactionModal
 				workspaceId={workspaceId}
 				baseCurrency={baseCurrency}
 				trigger={<Button aria-keyshortcuts="N">Record your first transaction</Button>}
