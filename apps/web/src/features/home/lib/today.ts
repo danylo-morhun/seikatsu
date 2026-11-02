@@ -1,6 +1,6 @@
 // Read-side queries for the home's Today view: one small summary per app. Not a "use server"
-// module — import only from the RSC page. Each summary fails alone, so one app's error leaves
-// the rest of the day readable.
+// module — import only from server components. Each summary fails alone, so one app's error
+// leaves the rest of the day readable, and each tile streams in as soon as its own is ready.
 
 import { getCar as getAishaCar, getCurrentVehicle } from "@/features/aisha/actions/data";
 import { getHoshii } from "@/features/hoshii/actions/data";
@@ -19,13 +19,17 @@ import {
 	asc,
 	db,
 	eq,
+	hoshiiItems,
 	isNotNull,
 	isNull,
+	kyuuApplications,
 	lte,
 	seiryuCards,
 	seiryuColumns,
 	seiryuProjects,
+	tsundokuBooks,
 } from "@seikatsu/db";
+import { cache } from "react";
 
 async function safely<T>(load: () => Promise<T>): Promise<T | null> {
 	try {
@@ -214,34 +218,49 @@ async function getWants(ws: Workspace, today: string): Promise<WantsToday> {
 }
 
 /** Whether each app holds anything yet; null when that couldn't be read. An empty app waits
- * on the home's start list instead of showing a tile of dashes. */
+ * on the home's start list instead of showing a tile of dashes. Cheap existence checks, so the
+ * page knows its tiles before any summary is ready. */
 export type Started = Record<keyof typeof APPS_CONFIG, boolean | null>;
 
-export async function getToday(ws: Workspace, today: string) {
-	const [money, habits, books, jobs, cards, car, hasMoney, hasHabits, hasProjects, hasCar, wants] =
-		await Promise.all([
-			safely(() => getMoney(ws, today)),
-			safely(getHabits),
-			safely(getBooks),
-			safely(getJobs),
-			safely(() => getCardsDue(ws, today)),
-			safely(() => getCar(today)),
-			safely(() => hasAnyTransactions(ws.id)),
-			safely(() => getAllHabits().then((list) => list.length > 0)),
-			safely(() => getProjects().then((list) => list.length > 0)),
-			safely(() => getCurrentVehicle().then(Boolean)),
-			safely(() => getWants(ws, today)),
-		]);
-	const started: Started = {
-		"/kuroji": hasMoney,
-		"/seiryu": hasProjects,
-		"/tsundoku": books && books.length > 0,
-		"/keizoku": hasHabits,
-		"/kyuu": jobs && jobs.total > 0,
-		"/aisha": hasCar,
-		"/hoshii": wants && wants.total > 0,
-	};
-	return { money, habits, reading: books && readingNow(books), jobs, cards, car, wants, started };
+/** Whether the workspace has a row in this table. */
+function hasRows(table: typeof tsundokuBooks | typeof kyuuApplications | typeof hoshiiItems) {
+	return (ws: Workspace) =>
+		db
+			.select({ id: table.id })
+			.from(table)
+			.where(eq(table.workspaceId, ws.id))
+			.limit(1)
+			.then((rows) => rows.length > 0);
 }
 
-export type Today = Awaited<ReturnType<typeof getToday>>;
+export async function getStarted(ws: Workspace): Promise<Started> {
+	const [kuroji, seiryu, tsundoku, keizoku, kyuu, aisha, hoshii] = await Promise.all([
+		safely(() => hasAnyTransactions(ws.id)),
+		safely(() => getProjects().then((list) => list.length > 0)),
+		safely(() => hasRows(tsundokuBooks)(ws)),
+		safely(() => getAllHabits().then((list) => list.length > 0)),
+		safely(() => hasRows(kyuuApplications)(ws)),
+		safely(() => getCurrentVehicle().then(Boolean)),
+		safely(() => hasRows(hoshiiItems)(ws)),
+	]);
+	return {
+		"/kuroji": kuroji,
+		"/seiryu": seiryu,
+		"/tsundoku": tsundoku,
+		"/keizoku": keizoku,
+		"/kyuu": kyuu,
+		"/aisha": aisha,
+		"/hoshii": hoshii,
+	};
+}
+
+// One load per request: a tile and the header's "what's waiting" line share each summary.
+export const loadMoney = cache((ws: Workspace, today: string) => safely(() => getMoney(ws, today)));
+export const loadHabits = cache(() => safely(getHabits));
+export const loadReading = cache(() => safely(() => getBooks().then(readingNow)));
+export const loadJobs = cache(() => safely(getJobs));
+export const loadCards = cache((ws: Workspace, today: string) =>
+	safely(() => getCardsDue(ws, today)),
+);
+export const loadCar = cache((today: string) => safely(() => getCar(today)));
+export const loadWants = cache((ws: Workspace, today: string) => safely(() => getWants(ws, today)));
