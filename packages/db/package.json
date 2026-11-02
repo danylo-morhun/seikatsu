@@ -8,7 +8,6 @@
 		"./test-utils": "./src/test-utils.ts"
 	},
 	"scripts": {
-		"build": "tsc --noEmit",
 		"typecheck": "tsc --noEmit",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
