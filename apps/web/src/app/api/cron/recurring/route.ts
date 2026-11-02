@@ -1,9 +1,21 @@
+import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
 import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
-import { and, db, eq, lte, recurringTransactions, workspaces } from "@seikatsu/db";
+import {
+	accounts,
+	and,
+	db,
+	eq,
+	hoshiiItems,
+	isNull,
+	lte,
+	ne,
+	recurringTransactions,
+	workspaces,
+} from "@seikatsu/db";
 import { type NextRequest, NextResponse } from "next/server";
 
-// Daily Vercel Cron (see vercel.json): materializes recurring transactions due today, so
-// page renders never have to. Guarded by CRON_SECRET like sync-banks.
+// Daily Vercel Cron (see vercel.json): materializes recurring transactions due today and
+// stores today's exchange rates, so page renders never have to. Guarded by CRON_SECRET.
 export async function GET(req: NextRequest) {
 	const secret = process.env.CRON_SECRET;
 	if (!secret) {
@@ -32,5 +44,27 @@ export async function GET(req: NextRequest) {
 		}
 	}
 
-	return NextResponse.json({ workspaces: due.length, generated, failures });
+	const rates = await warmRates(today);
+	return NextResponse.json({ workspaces: due.length, generated, failures, rates });
+}
+
+/** Stores today's rate for each foreign currency in use (open accounts, wants). */
+async function warmRates(today: string) {
+	const [inAccounts, inWants] = await Promise.all([
+		db
+			.selectDistinct({ from: accounts.currency, to: workspaces.baseCurrency })
+			.from(accounts)
+			.innerJoin(workspaces, eq(accounts.workspaceId, workspaces.id))
+			.where(and(isNull(accounts.archivedAt), ne(accounts.currency, workspaces.baseCurrency))),
+		db
+			.selectDistinct({ from: hoshiiItems.currency, to: workspaces.baseCurrency })
+			.from(hoshiiItems)
+			.innerJoin(workspaces, eq(hoshiiItems.workspaceId, workspaces.id))
+			.where(ne(hoshiiItems.currency, workspaces.baseCurrency)),
+	]);
+	const pairs = new Map([...inAccounts, ...inWants].map((p) => [`${p.from}>${p.to}`, p]));
+	const results = await Promise.allSettled(
+		[...pairs.values()].map((p) => getExchangeRate(p.from, p.to, today)),
+	);
+	return { pairs: pairs.size, failed: results.filter((r) => r.status === "rejected").length };
 }
