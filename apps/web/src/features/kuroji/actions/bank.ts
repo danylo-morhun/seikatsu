@@ -160,7 +160,13 @@ export async function getBankConnections(workspaceId: string) {
 	return db.query.bankConnections.findMany({
 		where: eq(bankConnections.workspaceId, workspaceId),
 		orderBy: [desc(bankConnections.createdAt)],
-		with: { bankAccounts: true },
+		// Only what the settings list shows: auth state and session ids stay on the server.
+		columns: { id: true, displayName: true, status: true, lastSyncedAt: true, lastError: true },
+		with: {
+			bankAccounts: {
+				columns: { id: true, accountUid: true, name: true, iban: true, accountId: true },
+			},
+		},
 	});
 }
 
