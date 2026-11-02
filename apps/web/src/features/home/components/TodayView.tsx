@@ -1,19 +1,20 @@
 "use client";
 
-import { ReadingDialog } from "@/features/aisha/components/ReadingDialog";
 import { StartHere } from "@/features/home/components/StartHere";
 import type { Today } from "@/features/home/lib/today";
 import { CheckButton } from "@/features/keizoku/components/HabitRow";
 import { tickDay } from "@/features/keizoku/lib/offline";
-import { AddTransactionModal } from "@/features/kuroji/components/AddTransactionModal";
+import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTransactionModal";
 import { usePendingOps } from "@/features/pwa/lib/use-outbox";
-import { ProgressDialog, type ProgressTarget } from "@/features/tsundoku/components/ProgressDialog";
+import type { ProgressTarget } from "@/features/tsundoku/components/ProgressDialog";
 import { ProgressMeter } from "@/features/tsundoku/components/ProgressMeter";
 import { saveProgress as sendProgress } from "@/features/tsundoku/lib/offline";
+import { useOpenedOnce } from "@/hooks/useOpenedOnce";
 import { APPS_CONFIG } from "@/lib/app-themes";
 import { pageKey } from "@/lib/capture-shortcut";
 import type { Workspace } from "@/lib/session";
 import { Button, cn } from "@seikatsu/ui";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -25,6 +26,14 @@ import {
 	useTransition,
 } from "react";
 import { toast } from "sonner";
+
+// The tiles' dialogs load on first open; hovering their button starts it early.
+const loadReading = () =>
+	import("@/features/aisha/components/ReadingDialog").then((m) => m.ReadingDialog);
+const loadProgress = () =>
+	import("@/features/tsundoku/components/ProgressDialog").then((m) => m.ProgressDialog);
+const ReadingDialog = dynamic(loadReading, { ssr: false });
+const ProgressDialog = dynamic(loadProgress, { ssr: false });
 
 type AppHref = keyof typeof APPS_CONFIG;
 const APP_HREFS = Object.keys(APPS_CONFIG) as AppHref[];
@@ -239,6 +248,8 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 	const [progressBook, setProgressBook] = useState<ProgressTarget | null>(null);
 	const [mileageOpen, setMileageOpen] = useState(false);
 	const hasCar = !!data.car;
+	const readingMounted = useOpenedOnce(mileageOpen);
+	const progressMounted = useOpenedOnce(progressBook != null);
 	const [, startTransition] = useTransition();
 
 	// The greeting follows the reader's clock, which the server doesn't know.
@@ -344,7 +355,7 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 							value={m ? money(m.netWorth, m.currency) : null}
 							note={m ? `Net worth · ${money(m.spentThisMonth, m.currency)} spent` : "Not set up"}
 							action={
-								<AddTransactionModal
+								<LazyAddTransactionModal
 									workspaceId={workspace.id}
 									baseCurrency={workspace.baseCurrency}
 									shortcut
@@ -384,7 +395,13 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 							alert={next?.status === "overdue"}
 							action={
 								data.car && (
-									<TileAction label="Log mileage" keys="M" onClick={() => setMileageOpen(true)}>
+									<TileAction
+										label="Log mileage"
+										keys="M"
+										onClick={() => setMileageOpen(true)}
+										onPointerEnter={loadReading}
+										onFocus={loadReading}
+									>
 										Log
 									</TileAction>
 								)
@@ -497,7 +514,13 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 							}
 							action={
 								book && (
-									<TileAction label="Log pages" keys="P" onClick={() => setProgressBook(book)}>
+									<TileAction
+										label="Log pages"
+										keys="P"
+										onClick={() => setProgressBook(book)}
+										onPointerEnter={loadProgress}
+										onFocus={loadProgress}
+									>
 										Log
 									</TileAction>
 								)
@@ -520,7 +543,7 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 				<StartHere apps={fresh} hidden={hidden} all={isNew} offset={isNew ? 1 : tile} />
 			)}
 
-			{data.car && (
+			{data.car && readingMounted && (
 				<ReadingDialog
 					open={mileageOpen}
 					onOpenChange={setMileageOpen}
@@ -528,11 +551,13 @@ export function TodayView({ data, today, workspace, firstName }: Props) {
 					currentKm={data.car.currentKm}
 				/>
 			)}
-			<ProgressDialog
-				book={progressBook}
-				onOpenChange={(open) => !open && setProgressBook(null)}
-				onSave={saveProgress}
-			/>
+			{progressMounted && (
+				<ProgressDialog
+					book={progressBook}
+					onOpenChange={(open) => !open && setProgressBook(null)}
+					onSave={saveProgress}
+				/>
+			)}
 		</div>
 	);
 }
