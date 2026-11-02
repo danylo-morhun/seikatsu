@@ -3,31 +3,8 @@
 import { auth } from "@/auth";
 import { parentError } from "@/features/kuroji/lib/account-parent";
 import { getOwnedWorkspace } from "@/lib/session";
-import {
-	accounts,
-	and,
-	db,
-	eq,
-	isNull,
-	or,
-	recurringTransactions,
-	transactionEntries,
-} from "@seikatsu/db";
+import { accounts, db, eq, or, recurringTransactions, transactionEntries } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
-
-export async function getAccounts(workspaceId: string, opts?: { includeArchived?: boolean }) {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Unauthorized");
-
-	const ws = await getOwnedWorkspace(workspaceId);
-
-	if (!ws) throw new Error("Forbidden");
-
-	const filter = opts?.includeArchived
-		? eq(accounts.workspaceId, workspaceId)
-		: and(eq(accounts.workspaceId, workspaceId), isNull(accounts.archivedAt));
-	return db.select().from(accounts).where(filter);
-}
 
 export async function createAccount(
 	workspaceId: string,
@@ -37,9 +14,6 @@ export async function createAccount(
 	budget?: number,
 	currency?: string,
 ) {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Unauthorized");
-
 	const workspace = await getOwnedWorkspace(workspaceId);
 	if (!workspace) throw new Error("Forbidden");
 

@@ -1,6 +1,6 @@
 "use client";
 
-import type { getAccounts } from "@/features/kuroji/actions/accounts";
+import type { getAccounts } from "@/features/kuroji/actions/data";
 import {
 	Select,
 	SelectContent,

@@ -1,7 +1,7 @@
 import { SettingsPage } from "@/components/SettingsSection";
 import { getHoshii } from "@/features/hoshii/actions/data";
 import { SettingsHoshii } from "@/features/hoshii/components/SettingsHoshii";
-import { getAccounts } from "@/features/kuroji/actions/accounts";
+import { getAccounts } from "@/features/kuroji/actions/data";
 import { getCurrentWorkspace } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
 import { redirect } from "next/navigation";

@@ -1,6 +1,6 @@
 "use client";
 
-import type { getAccounts } from "@/features/kuroji/actions/accounts";
+import type { getAccounts } from "@/features/kuroji/actions/data";
 import { EditAccountModal } from "@/features/kuroji/components/EditAccountModal";
 import { PencilEdit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";

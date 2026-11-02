@@ -1,12 +1,15 @@
 import { auth } from "@/auth";
 import { PageTab, PageTabs } from "@/components/PageTabs";
 import { SettingsPage, SettingsSection } from "@/components/SettingsSection";
-import { getAccounts } from "@/features/kuroji/actions/accounts";
 import { getBalances } from "@/features/kuroji/actions/balances";
-import { getBankConnections, getBankRules } from "@/features/kuroji/actions/bank";
 import { getCaptureKeyStatus } from "@/features/kuroji/actions/capture";
-import { getRecurringTransactions } from "@/features/kuroji/actions/recurring";
-import { initializeWorkspace } from "@/features/kuroji/actions/workspace";
+import {
+	getAccounts,
+	getBankConnections,
+	getBankRules,
+	getRecurringTransactions,
+	initializeWorkspace,
+} from "@/features/kuroji/actions/data";
 import { AccountsOverview } from "@/features/kuroji/components/AccountsOverview";
 import { AddAccountModal } from "@/features/kuroji/components/AddAccountModal";
 import { AddRecurringModal } from "@/features/kuroji/components/AddRecurringModal";

@@ -2,7 +2,7 @@
 
 import { SettingsSection } from "@/components/SettingsSection";
 import { unarchiveAccount } from "@/features/kuroji/actions/accounts";
-import type { getAccounts } from "@/features/kuroji/actions/accounts";
+import type { getAccounts } from "@/features/kuroji/actions/data";
 import { Archive01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@seikatsu/ui";

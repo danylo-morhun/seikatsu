@@ -1,13 +1,16 @@
 import { auth } from "@/auth";
 import { PageTitle } from "@/components/PageTitle";
-import { getAccounts } from "@/features/kuroji/actions/accounts";
 import { getBalances } from "@/features/kuroji/actions/balances";
-import { getBankProblem } from "@/features/kuroji/actions/bank";
+import {
+	getAccounts,
+	getBankProblem,
+	getRecentTransactions,
+	getTags,
+	hasAnyTransactions,
+	initializeWorkspace,
+} from "@/features/kuroji/actions/data";
 import { getPlan, getPlanSuggestions } from "@/features/kuroji/actions/plan";
-import { getTags } from "@/features/kuroji/actions/tags";
-import { getRecentTransactions, hasAnyTransactions } from "@/features/kuroji/actions/transactions";
 import { getMonthlyTrends } from "@/features/kuroji/actions/trends";
-import { initializeWorkspace } from "@/features/kuroji/actions/workspace";
 import { AccountsOverview } from "@/features/kuroji/components/AccountsOverview";
 import { BankSyncNotice } from "@/features/kuroji/components/BankSyncNotice";
 import { CategoryBreakdown } from "@/features/kuroji/components/CategoryBreakdown";

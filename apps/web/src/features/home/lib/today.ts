@@ -7,7 +7,7 @@ import { getHoshii } from "@/features/hoshii/actions/data";
 import { getHabits as getAllHabits } from "@/features/keizoku/actions/habits";
 import { getDueToday } from "@/features/keizoku/actions/logs";
 import { getBalances } from "@/features/kuroji/actions/balances";
-import { hasAnyTransactions } from "@/features/kuroji/actions/transactions";
+import { hasAnyTransactions } from "@/features/kuroji/actions/data";
 import { displayBalance, rollupRoots } from "@/features/kuroji/lib/balance";
 import { getGhostDue, getViewCounts } from "@/features/kyuu/actions/applications";
 import { getProjects } from "@/features/seiryu/actions/projects";

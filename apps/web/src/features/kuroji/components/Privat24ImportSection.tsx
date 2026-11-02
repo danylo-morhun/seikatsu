@@ -1,7 +1,7 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import type { getAccounts } from "@/features/kuroji/actions/accounts";
+import type { getAccounts } from "@/features/kuroji/actions/data";
 import { importPrivat24Statement } from "@/features/kuroji/actions/privat24-import";
 import { Xls01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";

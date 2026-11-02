@@ -5,8 +5,8 @@ import {
 	deleteAccount,
 	toggleAccountDashboardVisibility,
 } from "@/features/kuroji/actions/accounts";
-import type { getAccounts } from "@/features/kuroji/actions/accounts";
 import type { AccountBalance } from "@/features/kuroji/actions/balances";
+import type { getAccounts } from "@/features/kuroji/actions/data";
 import { AddAccountModal } from "@/features/kuroji/components/AddAccountModal";
 import { BudgetMeter } from "@/features/kuroji/components/BudgetMeter";
 import { EditAccountModal } from "@/features/kuroji/components/EditAccountModal";

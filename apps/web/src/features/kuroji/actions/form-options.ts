@@ -1,7 +1,7 @@
 "use server";
 
-import { getAccounts } from "@/features/kuroji/actions/accounts";
-import { type Tag, getTags } from "@/features/kuroji/actions/tags";
+import { getAccounts, getTags } from "@/features/kuroji/actions/data";
+import type { Tag } from "@/features/kuroji/actions/tags";
 import { type CategoryUsage, pickUsage } from "@/features/kuroji/lib/category-tiles";
 import { getOwnedWorkspace } from "@/lib/session";
 import {

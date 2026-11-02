@@ -2,8 +2,6 @@
 
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { Spinner } from "@/components/Spinner";
-import type { getAccounts } from "@/features/kuroji/actions/accounts";
-import type { getBankConnections } from "@/features/kuroji/actions/bank";
 import {
 	connectBank,
 	deleteBankConnection,
@@ -12,6 +10,7 @@ import {
 	resetAndResync,
 	syncBankConnection,
 } from "@/features/kuroji/actions/bank";
+import type { getAccounts, getBankConnections } from "@/features/kuroji/actions/data";
 import { formatDateTime } from "@/features/kuroji/lib/dates";
 import { Delete01Icon, MoreHorizontalIcon, RefreshIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";

@@ -1,9 +1,11 @@
 import { auth } from "@/auth";
 import { getAccountActivity, getAccountDetail } from "@/features/kuroji/actions/account-detail";
-import { getAccounts } from "@/features/kuroji/actions/accounts";
 import { getBalances } from "@/features/kuroji/actions/balances";
-import { getRecentTransactions } from "@/features/kuroji/actions/transactions";
-import { initializeWorkspace } from "@/features/kuroji/actions/workspace";
+import {
+	getAccounts,
+	getRecentTransactions,
+	initializeWorkspace,
+} from "@/features/kuroji/actions/data";
 import { AccountActivityChart } from "@/features/kuroji/components/AccountActivityChart";
 import { AccountEditButton } from "@/features/kuroji/components/AccountEditButton";
 import { BudgetMeter } from "@/features/kuroji/components/BudgetMeter";

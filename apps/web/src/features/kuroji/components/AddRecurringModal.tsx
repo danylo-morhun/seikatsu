@@ -1,7 +1,7 @@
 "use client";
 
 import { Spinner } from "@/components/Spinner";
-import type { getAccounts } from "@/features/kuroji/actions/accounts";
+import type { getAccounts } from "@/features/kuroji/actions/data";
 import { createRecurringTransaction } from "@/features/kuroji/actions/recurring";
 import { AccountSelect } from "@/features/kuroji/components/AccountSelect";
 import { CURRENCIES, toCurrency } from "@/features/kuroji/lib/constants";

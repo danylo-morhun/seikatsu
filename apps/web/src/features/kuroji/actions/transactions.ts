@@ -4,17 +4,10 @@ import { auth } from "@/auth";
 import { CAPTURE_EXTERNAL_PREFIX } from "@/features/kuroji/lib/capture-intake";
 import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
 import type { Leg } from "@/features/kuroji/lib/transaction-edit";
-import {
-	TRANSACTIONS_PAGE_SIZE,
-	type TransactionFilters,
-	clampPage,
-} from "@/features/kuroji/lib/transaction-filters";
-import { transactionOrder, transactionWhere } from "@/features/kuroji/lib/transaction-query";
 import { getOwnedWorkspace } from "@/lib/session";
 import {
 	accounts,
 	and,
-	count,
 	db,
 	eq,
 	inArray,
@@ -215,9 +208,6 @@ export async function createTransaction({
 	{ error: string } | { success: true; data: { id: string } }
 > {
 	try {
-		const session = await auth();
-		if (!session?.user?.id) return { error: "Unauthorized" };
-
 		const ws = await getOwnedWorkspace(workspaceId);
 		if (!ws) return { error: "Forbidden" };
 		if (id !== undefined && !UUID.test(id)) return { error: "Invalid transaction id" };
@@ -323,9 +313,6 @@ export async function deleteTransactions(
 ): Promise<{ error: string } | { success: true; deleted: number }> {
 	if (ids.length === 0) return { success: true, deleted: 0 };
 
-	const session = await auth();
-	if (!session?.user?.id) return { error: "Unauthorized" };
-
 	const ws = await getOwnedWorkspace(workspaceId);
 
 	if (!ws) return { error: "Forbidden" };
@@ -340,19 +327,6 @@ export async function deleteTransactions(
 }
 
 /** Whether the workspace has recorded anything yet — the first-run welcome shows until it has. */
-export async function hasAnyTransactions(workspaceId: string): Promise<boolean> {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Unauthorized");
-	const ws = await getOwnedWorkspace(workspaceId);
-	if (!ws) throw new Error("Forbidden");
-	const [row] = await db
-		.select({ id: transactions.id })
-		.from(transactions)
-		.where(eq(transactions.workspaceId, workspaceId))
-		.limit(1);
-	return !!row;
-}
-
 /**
  * Move transactions to another income/expense category. Only the category side changes,
  * so balances and the double-entry sum are untouched. Transactions split across several
@@ -364,9 +338,6 @@ export async function recategorizeTransactions(
 	categoryId: string,
 ): Promise<{ error: string } | { success: true; data: { moved: number; skipped: number } }> {
 	if (transactionIds.length === 0) return { success: true, data: { moved: 0, skipped: 0 } };
-
-	const session = await auth();
-	if (!session?.user?.id) return { error: "Unauthorized" };
 
 	const ws = await getOwnedWorkspace(workspaceId);
 	if (!ws) return { error: "Forbidden" };
@@ -475,92 +446,4 @@ export async function updateTransaction({
 		const msg = e instanceof Error ? e.message : "Unknown error";
 		return { error: msg };
 	}
-}
-
-export async function getRecentTransactions(
-	workspaceId: string,
-	filters: TransactionFilters,
-	page = 0,
-): Promise<{ rows: RecentTransaction[]; hasMore: boolean; total: number; page: number }> {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Unauthorized");
-
-	const ws = await getOwnedWorkspace(workspaceId);
-
-	if (!ws) throw new Error("Forbidden");
-
-	const where = transactionWhere(workspaceId, filters);
-	const fetchPage = (p: number) =>
-		db.query.transactions.findMany({
-			where,
-			orderBy: transactionOrder(filters),
-			limit: TRANSACTIONS_PAGE_SIZE + 1,
-			offset: p * TRANSACTIONS_PAGE_SIZE,
-			with: {
-				entries: { with: { account: { columns: { name: true, type: true } } } },
-				transactionTags: { with: { tag: { columns: { id: true, name: true, color: true } } } },
-			},
-		});
-	const [firstTry, [{ total }]] = await Promise.all([
-		fetchPage(page),
-		db.select({ total: count() }).from(transactions).where(where),
-	]);
-	// A page past the end (an old link, rows deleted since) shows the last page.
-	const shownPage = clampPage(page, total);
-	const rows = shownPage === page ? firstTry : await fetchPage(shownPage);
-
-	const hasMore = rows.length > TRANSACTIONS_PAGE_SIZE;
-	const page_rows = hasMore ? rows.slice(0, TRANSACTIONS_PAGE_SIZE) : rows;
-
-	return {
-		hasMore,
-		total,
-		page: shownPage,
-		rows: page_rows.map((txn) => {
-			const fromEntries = txn.entries.filter((e) => Number(e.baseAmount) < 0);
-			const toEntries = txn.entries.filter((e) => Number(e.baseAmount) > 0);
-			const fromEntry = fromEntries[0];
-			const toEntry = toEntries[0];
-			const toIsSplit = toEntries.length > 1;
-			const fromIsSplit = fromEntries.length > 1;
-			const totalAmount = toIsSplit
-				? toEntries.reduce((sum, e) => sum + Math.abs(Number(e.amount)), 0)
-				: Math.abs(Number(toEntry?.amount ?? 0));
-			const totalBaseAmount = toIsSplit
-				? toEntries.reduce((sum, e) => sum + Number(e.baseAmount), 0)
-				: Number(toEntry?.baseAmount ?? 0);
-			return {
-				id: txn.id,
-				date: txn.date,
-				description: txn.description,
-				imported: txn.externalId !== null,
-				fromAccount: fromIsSplit
-					? `Split (${fromEntries.length})`
-					: (fromEntry?.account?.name ?? "—"),
-				fromAccountId: fromEntry?.accountId ?? "",
-				fromAccountType: fromEntry?.account?.type ?? "",
-				toAccount: toIsSplit ? `Split (${toEntries.length})` : (toEntry?.account?.name ?? "—"),
-				toAccountId: toEntry?.accountId ?? "",
-				toAccountType: toEntry?.account?.type ?? "",
-				amount: totalAmount.toFixed(2),
-				currency: toEntry?.currency ?? "",
-				fromAmount: Math.abs(Number(fromEntry?.amount ?? 0)).toFixed(2),
-				fromCurrency: fromEntry?.currency ?? "",
-				baseAmount: totalBaseAmount.toFixed(4),
-				splitCount: toEntries.length,
-				legs: txn.entries.map((e) => ({
-					accountId: e.accountId,
-					accountType: e.account?.type ?? "",
-					amount: e.amount,
-					currency: e.currency,
-					baseAmount: e.baseAmount,
-				})),
-				tags: txn.transactionTags.map((tt) => ({
-					id: tt.tag.id,
-					name: tt.tag.name,
-					color: tt.tag.color,
-				})),
-			};
-		}),
-	};
 }
