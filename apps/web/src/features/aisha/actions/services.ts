@@ -1,12 +1,13 @@
 "use server";
 
 import { getReadings } from "@/features/aisha/actions/data";
-import { getOwnedVehicle } from "@/features/aisha/actions/guard";
+import { getOwnedVehicle, isUuid } from "@/features/aisha/actions/guard";
 import type { AishaVehicle } from "@/features/aisha/actions/vehicles";
 import { type ServiceFormValues, serviceFormSchema } from "@/features/aisha/lib/aisha-schemas";
 import { CURRENCY } from "@/features/aisha/lib/constants";
 import { readingConflict } from "@/features/aisha/lib/odometer";
 import { createTransaction, updateTransaction } from "@/features/kuroji/actions/transactions";
+import { getCurrentWorkspace } from "@/lib/session";
 import {
 	accounts,
 	aishaMaintenanceItems,
@@ -32,14 +33,16 @@ function revalidate() {
 }
 
 async function getOwnedRecord(recordId: string) {
-	const [record] = await db
-		.select()
+	if (!isUuid(recordId)) return null;
+	const ws = await getCurrentWorkspace();
+	if (!ws) return null;
+	const [row] = await db
+		.select({ record: aishaServiceRecords, vehicle: aishaVehicles })
 		.from(aishaServiceRecords)
-		.where(eq(aishaServiceRecords.id, recordId))
+		.innerJoin(aishaVehicles, eq(aishaVehicles.id, aishaServiceRecords.vehicleId))
+		.where(and(eq(aishaServiceRecords.id, recordId), eq(aishaVehicles.workspaceId, ws.id)))
 		.limit(1);
-	if (!record) return null;
-	const vehicle = await getOwnedVehicle(record.vehicleId);
-	return vehicle ? { record, vehicle } : null;
+	return row ?? null;
 }
 
 /** The items must be this car's; returns the distinct valid ids, or null. */

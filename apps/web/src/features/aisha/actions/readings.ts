@@ -1,10 +1,11 @@
 "use server";
 
 import { getReadings } from "@/features/aisha/actions/data";
-import { getOwnedVehicle } from "@/features/aisha/actions/guard";
+import { getOwnedVehicle, isUuid } from "@/features/aisha/actions/guard";
 import { type ReadingValues, readingSchema } from "@/features/aisha/lib/aisha-schemas";
 import { readingConflict } from "@/features/aisha/lib/odometer";
-import { aishaOdometerReadings, db, eq } from "@seikatsu/db";
+import { getCurrentWorkspace } from "@/lib/session";
+import { aishaOdometerReadings, aishaVehicles, and, db, eq } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 
 type Result = { error: string } | { success: true };
@@ -15,13 +16,16 @@ function revalidate() {
 }
 
 async function getOwnedReading(readingId: string) {
-	const [reading] = await db
-		.select()
+	if (!isUuid(readingId)) return null;
+	const ws = await getCurrentWorkspace();
+	if (!ws) return null;
+	const [row] = await db
+		.select({ reading: aishaOdometerReadings })
 		.from(aishaOdometerReadings)
-		.where(eq(aishaOdometerReadings.id, readingId))
+		.innerJoin(aishaVehicles, eq(aishaVehicles.id, aishaOdometerReadings.vehicleId))
+		.where(and(eq(aishaOdometerReadings.id, readingId), eq(aishaVehicles.workspaceId, ws.id)))
 		.limit(1);
-	if (!reading || !(await getOwnedVehicle(reading.vehicleId))) return null;
-	return reading;
+	return row?.reading ?? null;
 }
 
 export async function addReading(vehicleId: string, values: ReadingValues): Promise<Result> {

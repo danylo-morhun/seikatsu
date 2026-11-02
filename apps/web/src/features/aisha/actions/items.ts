@@ -1,11 +1,13 @@
 "use server";
 
 import { getReadings } from "@/features/aisha/actions/data";
-import { getOwnedVehicle } from "@/features/aisha/actions/guard";
+import { getOwnedVehicle, isUuid } from "@/features/aisha/actions/guard";
 import { type ItemFormValues, itemFormSchema } from "@/features/aisha/lib/aisha-schemas";
+import { getCurrentWorkspace } from "@/lib/session";
 import {
 	aishaMaintenanceItems,
 	aishaServiceRecordItems,
+	aishaVehicles,
 	and,
 	db,
 	eq,
@@ -24,13 +26,16 @@ function revalidate() {
 }
 
 async function getOwnedItem(itemId: string) {
-	const [item] = await db
-		.select()
+	if (!isUuid(itemId)) return null;
+	const ws = await getCurrentWorkspace();
+	if (!ws) return null;
+	const [row] = await db
+		.select({ item: aishaMaintenanceItems })
 		.from(aishaMaintenanceItems)
-		.where(eq(aishaMaintenanceItems.id, itemId))
+		.innerJoin(aishaVehicles, eq(aishaVehicles.id, aishaMaintenanceItems.vehicleId))
+		.where(and(eq(aishaMaintenanceItems.id, itemId), eq(aishaVehicles.workspaceId, ws.id)))
 		.limit(1);
-	if (!item || !(await getOwnedVehicle(item.vehicleId))) return null;
-	return item;
+	return row?.item ?? null;
 }
 
 export async function createItem(vehicleId: string, values: ItemFormValues): Promise<Result> {
