@@ -8,8 +8,10 @@ import {
 	db,
 	eq,
 	hoshiiItems,
+	inArray,
 	isNotNull,
 	isNull,
+	kurojiCaptures,
 	kyuuApplications,
 	lte,
 	seiryuCards,
@@ -40,24 +42,34 @@ async function safely<T>(load: () => Promise<T>): Promise<T | null> {
 	}
 }
 
-export type MoneyToday = { currency: string; netWorth: number; spentThisMonth: number };
+export type MoneyToday = {
+	currency: string;
+	netWorth: number;
+	spentThisMonth: number;
+	spentToday: number;
+};
 
-/** Net worth today and what the month has cost so far, as Kuroji's overview counts them. */
-function getMoney(ws: Workspace, today: string): Promise<MoneyToday> {
-	return getBalances(ws.id, `${today.slice(0, 7)}-01`, today).then((balances) => {
-		const roots = rollupRoots(balances);
-		const total = (type: string, skipOpening = false) =>
-			roots
-				.filter(
-					(b) => b.type === type && !b.hidden && (!skipOpening || b.name !== "Opening Balance"),
-				)
-				.reduce((acc, b) => acc + Number(b.balance), 0);
-		return {
-			currency: ws.baseCurrency,
-			netWorth: total("ASSET") - displayBalance("LIABILITY", total("LIABILITY", true)),
-			spentThisMonth: displayBalance("EXPENSE", total("EXPENSE")),
-		};
-	});
+type Balances = Awaited<ReturnType<typeof getBalances>>;
+
+function totalOf(balances: Balances, type: string, skipOpening = false) {
+	return rollupRoots(balances)
+		.filter((b) => b.type === type && !b.hidden && (!skipOpening || b.name !== "Opening Balance"))
+		.reduce((acc, b) => acc + Number(b.balance), 0);
+}
+
+/** Net worth today and what the month and the day have cost, as Kuroji's overview counts them. */
+async function getMoney(ws: Workspace, today: string): Promise<MoneyToday> {
+	const [month, day] = await Promise.all([
+		getBalances(ws.id, `${today.slice(0, 7)}-01`, today),
+		getBalances(ws.id, today, today),
+	]);
+	return {
+		currency: ws.baseCurrency,
+		netWorth:
+			totalOf(month, "ASSET") - displayBalance("LIABILITY", totalOf(month, "LIABILITY", true)),
+		spentThisMonth: displayBalance("EXPENSE", totalOf(month, "EXPENSE")),
+		spentToday: displayBalance("EXPENSE", totalOf(day, "EXPENSE")),
+	};
 }
 
 export type HabitToday = { id: string; name: string; emoji: string; done: boolean };
@@ -103,6 +115,8 @@ export type JobsToday = {
 	toSend: number;
 	waiting: number;
 	ghostDue: number;
+	/** The applications quiet long enough to close as ghosted. */
+	ghostIds: string[];
 	active: number;
 	total: number;
 };
@@ -113,6 +127,7 @@ async function getJobs(): Promise<JobsToday> {
 		toSend: counts.queue,
 		waiting: counts.waiting,
 		ghostDue: ghost.length,
+		ghostIds: ghost,
 		active: counts.active,
 		total: counts.all + counts.archived,
 	};
@@ -124,11 +139,26 @@ export type CardToday = {
 	dueDate: string;
 	projectId: string;
 	projectName: string;
+	/** Where "done" moves it: the project's finish column, if it has one. */
+	doneColumnId: string | null;
 };
 
+/** Each project's first finish column. */
+async function doneColumns(projectIds: string[]): Promise<Map<string, string>> {
+	if (projectIds.length === 0) return new Map();
+	const rows = await db
+		.select({ id: seiryuColumns.id, projectId: seiryuColumns.projectId })
+		.from(seiryuColumns)
+		.where(and(inArray(seiryuColumns.projectId, projectIds), eq(seiryuColumns.isDone, true)))
+		.orderBy(asc(seiryuColumns.position));
+	const first = new Map<string, string>();
+	for (const c of rows) if (!first.has(c.projectId)) first.set(c.projectId, c.id);
+	return first;
+}
+
 /** Open cards due today or earlier, oldest deadline first. */
-function getCardsDue(ws: Workspace, today: string): Promise<CardToday[]> {
-	return db
+async function getCardsDue(ws: Workspace, today: string): Promise<CardToday[]> {
+	const cards = await db
 		.select({
 			id: seiryuCards.id,
 			title: seiryuCards.title,
@@ -149,8 +179,13 @@ function getCardsDue(ws: Workspace, today: string): Promise<CardToday[]> {
 				lte(seiryuCards.dueDate, today),
 			),
 		)
-		.orderBy(asc(seiryuCards.dueDate))
-		.then((rows) => rows.map((r) => ({ ...r, dueDate: r.dueDate ?? today })));
+		.orderBy(asc(seiryuCards.dueDate));
+	const done = await doneColumns([...new Set(cards.map((c) => c.projectId))]);
+	return cards.map((c) => ({
+		...c,
+		dueDate: c.dueDate ?? today,
+		doneColumnId: done.get(c.projectId) ?? null,
+	}));
 }
 
 export type CarToday = {
@@ -195,6 +230,8 @@ async function getCar(today: string): Promise<CarToday | null> {
 
 export type WantsToday = {
 	decide: number;
+	/** The cooled wants, oldest first. */
+	toDecide: { id: string; title: string }[];
 	canBuy: number;
 	/** The first want in the Plan the piggy fully covers. */
 	nextBuy: string | null;
@@ -209,12 +246,23 @@ async function getWants(ws: Workspace, today: string): Promise<WantsToday> {
 	const ready = piggy ? queue.plan.filter((p) => p.share != null && p.share >= 1) : [];
 	return {
 		decide: queue.decide.length,
+		toDecide: queue.decide.map(({ id, title }) => ({ id, title })),
 		canBuy: ready.length,
 		nextBuy: ready[0]?.item.title ?? null,
 		plan: queue.plan.length,
 		cooling: queue.cooling.length,
 		total: items.length,
 	};
+}
+
+/** Apple Pay payments captured but not yet added to Kuroji. */
+function getCaptureCount(ws: Workspace): Promise<number> {
+	return db
+		.select({ id: kurojiCaptures.id })
+		.from(kurojiCaptures)
+		.where(and(eq(kurojiCaptures.workspaceId, ws.id), eq(kurojiCaptures.state, "pending")))
+		.limit(100)
+		.then((rows) => rows.length);
 }
 
 /** Whether each app holds anything yet; null when that couldn't be read. An empty app waits
@@ -264,3 +312,4 @@ export const loadCards = cache((ws: Workspace, today: string) =>
 );
 export const loadCar = cache((today: string) => safely(() => getCar(today)));
 export const loadWants = cache((ws: Workspace, today: string) => safely(() => getWants(ws, today)));
+export const loadCaptures = cache((ws: Workspace) => safely(() => getCaptureCount(ws)));
