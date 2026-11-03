@@ -41,6 +41,7 @@ import {
 import type { LinkOptions } from "@/features/goals/lib/data";
 import { LINK_APPS, LINK_KINDS, type LinkKind, type LinkView } from "@/features/goals/lib/progress";
 import { Seal } from "@/features/home/components/Line";
+import { APPS_CONFIG } from "@/lib/app-themes";
 
 export type GoalCardData = {
 	id: string;
@@ -404,7 +405,7 @@ function LinkDialog({
 						</p>
 					) : choices.length === 0 ? (
 						<p className="text-sm text-muted-foreground">
-							Nothing to link yet: make one in {LINK_APPS[kind].app.slice(1)} first.
+							Nothing to link yet: make one in {APPS_CONFIG[LINK_APPS[kind].app].name} first.
 						</p>
 					) : (
 						<div className="space-y-2">
