@@ -40,7 +40,7 @@ test.beforeEach(async () => {
 test("the week shows today's due card and moves it to another day", async ({ page }) => {
 	await page.goto("/");
 	await page
-		.getByRole("navigation", { name: "Today or week" })
+		.getByRole("navigation", { name: "Today, week or goals" })
 		.getByRole("link", { name: "Week" })
 		.click();
 	await expect(page).toHaveURL(/\/week$/);
