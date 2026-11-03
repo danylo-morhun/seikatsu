@@ -22,6 +22,7 @@ import {
 	SidebarFooter,
 	SidebarGroup,
 	SidebarGroupContent,
+	SidebarGroupLabel,
 	SidebarHeader,
 	SidebarMenu,
 	SidebarMenuButton,
@@ -35,6 +36,7 @@ import { signOutAction } from "@/features/auth/actions/auth";
 import { readAppEntry } from "@/lib/app-entry";
 import { APPS_CONFIG } from "@/lib/app-themes";
 import { SHORTCUTS_EVENT } from "@/lib/shortcuts";
+import { ZONES } from "@/lib/zones";
 
 interface User {
 	id: string;
@@ -100,47 +102,61 @@ export function AppSidebar({ workspaceName, hiddenApps, user }: Props) {
 			</SidebarHeader>
 
 			<SidebarContent>
-				<SidebarGroup>
-					<SidebarGroupContent>
-						<SidebarMenu>
-							{Object.entries(APPS_CONFIG).map(([href, { name, label, kanji, theme }]) => {
-								const isActive = pathname.startsWith(href);
-								if (hiddenApps.includes(href) && !isActive) return null;
-								return (
-									<SidebarMenuItem key={href}>
-										<SidebarMenuButton
-											asChild
-											isActive={isActive}
-											tooltip={`${name} · ${label}`}
-											// The active app is lit from inside with its own pigment.
-											className="h-11 gap-2.5 p-1.5 group-data-[collapsible=icon]:p-1! data-active:bg-primary/15 data-active:hover:bg-primary/20"
-										>
-											<Link href={entryHrefs[href] ?? href} prefetch>
-												{/* The kanji is the app's mark, tinted with its own pigment. */}
-												<span
-													aria-hidden
-													className={cn(
-														theme,
-														"flex size-8 shrink-0 items-center justify-center rounded-md text-[15px] font-semibold leading-none transition-colors group-data-[collapsible=icon]:size-6 group-data-[collapsible=icon]:text-[13px]",
-														isActive
-															? "bg-primary text-primary-foreground"
-															: "bg-primary/10 text-primary",
-													)}
+				{ZONES.map((zone) => {
+					const apps = zone.apps.filter(
+						(href) => !hiddenApps.includes(href) || pathname.startsWith(href),
+					);
+					if (apps.length === 0) return null;
+					return (
+						<SidebarGroup key={zone.id}>
+							<SidebarGroupLabel className="gap-1.5">
+								<span aria-hidden>{zone.kanji}</span>
+								{zone.name}
+							</SidebarGroupLabel>
+							<SidebarGroupContent>
+								<SidebarMenu>
+									{apps.map((href) => {
+										const { name, label, kanji, theme } = APPS_CONFIG[href];
+										const isActive = pathname.startsWith(href);
+										return (
+											<SidebarMenuItem key={href}>
+												<SidebarMenuButton
+													asChild
+													isActive={isActive}
+													tooltip={`${name} · ${label}`}
+													// The active app is lit from inside with its own pigment.
+													className="h-11 gap-2.5 p-1.5 group-data-[collapsible=icon]:p-1! data-active:bg-primary/15 data-active:hover:bg-primary/20"
 												>
-													{kanji}
-												</span>
-												<span className="flex min-w-0 flex-col leading-tight">
-													<span className="truncate text-sm font-medium">{name}</span>
-													<span className="truncate text-xs text-muted-foreground">{label}</span>
-												</span>
-											</Link>
-										</SidebarMenuButton>
-									</SidebarMenuItem>
-								);
-							})}
-						</SidebarMenu>
-					</SidebarGroupContent>
-				</SidebarGroup>
+													<Link href={entryHrefs[href] ?? href} prefetch>
+														{/* The kanji is the app's mark, tinted with its own pigment. */}
+														<span
+															aria-hidden
+															className={cn(
+																theme,
+																"flex size-8 shrink-0 items-center justify-center rounded-md text-[15px] font-semibold leading-none transition-colors group-data-[collapsible=icon]:size-6 group-data-[collapsible=icon]:text-[13px]",
+																isActive
+																	? "bg-primary text-primary-foreground"
+																	: "bg-primary/10 text-primary",
+															)}
+														>
+															{kanji}
+														</span>
+														<span className="flex min-w-0 flex-col leading-tight">
+															<span className="truncate text-sm font-medium">{name}</span>
+															<span className="truncate text-xs text-muted-foreground">
+																{label}
+															</span>
+														</span>
+													</Link>
+												</SidebarMenuButton>
+											</SidebarMenuItem>
+										);
+									})}
+								</SidebarMenu>
+							</SidebarGroupContent>
+						</SidebarGroup>
+					);
+				})}
 			</SidebarContent>
 
 			<SidebarFooter>
