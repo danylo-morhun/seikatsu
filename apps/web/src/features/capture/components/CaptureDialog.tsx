@@ -32,8 +32,6 @@ import { readCaptureMemory } from "@/features/kuroji/lib/capture-memory";
 import { PRIORITIES, PRIORITY_CONFIG, type Priority } from "@/features/seiryu/lib/constants";
 import { APPS_CONFIG } from "@/lib/app-themes";
 
-const EXAMPLES = "бенз 240 zł, 84 500 км · хочу Kindle · был в зале · 1984 до 52";
-
 type Row = { action: PlannedAction; on: boolean };
 
 /** One line in, the actions it means out; nothing is saved until the user says so. */
@@ -181,7 +179,7 @@ export function CaptureDialog({
 						id={`${id}-text`}
 						aria-label="What happened"
 						autoComplete="off"
-						placeholder={EXAMPLES}
+						placeholder="What happened?"
 						className="h-11 flex-1"
 						value={text}
 						disabled={isSaving}

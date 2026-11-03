@@ -38,7 +38,7 @@ export function CaptureBar() {
 			<input
 				aria-label="Capture: one line about what happened"
 				autoComplete="off"
-				placeholder="бенз 240 zł · хочу Kindle · был в зале…"
+				placeholder="Capture anything"
 				value={text}
 				onChange={(e) => setText(e.target.value)}
 				className="h-12 w-full rounded-field border border-[var(--search-border)] bg-[var(--search-bg)] pr-14 pl-10 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring md:text-sm"
