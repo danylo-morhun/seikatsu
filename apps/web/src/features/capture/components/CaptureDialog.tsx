@@ -1,5 +1,7 @@
 "use client";
 
+import { PencilEdit02Icon, Tick02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
 	Checkbox,
@@ -20,6 +22,7 @@ import { useEffect, useId, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Spinner } from "@/components/Spinner";
 import { FieldError, FOOTER } from "@/features/aisha/components/DialogParts";
+import { parseNumber } from "@/features/aisha/lib/format";
 import { type CapturePlan, parseCapture } from "@/features/capture/actions/parse";
 import { applyAction } from "@/features/capture/lib/apply";
 import { describeAction } from "@/features/capture/lib/describe";
@@ -250,12 +253,16 @@ function ActionRow({
 	onChange: (patch: Partial<PlannedAction>) => void;
 }) {
 	const id = useId();
+	const [editing, setEditing] = useState(false);
 	const { action } = row;
 	const { app, title, detail } = describeAction(action, options, today);
 	const config = APPS_CONFIG[app];
 	const money = action.kind === "expense" || action.kind === "income";
 	const categories =
 		action.kind === "income" ? options.incomeCategories : options.expenseCategories;
+	// Pickers show when something is missing, or while the row is being edited.
+	const showMoney = money && (editing || !action.walletId || !action.categoryId);
+	const showProject = action.kind === "card" && (editing || !action.projectId);
 
 	return (
 		<li className="flex gap-3 py-3">
@@ -277,11 +284,30 @@ function ActionRow({
 				{config.kanji}
 			</span>
 			<div className={cn("min-w-0 flex-1 space-y-2", !row.on && "opacity-50")}>
-				<label htmlFor={`${id}-on`} className="block">
-					<span className="block truncate text-sm font-medium">{title}</span>
-					<span className="block truncate text-xs text-muted-foreground">{detail}</span>
-				</label>
-				{row.on && money && (
+				<div className="flex items-start gap-2">
+					<label htmlFor={`${id}-on`} className="block min-w-0 flex-1">
+						<span className="block truncate text-sm font-medium">{title}</span>
+						<span className="block truncate text-xs text-muted-foreground">{detail}</span>
+					</label>
+					{row.on && (
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="size-8 shrink-0 text-muted-foreground"
+							aria-label={editing ? `Done editing ${title}` : `Edit ${title}`}
+							aria-pressed={editing}
+							disabled={disabled}
+							onClick={() => setEditing((v) => !v)}
+						>
+							<HugeiconsIcon icon={editing ? Tick02Icon : PencilEdit02Icon} className="size-4" />
+						</Button>
+					)}
+				</div>
+				{row.on && editing && (
+					<Fields action={action} today={today} disabled={disabled} onChange={onChange} />
+				)}
+				{row.on && showMoney && (
 					<div className="grid grid-cols-2 gap-2">
 						<Pick
 							label={action.kind === "income" ? "To wallet" : "From wallet"}
@@ -299,7 +325,7 @@ function ActionRow({
 						/>
 					</div>
 				)}
-				{row.on && action.kind === "card" && (
+				{row.on && showProject && action.kind === "card" && (
 					<Pick
 						label="Project"
 						value={action.projectId}
@@ -310,6 +336,162 @@ function ActionRow({
 				)}
 			</div>
 		</li>
+	);
+}
+
+/** The row's own fields, by kind: what the line said, to fix before saving. */
+function Fields({
+	action,
+	today,
+	disabled,
+	onChange,
+}: {
+	action: PlannedAction;
+	today: string;
+	disabled: boolean;
+	onChange: (patch: Partial<PlannedAction>) => void;
+}) {
+	const date = "date" in action && (
+		<Field label="Date">
+			<Input
+				type="date"
+				max={today}
+				value={action.date}
+				disabled={disabled}
+				className="h-9"
+				onChange={(e) => e.target.value && onChange({ date: e.target.value })}
+			/>
+		</Field>
+	);
+	switch (action.kind) {
+		case "expense":
+		case "income":
+			return (
+				<div className="grid grid-cols-2 gap-2">
+					<Field label={`Amount, ${action.currency}`}>
+						<NumberInput
+							value={action.amount}
+							disabled={disabled}
+							onChange={(amount) => onChange({ amount: amount ?? 0 })}
+						/>
+					</Field>
+					{date}
+					<Field label="Description" className="col-span-2">
+						<Input
+							value={action.description}
+							disabled={disabled}
+							className="h-9"
+							onChange={(e) => onChange({ description: e.target.value })}
+						/>
+					</Field>
+				</div>
+			);
+		case "want":
+			return (
+				<div className="grid grid-cols-[1fr_8rem] gap-2">
+					<Field label="Name">
+						<Input
+							value={action.title}
+							disabled={disabled}
+							className="h-9"
+							onChange={(e) => onChange({ title: e.target.value })}
+						/>
+					</Field>
+					<Field label={`Price, ${action.currency}`}>
+						<NumberInput
+							value={action.price}
+							disabled={disabled}
+							onChange={(price) => onChange({ price })}
+						/>
+					</Field>
+				</div>
+			);
+		case "card":
+			return (
+				<Field label="Title">
+					<Input
+						value={action.title}
+						disabled={disabled}
+						className="h-9"
+						onChange={(e) => onChange({ title: e.target.value })}
+					/>
+				</Field>
+			);
+		case "mileage":
+			return (
+				<div className="grid grid-cols-2 gap-2">
+					<Field label="Odometer, km">
+						<NumberInput
+							value={action.km}
+							integer
+							disabled={disabled}
+							onChange={(km) => km != null && onChange({ km })}
+						/>
+					</Field>
+					{date}
+				</div>
+			);
+		case "pages":
+			return (
+				<Field label="Page reached">
+					<NumberInput
+						value={action.page}
+						integer
+						disabled={disabled}
+						onChange={(page) => page != null && onChange({ page })}
+					/>
+				</Field>
+			);
+		case "habit":
+			return date;
+	}
+}
+
+function Field({
+	label,
+	className,
+	children,
+}: {
+	label: string;
+	className?: string;
+	children: React.ReactNode;
+}) {
+	return (
+		// biome-ignore lint/a11y/noLabelWithoutControl: the control is the child
+		<label className={cn("block min-w-0 space-y-1", className)}>
+			<span className="block text-xs text-muted-foreground">{label}</span>
+			{children}
+		</label>
+	);
+}
+
+/** Typed as text so "12," stays while typing; reports the number once it reads as one. */
+function NumberInput({
+	value,
+	integer,
+	disabled,
+	onChange,
+}: {
+	value: number | null;
+	integer?: boolean;
+	disabled: boolean;
+	onChange: (value: number | null) => void;
+}) {
+	const [text, setText] = useState(value == null ? "" : String(value));
+	return (
+		<Input
+			inputMode={integer ? "numeric" : "decimal"}
+			autoComplete="off"
+			value={text}
+			disabled={disabled}
+			className="h-9 font-figures"
+			onChange={(e) => {
+				setText(e.target.value);
+				const n = parseNumber(e.target.value);
+				if (n == null) onChange(null);
+				else if (!integer || Number.isInteger(n)) onChange(n);
+			}}
+		/>
 	);
 }
 
