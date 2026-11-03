@@ -1,8 +1,22 @@
 // Server-only read: what the capture line may point at — the user's own wallets, categories,
 // car, projects, habits and books. Not a "use server" module.
 
-import { and, asc, db, eq, inArray, seiryuColumns } from "@seikatsu/db";
-import type { CaptureContext, Named } from "@/features/capture/lib/plan";
+import {
+	accounts,
+	and,
+	asc,
+	count,
+	db,
+	desc,
+	eq,
+	gte,
+	inArray,
+	isNotNull,
+	seiryuColumns,
+	transactionEntries,
+	transactions,
+} from "@seikatsu/db";
+import { type CaptureContext, type Named, pickMerchants } from "@/features/capture/lib/plan";
 import { loadCar, loadReading } from "@/features/home/lib/today";
 import { getChromeData } from "@/features/hoshii/actions/data";
 import { getHabits } from "@/features/keizoku/actions/habits";
@@ -39,26 +53,63 @@ async function inboxColumns(projectIds: string[]): Promise<Map<string, string>> 
 	return first;
 }
 
+/** A year of expenses by description and category: where they spend, and how they file it. */
+async function merchantUses(workspaceId: string, today: string) {
+	const since = `${Number(today.slice(0, 4)) - 1}${today.slice(4)}`;
+	const uses = count();
+	return db
+		.select({
+			description: transactions.description,
+			categoryId: transactionEntries.accountId,
+			uses,
+		})
+		.from(transactionEntries)
+		.innerJoin(transactions, eq(transactions.id, transactionEntries.transactionId))
+		.innerJoin(accounts, eq(accounts.id, transactionEntries.accountId))
+		.where(
+			and(
+				eq(transactions.workspaceId, workspaceId),
+				eq(accounts.type, "EXPENSE"),
+				isNotNull(transactions.description),
+				gte(transactions.date, since),
+			),
+		)
+		.groupBy(transactions.description, transactionEntries.accountId)
+		.orderBy(desc(uses))
+		.limit(400);
+}
+
 export async function getCaptureContext(ws: Workspace, today: string): Promise<CaptureContext> {
-	const [accounts, car, projects, habits, books, hoshii] = await Promise.all([
+	const [all, car, projects, habits, books, hoshii, spent] = await Promise.all([
 		getAccounts(ws.id),
 		loadCar(today),
 		getProjects(),
 		getHabits(),
 		loadReading(),
 		getChromeData(ws),
+		merchantUses(ws.id, today),
 	]);
 	const live = projects.filter((p) => !p.archivedAt);
+	const expenseCategories = named(all, "EXPENSE");
+	const expense = new Set(expenseCategories.map((c) => c.id));
 	const columns = await inboxColumns(live.map((p) => p.id));
 
 	return {
 		today,
 		baseCurrency: ws.baseCurrency,
-		wallets: accounts
+		wallets: all
 			.filter((a) => (a.type === "ASSET" || a.type === "LIABILITY") && !SYSTEM.has(a.name))
 			.map((a) => ({ id: a.id, name: a.name, currency: a.currency })),
-		expenseCategories: named(accounts, "EXPENSE"),
-		incomeCategories: named(accounts, "INCOME"),
+		expenseCategories,
+		incomeCategories: named(all, "INCOME"),
+		// Only categories still offered: an archived one would be dropped by toPlan anyway.
+		merchants: pickMerchants(
+			spent.flatMap((r) =>
+				r.description && expense.has(r.categoryId)
+					? [{ description: r.description, categoryId: r.categoryId, uses: r.uses }]
+					: [],
+			),
+		),
 		vehicle: car ? { id: car.vehicleId, name: car.name, currentKm: car.currentKm } : null,
 		projects: live.flatMap((p) => {
 			const columnId = columns.get(p.id);
