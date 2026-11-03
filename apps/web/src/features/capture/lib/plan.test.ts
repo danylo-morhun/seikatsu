@@ -188,6 +188,25 @@ describe("toPlan skipped", () => {
 	});
 });
 
+describe("isReady", () => {
+	it("waits for what an edit emptied", () => {
+		const [expense, want, mileage] = actions(
+			{
+				actions: [
+					raw({ kind: "expense", amount: 5, categoryId: "c-food", walletId: "w-pln" }),
+					raw({ kind: "want", title: "Hat" }),
+					raw({ kind: "mileage", km: 84_300 }),
+				],
+			},
+			ctx,
+		);
+		expect([expense, want, mileage].map(isReady)).toEqual([true, true, true]);
+		expect(isReady({ ...expense, amount: 0 } as typeof expense)).toBe(false);
+		expect(isReady({ ...want, title: "  " } as typeof want)).toBe(false);
+		expect(isReady({ ...mileage, km: 84_000 } as typeof mileage)).toBe(false);
+	});
+});
+
 describe("buildPrompt", () => {
 	it("lists the user's ids and quotes the line", () => {
 		const prompt = buildPrompt('бенз 240 zł "Orlen"', ctx);
