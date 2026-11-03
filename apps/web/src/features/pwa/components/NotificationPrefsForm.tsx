@@ -59,6 +59,12 @@ const ROWS: Row[] = [
 		label: "Weekly summary",
 		detail: "Monday morning: last week's spending, income and net.",
 	},
+	{
+		key: "weekRecap",
+		app: "週 Week",
+		label: "Week in one line",
+		detail: "Sunday at 18:00: what the week held across the apps. Off unless you want it.",
+	},
 ];
 
 const DEFAULTS: PrefsInput = {
@@ -71,6 +77,7 @@ const DEFAULTS: PrefsInput = {
 	kurojiRecurring: true,
 	kurojiBudget: true,
 	kurojiWeekly: true,
+	weekRecap: false,
 };
 
 const hhmm = (t: string) => t.slice(0, 5);
