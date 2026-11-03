@@ -1,5 +1,5 @@
-// One structured Gemini call (free tier) through the Interactions API. Server-only helper,
-// not a "use server" module. generateContent no longer answers this key.
+// One structured Gemini call (free tier) through the Interactions API, for Kyuu and capture.
+// Server-only helper, not a "use server" module. generateContent no longer answers this key.
 
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/interactions";
 

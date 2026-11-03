@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
-import { askGemini, GeminiError, geminiConfigured } from "../lib/gemini";
+import { askGemini, GeminiError, geminiConfigured } from "@/lib/gemini";
 
 export interface ExtractedApplication {
 	company: string;

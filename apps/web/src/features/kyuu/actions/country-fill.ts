@@ -2,8 +2,8 @@
 // the Settings action and the mail sync, both of which own the workspace check.
 
 import { and, db, desc, eq, gte, isNull, kyuuApplications } from "@seikatsu/db";
+import { askGemini } from "@/lib/gemini";
 import { toCountryCode } from "../lib/country";
-import { askGemini } from "../lib/gemini";
 
 const BATCH = 15;
 const POSTING_CHARS = 1_500;
