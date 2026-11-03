@@ -4,6 +4,7 @@
 
 import {
 	accounts,
+	aishaVehicles,
 	and,
 	asc,
 	db,
@@ -29,12 +30,14 @@ import {
 	tsundokuBooks,
 	tsundokuSessions,
 } from "@seikatsu/db";
-import { getCar, getCurrentVehicle } from "@/features/aisha/actions/data";
+import { getCar } from "@/features/aisha/actions/data";
 import { isScheduled } from "@/features/keizoku/lib/streak";
 import type { WeekData } from "@/features/week/lib/week";
 import type { Workspace } from "@/lib/session";
 
 type Range = { from: string; to: string };
+/** Only the id: the Sunday push reads the week without a session. */
+type Owner = Pick<Workspace, "id">;
 
 async function safely<T>(load: () => Promise<T[]>): Promise<T[]> {
 	try {
@@ -48,7 +51,7 @@ async function safely<T>(load: () => Promise<T[]>): Promise<T[]> {
 const inRange = (column: Parameters<typeof gte>[0], { from, to }: Range) =>
 	and(gte(column, from), lte(column, to));
 
-async function getSpent(ws: Workspace, range: Range): Promise<WeekData["spent"]> {
+async function getSpent(ws: Owner, range: Range): Promise<WeekData["spent"]> {
 	const rows = await db
 		.select({ date: transactions.date, amount: sum(transactionEntries.baseAmount) })
 		.from(transactionEntries)
@@ -65,7 +68,7 @@ async function getSpent(ws: Workspace, range: Range): Promise<WeekData["spent"]>
 	return rows.map((r) => ({ date: r.date, amount: Number(r.amount ?? 0) }));
 }
 
-async function getHabits(ws: Workspace, range: Range, week: string[]) {
+async function getHabits(ws: Owner, range: Range, week: string[]) {
 	const habits = await db
 		.select()
 		.from(keizokuHabits)
@@ -98,7 +101,7 @@ async function getHabits(ws: Workspace, range: Range, week: string[]) {
 	};
 }
 
-async function getPages(ws: Workspace, range: Range): Promise<WeekData["pages"]> {
+async function getPages(ws: Owner, range: Range): Promise<WeekData["pages"]> {
 	const rows = await db
 		.select({ date: tsundokuSessions.date, pages: sum(tsundokuSessions.pagesRead) })
 		.from(tsundokuSessions)
@@ -109,8 +112,13 @@ async function getPages(ws: Workspace, range: Range): Promise<WeekData["pages"]>
 }
 
 /** Kilometres per day from the car's readings, and what Aisha has dated in the week. */
-async function getCarWeek(today: string, range: Range) {
-	const vehicle = await getCurrentVehicle();
+async function getCarWeek(ws: Owner, today: string, range: Range) {
+	const [vehicle] = await db
+		.select()
+		.from(aishaVehicles)
+		.where(eq(aishaVehicles.workspaceId, ws.id))
+		.orderBy(asc(aishaVehicles.createdAt))
+		.limit(1);
 	if (!vehicle) return { driven: [], due: [] };
 	const car = await getCar(vehicle, today);
 	const readings = [...car.readings].sort((a, b) => a.date.localeCompare(b.date));
@@ -133,7 +141,7 @@ async function getCarWeek(today: string, range: Range) {
 	return { driven, due };
 }
 
-async function getCards(ws: Workspace, range: Range) {
+async function getCards(ws: Owner, range: Range) {
 	const cards = await db
 		.select({
 			id: seiryuCards.id,
@@ -176,7 +184,7 @@ async function getCards(ws: Workspace, range: Range) {
 	};
 }
 
-async function getJobs(ws: Workspace, range: Range): Promise<WeekData["jobs"]> {
+async function getJobs(ws: Owner, range: Range): Promise<WeekData["jobs"]> {
 	const [sent, events] = await Promise.all([
 		db
 			.select({ date: kyuuApplications.dateApplied, company: kyuuApplications.company })
@@ -204,7 +212,7 @@ async function getJobs(ws: Workspace, range: Range): Promise<WeekData["jobs"]> {
 	];
 }
 
-async function getWants(ws: Workspace, range: Range): Promise<WeekData["wants"]> {
+async function getWants(ws: Owner, range: Range): Promise<WeekData["wants"]> {
 	const items = await db
 		.select()
 		.from(hoshiiItems)
@@ -236,7 +244,7 @@ async function getWants(ws: Workspace, range: Range): Promise<WeekData["wants"]>
 	]);
 }
 
-async function getBills(ws: Workspace, range: Range): Promise<WeekData["bills"]> {
+async function getBills(ws: Owner, range: Range): Promise<WeekData["bills"]> {
 	const rows = await db
 		.select()
 		.from(recurringTransactions)
@@ -257,7 +265,7 @@ async function getBills(ws: Workspace, range: Range): Promise<WeekData["bills"]>
 }
 
 /** Everything the week view needs, read at once. */
-export async function getWeekData(ws: Workspace, today: string, week: string[]): Promise<WeekData> {
+export async function getWeekData(ws: Owner, today: string, week: string[]): Promise<WeekData> {
 	const range = { from: week[0], to: week[6] };
 	const [spent, habits, pages, car, cards, jobs, wants, bills] = await Promise.all([
 		safely(() => getSpent(ws, range)),
@@ -266,7 +274,7 @@ export async function getWeekData(ws: Workspace, today: string, week: string[]):
 			return { ticks: [], expected: [] };
 		}),
 		safely(() => getPages(ws, range)),
-		getCarWeek(today, range).catch((error) => {
+		getCarWeek(ws, today, range).catch((error) => {
 			console.error("[week] read failed", error);
 			return { driven: [], due: [] };
 		}),

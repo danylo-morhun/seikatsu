@@ -292,3 +292,16 @@ export function buildWeek(
 		},
 	};
 }
+
+/** The week in one line, only what moved: "181 zł spent · 2 of 12 habits · 19 applied". */
+export function weekLine(totals: WeekTotals, money: Money): string | null {
+	const parts = [
+		totals.spent > 0 && `${money(totals.spent)} spent`,
+		totals.expected > 0 && `${totals.ticks} of ${totals.expected} habits`,
+		totals.pages > 0 && `${totals.pages} pages`,
+		totals.cardsDone > 0 && `${plural(totals.cardsDone, "card")} done`,
+		totals.km > 0 && `${totals.km.toLocaleString("en-US")} km`,
+		totals.applied > 0 && `${totals.applied} applied`,
+	].filter(Boolean);
+	return parts.length > 0 ? parts.join(" · ") : null;
+}
