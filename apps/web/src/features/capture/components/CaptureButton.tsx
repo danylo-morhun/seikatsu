@@ -4,7 +4,7 @@ import { QuillWrite01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@seikatsu/ui";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Kbd } from "@/components/Kbd";
 import { isCaptureKey } from "@/features/capture/lib/key";
 
@@ -13,7 +13,8 @@ const CaptureDialog = dynamic(() =>
 	import("@/features/capture/components/CaptureDialog").then((m) => m.CaptureDialog),
 );
 
-const loadDialog = () => void import("@/features/capture/components/CaptureDialog");
+/** Starts loading the dialog early (hover, focus, typing), so it opens at once. */
+export const loadDialog = () => void import("@/features/capture/components/CaptureDialog");
 
 /** The header's capture: one line into any app. ⌘K / Ctrl+K opens it from anywhere. */
 export function CaptureButton() {
@@ -56,7 +57,12 @@ export function CaptureButton() {
 					<Kbd className="h-5 min-w-5">⌘K</Kbd>
 				</TooltipContent>
 			</Tooltip>
-			{mounted && <CaptureDialog open={open} onOpenChange={setOpen} />}
+			{/* Its own boundary: while the dialog's code loads, nothing else on the page suspends. */}
+			{mounted && (
+				<Suspense fallback={null}>
+					<CaptureDialog open={open} onOpenChange={setOpen} />
+				</Suspense>
+			)}
 		</>
 	);
 }
