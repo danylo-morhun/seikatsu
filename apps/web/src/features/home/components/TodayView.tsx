@@ -30,6 +30,7 @@ import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTra
 import { ProgressMeter } from "@/features/tsundoku/components/ProgressMeter";
 import { APPS_CONFIG } from "@/lib/app-themes";
 import type { Workspace } from "@/lib/session";
+import { ZONES } from "@/lib/zones";
 
 const APP_HREFS = Object.keys(APPS_CONFIG) as AppHref[];
 
@@ -51,8 +52,9 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 	const fresh = listed.filter((href) => started[href] === false);
 	const isNew = APP_HREFS.every((href) => started[href] === false);
 	const shows = (href: AppHref) => listed.includes(href) && !fresh.includes(href);
-	const smalls = (["/kuroji", "/aisha", "/seiryu", "/kyuu", "/hoshii"] as const).filter(shows);
-	const fill = smalls.length % 2 === 1 ? smalls.at(-1) : undefined;
+	const zones = ZONES.map((zone) => ({ ...zone, apps: zone.apps.filter(shows) })).filter(
+		(zone) => zone.apps.length > 0,
+	);
 	let tile = 0;
 
 	return (
@@ -83,59 +85,43 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 				</header>
 			)}
 
-			{!isNew && (
-				<div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-					{shows("/kuroji") && (
-						<TileFrame href="/kuroji" index={tile++} fill={fill === "/kuroji"} action>
-							<Suspense fallback={<TileBodySkeleton action />}>
-								<KurojiBody ws={ws} today={today} />
-							</Suspense>
-						</TileFrame>
-					)}
-					{shows("/aisha") && (
-						<TileFrame href="/aisha" index={tile++} fill={fill === "/aisha"} action>
-							<Suspense fallback={<TileBodySkeleton action />}>
-								<AishaBody today={today} />
-							</Suspense>
-						</TileFrame>
-					)}
-					{shows("/seiryu") && (
-						<TileFrame href="/seiryu" index={tile++} fill={fill === "/seiryu"}>
-							<Suspense fallback={<TileBodySkeleton />}>
-								<SeiryuBody ws={ws} today={today} />
-							</Suspense>
-						</TileFrame>
-					)}
-					{shows("/kyuu") && (
-						<TileFrame href="/kyuu" index={tile++} fill={fill === "/kyuu"}>
-							<Suspense fallback={<TileBodySkeleton />}>
-								<KyuuBody />
-							</Suspense>
-						</TileFrame>
-					)}
-					{shows("/hoshii") && (
-						<TileFrame href="/hoshii" index={tile++} fill={fill === "/hoshii"}>
-							<Suspense fallback={<TileBodySkeleton />}>
-								<HoshiiBody ws={ws} today={today} />
-							</Suspense>
-						</TileFrame>
-					)}
-					{shows("/keizoku") && (
-						<TileFrame href="/keizoku" index={tile++} wide>
-							<Suspense fallback={<TileBodySkeleton />}>
-								<KeizokuBody today={today} />
-							</Suspense>
-						</TileFrame>
-					)}
-					{shows("/tsundoku") && (
-						<TileFrame href="/tsundoku" index={tile++} wide action>
-							<Suspense fallback={<TileBodySkeleton />}>
-								<TsundokuBody />
-							</Suspense>
-						</TileFrame>
-					)}
-				</div>
-			)}
+			{!isNew &&
+				zones.map((zone) => {
+					// Small tiles first, then the lists; the odd small one takes two columns, so no hole.
+					const smalls = zone.apps.filter((href) => !TILES[href].wide);
+					const wides = zone.apps.filter((href) => TILES[href].wide);
+					const fill = smalls.length % 2 === 1 ? smalls.at(-1) : undefined;
+					return (
+						<section key={zone.id} aria-labelledby={`zone-${zone.id}`} className="space-y-2">
+							<h2
+								id={`zone-${zone.id}`}
+								className="flex items-center gap-1.5 px-1 text-xs font-medium text-muted-foreground"
+							>
+								<span aria-hidden>{zone.kanji}</span>
+								{zone.name}
+							</h2>
+							<div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+								{[...smalls, ...wides].map((href) => {
+									const { wide, action, Body } = TILES[href];
+									return (
+										<TileFrame
+											key={href}
+											href={href}
+											index={tile++}
+											wide={wide}
+											fill={fill === href}
+											action={action}
+										>
+											<Suspense fallback={<TileBodySkeleton action={action && !wide} />}>
+												<Body ws={ws} today={today} />
+											</Suspense>
+										</TileFrame>
+									);
+								})}
+							</div>
+						</section>
+					);
+				})}
 
 			{(fresh.length > 0 || hidden.length > 0) && (
 				<StartHere apps={fresh} hidden={hidden} all={isNew} offset={isNew ? 1 : tile} />
@@ -143,6 +129,24 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 		</div>
 	);
 }
+
+// ── Tiles ─────────────────────────────────────────────────────────────────────
+
+type BodyProps = { ws: Workspace; today: string };
+
+/** Each app's tile: a wide one carries a list; `action` leaves room for its corner capture. */
+const TILES: Record<
+	AppHref,
+	{ wide?: boolean; action?: boolean; Body: (props: BodyProps) => Promise<React.ReactNode> }
+> = {
+	"/kuroji": { action: true, Body: KurojiBody },
+	"/hoshii": { Body: HoshiiBody },
+	"/seiryu": { Body: SeiryuBody },
+	"/kyuu": { Body: KyuuBody },
+	"/aisha": { action: true, Body: AishaBody },
+	"/keizoku": { wide: true, Body: KeizokuBody },
+	"/tsundoku": { wide: true, action: true, Body: TsundokuBody },
+};
 
 // ── What's waiting ────────────────────────────────────────────────────────────
 
