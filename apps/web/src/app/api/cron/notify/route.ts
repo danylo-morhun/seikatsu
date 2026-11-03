@@ -11,6 +11,7 @@ import {
 import { notifyKyuu } from "@/features/kyuu/lib/notify";
 import type { Notifier } from "@/features/pwa/lib/notifiers";
 import { localClock, safeTimeZone } from "@/features/pwa/lib/schedule";
+import { notifyWeek } from "@/features/week/lib/notify";
 
 const NOTIFIERS: Record<string, Notifier> = {
 	keizoku: notifyKeizoku,
@@ -19,6 +20,7 @@ const NOTIFIERS: Record<string, Notifier> = {
 	kurojiRecurring: notifyKurojiRecurring,
 	kurojiBudget: notifyKurojiBudget,
 	kurojiWeekly: notifyKurojiWeekly,
+	week: notifyWeek,
 };
 
 // Every 15 minutes from cron-job.org, with GitHub Actions (.github/workflows/notify.yml) as a
