@@ -11,6 +11,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { Kbd } from "@/components/Kbd";
+import { loadDialog } from "@/features/capture/components/CaptureButton";
 import { openCapture } from "@/features/capture/lib/key";
 import type { QueueItem } from "@/features/home/lib/queue";
 import { sendMove } from "@/features/hoshii/lib/offline";
@@ -40,6 +41,7 @@ export function CaptureBar() {
 				autoComplete="off"
 				placeholder="Capture anything"
 				value={text}
+				onFocus={loadDialog}
 				onChange={(e) => setText(e.target.value)}
 				className="h-12 w-full rounded-field border border-[var(--search-border)] bg-[var(--search-bg)] pr-14 pl-10 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring md:text-sm"
 			/>
