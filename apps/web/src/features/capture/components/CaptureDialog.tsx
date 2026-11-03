@@ -18,7 +18,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@seikatsu/ui";
-import { useEffect, useId, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Spinner } from "@/components/Spinner";
 import { FieldError, FOOTER } from "@/features/aisha/components/DialogParts";
@@ -40,9 +40,12 @@ type Row = { action: PlannedAction; on: boolean };
 export function CaptureDialog({
 	open,
 	onOpenChange,
+	line,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	/** Typed before the dialog opened: read straight away. A new object reads again. */
+	line?: { text: string } | null;
 }) {
 	const id = useId();
 	const [text, setText] = useState("");
@@ -64,6 +67,19 @@ export function CaptureDialog({
 
 	function read(e: React.FormEvent) {
 		e.preventDefault();
+		readLine(text);
+	}
+
+	// Each line object reads once, when the dialog opens with it.
+	const readFor = useRef<{ text: string } | null>(null);
+	useEffect(() => {
+		if (!open || !line || readFor.current === line) return;
+		readFor.current = line;
+		setText(line.text);
+		readLine(line.text);
+	}, [open, line]);
+
+	function readLine(text: string) {
 		if (!text.trim()) return;
 		setError(null);
 		startRead(async () => {

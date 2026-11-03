@@ -6,7 +6,7 @@ import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@seikatsu/ui";
 import dynamic from "next/dynamic";
 import { Suspense, useEffect, useState } from "react";
 import { Kbd } from "@/components/Kbd";
-import { isCaptureKey } from "@/features/capture/lib/key";
+import { CAPTURE_EVENT, isCaptureKey } from "@/features/capture/lib/key";
 
 // The dialog (and its server action) loads on first open, so no page ships it up front.
 const CaptureDialog = dynamic(() =>
@@ -20,6 +20,8 @@ export const loadDialog = () => void import("@/features/capture/components/Captu
 export function CaptureButton() {
 	const [open, setOpen] = useState(false);
 	const [mounted, setMounted] = useState(false);
+	/** A line typed elsewhere (the home's bar), read as soon as the dialog opens. */
+	const [line, setLine] = useState<{ text: string } | null>(null);
 
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
@@ -28,8 +30,18 @@ export function CaptureButton() {
 			setMounted(true);
 			setOpen(true);
 		}
+		function onCapture(e: Event) {
+			const text = (e as CustomEvent<string>).detail;
+			setLine(text ? { text } : null);
+			setMounted(true);
+			setOpen(true);
+		}
 		window.addEventListener("keydown", onKeyDown);
-		return () => window.removeEventListener("keydown", onKeyDown);
+		window.addEventListener(CAPTURE_EVENT, onCapture);
+		return () => {
+			window.removeEventListener("keydown", onKeyDown);
+			window.removeEventListener(CAPTURE_EVENT, onCapture);
+		};
 	}, []);
 
 	return (
@@ -45,6 +57,7 @@ export function CaptureButton() {
 						onPointerEnter={loadDialog}
 						onFocus={loadDialog}
 						onClick={() => {
+							setLine(null);
 							setMounted(true);
 							setOpen(true);
 						}}
@@ -60,7 +73,14 @@ export function CaptureButton() {
 			{/* Its own boundary: while the dialog's code loads, nothing else on the page suspends. */}
 			{mounted && (
 				<Suspense fallback={null}>
-					<CaptureDialog open={open} onOpenChange={setOpen} />
+					<CaptureDialog
+						open={open}
+						onOpenChange={(v) => {
+							setOpen(v);
+							if (!v) setLine(null);
+						}}
+						line={line}
+					/>
 				</Suspense>
 			)}
 		</>
