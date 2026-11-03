@@ -109,9 +109,17 @@ export function AppSidebar({ workspaceName, hiddenApps, user }: Props) {
 					if (apps.length === 0) return null;
 					return (
 						<SidebarGroup key={zone.id}>
-							<SidebarGroupLabel className="gap-1.5">
-								<span aria-hidden>{zone.kanji}</span>
-								{zone.name}
+							{/* The zone's name opens its page: everything its apps wait on. */}
+							<SidebarGroupLabel asChild className="gap-1.5">
+								<Link
+									href={zone.href}
+									prefetch
+									aria-current={pathname === zone.href ? "page" : undefined}
+									className="transition-colors hover:text-sidebar-foreground aria-[current=page]:text-sidebar-foreground"
+								>
+									<span aria-hidden>{zone.kanji}</span>
+									{zone.name}
+								</Link>
 							</SidebarGroupLabel>
 							<SidebarGroupContent>
 								<SidebarMenu>
