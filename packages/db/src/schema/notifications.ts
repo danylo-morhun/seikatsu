@@ -32,6 +32,8 @@ export const notificationPrefs = pgTable("notification_prefs", {
 	kurojiRecurring: boolean("kuroji_recurring").notNull().default(true),
 	kurojiBudget: boolean("kuroji_budget").notNull().default(true),
 	kurojiWeekly: boolean("kuroji_weekly").notNull().default(true),
+	/** Sunday evening: the week in one line. Off unless asked for. */
+	weekRecap: boolean("week_recap").notNull().default(false),
 	updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

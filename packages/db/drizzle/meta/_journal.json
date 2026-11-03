@@ -260,6 +260,13 @@
 			"when": 1793624528177,
 			"tag": "0036_fk_and_filter_indexes",
 			"breakpoints": true
+		},
+		{
+			"idx": 37,
+			"version": "7",
+			"when": 1793735325692,
+			"tag": "0037_week",
+			"breakpoints": true
 		}
 	]
 }
