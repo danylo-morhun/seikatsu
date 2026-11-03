@@ -1,3 +1,6 @@
+import { APPS_CONFIG } from "@/lib/app-themes";
+import { ZONES } from "@/lib/zones";
+
 // Every app's keyboard shortcuts, as the "?" sheet lists them. The handlers live with their
 // features; keep this in step when one is added.
 
@@ -15,6 +18,24 @@ export const GENERAL_SHORTCUTS: ShortcutGroup = {
 	],
 };
 
+/** A zone page's keys open its apps, in the order the sidebar lists them. */
+const ZONE_SHORTCUTS: Record<string, ShortcutGroup[]> = Object.fromEntries(
+	ZONES.map((zone) => [
+		zone.href,
+		[
+			{
+				title: zone.name,
+				items: [
+					{
+						keys: zone.apps.map((_, i) => String(i + 1)),
+						label: `Open ${zone.apps.map((href) => APPS_CONFIG[href].name).join(", ")}`,
+					},
+				],
+			},
+		],
+	]),
+);
+
 /** By route prefix. */
 export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 	"/": [
@@ -31,6 +52,7 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 			],
 		},
 	],
+	...ZONE_SHORTCUTS,
 	"/kuroji": [
 		{
 			title: "Kuroji",
