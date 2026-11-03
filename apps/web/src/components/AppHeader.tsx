@@ -204,7 +204,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 				/>
 			)}
 
-			{(app || pathname === "/" || pathname === "/week") && (
+			{(app || ["/", "/week", "/goals"].includes(pathname)) && (
 				<div className="ml-auto flex min-w-0 items-center gap-1.5">
 					<OfflinePill />
 					{/* The plan picks its own month. */}

@@ -76,7 +76,7 @@ export function AppSidebar({ workspaceName, hiddenApps, user }: Props) {
 						<SidebarMenuButton
 							asChild
 							size="lg"
-							isActive={pathname === "/" || pathname === "/week"}
+							isActive={["/", "/week", "/goals"].includes(pathname)}
 							tooltip="Today"
 							className="data-active:bg-sidebar-accent"
 						>
@@ -90,7 +90,13 @@ export function AppSidebar({ workspaceName, hiddenApps, user }: Props) {
 								<div className="flex min-w-0 flex-col text-left leading-none">
 									<span className="text-sm font-bold">seikatsu</span>
 									<span className="truncate text-xs text-muted-foreground">
-										{pathname === "/" ? "Today" : pathname === "/week" ? "Week" : workspaceName}
+										{pathname === "/"
+											? "Today"
+											: pathname === "/week"
+												? "Week"
+												: pathname === "/goals"
+													? "Goals"
+													: workspaceName}
 									</span>
 								</div>
 							</Link>
