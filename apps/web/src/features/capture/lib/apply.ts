@@ -7,7 +7,7 @@ import { saveNewItem } from "@/features/hoshii/lib/offline";
 import { tickDay } from "@/features/keizoku/lib/offline";
 import { captureTransaction } from "@/features/kuroji/lib/offline";
 import type { RunResult } from "@/features/pwa/lib/run";
-import { addCard } from "@/features/seiryu/lib/offline";
+import { addCard, saveCard } from "@/features/seiryu/lib/offline";
 import { saveProgress } from "@/features/tsundoku/lib/offline";
 
 type Ctx = { workspaceId: string; columnOf: (projectId: string) => string | undefined };
@@ -39,13 +39,18 @@ export async function applyAction(action: PlannedAction, ctx: Ctx): Promise<RunR
 				imageUrl: null,
 				price: action.price,
 				currency: action.currency,
-				listId: null,
-				note: null,
+				listId: action.listId,
+				note: action.note.trim() || null,
+				skipCooling: action.now,
 			});
 		case "card": {
 			const columnId = action.projectId ? ctx.columnOf(action.projectId) : undefined;
 			if (!action.projectId || !columnId) return { error: "Pick a project" };
-			return addCard(crypto.randomUUID(), columnId, action.projectId, action.title);
+			const id = crypto.randomUUID();
+			const added = await addCard(id, columnId, action.projectId, action.title);
+			if ("error" in added || (!action.dueDate && !action.priority)) return added;
+			// A new card takes only a title; the rest goes on as an edit, queued after it.
+			return saveCard(id, action.title, { dueDate: action.dueDate, priority: action.priority });
 		}
 		case "habit":
 			return tickDay(
