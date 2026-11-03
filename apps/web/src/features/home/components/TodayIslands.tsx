@@ -8,7 +8,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { type AppHref, TileAction } from "@/features/home/components/Tile";
+import { type AppHref, LineAction } from "@/features/home/components/Line";
 import { greeting } from "@/features/home/lib/format";
 import type { BookToday, HabitToday } from "@/features/home/lib/today";
 import { CheckButton } from "@/features/keizoku/components/HabitRow";
@@ -131,7 +131,7 @@ export function LogMileage({ vehicleId, currentKm }: { vehicleId: string; curren
 	useTileKey("m", openDialog);
 	return (
 		<>
-			<TileAction
+			<LineAction
 				label="Log mileage"
 				keys="M"
 				onClick={openDialog}
@@ -139,7 +139,7 @@ export function LogMileage({ vehicleId, currentKm }: { vehicleId: string; curren
 				onFocus={loadReading}
 			>
 				Log
-			</TileAction>
+			</LineAction>
 			{mounted && (
 				<ReadingDialog
 					open={open}
@@ -171,7 +171,7 @@ export function LogPages({ book }: { book: BookToday }) {
 
 	return (
 		<>
-			<TileAction
+			<LineAction
 				label="Log pages"
 				keys="P"
 				onClick={openDialog}
@@ -179,7 +179,7 @@ export function LogPages({ book }: { book: BookToday }) {
 				onFocus={loadProgress}
 			>
 				Log
-			</TileAction>
+			</LineAction>
 			{mounted && (
 				<ProgressDialog
 					book={target}

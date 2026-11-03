@@ -1,13 +1,8 @@
+import { cn } from "@seikatsu/ui";
 import Link from "next/link";
-import { Suspense } from "react";
+import { type CSSProperties, Suspense } from "react";
+import { type AppHref, Line, LineAction, LineSkeleton } from "@/features/home/components/Line";
 import { StartHere } from "@/features/home/components/StartHere";
-import {
-	type AppHref,
-	TileAction,
-	TileBody,
-	TileBodySkeleton,
-	TileFrame,
-} from "@/features/home/components/Tile";
 import {
 	Greeting,
 	HabitsToday,
@@ -15,8 +10,11 @@ import {
 	LogMileage,
 	LogPages,
 } from "@/features/home/components/TodayIslands";
+import { CaptureBar, TodayQueue } from "@/features/home/components/TodayQueue";
 import { km, longDate, money, plural } from "@/features/home/lib/format";
+import { buildQueue } from "@/features/home/lib/queue";
 import {
+	loadCaptures,
 	loadCar,
 	loadCards,
 	loadHabits,
@@ -41,22 +39,20 @@ interface Props {
 }
 
 /**
- * The home: the day's date and what's waiting, then one tile per app in use. The layout is
- * known from the start; each tile's figures (and the "waiting" line) stream in on their own.
+ * The home is the day to work through: one line to capture anything, what waits today with its
+ * action right in the row, habits, what's running now, then one figure per app. The layout is
+ * known from the start; each part streams in on its own.
  */
 export function TodayView({ ws, today, started, firstName }: Props) {
 	const hidden = APP_HREFS.filter((href) => ws.hiddenApps.includes(href));
 	const listed = APP_HREFS.filter((href) => !ws.hiddenApps.includes(href));
-	// An app with nothing in it yet waits on the start list, not as a tile of dashes.
+	// An app with nothing in it yet waits on the start list, not as an empty figure.
 	const fresh = listed.filter((href) => started[href] === false);
 	const isNew = APP_HREFS.every((href) => started[href] === false);
 	const shows = (href: AppHref) => listed.includes(href) && !fresh.includes(href);
-	const smalls = (["/kuroji", "/aisha", "/seiryu", "/kyuu", "/hoshii"] as const).filter(shows);
-	const fill = smalls.length % 2 === 1 ? smalls.at(-1) : undefined;
-	let tile = 0;
 
 	return (
-		<div className="space-y-6 px-4 pt-5 pb-16 sm:px-8 md:space-y-8 md:py-8">
+		<div className="mx-auto max-w-5xl space-y-6 px-4 pt-5 pb-16 sm:px-8 md:space-y-8 md:py-8">
 			<HomeKeys listed={listed} />
 			{isNew ? (
 				<header className="max-w-2xl animate-rise">
@@ -70,77 +66,161 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 						something in it.
 					</p>
 				</header>
-			) : (
-				<header className="animate-rise">
-					<h1 className="text-xl font-semibold tracking-tight md:text-3xl">{longDate(today)}</h1>
-					<p className="mt-1 text-sm text-muted-foreground">
-						<Greeting firstName={firstName} />
-						{/* Holds the line's height until the summaries are in. */}
-						<Suspense fallback={<span className="invisible">Nothing waiting on you today.</span>}>
-							<Waiting ws={ws} today={today} />
-						</Suspense>
-					</p>
-				</header>
-			)}
-
-			{!isNew && (
-				<div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-					{shows("/kuroji") && (
-						<TileFrame href="/kuroji" index={tile++} fill={fill === "/kuroji"} action>
-							<Suspense fallback={<TileBodySkeleton action />}>
-								<KurojiBody ws={ws} today={today} />
-							</Suspense>
-						</TileFrame>
-					)}
-					{shows("/aisha") && (
-						<TileFrame href="/aisha" index={tile++} fill={fill === "/aisha"} action>
-							<Suspense fallback={<TileBodySkeleton action />}>
-								<AishaBody today={today} />
-							</Suspense>
-						</TileFrame>
-					)}
-					{shows("/seiryu") && (
-						<TileFrame href="/seiryu" index={tile++} fill={fill === "/seiryu"}>
-							<Suspense fallback={<TileBodySkeleton />}>
-								<SeiryuBody ws={ws} today={today} />
-							</Suspense>
-						</TileFrame>
-					)}
-					{shows("/kyuu") && (
-						<TileFrame href="/kyuu" index={tile++} fill={fill === "/kyuu"}>
-							<Suspense fallback={<TileBodySkeleton />}>
-								<KyuuBody />
-							</Suspense>
-						</TileFrame>
-					)}
-					{shows("/hoshii") && (
-						<TileFrame href="/hoshii" index={tile++} fill={fill === "/hoshii"}>
-							<Suspense fallback={<TileBodySkeleton />}>
-								<HoshiiBody ws={ws} today={today} />
-							</Suspense>
-						</TileFrame>
-					)}
-					{shows("/keizoku") && (
-						<TileFrame href="/keizoku" index={tile++} wide>
-							<Suspense fallback={<TileBodySkeleton />}>
-								<KeizokuBody today={today} />
-							</Suspense>
-						</TileFrame>
-					)}
-					{shows("/tsundoku") && (
-						<TileFrame href="/tsundoku" index={tile++} wide action>
-							<Suspense fallback={<TileBodySkeleton />}>
-								<TsundokuBody />
-							</Suspense>
-						</TileFrame>
-					)}
+			) : null}
+			{isNew && (
+				<div className="max-w-2xl animate-rise [--i:1]">
+					<CaptureBar />
 				</div>
+			)}
+			{!isNew && (
+				<>
+					<header className="animate-rise">
+						<h1 className="text-xl font-semibold tracking-tight md:text-3xl">{longDate(today)}</h1>
+						<p className="mt-1 text-sm text-muted-foreground">
+							<Greeting firstName={firstName} />
+							{/* Holds the line's height until the summaries are in. */}
+							<Suspense fallback={<span className="invisible">Nothing waiting on you today.</span>}>
+								<Waiting ws={ws} today={today} />
+							</Suspense>
+						</p>
+					</header>
+
+					<div className="animate-rise [--i:1]">
+						<CaptureBar />
+					</div>
+
+					<div className="grid gap-6 md:gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+						<Section title="To do" index={2}>
+							<Suspense fallback={<ListSkeleton rows={3} />}>
+								<Queue ws={ws} today={today} />
+							</Suspense>
+						</Section>
+
+						<div className="space-y-6 md:space-y-8">
+							{shows("/keizoku") && (
+								<Section title="Habits" href="/keizoku" index={3}>
+									<div className="group-card">
+										<Suspense fallback={<ListSkeleton rows={2} bare />}>
+											<Habits />
+										</Suspense>
+									</div>
+								</Section>
+							)}
+							{(shows("/tsundoku") || shows("/kuroji") || shows("/aisha")) && (
+								<Section title="Now" index={4}>
+									<ul className="inset-group">
+										{shows("/tsundoku") && (
+											<Suspense fallback={<LineSkeleton />}>
+												<ReadingLine />
+											</Suspense>
+										)}
+										{shows("/kuroji") && (
+											<Suspense fallback={<LineSkeleton />}>
+												<MoneyLine ws={ws} today={today} />
+											</Suspense>
+										)}
+										{shows("/aisha") && (
+											<Suspense fallback={<LineSkeleton />}>
+												<CarLine today={today} />
+											</Suspense>
+										)}
+									</ul>
+								</Section>
+							)}
+						</div>
+					</div>
+
+					<Section title="Apps" index={5}>
+						<ul className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+							{listed.filter(shows).map((href) => (
+								<AppFigure key={href} href={href}>
+									<Suspense fallback={<FigureText value={null} label={APPS_CONFIG[href].label} />}>
+										<Figure href={href} ws={ws} today={today} />
+									</Suspense>
+								</AppFigure>
+							))}
+						</ul>
+					</Section>
+				</>
 			)}
 
 			{(fresh.length > 0 || hidden.length > 0) && (
-				<StartHere apps={fresh} hidden={hidden} all={isNew} offset={isNew ? 1 : tile} />
+				<StartHere apps={fresh} hidden={hidden} all={isNew} offset={isNew ? 1 : 6} />
 			)}
 		</div>
+	);
+}
+
+function Section({
+	title,
+	href,
+	index,
+	children,
+}: {
+	title: string;
+	href?: AppHref;
+	index: number;
+	children: React.ReactNode;
+}) {
+	return (
+		<section
+			aria-label={title}
+			className="min-w-0 animate-rise"
+			style={{ "--i": index } as CSSProperties}
+		>
+			<h2 className="mb-2 px-1 text-sm font-medium text-muted-foreground">
+				{href ? (
+					<Link href={href} prefetch className="transition-colors hover:text-foreground">
+						{title}
+					</Link>
+				) : (
+					title
+				)}
+			</h2>
+			{children}
+		</section>
+	);
+}
+
+const ROWS = ["a", "b", "c"];
+
+function ListSkeleton({ rows, bare = false }: { rows: number; bare?: boolean }) {
+	const lines = ROWS.slice(0, rows).map((key) => <LineSkeleton key={key} />);
+	return bare ? <ul>{lines}</ul> : <ul className="inset-group">{lines}</ul>;
+}
+
+/** One app in the strip: its seal, one figure, its name. Opens the app. */
+function AppFigure({ href, children }: { href: AppHref; children: React.ReactNode }) {
+	const app = APPS_CONFIG[href];
+	return (
+		<li className={cn(app.theme, "min-w-0")}>
+			<Link
+				href={href}
+				prefetch
+				className="flex h-full flex-col gap-0.5 rounded-group bg-surface px-3 py-2.5 outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring"
+			>
+				<span aria-hidden className="text-[13px] font-semibold text-primary">
+					{app.kanji}
+				</span>
+				{children}
+			</Link>
+		</li>
+	);
+}
+
+function FigureText({ value, label }: { value: string | null; label: string }) {
+	return (
+		<>
+			<span
+				className={cn(
+					"truncate font-figures text-sm font-semibold",
+					value == null && "text-muted-foreground/50",
+				)}
+			>
+				{value ?? "—"}
+			</span>
+			<span className="truncate text-[11px] text-muted-foreground">{label}</span>
+		</>
 	);
 }
 
@@ -166,24 +246,72 @@ async function Waiting({ ws, today }: { ws: Workspace; today: string }) {
 	return attention.length > 0 ? `${attention.join(", ")}.` : "Nothing waiting on you today.";
 }
 
-// ── Tile bodies ───────────────────────────────────────────────────────────────
+// ── The parts ─────────────────────────────────────────────────────────────────
 
-async function KurojiBody({ ws, today }: { ws: Workspace; today: string }) {
+async function Queue({ ws, today }: { ws: Workspace; today: string }) {
+	const [captures, wants, cards, jobs, car] = await Promise.all([
+		loadCaptures(ws),
+		loadWants(ws, today),
+		loadCards(ws, today),
+		loadJobs(),
+		loadCar(today),
+	]);
+	return <TodayQueue items={buildQueue({ captures, wants, cards, jobs, car }, today)} />;
+}
+
+async function Habits() {
+	const data = await loadHabits();
+	const habits = data?.habits ?? [];
+	if (habits.length === 0)
+		return <p className="text-sm text-muted-foreground">Nothing due today.</p>;
+	// Undone first: what's left, then what's ticked.
+	const sorted = [...habits].sort((a, b) => Number(a.done) - Number(b.done));
+	return <HabitsToday habits={sorted} today={data?.today ?? ""} />;
+}
+
+async function ReadingLine() {
+	const book = (await loadReading())?.[0];
+	if (!book) return <Line href="/tsundoku" title="No book on the go" note="Tsundoku" />;
+	return (
+		<Line
+			href="/tsundoku"
+			title={book.title}
+			note={[
+				`p. ${book.currentPage}${book.pageCount ? ` of ${book.pageCount}` : ""}`,
+				book.daysToFinish != null && `about ${plural(book.daysToFinish, "day")} to go`,
+			]
+				.filter(Boolean)
+				.join(" · ")}
+			action={<LogPages book={book} />}
+		>
+			<div className="mt-1.5">
+				<ProgressMeter
+					compact
+					currentPage={book.currentPage}
+					pageCount={book.pageCount}
+					daysToFinish={book.daysToFinish}
+				/>
+			</div>
+		</Line>
+	);
+}
+
+async function MoneyLine({ ws, today }: { ws: Workspace; today: string }) {
 	const m = await loadMoney(ws, today);
 	return (
-		<TileBody
-			negative={(m?.netWorth ?? 0) < 0}
-			value={m ? money(m.netWorth, m.currency) : null}
-			note={m ? `Net worth · ${money(m.spentThisMonth, m.currency)} spent` : "Not set up"}
+		<Line
+			href="/kuroji"
+			title={m ? `${money(m.spentToday, m.currency)} spent today` : "Money"}
+			note={m ? `${money(m.spentThisMonth, m.currency)} this month` : "Couldn't load"}
 			action={
 				<LazyAddTransactionModal
 					workspaceId={ws.id}
 					baseCurrency={ws.baseCurrency}
 					shortcut
 					trigger={
-						<TileAction label="Add transaction" keys="N">
+						<LineAction label="Add transaction" keys="N">
 							Add
-						</TileAction>
+						</LineAction>
 					}
 				/>
 			}
@@ -191,144 +319,67 @@ async function KurojiBody({ ws, today }: { ws: Workspace; today: string }) {
 	);
 }
 
-async function AishaBody({ today }: { today: string }) {
+async function CarLine({ today }: { today: string }) {
 	const car = await loadCar(today);
-	const next = car?.next;
+	if (!car) return <Line href="/aisha" title="No car yet" note="Aisha" />;
+	const next = car.next;
 	return (
-		<TileBody
-			value={
-				next?.kmLeft != null
-					? km(next.kmLeft)
-					: next?.daysLeft != null
-						? plural(Math.abs(next.daysLeft), "day")
-						: car
-							? km(car.currentKm)
-							: null
-			}
+		<Line
+			href="/aisha"
+			title={`${car.name} · ${km(car.currentKm)}`}
 			note={
-				!car
-					? "Not set up"
-					: !next
-						? "on the odometer"
-						: next.status === "overdue"
-							? `${next.name} overdue`
-							: `to ${next.name}`
+				!next
+					? "on the odometer"
+					: next.kmLeft != null
+						? `${next.name} ${next.kmLeft < 0 ? `${km(next.kmLeft)} overdue` : `in ${km(next.kmLeft)}`}`
+						: next.daysLeft != null
+							? `${next.name} ${next.daysLeft < 0 ? `${plural(-next.daysLeft, "day")} overdue` : `in ${plural(next.daysLeft, "day")}`}`
+							: next.name
 			}
-			alert={next?.status === "overdue"}
-			action={car && <LogMileage vehicleId={car.vehicleId} currentKm={car.currentKm} />}
+			action={<LogMileage vehicleId={car.vehicleId} currentKm={car.currentKm} />}
 		/>
 	);
 }
 
-async function SeiryuBody({ ws, today }: { ws: Workspace; today: string }) {
-	const cards = (await loadCards(ws, today)) ?? [];
-	const overdue = cards.filter((c) => c.dueDate < today).length;
-	return (
-		<TileBody
-			value={String(cards.length)}
-			note={
-				overdue > 0
-					? `${plural(overdue, "card")} overdue`
-					: cards.length > 0
-						? "cards due today"
-						: "No cards due"
-			}
-			alert={overdue > 0}
-		/>
-	);
+/** The strip's one figure per app: short enough for a quarter of a phone. */
+async function Figure({ href, ws, today }: { href: AppHref; ws: Workspace; today: string }) {
+	const [value, label] = await figureOf(href, ws, today);
+	return <FigureText value={value} label={label} />;
 }
 
-async function KyuuBody() {
-	const jobs = await loadJobs();
-	return (
-		<TileBody
-			value={jobs ? String(jobs.toSend) : null}
-			note={
-				jobs
-					? jobs.ghostDue > 0
-						? `to send · ${jobs.ghostDue} to close`
-						: `to send · ${jobs.waiting} waiting`
-					: null
-			}
-		/>
-	);
-}
-
-async function HoshiiBody({ ws, today }: { ws: Workspace; today: string }) {
-	const wants = await loadWants(ws, today);
-	return (
-		<TileBody
-			value={
-				wants
-					? String(
-							wants.decide > 0 ? wants.decide : wants.canBuy > 0 ? wants.canBuy : wants.cooling,
-						)
-					: null
-			}
-			note={
-				!wants
-					? null
-					: wants.decide > 0
-						? `to decide${wants.canBuy > 0 ? ` · ${wants.canBuy} can buy` : ""}`
-						: wants.canBuy > 0
-							? `can buy · ${wants.nextBuy}`
-							: `cooling · ${wants.plan} in the Plan`
-			}
-		/>
-	);
-}
-
-async function KeizokuBody({ today }: { today: string }) {
-	const data = await loadHabits();
-	const habits = data?.habits ?? [];
-	const left = habits.filter((h) => !h.done).length;
-	// Undone first: the tile shows what's left, then what's ticked.
-	const habitList = [...habits].sort((a, b) => Number(a.done) - Number(b.done)).slice(0, 4);
-	return (
-		<TileBody
-			value={habits.length > 0 ? `${habits.length - left} / ${habits.length}` : null}
-			note={
-				habits.length === 0
-					? "Nothing due today"
-					: left === 0
-						? "All done today"
-						: `${left} left today`
-			}
-		>
-			{habitList.length > 0 && <HabitsToday habits={habitList} today={data?.today ?? today} />}
-			{habits.length > habitList.length && (
-				<Link
-					href="/keizoku"
-					prefetch
-					className="mt-1 inline-block text-xs text-muted-foreground transition-colors hover:text-foreground"
-				>
-					{habits.length - habitList.length} more
-				</Link>
-			)}
-		</TileBody>
-	);
-}
-
-async function TsundokuBody() {
-	const book = (await loadReading())?.[0];
-	return (
-		<TileBody
-			value={book ? `p. ${book.currentPage}` : null}
-			note={
-				book
-					? [book.title, book.pageCount && `of ${book.pageCount}`].filter(Boolean).join(" · ")
-					: "No book on the go"
-			}
-			action={book && <LogPages book={book} />}
-		>
-			{book && (
-				<ProgressMeter
-					compact
-					currentPage={book.currentPage}
-					pageCount={book.pageCount}
-					daysToFinish={book.daysToFinish}
-				/>
-			)}
-		</TileBody>
-	);
+async function figureOf(
+	href: AppHref,
+	ws: Workspace,
+	today: string,
+): Promise<[string | null, string]> {
+	switch (href) {
+		case "/kuroji": {
+			const m = await loadMoney(ws, today);
+			return [m && money(m.netWorth, m.currency), "net worth"];
+		}
+		case "/seiryu": {
+			const cards = await loadCards(ws, today);
+			return [cards && String(cards.length), "cards due"];
+		}
+		case "/tsundoku": {
+			const book = (await loadReading())?.[0];
+			return [book ? `p. ${book.currentPage}` : null, "reading"];
+		}
+		case "/keizoku": {
+			const habits = (await loadHabits())?.habits ?? [];
+			return [`${habits.filter((h) => h.done).length} / ${habits.length}`, "habits today"];
+		}
+		case "/kyuu": {
+			const jobs = await loadJobs();
+			return [jobs && String(jobs.toSend), "to send"];
+		}
+		case "/aisha": {
+			const car = await loadCar(today);
+			return [car && new Intl.NumberFormat("pl-PL").format(car.currentKm), "km"];
+		}
+		case "/hoshii": {
+			const wants = await loadWants(ws, today);
+			return [wants && String(wants.plan), "in the Plan"];
+		}
+	}
 }
