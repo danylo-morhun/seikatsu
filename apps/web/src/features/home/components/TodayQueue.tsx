@@ -84,28 +84,29 @@ export function TodayQueue({ items }: { items: QueueItem[] }) {
 
 	if (left.length === 0)
 		return (
-			<p className="rounded-group bg-[var(--group-bg)] px-[var(--group-px)] py-4 text-sm text-muted-foreground">
+			<p className="rounded-group bg-[var(--group-bg)] px-[var(--group-px)] py-4 text-sm text-muted-foreground lg:flex-1">
 				Nothing waiting on you. Anything new goes in the line above.
 			</p>
 		);
 
+	// Fills its column on a desktop, so it ends where the column beside it does.
 	return (
-		<div>
-			<ul aria-label="Waiting today" className="inset-group">
-				{shown.map((item) => (
-					<QueueRow key={item.key} item={item} settle={settle} />
-				))}
-			</ul>
+		<ul aria-label="Waiting today" className="inset-group lg:flex-1">
+			{shown.map((item) => (
+				<QueueRow key={item.key} item={item} settle={settle} />
+			))}
 			{left.length > FIRST && (
-				<button
-					type="button"
-					onClick={() => setAll((v) => !v)}
-					className="mt-2 px-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-				>
-					{all ? "Show less" : `Show ${left.length - FIRST} more`}
-				</button>
+				<li>
+					<button
+						type="button"
+						onClick={() => setAll((v) => !v)}
+						className="flex min-h-11 w-full items-center pl-10 text-sm text-muted-foreground transition-colors hover:text-foreground"
+					>
+						{all ? "Show less" : `Show ${left.length - FIRST} more`}
+					</button>
+				</li>
 			)}
-		</div>
+		</ul>
 	);
 }
 

@@ -50,6 +50,8 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 	const fresh = listed.filter((href) => started[href] === false);
 	const isNew = APP_HREFS.every((href) => started[href] === false);
 	const shows = (href: AppHref) => listed.includes(href) && !fresh.includes(href);
+	const side = shows("/keizoku") || shows("/tsundoku") || shows("/kuroji") || shows("/aisha");
+	const strip = listed.filter(shows);
 
 	return (
 		<div className="mx-auto max-w-5xl space-y-6 px-4 pt-5 pb-16 sm:px-8 md:space-y-8 md:py-8">
@@ -89,14 +91,25 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 						<CaptureBar />
 					</div>
 
-					<div className="grid gap-6 md:gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
-						<Section title="To do" index={2}>
+					{/* One grid for the day and the strip below: seven columns on a desktop, so the
+					    columns' edges fall on the strip's seams, and both columns end on one line. */}
+					<div className="grid gap-6 md:gap-8 lg:grid-cols-7 lg:gap-x-3">
+						<Section
+							title="To do"
+							index={2}
+							className={cn("lg:flex lg:flex-col", side ? "lg:col-span-4" : "lg:col-span-7")}
+						>
 							<Suspense fallback={<ListSkeleton rows={3} />}>
 								<Queue ws={ws} today={today} />
 							</Suspense>
 						</Section>
 
-						<div className="space-y-6 md:space-y-8">
+						<div
+							className={cn(
+								"space-y-6 md:space-y-8 lg:col-span-3 lg:flex lg:flex-col",
+								!side && "hidden",
+							)}
+						>
 							{shows("/keizoku") && (
 								<Section title="Habits" href="/keizoku" index={3}>
 									<div className="group-card">
@@ -107,8 +120,8 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 								</Section>
 							)}
 							{(shows("/tsundoku") || shows("/kuroji") || shows("/aisha")) && (
-								<Section title="Now" index={4}>
-									<ul className="inset-group">
+								<Section title="Now" index={4} className="lg:flex lg:flex-1 lg:flex-col">
+									<ul className="inset-group lg:flex-1">
 										{shows("/tsundoku") && (
 											<Suspense fallback={<LineSkeleton />}>
 												<ReadingLine />
@@ -131,9 +144,10 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 					</div>
 
 					<Section title="Apps" index={5}>
-						<ul className="grid grid-cols-4 gap-2 sm:grid-cols-7">
-							{listed.filter(shows).map((href) => (
-								<AppFigure key={href} href={href}>
+						<ul className="grid grid-cols-4 gap-2 sm:grid-cols-7 lg:gap-3">
+							{strip.map((href, i) => (
+								// A phone's four columns: the first few widen so the last row has no hole.
+								<AppFigure key={href} href={href} wide={i < (4 - (strip.length % 4)) % 4}>
 									<Suspense fallback={<FigureText value={null} label={APPS_CONFIG[href].label} />}>
 										<Figure href={href} ws={ws} today={today} />
 									</Suspense>
@@ -155,17 +169,19 @@ function Section({
 	title,
 	href,
 	index,
+	className,
 	children,
 }: {
 	title: string;
 	href?: AppHref;
 	index: number;
+	className?: string;
 	children: React.ReactNode;
 }) {
 	return (
 		<section
 			aria-label={title}
-			className="min-w-0 animate-rise"
+			className={cn("min-w-0 animate-rise", className)}
 			style={{ "--i": index } as CSSProperties}
 		>
 			<h2 className="mb-2 px-1 text-sm font-medium text-muted-foreground">
@@ -186,14 +202,22 @@ const ROWS = ["a", "b", "c"];
 
 function ListSkeleton({ rows, bare = false }: { rows: number; bare?: boolean }) {
 	const lines = ROWS.slice(0, rows).map((key) => <LineSkeleton key={key} />);
-	return bare ? <ul>{lines}</ul> : <ul className="inset-group">{lines}</ul>;
+	return bare ? <ul>{lines}</ul> : <ul className="inset-group lg:flex-1">{lines}</ul>;
 }
 
 /** One app in the strip: its seal, one figure, its name. Opens the app. */
-function AppFigure({ href, children }: { href: AppHref; children: React.ReactNode }) {
+function AppFigure({
+	href,
+	wide,
+	children,
+}: {
+	href: AppHref;
+	wide: boolean;
+	children: React.ReactNode;
+}) {
 	const app = APPS_CONFIG[href];
 	return (
-		<li className={cn(app.theme, "min-w-0")}>
+		<li className={cn(app.theme, "min-w-0", wide && "max-sm:col-span-2")}>
 			<Link
 				href={href}
 				prefetch
@@ -367,7 +391,7 @@ async function figureOf(
 		}
 		case "/keizoku": {
 			const habits = (await loadHabits())?.habits ?? [];
-			return [`${habits.filter((h) => h.done).length} / ${habits.length}`, "habits today"];
+			return [`${habits.filter((h) => h.done).length} / ${habits.length}`, "habits"];
 		}
 		case "/kyuu": {
 			const jobs = await loadJobs();
