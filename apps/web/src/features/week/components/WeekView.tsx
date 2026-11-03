@@ -9,7 +9,7 @@ import { money } from "@/features/home/lib/format";
 import { addDays } from "@/features/keizoku/lib/streak";
 import { MoveCard } from "@/features/week/components/MoveCard";
 import { getWeekData } from "@/features/week/lib/data";
-import { buildWeek, type WeekEntry, type WeekTotals, weekOf } from "@/features/week/lib/week";
+import { buildWeek, type WeekEntry, weekLine, weekOf } from "@/features/week/lib/week";
 import type { Workspace } from "@/lib/session";
 
 const DAY_NAME = new Intl.DateTimeFormat("en-GB", { weekday: "long", timeZone: "UTC" });
@@ -51,7 +51,7 @@ export async function WeekView({ ws, today, day }: { ws: Workspace; today: strin
 					<p className="mt-1 text-sm text-muted-foreground">
 						{current ? "This week" : week[6] < today ? "A week behind you" : "A week ahead"}
 						{" · "}
-						<Totals totals={totals} fmt={fmt} />
+						{weekLine(totals, fmt) ?? "nothing logged yet"}
 					</p>
 				</div>
 				<nav aria-label="Weeks" className="flex items-center gap-1">
@@ -162,17 +162,4 @@ function Entry({ entry, move }: { entry: WeekEntry; move?: React.ReactNode }) {
 			{move}
 		</li>
 	);
-}
-
-/** The week in one line: only what moved. */
-function Totals({ totals, fmt }: { totals: WeekTotals; fmt: (n: number) => string }) {
-	const parts = [
-		totals.spent > 0 && `${fmt(totals.spent)} spent`,
-		totals.expected > 0 && `${totals.ticks} of ${totals.expected} habits`,
-		totals.pages > 0 && `${totals.pages} pages`,
-		totals.cardsDone > 0 && `${totals.cardsDone} cards done`,
-		totals.km > 0 && `${totals.km.toLocaleString("en-US")} km`,
-		totals.applied > 0 && `${totals.applied} applied`,
-	].filter(Boolean);
-	return parts.length > 0 ? parts.join(" · ") : "nothing logged yet";
 }
