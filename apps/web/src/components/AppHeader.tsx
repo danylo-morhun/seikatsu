@@ -12,6 +12,7 @@ import { ShortcutsButton } from "@/components/KeyboardShortcuts";
 import { SectionNav } from "@/components/SectionNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { requestLogService } from "@/features/aisha/lib/events";
+import { CaptureButton } from "@/features/capture/components/CaptureButton";
 import { requestAdd } from "@/features/hoshii/lib/events";
 import { requestNewHabit } from "@/features/keizoku/lib/events";
 import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTransactionModal";
@@ -311,6 +312,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 									: "contents",
 							)}
 						>
+							<CaptureButton />
 							<ShortcutsButton />
 							<ThemeToggle />
 						</div>

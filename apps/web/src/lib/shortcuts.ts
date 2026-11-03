@@ -11,6 +11,7 @@ export const GENERAL_SHORTCUTS: ShortcutGroup = {
 	title: "Anywhere",
 	items: [
 		{ keys: ["?"], label: "Show shortcuts" },
+		{ keys: ["⌘K"], label: "Capture: one line into any app (Ctrl+K on Windows)" },
 		{ keys: ["Esc"], label: "Close a dialog, sheet or menu" },
 	],
 };
