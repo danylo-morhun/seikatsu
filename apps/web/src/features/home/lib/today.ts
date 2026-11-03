@@ -10,6 +10,7 @@ import {
 	hoshiiItems,
 	isNotNull,
 	isNull,
+	kurojiCaptures,
 	kyuuApplications,
 	lte,
 	seiryuCards,
@@ -217,6 +218,16 @@ async function getWants(ws: Workspace, today: string): Promise<WantsToday> {
 	};
 }
 
+/** Apple Pay payments captured but not yet added to Kuroji. */
+function getCaptureCount(ws: Workspace): Promise<number> {
+	return db
+		.select({ id: kurojiCaptures.id })
+		.from(kurojiCaptures)
+		.where(and(eq(kurojiCaptures.workspaceId, ws.id), eq(kurojiCaptures.state, "pending")))
+		.limit(100)
+		.then((rows) => rows.length);
+}
+
 /** Whether each app holds anything yet; null when that couldn't be read. An empty app waits
  * on the home's start list instead of showing a tile of dashes. Cheap existence checks, so the
  * page knows its tiles before any summary is ready. */
@@ -264,3 +275,4 @@ export const loadCards = cache((ws: Workspace, today: string) =>
 );
 export const loadCar = cache((today: string) => safely(() => getCar(today)));
 export const loadWants = cache((ws: Workspace, today: string) => safely(() => getWants(ws, today)));
+export const loadCaptures = cache((ws: Workspace) => safely(() => getCaptureCount(ws)));
