@@ -130,7 +130,11 @@ Today is ${ctx.today}. Their main currency is ${ctx.baseCurrency}.
 
 Kinds:
 - expense: money spent. income: money received. Amount, currency (zł → PLN, грн → UAH,
-  € → EUR, $ → USD; none named → null), the best matching category, a short description.
+  € → EUR, $ → USD; none named → null), the best matching category, a short description,
+  and the wallet when the line says where it was paid from. Match wallets loosely, as people
+  say them: a bank's nickname or a case ending ("с привата", "приватом" → a Privat / P24 wallet;
+  "с пекао" → Pekao; "налом", "кэш" → cash), and when a bank has wallets in several
+  currencies, the one in the currency named.
 - mileage: the car's odometer. Current reading ${ctx.vehicle ? `${ctx.vehicle.currentKm} km` : "unknown (no car)"}.
   "drove 300 km" means km = current + 300.
 - want: something to buy ("хочу Kindle", "надо шапку купить"). Title, price if given, the
@@ -203,6 +207,18 @@ export function pickMerchants(
 		.map(([, m]) => ({ name: m.name, categoryId: m.categoryId }));
 }
 
+/** Paid from this wallet: an amount with no currency named is in the wallet's. */
+export function withWallet<A extends Extract<PlannedAction, { kind: "expense" | "income" }>>(
+	action: A,
+	wallet: { id: string; currency: string },
+): A {
+	return {
+		...action,
+		walletId: wallet.id,
+		currency: action.currencyNamed ? action.currency : wallet.currency,
+	};
+}
+
 // ── Checking the answer ──────────────────────────────────────────────────────
 
 type Base = { key: string };
@@ -213,6 +229,8 @@ export type PlannedAction = Base &
 				kind: "expense" | "income";
 				amount: number;
 				currency: string;
+				/** The line named the currency; else it follows the wallet. */
+				currencyNamed: boolean;
 				/** Null: the dialog asks for it before saving. */
 				categoryId: string | null;
 				walletId: string | null;
@@ -286,6 +304,7 @@ function plan(raw: RawAction, ctx: CaptureContext, key: string): PlannedAction |
 				kind: raw.kind,
 				amount: Math.round(raw.amount * 100) / 100,
 				currency: currencyOf(raw.currency, wallet?.currency ?? ctx.baseCurrency),
+				currencyNamed: currencyOf(raw.currency, "") !== "",
 				categoryId: known(categories, raw.categoryId)?.id ?? null,
 				walletId: wallet?.id ?? null,
 				description: clean(raw.description) ?? "",
