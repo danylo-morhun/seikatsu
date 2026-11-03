@@ -16,7 +16,7 @@ import {
 	kyuuMailKeys,
 	ne,
 } from "@seikatsu/db";
-import { askGemini } from "../lib/gemini";
+import { askGemini } from "@/lib/gemini";
 import {
 	fromHiringPlatform,
 	gmailLink,

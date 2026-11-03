@@ -16,7 +16,7 @@ vi.mock("@seikatsu/db", async () => ({
 }));
 
 const askGemini = vi.fn();
-vi.mock("../lib/gemini", () => ({
+vi.mock("@/lib/gemini", () => ({
 	askGemini: (...args: unknown[]) => askGemini(...args),
 }));
 
