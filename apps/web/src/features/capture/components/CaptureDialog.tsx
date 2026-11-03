@@ -27,7 +27,9 @@ import { type CapturePlan, parseCapture } from "@/features/capture/actions/parse
 import { applyAction } from "@/features/capture/lib/apply";
 import { describeAction } from "@/features/capture/lib/describe";
 import { isReady, type PlannedAction } from "@/features/capture/lib/plan";
+import { CurrencySelect, Toggle } from "@/features/hoshii/components/Parts";
 import { readCaptureMemory } from "@/features/kuroji/lib/capture-memory";
+import { PRIORITIES, PRIORITY_CONFIG, type Priority } from "@/features/seiryu/lib/constants";
 import { APPS_CONFIG } from "@/lib/app-themes";
 
 const EXAMPLES = "бенз 240 zł, 84 500 км · хочу Kindle · был в зале · 1984 до 52";
@@ -253,16 +255,17 @@ function ActionRow({
 	onChange: (patch: Partial<PlannedAction>) => void;
 }) {
 	const id = useId();
-	const [editing, setEditing] = useState(false);
 	const { action } = row;
+	const ready = isReady(action);
+	// Opens by itself when something is missing, and stays open once it's filled in, so the
+	// fields don't jump away mid-edit.
+	const [editing, setEditing] = useState(!ready);
+	useEffect(() => {
+		if (!ready) setEditing(true);
+	}, [ready]);
 	const { app, title, detail } = describeAction(action, options, today);
 	const config = APPS_CONFIG[app];
-	const money = action.kind === "expense" || action.kind === "income";
-	const categories =
-		action.kind === "income" ? options.incomeCategories : options.expenseCategories;
-	// Pickers show when something is missing, or while the row is being edited.
-	const showMoney = money && (editing || !action.walletId || !action.categoryId);
-	const showProject = action.kind === "card" && (editing || !action.projectId);
+	const open = row.on && editing;
 
 	return (
 		<li className="flex gap-3 py-3">
@@ -283,7 +286,7 @@ function ActionRow({
 			>
 				{config.kanji}
 			</span>
-			<div className={cn("min-w-0 flex-1 space-y-2", !row.on && "opacity-50")}>
+			<div className={cn("min-w-0 flex-1", !row.on && "opacity-50")}>
 				<div className="flex items-start gap-2">
 					<label htmlFor={`${id}-on`} className="block min-w-0 flex-1">
 						<span className="block truncate text-sm font-medium">{title}</span>
@@ -295,131 +298,202 @@ function ActionRow({
 							variant="ghost"
 							size="icon"
 							className="size-8 shrink-0 text-muted-foreground"
-							aria-label={editing ? `Done editing ${title}` : `Edit ${title}`}
-							aria-pressed={editing}
-							disabled={disabled}
-							onClick={() => setEditing((v) => !v)}
+							aria-label={open ? `Done editing ${title}` : `Edit ${title}`}
+							aria-pressed={open}
+							disabled={disabled || (open && !ready)}
+							onClick={() => setEditing(!open)}
 						>
-							<HugeiconsIcon icon={editing ? Tick02Icon : PencilEdit02Icon} className="size-4" />
+							<HugeiconsIcon icon={open ? Tick02Icon : PencilEdit02Icon} className="size-4" />
 						</Button>
 					)}
 				</div>
-				{row.on && editing && (
-					<Fields action={action} today={today} disabled={disabled} onChange={onChange} />
-				)}
-				{row.on && showMoney && (
-					<div className="grid grid-cols-2 gap-2">
-						<Pick
-							label={action.kind === "income" ? "To wallet" : "From wallet"}
-							value={action.walletId}
-							items={options.wallets.map((w) => ({ id: w.id, name: `${w.name} · ${w.currency}` }))}
+				{open && (
+					<div className="mt-3 grid grid-cols-2 gap-x-2 gap-y-3">
+						<Fields
+							action={action}
+							options={options}
+							today={today}
 							disabled={disabled}
-							onChange={(walletId) => onChange({ walletId })}
-						/>
-						<Pick
-							label="Category"
-							value={action.categoryId}
-							items={categories}
-							disabled={disabled}
-							onChange={(categoryId) => onChange({ categoryId })}
+							onChange={onChange}
 						/>
 					</div>
-				)}
-				{row.on && showProject && action.kind === "card" && (
-					<Pick
-						label="Project"
-						value={action.projectId}
-						items={options.projects}
-						disabled={disabled}
-						onChange={(projectId) => onChange({ projectId })}
-					/>
 				)}
 			</div>
 		</li>
 	);
 }
 
-/** The row's own fields, by kind: what the line said, to fix before saving. */
+/** Everything the app itself would ask for this kind, laid out on a two-column grid. */
 function Fields({
 	action,
+	options,
 	today,
 	disabled,
 	onChange,
 }: {
 	action: PlannedAction;
+	options: CapturePlan["options"];
 	today: string;
 	disabled: boolean;
 	onChange: (patch: Partial<PlannedAction>) => void;
 }) {
-	const date = "date" in action && (
-		<Field label="Date">
+	const text = (
+		label: string,
+		value: string,
+		key: "title" | "description" | "note",
+		placeholder?: string,
+	) => (
+		<Field label={label} className="col-span-2">
 			<Input
-				type="date"
-				max={today}
-				value={action.date}
+				value={value}
+				placeholder={placeholder}
+				autoComplete="off"
 				disabled={disabled}
 				className="h-9"
-				onChange={(e) => e.target.value && onChange({ date: e.target.value })}
+				onChange={(e) => onChange({ [key]: e.target.value })}
 			/>
 		</Field>
 	);
+	const date = (label = "Date", max: string | undefined = today) =>
+		"date" in action && (
+			<Field label={label}>
+				<Input
+					type="date"
+					max={max}
+					value={action.date}
+					disabled={disabled}
+					className="h-9"
+					onChange={(e) => e.target.value && onChange({ date: e.target.value })}
+				/>
+			</Field>
+		);
+
 	switch (action.kind) {
 		case "expense":
 		case "income":
 			return (
-				<div className="grid grid-cols-2 gap-2">
-					<Field label={`Amount, ${action.currency}`}>
-						<NumberInput
-							value={action.amount}
+				<>
+					<Field label="Amount">
+						<div className="flex gap-1.5">
+							<NumberInput
+								value={action.amount}
+								disabled={disabled}
+								onChange={(amount) => onChange({ amount: amount ?? 0 })}
+							/>
+							<div className="w-24 shrink-0">
+								<CurrencySelect
+									value={action.currency}
+									onChange={(currency) => onChange({ currency })}
+								/>
+							</div>
+						</div>
+					</Field>
+					{date()}
+					<Field label={action.kind === "income" ? "To wallet" : "From wallet"}>
+						<Pick
+							label="Wallet"
+							value={action.walletId}
+							items={options.wallets.map((w) => ({ id: w.id, name: `${w.name} · ${w.currency}` }))}
 							disabled={disabled}
-							onChange={(amount) => onChange({ amount: amount ?? 0 })}
+							onChange={(walletId) => onChange({ walletId })}
 						/>
 					</Field>
-					{date}
-					<Field label="Description" className="col-span-2">
-						<Input
-							value={action.description}
+					<Field label="Category">
+						<Pick
+							label="Category"
+							value={action.categoryId}
+							items={
+								action.kind === "income" ? options.incomeCategories : options.expenseCategories
+							}
 							disabled={disabled}
-							className="h-9"
-							onChange={(e) => onChange({ description: e.target.value })}
+							onChange={(categoryId) => onChange({ categoryId })}
 						/>
 					</Field>
-				</div>
+					{text("Description", action.description, "description", "Merchant or what it was")}
+				</>
 			);
 		case "want":
 			return (
-				<div className="grid grid-cols-[1fr_8rem] gap-2">
-					<Field label="Name">
-						<Input
-							value={action.title}
-							disabled={disabled}
-							className="h-9"
-							onChange={(e) => onChange({ title: e.target.value })}
-						/>
+				<>
+					{text("Name", action.title, "title")}
+					<Field label="Price" className="col-span-2">
+						<div className="flex gap-1.5">
+							<NumberInput
+								value={action.price}
+								placeholder="Optional"
+								disabled={disabled}
+								onChange={(price) => onChange({ price })}
+							/>
+							<div className="w-24 shrink-0">
+								<CurrencySelect
+									value={action.currency}
+									onChange={(currency) => onChange({ currency })}
+								/>
+							</div>
+						</div>
 					</Field>
-					<Field label={`Price, ${action.currency}`}>
-						<NumberInput
-							value={action.price}
-							disabled={disabled}
-							onChange={(price) => onChange({ price })}
-						/>
-					</Field>
-				</div>
+					{options.lists.length > 0 && (
+						<Field label="List" className="col-span-2" as="div">
+							<Chips
+								value={action.listId}
+								items={options.lists}
+								disabled={disabled}
+								onChange={(listId) => onChange({ listId })}
+							/>
+						</Field>
+					)}
+					{text("Why you want it", action.note, "note", "Optional")}
+					<div className="col-span-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-field py-1 pr-1 pl-3 text-sm shadow-[inset_0_0_0_1px_var(--input)]">
+						<span className="min-w-0 text-muted-foreground">
+							{action.now ? (
+								<>
+									Goes straight to the <span className="text-foreground">Plan</span>
+								</>
+							) : (
+								"Cools for a time set by its price"
+							)}
+						</span>
+						<Toggle checked={action.now} onChange={(now) => onChange({ now })}>
+							Need it now
+						</Toggle>
+					</div>
+				</>
 			);
 		case "card":
 			return (
-				<Field label="Title">
-					<Input
-						value={action.title}
-						disabled={disabled}
-						className="h-9"
-						onChange={(e) => onChange({ title: e.target.value })}
-					/>
-				</Field>
+				<>
+					{text("Title", action.title, "title")}
+					<Field label="Project">
+						<Pick
+							label="Project"
+							value={action.projectId}
+							items={options.projects}
+							disabled={disabled}
+							onChange={(projectId) => onChange({ projectId })}
+						/>
+					</Field>
+					<Field label="Due">
+						<Input
+							type="date"
+							value={action.dueDate ?? ""}
+							disabled={disabled}
+							className="h-9"
+							onChange={(e) => onChange({ dueDate: e.target.value || null })}
+						/>
+					</Field>
+					<Field label="Priority" className="col-span-2" as="div">
+						<Chips
+							value={action.priority}
+							items={PRIORITIES.map((p) => ({ id: p, name: PRIORITY_CONFIG[p].label }))}
+							disabled={disabled}
+							onChange={(priority) => onChange({ priority: priority as Priority | null })}
+						/>
+					</Field>
+				</>
 			);
 		case "mileage":
 			return (
-				<div className="grid grid-cols-2 gap-2">
+				<>
 					<Field label="Odometer, km">
 						<NumberInput
 							value={action.km}
@@ -428,12 +502,12 @@ function Fields({
 							onChange={(km) => km != null && onChange({ km })}
 						/>
 					</Field>
-					{date}
-				</div>
+					{date()}
+				</>
 			);
 		case "pages":
 			return (
-				<Field label="Page reached">
+				<Field label={`Page reached, from ${action.from}`}>
 					<NumberInput
 						value={action.page}
 						integer
@@ -443,25 +517,69 @@ function Fields({
 				</Field>
 			);
 		case "habit":
-			return date;
+			return date("Done on");
 	}
+}
+
+/** Pick one or none: tap again to clear. */
+function Chips({
+	value,
+	items,
+	disabled,
+	onChange,
+}: {
+	value: string | null;
+	items: { id: string; name: string }[];
+	disabled: boolean;
+	onChange: (id: string | null) => void;
+}) {
+	return (
+		<div className="flex flex-wrap gap-1.5">
+			{items.map((item) => {
+				const on = value === item.id;
+				return (
+					<button
+						key={item.id}
+						type="button"
+						aria-pressed={on}
+						disabled={disabled}
+						onClick={() => onChange(on ? null : item.id)}
+						className={cn(
+							"h-8 rounded-button px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+							on
+								? "bg-primary text-primary-foreground"
+								: "text-muted-foreground shadow-[inset_0_0_0_1px_var(--input)] hover:bg-surface-2 hover:text-foreground",
+						)}
+					>
+						{item.name}
+					</button>
+				);
+			})}
+		</div>
+	);
 }
 
 function Field({
 	label,
 	className,
+	as = "label",
 	children,
 }: {
 	label: string;
 	className?: string;
+	/** "div" for a group of buttons, which a label can't hold. */
+	as?: "label" | "div";
 	children: React.ReactNode;
 }) {
+	const Tag = as;
 	return (
-		// biome-ignore lint/a11y/noLabelWithoutControl: the control is the child
-		<label className={cn("block min-w-0 space-y-1", className)}>
+		<Tag
+			className={cn("block min-w-0 space-y-1", className)}
+			{...(as === "div" && { role: "group", "aria-label": label })}
+		>
 			<span className="block text-xs text-muted-foreground">{label}</span>
 			{children}
-		</label>
+		</Tag>
 	);
 }
 
@@ -469,11 +587,13 @@ function Field({
 function NumberInput({
 	value,
 	integer,
+	placeholder,
 	disabled,
 	onChange,
 }: {
 	value: number | null;
 	integer?: boolean;
+	placeholder?: string;
 	disabled: boolean;
 	onChange: (value: number | null) => void;
 }) {
@@ -483,8 +603,9 @@ function NumberInput({
 			inputMode={integer ? "numeric" : "decimal"}
 			autoComplete="off"
 			value={text}
+			placeholder={placeholder}
 			disabled={disabled}
-			className="h-9 font-figures"
+			className="h-9 min-w-0 font-figures"
 			onChange={(e) => {
 				setText(e.target.value);
 				const n = parseNumber(e.target.value);

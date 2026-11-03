@@ -4,6 +4,7 @@
 import { and, asc, db, eq, inArray, seiryuColumns } from "@seikatsu/db";
 import type { CaptureContext, Named } from "@/features/capture/lib/plan";
 import { loadCar, loadReading } from "@/features/home/lib/today";
+import { getChromeData } from "@/features/hoshii/actions/data";
 import { getHabits } from "@/features/keizoku/actions/habits";
 import { getAccounts } from "@/features/kuroji/actions/data";
 import { getProjects } from "@/features/seiryu/actions/projects";
@@ -39,12 +40,13 @@ async function inboxColumns(projectIds: string[]): Promise<Map<string, string>> 
 }
 
 export async function getCaptureContext(ws: Workspace, today: string): Promise<CaptureContext> {
-	const [accounts, car, projects, habits, books] = await Promise.all([
+	const [accounts, car, projects, habits, books, hoshii] = await Promise.all([
 		getAccounts(ws.id),
 		loadCar(today),
 		getProjects(),
 		getHabits(),
 		loadReading(),
+		getChromeData(ws),
 	]);
 	const live = projects.filter((p) => !p.archivedAt);
 	const columns = await inboxColumns(live.map((p) => p.id));
@@ -62,6 +64,7 @@ export async function getCaptureContext(ws: Workspace, today: string): Promise<C
 			const columnId = columns.get(p.id);
 			return columnId ? [{ id: p.id, name: p.name, columnId }] : [];
 		}),
+		lists: hoshii.lists,
 		habits: habits.map((h) => ({ id: h.id, name: h.name, emoji: h.emoji })),
 		books: (books ?? []).map((b) => ({
 			id: b.id,

@@ -3,6 +3,7 @@
 // writes; the dialog shows the plan and runs each action through its app's own server action.
 
 import { CURRENCIES } from "@/features/kuroji/lib/constants";
+import { PRIORITIES, type Priority } from "@/features/seiryu/lib/constants";
 
 export type Named = { id: string; name: string };
 
@@ -16,6 +17,8 @@ export type CaptureContext = {
 	vehicle: { id: string; name: string; currentKm: number } | null;
 	/** Each with the column new cards land in (the first not-done one). */
 	projects: (Named & { columnId: string })[];
+	/** Hoshii's lists. */
+	lists: Named[];
 	habits: (Named & { emoji: string })[];
 	books: { id: string; title: string; currentPage: number; pageCount: number | null }[];
 };
@@ -35,7 +38,11 @@ export type RawAction = {
 	km: number | null;
 	title: string | null;
 	price: number | null;
+	listId: string | null;
+	now: boolean | null;
 	projectId: string | null;
+	dueDate: string | null;
+	priority: Priority | null;
 	habitId: string | null;
 	bookId: string | null;
 	page: number | null;
@@ -62,7 +69,15 @@ export const RESPONSE_SCHEMA = {
 					km: nullable("integer", "mileage: the odometer reading in km"),
 					title: nullable("string", "want: the thing itself; card: a short imperative"),
 					price: nullable("number", "want: price if given"),
+					listId: nullable("string", "want: id from the wish list list, if one fits"),
+					now: nullable("boolean", "want: true only when it's needed now, not to cool"),
 					projectId: nullable("string", "card: id from the project list"),
+					dueDate: nullable("string", "card: YYYY-MM-DD when a day to do it by is named"),
+					priority: {
+						type: ["string", "null"],
+						enum: [...PRIORITIES, null],
+						description: "card: only if the text says how urgent",
+					},
 					habitId: nullable("string", "habit: id from the habit list"),
 					bookId: nullable("string", "pages: id from the book list"),
 					page: nullable("integer", "pages: the page reached"),
@@ -79,7 +94,11 @@ export const RESPONSE_SCHEMA = {
 					"km",
 					"title",
 					"price",
+					"listId",
+					"now",
 					"projectId",
+					"dueDate",
+					"priority",
 					"habitId",
 					"bookId",
 					"page",
@@ -112,8 +131,10 @@ Kinds:
   € → EUR, $ → USD; none named → null), the best matching category, a short description.
 - mileage: the car's odometer. Current reading ${ctx.vehicle ? `${ctx.vehicle.currentKm} km` : "unknown (no car)"}.
   "drove 300 km" means km = current + 300.
-- want: something to buy ("хочу Kindle", "надо шапку купить"). Title, price if given.
-- card: a task to do ("позвонить в СТО"). Title, and the project it belongs to if one fits.
+- want: something to buy ("хочу Kindle", "надо шапку купить"). Title, price if given, the
+  list it fits. now = true only when it's needed right away ("срочно", "закончился").
+- card: a task to do ("позвонить в СТО"). Title, the project it belongs to if one fits, a due
+  date when a day is named ("завтра", "до пятницы"), priority only when urgency is said.
 - habit: a habit done ("был в зале" → the gym habit). Only habits from the list.
 - pages: reading progress. page = the page reached ("до 52"); pagesRead when only a count
   is given ("прочитал 20 страниц").
@@ -139,6 +160,8 @@ Income categories:
 ${list(ctx.incomeCategories)}
 Projects:
 ${list(ctx.projects)}
+Wish lists:
+${list(ctx.lists)}
 Habits:
 ${list(ctx.habits, (h) => h.emoji)}
 Books being read:
@@ -172,8 +195,23 @@ export type PlannedAction = Base &
 				from: number;
 				date: string;
 		  }
-		| { kind: "want"; title: string; price: number | null; currency: string }
-		| { kind: "card"; title: string; projectId: string | null }
+		| {
+				kind: "want";
+				title: string;
+				price: number | null;
+				currency: string;
+				listId: string | null;
+				note: string;
+				/** Straight to the Plan, no cooling. */
+				now: boolean;
+		  }
+		| {
+				kind: "card";
+				title: string;
+				projectId: string | null;
+				dueDate: string | null;
+				priority: Priority | null;
+		  }
 		| { kind: "habit"; habitId: string; name: string; emoji: string; date: string }
 		| { kind: "pages"; bookId: string; title: string; page: number; from: number }
 	);
@@ -183,6 +221,11 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 /** A day the text named, never in the future; else today. */
 function dayOf(date: string | null, today: string): string {
 	return date && DAY.test(date) && !Number.isNaN(Date.parse(date)) && date <= today ? date : today;
+}
+
+/** A due day: any valid date, past or future. */
+function dueOf(date: string | null): string | null {
+	return date && DAY.test(date) && !Number.isNaN(Date.parse(date)) ? date : null;
 }
 
 function currencyOf(code: string | null, fallback: string): string {
@@ -242,6 +285,9 @@ function plan(raw: RawAction, ctx: CaptureContext, key: string): PlannedAction |
 				title: title.slice(0, 200),
 				price,
 				currency: currencyOf(raw.currency, ctx.baseCurrency),
+				listId: known(ctx.lists, raw.listId)?.id ?? null,
+				note: "",
+				now: raw.now === true,
 			};
 		}
 		case "card": {
@@ -249,7 +295,14 @@ function plan(raw: RawAction, ctx: CaptureContext, key: string): PlannedAction |
 			if (!title) return null;
 			const project =
 				known(ctx.projects, raw.projectId) ?? (ctx.projects.length === 1 ? ctx.projects[0] : null);
-			return { key, kind: "card", title: title.slice(0, 500), projectId: project?.id ?? null };
+			return {
+				key,
+				kind: "card",
+				title: title.slice(0, 500),
+				projectId: project?.id ?? null,
+				dueDate: dueOf(raw.dueDate),
+				priority: raw.priority && PRIORITIES.includes(raw.priority) ? raw.priority : null,
+			};
 		}
 		case "habit": {
 			const habit = known(ctx.habits, raw.habitId);
@@ -329,7 +382,11 @@ function withNulls(raw: RawAction): RawAction {
 		km: num(raw.km),
 		title: str(raw.title),
 		price: num(raw.price),
+		listId: str(raw.listId),
+		now: typeof raw.now === "boolean" ? raw.now : null,
 		projectId: str(raw.projectId),
+		dueDate: str(raw.dueDate),
+		priority: str(raw.priority) as Priority | null,
 		habitId: str(raw.habitId),
 		bookId: str(raw.bookId),
 		page: num(raw.page),

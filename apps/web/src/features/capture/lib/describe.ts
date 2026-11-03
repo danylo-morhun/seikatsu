@@ -2,11 +2,12 @@
 
 import type { CaptureContext, PlannedAction } from "@/features/capture/lib/plan";
 import { formatCurrency } from "@/features/kuroji/lib/format";
+import { PRIORITY_CONFIG } from "@/features/seiryu/lib/constants";
 import type { APPS_CONFIG } from "@/lib/app-themes";
 
 type Options = Pick<
 	CaptureContext,
-	"wallets" | "expenseCategories" | "incomeCategories" | "projects"
+	"wallets" | "expenseCategories" | "incomeCategories" | "projects" | "lists"
 >;
 
 const KM = new Intl.NumberFormat("pl-PL");
@@ -14,6 +15,8 @@ const DAY = new Intl.DateTimeFormat("en", { day: "numeric", month: "short", time
 
 const when = (date: string, today?: string) =>
 	date === today ? "today" : DAY.format(new Date(`${date}T00:00:00Z`));
+
+const line = (...parts: (string | null | undefined | false)[]) => parts.filter(Boolean).join(" · ");
 
 export function describeAction(
 	action: PlannedAction,
@@ -28,9 +31,7 @@ export function describeAction(
 			return {
 				app: "/kuroji",
 				title: `${action.kind === "income" ? "Income" : "Expense"} ${formatCurrency(action.amount, action.currency)}`,
-				detail: [action.description, category ?? "pick a category", when(action.date, today)]
-					.filter(Boolean)
-					.join(" · "),
+				detail: line(action.description, category ?? "pick a category", when(action.date, today)),
 			};
 		}
 		case "mileage":
@@ -43,16 +44,21 @@ export function describeAction(
 			return {
 				app: "/hoshii",
 				title: `Want: ${action.title}`,
-				detail:
-					action.price != null
-						? `${formatCurrency(action.price, action.currency)} · starts cooling`
-						: "starts cooling",
+				detail: line(
+					action.price != null && formatCurrency(action.price, action.currency),
+					options.lists.find((l) => l.id === action.listId)?.name,
+					action.now ? "straight to the Plan" : "starts cooling",
+				),
 			};
 		case "card":
 			return {
 				app: "/seiryu",
 				title: `Card: ${action.title}`,
-				detail: options.projects.find((p) => p.id === action.projectId)?.name ?? "pick a project",
+				detail: line(
+					options.projects.find((p) => p.id === action.projectId)?.name ?? "pick a project",
+					action.dueDate && `due ${action.dueDate === today ? "today" : when(action.dueDate)}`,
+					action.priority && PRIORITY_CONFIG[action.priority].label,
+				),
 			};
 		case "habit":
 			return {

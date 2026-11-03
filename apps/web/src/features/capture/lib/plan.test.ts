@@ -20,6 +20,7 @@ const ctx: CaptureContext = {
 		{ id: "p-home", name: "Home", columnId: "col-home" },
 		{ id: "p-wb", name: "wellbotany.pl", columnId: "col-wb" },
 	],
+	lists: [{ id: "l-tech", name: "Tech" }],
 	habits: [{ id: "h-gym", name: "Gym", emoji: "💪" }],
 	books: [{ id: "b-1984", title: "Nineteen Eighty-Four", currentPage: 26, pageCount: 318 }],
 };
@@ -34,7 +35,11 @@ const raw = (fields: Partial<RawAction> & Pick<RawAction, "kind">): RawAction =>
 	km: null,
 	title: null,
 	price: null,
+	listId: null,
+	now: null,
 	projectId: null,
+	dueDate: null,
+	priority: null,
 	habitId: null,
 	bookId: null,
 	page: null,
@@ -162,7 +167,44 @@ describe("toPlan", () => {
 
 	it("keeps a want with its price in the main currency", () => {
 		const [want] = actions({ actions: [raw({ kind: "want", title: "Kindle", price: 599 })] }, ctx);
-		expect(want).toEqual({ key: "a0", kind: "want", title: "Kindle", price: 599, currency: "PLN" });
+		expect(want).toEqual({
+			key: "a0",
+			kind: "want",
+			title: "Kindle",
+			price: 599,
+			currency: "PLN",
+			listId: null,
+			note: "",
+			now: false,
+		});
+	});
+
+	it("keeps a want's list and need-it-now", () => {
+		const [want, other] = actions(
+			{
+				actions: [
+					raw({ kind: "want", title: "Creatine", listId: "l-tech", now: true }),
+					raw({ kind: "want", title: "Hat", listId: "someone-else" }),
+				],
+			},
+			ctx,
+		);
+		expect(want).toMatchObject({ listId: "l-tech", now: true });
+		expect(other).toMatchObject({ listId: null, now: false });
+	});
+
+	it("keeps a card's due day, even ahead, and a known priority only", () => {
+		const [card, other] = actions(
+			{
+				actions: [
+					raw({ kind: "card", title: "Call", dueDate: "2026-11-04", priority: "high" }),
+					raw({ kind: "card", title: "Fix", dueDate: "tomorrow", priority: "asap" as never }),
+				],
+			},
+			ctx,
+		);
+		expect(card).toMatchObject({ dueDate: "2026-11-04", priority: "high" });
+		expect(other).toMatchObject({ dueDate: null, priority: null });
 	});
 });
 

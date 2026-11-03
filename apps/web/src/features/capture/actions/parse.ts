@@ -21,7 +21,10 @@ export type CapturePlan = {
 	/** What the line asked for that can't be done, and why. */
 	skipped: string[];
 	/** What the dialog's pickers offer when an action still needs a wallet, category or project. */
-	options: Pick<CaptureContext, "wallets" | "expenseCategories" | "incomeCategories" | "projects">;
+	options: Pick<
+		CaptureContext,
+		"wallets" | "expenseCategories" | "incomeCategories" | "projects" | "lists"
+	>;
 };
 
 /** The free tier's light model takes 15-20 s for a line; past this, give up. */
@@ -51,14 +54,14 @@ export async function parseCapture(
 		return { error: "Couldn't read that. Try again." };
 	}
 
-	const { wallets, expenseCategories, incomeCategories, projects } = ctx;
+	const { wallets, expenseCategories, incomeCategories, projects, lists } = ctx;
 	return {
 		success: true,
 		data: {
 			workspaceId: ws.id,
 			today: ctx.today,
 			...toPlan(answer, ctx),
-			options: { wallets, expenseCategories, incomeCategories, projects },
+			options: { wallets, expenseCategories, incomeCategories, projects, lists },
 		},
 	};
 }
