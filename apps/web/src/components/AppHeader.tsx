@@ -11,6 +11,7 @@ import { useDesign } from "@/components/DesignProvider";
 import { ShortcutsButton } from "@/components/KeyboardShortcuts";
 import { SectionNav } from "@/components/SectionNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ZoneSwitcher } from "@/components/ZoneSwitcher";
 import { requestLogService } from "@/features/aisha/lib/events";
 import { requestAdd } from "@/features/hoshii/lib/events";
 import { requestNewHabit } from "@/features/keizoku/lib/events";
@@ -22,6 +23,7 @@ import { OfflinePill } from "@/features/pwa/components/OfflinePill";
 import { requestNewCard } from "@/features/seiryu/lib/events";
 import { requestNewBook } from "@/features/tsundoku/lib/events";
 import { getAppForPath } from "@/lib/app-themes";
+import { getZoneForPath } from "@/lib/zones";
 
 // Kuroji-only controls load on demand so the other apps' shells don't ship the
 // form/date-picker code (zod, react-hook-form, react-day-picker).
@@ -75,12 +77,16 @@ const CAPTURE_CLASSIC = "xl:w-auto xl:gap-2 xl:px-3 max-md:hidden";
 interface Props {
 	workspaceId?: string;
 	baseCurrency?: string;
+	hiddenApps?: string[];
 }
 
-export function AppHeader({ workspaceId, baseCurrency }: Props) {
+export function AppHeader({ workspaceId, baseCurrency, hiddenApps = [] }: Props) {
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
 	const app = getAppForPath(pathname);
+	const zone = getZoneForPath(pathname);
+	// A zone's own page: the header names the zone, as it names an app on the app's pages.
+	const zonePage = !app && zone ? zone : null;
 
 	const isSettings = pathname.startsWith("/settings");
 	const isKurojiHome = pathname === "/kuroji";
@@ -179,19 +185,28 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 				/>
 				{!glass && <div aria-hidden className="mr-1 h-4 w-px shrink-0 bg-border" />}
 				<Link
-					href={app?.href ?? (isSettings ? "/settings" : "/")}
+					href={app?.href ?? zonePage?.href ?? (isSettings ? "/settings" : "/")}
 					className={cn(
 						"flex min-w-0 items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
 						tabs.length > 0 && "md:max-lg:hidden",
 					)}
 				>
 					{app && <span className="text-primary">{app.kanji}</span>}
+					{zonePage && <span aria-hidden>{zonePage.kanji}</span>}
 					<span className="truncate">
-						{app ? app.name : isSettings ? "Settings" : "seikatsu"}
+						{app ? app.name : zonePage ? zonePage.name : isSettings ? "Settings" : "seikatsu"}
 						{/* The sidebar already names the app's purpose; on a phone or beside tabs the label is noise. */}
 						{app && showPurpose && <span className="hidden md:inline"> · {app.label}</span>}
 					</span>
 				</Link>
+				{app && zone && (
+					<ZoneSwitcher
+						zone={zone}
+						current={app.href}
+						hiddenApps={hiddenApps}
+						className={cn("-ml-0.5", tabs.length > 0 && "md:max-lg:hidden")}
+					/>
+				)}
 			</div>
 
 			{tabs.length > 0 && (
@@ -203,7 +218,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 				/>
 			)}
 
-			{(app || pathname === "/") && (
+			{(app || zonePage || pathname === "/") && (
 				<div className="ml-auto flex min-w-0 items-center gap-1.5">
 					<OfflinePill />
 					{/* The plan picks its own month. */}

@@ -73,7 +73,11 @@ export function AppShell({
 			<SidebarProvider defaultOpen={sidebarDefaultOpen} className={theme}>
 				<AppSidebar workspaceName={workspaceName} hiddenApps={hiddenApps} user={user} />
 				<SidebarInset className="min-w-0">
-					<AppHeader workspaceId={workspaceId} baseCurrency={baseCurrency} />
+					<AppHeader
+						workspaceId={workspaceId}
+						baseCurrency={baseCurrency}
+						hiddenApps={hiddenApps}
+					/>
 					{children}
 				</SidebarInset>
 				<KeyboardShortcuts />
