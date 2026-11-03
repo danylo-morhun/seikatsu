@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { warmPages } from "@/features/pwa/lib/sw-client";
 import { readAppEntry } from "@/lib/app-entry";
 import { APPS_CONFIG } from "@/lib/app-themes";
+import { ZONES } from "@/lib/zones";
 
 const KEY = "seikatsu:warmed-at";
 const EVERY_MS = 6 * 60 * 60 * 1000;
@@ -27,7 +28,11 @@ export function OfflineWarmup() {
 		navigator.serviceWorker.ready.then(() => {
 			const run = () => {
 				if (cancelled) return;
-				const urls = ["/", ...Object.keys(APPS_CONFIG).map((href) => readAppEntry(href) ?? href)];
+				const urls = [
+					"/",
+					...ZONES.map((zone) => zone.href),
+					...Object.keys(APPS_CONFIG).map((href) => readAppEntry(href) ?? href),
+				];
 				warmPages(urls).catch(() => undefined);
 				try {
 					window.localStorage.setItem(KEY, String(Date.now()));
