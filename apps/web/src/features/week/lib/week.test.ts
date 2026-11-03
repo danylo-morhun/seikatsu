@@ -83,10 +83,33 @@ describe("buildWeek", () => {
 		expect(days[1].done.map((e) => e.title)).toEqual(["Merge PRs", "20 pages read", "Hat"]);
 		const thursday = days[3];
 		expect(thursday.done).toEqual([]);
-		expect(thursday.plan.map((e) => e.title)).toEqual(["Call the garage", "2 habits"]);
+		expect(thursday.plan.map((e) => e.title)).toEqual(["Call the garage"]);
 		expect(thursday.plan[0].card).toEqual({ id: "c2", title: "Call the garage" });
 		expect(days[4].plan.map((e) => e.note)).toEqual(["done cooling: decide"]);
 		expect(days[5].plan[0].note).toBe("2400 PLN · recurring");
+	});
+
+	it("folds a day of many alike events into one line", () => {
+		const { days: busy } = buildWeek(
+			{
+				...empty,
+				jobs: [
+					...["A", "B", "C", "D", "E"].map((company) => ({
+						date: "2026-11-02",
+						company,
+						what: "ghosted" as const,
+					})),
+					{ date: "2026-11-02", company: "Solo", what: "interview" },
+				],
+			},
+			TODAY,
+			WEEK,
+			money,
+		);
+		expect(busy[0].done.map((e) => [e.title, e.note])).toEqual([
+			["5 closed as ghosted", "A, B, C and 2 more"],
+			["Solo", "interview"],
+		]);
 	});
 
 	it("marks today, which carries both", () => {

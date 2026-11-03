@@ -108,6 +108,22 @@ const on = <T extends { date: string }>(rows: T[], date: string) =>
 
 const sumOf = <T>(rows: T[], pick: (row: T) => number) => rows.reduce((acc, r) => acc + pick(r), 0);
 
+/** Up to this many done cards get a line each; more fold into one. */
+const APART = 3;
+
+/** "Acme, Beta, Gamma and 12 more". */
+function listOf(names: string[], shown = 3): string {
+	const head = names.slice(0, shown).join(", ");
+	return names.length > shown ? `${head} and ${names.length - shown} more` : head;
+}
+
+/** Rows grouped by what happened, in first-seen order. */
+function byKind<T extends { what: string }>(rows: T[]): [T["what"], T[]][] {
+	const groups = new Map<T["what"], T[]>();
+	for (const row of rows) groups.set(row.what, [...(groups.get(row.what) ?? []), row]);
+	return [...groups];
+}
+
 /** What happened that day, one line per app (several for cards, jobs and wants). */
 function doneOn(data: WeekData, date: string, money: Money): WeekEntry[] {
 	const entries: WeekEntry[] = [];
@@ -120,14 +136,24 @@ function doneOn(data: WeekData, date: string, money: Money): WeekEntry[] {
 			note: plural(ticks.length, "habit"),
 			href: "/keizoku",
 		});
-	for (const card of on(data.cardsDone, date))
+	const cards = on(data.cardsDone, date);
+	if (cards.length > APART)
 		entries.push({
-			key: `seiryu:done:${card.id}`,
+			key: `seiryu:done:${date}`,
 			app: "/seiryu",
-			title: card.title,
-			note: "done",
-			href: `/seiryu/${card.projectId}/${card.id}`,
+			title: `${cards.length} cards done`,
+			note: listOf(cards.map((c) => c.title)),
+			href: "/seiryu",
 		});
+	else
+		for (const card of cards)
+			entries.push({
+				key: `seiryu:done:${card.id}`,
+				app: "/seiryu",
+				title: card.title,
+				note: "done",
+				href: `/seiryu/${card.projectId}/${card.id}`,
+			});
 	const spent = sumOf(on(data.spent, date), (r) => r.amount);
 	if (spent > 0)
 		entries.push({
@@ -152,28 +178,47 @@ function doneOn(data: WeekData, date: string, money: Money): WeekEntry[] {
 			title: `${km.toLocaleString("en-US")} km driven`,
 			href: "/aisha",
 		});
-	for (const [i, job] of on(data.jobs, date).entries())
-		entries.push({
-			key: `kyuu:${date}:${i}`,
-			app: "/kyuu",
-			title: job.company,
-			note: JOB_TEXT[job.what],
-			href: "/kyuu",
-		});
-	for (const [i, want] of on(data.wants, date)
-		.filter((w) => w.what !== "cools")
-		.entries())
-		entries.push({
-			key: `hoshii:${date}:${i}`,
-			app: "/hoshii",
-			title: want.title,
-			note: WANT_TEXT[want.what],
-			href: "/hoshii",
-		});
+	// A day can close dozens of applications at once: one line per kind of event.
+	for (const [what, jobs] of byKind(on(data.jobs, date)))
+		entries.push(
+			jobs.length === 1
+				? {
+						key: `kyuu:${date}:${what}`,
+						app: "/kyuu",
+						title: jobs[0].company,
+						note: JOB_TEXT[what],
+						href: "/kyuu",
+					}
+				: {
+						key: `kyuu:${date}:${what}`,
+						app: "/kyuu",
+						title: `${jobs.length} ${what === "applied" ? "applications sent" : JOB_TEXT[what]}`,
+						note: listOf(jobs.map((j) => j.company)),
+						href: "/kyuu",
+					},
+		);
+	for (const [what, wants] of byKind(on(data.wants, date).filter((w) => w.what !== "cools")))
+		entries.push(
+			wants.length === 1
+				? {
+						key: `hoshii:${date}:${what}`,
+						app: "/hoshii",
+						title: wants[0].title,
+						note: WANT_TEXT[what],
+						href: "/hoshii",
+					}
+				: {
+						key: `hoshii:${date}:${what}`,
+						app: "/hoshii",
+						title: `${plural(wants.length, "want")} ${WANT_TEXT[what]}`,
+						note: listOf(wants.map((w) => w.title)),
+						href: "/hoshii",
+					},
+		);
 	return entries;
 }
 
-/** What's dated that day ahead: cards due, wants done cooling, the car, bills. */
+/** What's dated that day ahead: cards due, the car, wants done cooling, bills. */
 function planOn(data: WeekData, date: string, money: Money): WeekEntry[] {
 	const entries: WeekEntry[] = [];
 	for (const card of on(data.cardsDue, date))
@@ -211,15 +256,7 @@ function planOn(data: WeekData, date: string, money: Money): WeekEntry[] {
 			note: `${money(bill.amount, bill.currency)} · recurring`,
 			href: "/kuroji",
 		});
-	const habits = sumOf(on(data.expected, date), (r) => r.count);
-	if (habits > 0)
-		entries.push({
-			key: `keizoku:plan:${date}`,
-			app: "/keizoku",
-			title: plural(habits, "habit"),
-			note: "on the list",
-			href: "/keizoku",
-		});
+	// Habits repeat every day: they count in the week's figures, not as a line per day.
 	return entries;
 }
 
