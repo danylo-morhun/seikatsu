@@ -14,6 +14,8 @@ export type CaptureContext = {
 	wallets: (Named & { currency: string })[];
 	expenseCategories: Named[];
 	incomeCategories: Named[];
+	/** Places they spend at often, as they wrote them, with the category they used. */
+	merchants: { name: string; categoryId: string }[];
 	vehicle: { id: string; name: string; currentKm: number } | null;
 	/** Each with the column new cards land in (the first not-done one). */
 	projects: (Named & { columnId: string })[];
@@ -150,12 +152,20 @@ not a copy of their words:
   ("надо шапку купить" → "Hat"; "хочу kindle paperwhite" → "Kindle Paperwhite").
 - card: a short imperative ("позвонить в СТО насчёт шин" → "Call the garage about tyres").
 - expense/income description: the merchant if named ("Orlen", "Lidl"), else a short noun
-  ("Coffee", "Fuel"). Never repeat the amount or the date.
+  ("Coffee", "Fuel"). Never repeat the amount or the date. A word that isn't an ordinary
+  noun is usually a merchant, often typed by ear in Cyrillic: match it to a known merchant
+  below ("обрут" → "Obrót Coffee") and take its spelling and its category; an unknown one,
+  write it in Latin letters ("обрут" → "Obrot").
+
+Category: a known merchant's category comes first. Otherwise think where the money went:
+coffee or a meal out is a cafe or restaurant, not groceries; food bought in a shop is groceries.
 
 Wallets:
 ${list(ctx.wallets, (w) => `(${w.currency})`)}
 Expense categories:
 ${list(ctx.expenseCategories)}
+Known merchants (name → category id):
+${ctx.merchants.map((m) => `- ${m.name} → ${m.categoryId}`).join("\n") || "(none)"}
 Income categories:
 ${list(ctx.incomeCategories)}
 Projects:
@@ -168,6 +178,29 @@ Books being read:
 ${list(books)}
 
 The line: ${JSON.stringify(text)}`;
+}
+
+/** Past expenses grouped by description and category → each place once, with the category it
+ * was filed under most, the most used places first. */
+export function pickMerchants(
+	rows: { description: string; categoryId: string; uses: number }[],
+	limit = 80,
+): CaptureContext["merchants"] {
+	const best = new Map<string, { name: string; categoryId: string; uses: number }>();
+	const total = new Map<string, number>();
+	for (const r of rows) {
+		const name = r.description.trim();
+		const key = name.toLowerCase();
+		if (!name) continue;
+		total.set(key, (total.get(key) ?? 0) + r.uses);
+		const prev = best.get(key);
+		if (!prev || r.uses > prev.uses)
+			best.set(key, { name, categoryId: r.categoryId, uses: r.uses });
+	}
+	return [...best.entries()]
+		.sort((a, b) => (total.get(b[0]) ?? 0) - (total.get(a[0]) ?? 0))
+		.slice(0, limit)
+		.map(([, m]) => ({ name: m.name, categoryId: m.categoryId }));
 }
 
 // ── Checking the answer ──────────────────────────────────────────────────────

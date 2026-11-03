@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildPrompt, type CaptureContext, isReady, type RawAction, toPlan } from "./plan";
+import {
+	buildPrompt,
+	type CaptureContext,
+	isReady,
+	pickMerchants,
+	type RawAction,
+	toPlan,
+} from "./plan";
 
 const actions = (answer: unknown, c: CaptureContext) => toPlan(answer, c).actions;
 
@@ -15,6 +22,7 @@ const ctx: CaptureContext = {
 		{ id: "c-food", name: "Groceries" },
 	],
 	incomeCategories: [{ id: "c-salary", name: "Salary" }],
+	merchants: [],
 	vehicle: { id: "v1", name: "Hyundai i30", currentKm: 84_210 },
 	projects: [
 		{ id: "p-home", name: "Home", columnId: "col-home" },
@@ -246,6 +254,23 @@ describe("isReady", () => {
 		expect(isReady({ ...expense, amount: 0 } as typeof expense)).toBe(false);
 		expect(isReady({ ...want, title: "  " } as typeof want)).toBe(false);
 		expect(isReady({ ...mileage, km: 84_000 } as typeof mileage)).toBe(false);
+	});
+});
+
+describe("pickMerchants", () => {
+	it("lists each place once, under the category used most, busiest first", () => {
+		expect(
+			pickMerchants([
+				{ description: "Lidl", categoryId: "c-food", uses: 2 },
+				{ description: "Obrót Coffee", categoryId: "c-cafe", uses: 3 },
+				{ description: "obrót coffee ", categoryId: "c-food", uses: 1 },
+				{ description: "Lidl", categoryId: "c-home", uses: 1 },
+				{ description: " ", categoryId: "c-food", uses: 9 },
+			]),
+		).toEqual([
+			{ name: "Obrót Coffee", categoryId: "c-cafe" },
+			{ name: "Lidl", categoryId: "c-food" },
+		]);
 	});
 });
 
