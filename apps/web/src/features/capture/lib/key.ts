@@ -9,3 +9,10 @@ export function isCaptureKey(e: {
 }): boolean {
 	return e.code === "KeyK" && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey;
 }
+
+/** Opens capture from anywhere on the page; `detail` is a line to read at once. */
+export const CAPTURE_EVENT = "seikatsu:capture";
+
+export function openCapture(text = "") {
+	window.dispatchEvent(new CustomEvent(CAPTURE_EVENT, { detail: text }));
+}
