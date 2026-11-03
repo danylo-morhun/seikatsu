@@ -69,6 +69,8 @@ export const seiryuCards = pgTable(
 		description: text("description"),
 		priority: seiryuCardPriorityEnum("priority"),
 		dueDate: date("due_date"),
+		/** The user's day it reached a finish column; null while open. Feeds the week's recap. */
+		doneOn: date("done_on"),
 		position: varchar("position", { length: 255 }).notNull(),
 		archivedAt: timestamp("archived_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
