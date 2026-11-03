@@ -57,10 +57,10 @@ export const RESPONSE_SCHEMA = {
 					currency: nullable("string", "ISO code (PLN, EUR, USD, CHF, GBP, UAH)"),
 					categoryId: nullable("string", "expense/income: id from the category list"),
 					walletId: nullable("string", "expense/income: id from the wallet list, if named"),
-					description: nullable("string", "expense/income: short merchant or note"),
+					description: nullable("string", "expense/income: merchant, else a short noun"),
 					date: nullable("string", "YYYY-MM-DD when the text names another day"),
 					km: nullable("integer", "mileage: the odometer reading in km"),
-					title: nullable("string", "want/card: the name, in the user's words"),
+					title: nullable("string", "want: the thing itself; card: a short imperative"),
 					price: nullable("number", "want: price if given"),
 					projectId: nullable("string", "card: id from the project list"),
 					habitId: nullable("string", "habit: id from the habit list"),
@@ -94,6 +94,9 @@ export const RESPONSE_SCHEMA = {
 const list = <T extends Named>(items: T[], extra?: (item: T) => string) =>
 	items.map((i) => `- ${i.id}: ${i.name}${extra ? ` ${extra(i)}` : ""}`).join("\n") || "(none)";
 
+/** The language the apps are kept in: titles come out in it, whatever the line was typed in. */
+const LANGUAGE = "English";
+
 export function buildPrompt(text: string, ctx: CaptureContext): string {
 	const books = ctx.books.map((b) => ({
 		id: b.id,
@@ -109,7 +112,7 @@ Kinds:
   € → EUR, $ → USD; none named → null), the best matching category, a short description.
 - mileage: the car's odometer. Current reading ${ctx.vehicle ? `${ctx.vehicle.currentKm} km` : "unknown (no car)"}.
   "drove 300 km" means km = current + 300.
-- want: something they'd like to buy someday ("хочу Kindle"). Title, price if given.
+- want: something to buy ("хочу Kindle", "надо шапку купить"). Title, price if given.
 - card: a task to do ("позвонить в СТО"). Title, and the project it belongs to if one fits.
 - habit: a habit done ("был в зале" → the gym habit). Only habits from the list.
 - pages: reading progress. page = the page reached ("до 52"); pagesRead when only a count
@@ -118,7 +121,15 @@ Kinds:
 Fuel bought with a reading ("бенз 240 zł, 84 500 км") is two actions: an expense and mileage.
 Dates: "вчера" = the day before today; leave date null for today.
 Use ids only from these lists; when nothing fits, use null. Never invent ids.
-Skip anything that fits no kind. Keep titles and descriptions in the user's language.
+Skip anything that fits no kind.
+
+Write every title and description in ${LANGUAGE}, the way they'd name it in the app themselves,
+not a copy of their words:
+- want: just the thing, a short noun with a capital letter, brand and model kept
+  ("надо шапку купить" → "Hat"; "хочу kindle paperwhite" → "Kindle Paperwhite").
+- card: a short imperative ("позвонить в СТО насчёт шин" → "Call the garage about tyres").
+- expense/income description: the merchant if named ("Orlen", "Lidl"), else a short noun
+  ("Coffee", "Fuel"). Never repeat the amount or the date.
 
 Wallets:
 ${list(ctx.wallets, (w) => `(${w.currency})`)}
@@ -326,10 +337,21 @@ function withNulls(raw: RawAction): RawAction {
 	};
 }
 
-/** Whether an action has all it needs; the dialog asks for what's missing. */
+/** Whether an action has all it needs (after the user's edits); Save waits until it does. */
 export function isReady(action: PlannedAction): boolean {
-	if (action.kind === "expense" || action.kind === "income")
-		return action.categoryId != null && action.walletId != null;
-	if (action.kind === "card") return action.projectId != null;
-	return true;
+	switch (action.kind) {
+		case "expense":
+		case "income":
+			return action.amount > 0 && action.categoryId != null && action.walletId != null;
+		case "card":
+			return action.projectId != null && action.title.trim() !== "";
+		case "want":
+			return action.title.trim() !== "" && (action.price == null || action.price > 0);
+		case "mileage":
+			return action.km > action.from;
+		case "pages":
+			return action.page > action.from;
+		case "habit":
+			return true;
+	}
 }
