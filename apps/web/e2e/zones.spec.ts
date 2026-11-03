@@ -35,6 +35,9 @@ test("header switches between a zone's apps", async ({ page }) => {
 test("a zone page's number keys open its apps", async ({ page }) => {
 	await page.goto("/life");
 	await expect(page.getByRole("heading", { name: "Life", level: 1 })).toBeVisible();
-	await page.keyboard.press("1");
-	await expect(page).toHaveURL(/\/tsundoku/);
+	// The page is server-rendered: keys attach on hydration, so press until it lands.
+	await expect(async () => {
+		await page.keyboard.press("1");
+		await expect(page).toHaveURL(/\/tsundoku/, { timeout: 1000 });
+	}).toPass();
 });
