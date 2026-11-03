@@ -17,6 +17,7 @@ describe("describeAction", () => {
 				kind: "expense",
 				amount: 240,
 				currency: "PLN",
+				currencyNamed: true,
 				categoryId: "c-fuel",
 				walletId: "w",
 				description: "Orlen",

@@ -26,7 +26,7 @@ import { parseNumber } from "@/features/aisha/lib/format";
 import { type CapturePlan, parseCapture } from "@/features/capture/actions/parse";
 import { applyAction } from "@/features/capture/lib/apply";
 import { describeAction } from "@/features/capture/lib/describe";
-import { isReady, type PlannedAction } from "@/features/capture/lib/plan";
+import { isReady, type PlannedAction, withWallet } from "@/features/capture/lib/plan";
 import { CurrencySelect, Toggle } from "@/features/hoshii/components/Parts";
 import { readCaptureMemory } from "@/features/kuroji/lib/capture-memory";
 import { PRIORITIES, PRIORITY_CONFIG, type Priority } from "@/features/seiryu/lib/constants";
@@ -75,18 +75,24 @@ export function CaptureDialog({
 				return;
 			}
 			const memory = readCaptureMemory(result.data.workspaceId);
-			const owned = (wallet: string | undefined) =>
-				result.data.options.wallets.some((w) => w.id === wallet) ? wallet : undefined;
+			const walletOf = (id: string | undefined) =>
+				result.data.options.wallets.find((w) => w.id === id);
 			setPlan(result.data);
 			setRows(
-				result.data.actions.map((action) => ({
+				result.data.actions.map((action) => {
 					// The wallet the Kuroji form last paid from, when the line named none.
-					action:
+					const last =
 						(action.kind === "expense" || action.kind === "income") && !action.walletId
-							? { ...action, walletId: owned(memory.wallet?.[action.kind]) ?? null }
-							: action,
-					on: true,
-				})),
+							? walletOf(memory.wallet?.[action.kind])
+							: undefined;
+					return {
+						action:
+							last && (action.kind === "expense" || action.kind === "income")
+								? withWallet(action, last)
+								: action,
+						on: true,
+					};
+				}),
 			);
 			if (result.data.actions.length === 0 && result.data.skipped.length === 0)
 				setError("Nothing to save in that. Try naming an amount, a task or a habit.");
@@ -383,7 +389,7 @@ function Fields({
 							<div className="w-24 shrink-0">
 								<CurrencySelect
 									value={action.currency}
-									onChange={(currency) => onChange({ currency })}
+									onChange={(currency) => onChange({ currency, currencyNamed: true })}
 								/>
 							</div>
 						</div>
@@ -395,7 +401,10 @@ function Fields({
 							value={action.walletId}
 							items={options.wallets.map((w) => ({ id: w.id, name: `${w.name} · ${w.currency}` }))}
 							disabled={disabled}
-							onChange={(walletId) => onChange({ walletId })}
+							onChange={(walletId) => {
+								const wallet = options.wallets.find((w) => w.id === walletId);
+								if (wallet) onChange(withWallet(action, wallet));
+							}}
 						/>
 					</Field>
 					<Field label="Category">

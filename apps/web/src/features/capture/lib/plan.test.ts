@@ -6,6 +6,7 @@ import {
 	pickMerchants,
 	type RawAction,
 	toPlan,
+	withWallet,
 } from "./plan";
 
 const actions = (answer: unknown, c: CaptureContext) => toPlan(answer, c).actions;
@@ -78,6 +79,7 @@ describe("toPlan", () => {
 				kind: "expense",
 				amount: 240,
 				currency: "PLN",
+				currencyNamed: true,
 				categoryId: "c-fuel",
 				walletId: null,
 				description: "Orlen",
@@ -117,7 +119,24 @@ describe("toPlan", () => {
 			{ actions: [raw({ kind: "expense", amount: 300, walletId: "w-uah" })] },
 			ctx,
 		);
-		expect(expense).toMatchObject({ walletId: "w-uah", currency: "UAH" });
+		expect(expense).toMatchObject({ walletId: "w-uah", currency: "UAH", currencyNamed: false });
+	});
+
+	it("moves an unnamed currency to a wallet picked later, never a named one", () => {
+		const [loose, named] = actions(
+			{
+				actions: [
+					raw({ kind: "expense", amount: 350.14 }),
+					raw({ kind: "expense", amount: 20, currency: "EUR" }),
+				],
+			},
+			ctx,
+		);
+		const privat = { id: "w-uah", currency: "UAH" };
+		if (loose.kind !== "expense" || named.kind !== "expense") throw new Error("not expenses");
+		expect(loose.currency).toBe("PLN");
+		expect(withWallet(loose, privat)).toMatchObject({ walletId: "w-uah", currency: "UAH" });
+		expect(withWallet(named, privat)).toMatchObject({ walletId: "w-uah", currency: "EUR" });
 	});
 
 	it("drops a reading below the odometer, and a future date becomes today", () => {
