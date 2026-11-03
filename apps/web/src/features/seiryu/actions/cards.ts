@@ -34,6 +34,7 @@ import {
 	updateCardSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
 import { generateKeyBetween } from "@/lib/position";
+import { getUserToday } from "@/lib/timezone";
 
 type CardRow = Omit<typeof seiryuCards.$inferSelect, "description"> & {
 	description?: string | null;
@@ -251,9 +252,11 @@ export async function moveCard(
 	if (column?.projectId !== card.projectId) return { error: "Invalid column" };
 
 	const position = newPosition ?? (await endOfColumn(newColumnId));
+	// Done on the day it first reaches a finish column; reopened, it's open again.
+	const doneOn = column.isDone ? (card.doneOn ?? (await getUserToday())) : null;
 	await db
 		.update(seiryuCards)
-		.set({ columnId: newColumnId, position })
+		.set({ columnId: newColumnId, position, doneOn })
 		.where(eq(seiryuCards.id, cardId));
 
 	// Open-card counts in the project list change too.

@@ -35,6 +35,7 @@ export async function getOwnedCard(cardId: string, workspaceId: string) {
 			projectId: seiryuCards.projectId,
 			columnId: seiryuCards.columnId,
 			position: seiryuCards.position,
+			doneOn: seiryuCards.doneOn,
 		})
 		.from(seiryuCards)
 		.innerJoin(seiryuProjects, eq(seiryuProjects.id, seiryuCards.projectId))
@@ -46,7 +47,7 @@ export async function getOwnedCard(cardId: string, workspaceId: string) {
 /** The column's project if it belongs to the workspace — one query. */
 export async function getOwnedColumn(columnId: string, workspaceId: string) {
 	const [column] = await db
-		.select({ projectId: seiryuColumns.projectId })
+		.select({ projectId: seiryuColumns.projectId, isDone: seiryuColumns.isDone })
 		.from(seiryuColumns)
 		.innerJoin(seiryuProjects, eq(seiryuProjects.id, seiryuColumns.projectId))
 		.where(and(eq(seiryuColumns.id, columnId), eq(seiryuProjects.workspaceId, workspaceId)))
