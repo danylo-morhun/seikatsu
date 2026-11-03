@@ -9,6 +9,10 @@ const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/interaction
  */
 const MODELS = ["gemini-3.8-flash", "gemini-3.5-flash-lite"] as const;
 
+/** For someone waiting on the answer (capture): only the light model, given the whole wait.
+ * Flash is busy too often to be worth the first seconds. */
+export const QUICK = ["gemini-3.5-flash-lite"] as const;
+
 export class GeminiError extends Error {
 	constructor(
 		message: string,
@@ -36,11 +40,12 @@ export async function askGemini(
 	prompt: string,
 	schema: Record<string, unknown>,
 	timeoutMs = 20_000,
+	models: readonly string[] = MODELS,
 ): Promise<unknown> {
 	let last: GeminiError | null = null;
-	for (const [i, model] of MODELS.entries()) {
-		// Don't let a busy first model eat the time the light one needs.
-		const wait = i < MODELS.length - 1 ? Math.min(timeoutMs, FIRST_TRY_MS) : timeoutMs;
+	for (const [i, model] of models.entries()) {
+		// Don't let a busy first model eat the time the next one needs.
+		const wait = i < models.length - 1 ? Math.min(timeoutMs, FIRST_TRY_MS) : timeoutMs;
 		try {
 			return await askOnce(model, prompt, schema, wait);
 		} catch (err) {
@@ -50,7 +55,7 @@ export async function askGemini(
 	}
 	if (last?.overloaded) {
 		await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
-		return askOnce(MODELS[MODELS.length - 1], prompt, schema, timeoutMs);
+		return askOnce(models[models.length - 1], prompt, schema, timeoutMs);
 	}
 	throw last ?? new GeminiError("Gemini failed");
 }
