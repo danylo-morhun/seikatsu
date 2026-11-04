@@ -16,7 +16,13 @@ import {
 	updateTransaction,
 } from "@/features/kuroji/actions/transactions";
 import { transactionInputSchema } from "@/features/kuroji/lib/transaction-schema";
-import { followUp, logEvent, setArchived, setStatus } from "@/features/kyuu/actions/progress";
+import {
+	followUp,
+	ghostApplications,
+	logEvent,
+	setArchived,
+	setStatus,
+} from "@/features/kyuu/actions/progress";
 import { EVENT_KINDS, STATUSES } from "@/features/kyuu/lib/stages";
 import type { OfflineOps, OpName, OpResult } from "@/features/pwa/lib/ops";
 import {
@@ -219,6 +225,13 @@ export const REGISTRY: { [N in OpName]: Entry<N> } = {
 	"kyuu.setArchived": {
 		schema: z.object({ applicationId: z.uuid(), archived: z.boolean() }),
 		run: ({ applicationId, archived }) => setArchived(applicationId, archived),
+	},
+	"kyuu.ghost": {
+		schema: z.object({ ids: z.array(z.uuid()).max(1000), on: day }),
+		run: async ({ ids, on }) => {
+			const result = await ghostApplications(ids, on);
+			return "error" in result ? result : { success: true };
+		},
 	},
 	"aisha.addReading": {
 		schema: z.object({ vehicleId: z.uuid(), id: z.uuid(), date: day, km: z.number() }),

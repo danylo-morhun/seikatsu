@@ -143,12 +143,17 @@ export async function followUp(
 }
 
 /** Closes sent applications nobody answered as ghosted, logged today. Others are skipped. */
-export async function ghostApplications(ids: string[]): Promise<Result<{ count: number }>> {
+export async function ghostApplications(
+	ids: string[],
+	on?: string,
+): Promise<Result<{ count: number }>> {
 	const parsed = z.array(z.string().uuid()).max(1000).safeParse(ids);
 	if (!parsed.success) return { error: "Invalid selection" };
 	if (parsed.data.length === 0) return { success: true, data: { count: 0 } };
 	const ws = await requireWorkspace();
-	const today = await getUserToday();
+	// Queued offline, it carries the day it was done; never a day still to come.
+	const userToday = await getUserToday();
+	const today = on && /^\d{4}-\d{2}-\d{2}$/.test(on) && on < userToday ? on : userToday;
 
 	const count = await db.transaction(async (tx) => {
 		const closed = await tx
