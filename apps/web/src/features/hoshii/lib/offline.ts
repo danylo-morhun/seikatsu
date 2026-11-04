@@ -34,4 +34,4 @@ export function sendReorder(item: { id: string; title: string }, position: strin
 }
 
 /** The toast for a change kept on this device. */
-export const QUEUED_TOAST = "Saved on this device. It syncs when you're back online.";
+export { QUEUED_TOAST } from "@/features/pwa/lib/run";

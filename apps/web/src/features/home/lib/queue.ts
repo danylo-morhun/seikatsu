@@ -10,8 +10,8 @@ export type QueueTone = "overdue" | "due" | "info";
 
 /** What the row's button does, right on the home. "open" only links into the app. */
 export type QueueAct =
-	| { kind: "done"; cardId: string; columnId: string }
-	| { kind: "decide"; itemId: string }
+	| { kind: "done"; cardId: string; columnId: string; from: { columnId: string; position: string } }
+	| { kind: "decide"; itemId: string; base: number | null; currency: string }
 	| { kind: "ghost"; ids: string[] }
 	| { kind: "open" };
 
@@ -70,7 +70,12 @@ function cardItems(cards: CardToday[], today: string): QueueItem[] {
 			href: `/seiryu/${card.projectId}/${card.id}`,
 			tone: late > 0 ? "overdue" : "due",
 			act: card.doneColumnId
-				? { kind: "done", cardId: card.id, columnId: card.doneColumnId }
+				? {
+						kind: "done",
+						cardId: card.id,
+						columnId: card.doneColumnId,
+						from: { columnId: card.columnId, position: card.position },
+					}
 				: { kind: "open" },
 		};
 	});
@@ -86,7 +91,7 @@ function wantItems(wants: WantsToday): QueueItem[] {
 					note: "Cooled down: still want it?",
 					href: "/hoshii",
 					tone: "due",
-					act: { kind: "decide", itemId: want.id },
+					act: { kind: "decide", itemId: want.id, base: want.base, currency: wants.currency },
 				}))
 			: [
 					{

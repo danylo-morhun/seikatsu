@@ -11,12 +11,15 @@ const card = (id: string, dueDate: string, doneColumnId: string | null = "col-do
 	dueDate,
 	projectId: "p",
 	projectName: "Home",
+	columnId: "col-todo",
+	position: "a0",
 	doneColumnId,
 });
 
 const wants = (n: number) => ({
 	decide: n,
-	toDecide: Array.from({ length: n }, (_, i) => ({ id: `w${i}`, title: `Want ${i}` })),
+	toDecide: Array.from({ length: n }, (_, i) => ({ id: `w${i}`, title: `Want ${i}`, base: null })),
+	currency: "PLN",
 	canBuy: 0,
 	nextBuy: null,
 	plan: 0,
@@ -54,7 +57,12 @@ describe("buildQueue", () => {
 			{ ...empty, cards: [card("a", TODAY), card("b", TODAY, null)] },
 			TODAY,
 		);
-		expect(withDone.act).toEqual({ kind: "done", cardId: "a", columnId: "col-done" });
+		expect(withDone.act).toEqual({
+			kind: "done",
+			cardId: "a",
+			columnId: "col-done",
+			from: { columnId: "col-todo", position: "a0" },
+		});
 		expect(without.act).toEqual({ kind: "open" });
 	});
 

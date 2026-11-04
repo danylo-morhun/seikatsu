@@ -30,9 +30,9 @@ import { BuyDialog } from "@/features/hoshii/components/BuyDialog";
 import { ItemDialog } from "@/features/hoshii/components/ItemDialog";
 import { Thumb } from "@/features/hoshii/components/Thumb";
 import { daysBetween, formatDay } from "@/features/hoshii/lib/dates";
+import { keepWant, moveWant, releaseWant } from "@/features/hoshii/lib/decide";
 import { formatMoney, plural } from "@/features/hoshii/lib/format";
 import type { MoveTarget } from "@/features/hoshii/lib/hoshii-schemas";
-import { QUEUED_TOAST, sendMove } from "@/features/hoshii/lib/offline";
 import { shopOf } from "@/features/hoshii/lib/product";
 
 export type Stage = "decide" | "cooling" | "plan" | "bought" | "released";
@@ -88,36 +88,25 @@ export function useItemLayer({
 	const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
 	const sheetItem = sheetId ? byId.get(sheetId) : undefined;
 
+	const hide = useCallback(
+		(item: HoshiiItem) => hideOnMove && setHidden((h) => new Set(h).add(item.id)),
+		[hideOnMove],
+	);
+	const show = useCallback(
+		(item: HoshiiItem) =>
+			setHidden((h) => {
+				const next = new Set(h);
+				next.delete(item.id);
+				return next;
+			}),
+		[],
+	);
 	const move = useCallback(
 		async (item: HoshiiItem, to: MoveTarget, done: string, undoTo: MoveTarget | null) => {
-			if (hideOnMove) setHidden((h) => new Set(h).add(item.id));
-			const result = await sendMove(item, to).catch(() => FAILED);
-			if ("error" in result) {
-				setHidden((h) => {
-					const next = new Set(h);
-					next.delete(item.id);
-					return next;
-				});
-				toast.error(result.error);
-				return;
-			}
-			if ("queued" in result) {
-				toast(QUEUED_TOAST);
-				return;
-			}
-			if (!undoTo) {
-				toast(done);
-				return;
-			}
-			toast(done, {
-				action: {
-					label: "Undo",
-					onClick: () =>
-						void sendMove(item, undoTo).then((r) => "error" in r && toast.error(r.error)),
-				},
-			});
+			hide(item);
+			await moveWant(item, to, done, undoTo, () => show(item));
 		},
-		[hideOnMove],
+		[hide, show],
 	);
 
 	const actions = useMemo(
@@ -131,7 +120,8 @@ export function useItemLayer({
 			remove: (item: HoshiiItem) => setDeleting(item),
 			keep: (item: HoshiiItem) => {
 				if (stageOf(item, today) !== "decide") return;
-				void move(item, "plan", `Kept · ${item.title} joins the Plan`, "cooling");
+				hide(item);
+				void keepWant(item, () => show(item));
 			},
 			needNow: (item: HoshiiItem) => {
 				if (stageOf(item, today) !== "cooling") return;
@@ -139,9 +129,8 @@ export function useItemLayer({
 			},
 			release: (item: HoshiiItem) => {
 				if (item.state !== "cooling" && item.state !== "plan") return;
-				const saved =
-					item.base != null ? ` · ${formatMoney(item.base, chrome.currency, true)} not spent` : "";
-				void move(item, "released", `Let go${saved}`, item.state);
+				hide(item);
+				void releaseWant(item, item.state, chrome.currency, () => show(item));
 			},
 			/** A want let go, wanted again: back where it was decided from. */
 			restore: (item: HoshiiItem) =>
@@ -157,7 +146,7 @@ export function useItemLayer({
 					null,
 				),
 		}),
-		[move, today, chrome.currency],
+		[move, hide, show, today, chrome.currency],
 	);
 
 	const layer = (

@@ -14,9 +14,9 @@ import { Kbd } from "@/components/Kbd";
 import { loadDialog } from "@/features/capture/components/CaptureButton";
 import { openCapture } from "@/features/capture/lib/key";
 import type { QueueItem } from "@/features/home/lib/queue";
-import { sendMove } from "@/features/hoshii/lib/offline";
+import { keepWant, releaseWant } from "@/features/hoshii/lib/decide";
 import { ghostApplications } from "@/features/kyuu/actions/progress";
-import { placeCard } from "@/features/seiryu/lib/offline";
+import { finishCard } from "@/features/seiryu/lib/finish";
 import { APPS_CONFIG } from "@/lib/app-themes";
 
 /** One line about anything: opens capture with it, already reading. */
@@ -66,6 +66,20 @@ export function TodayQueue({ items }: { items: QueueItem[] }) {
 	const left = items.filter((i) => !gone.has(i.key));
 	const shown = all ? left : left.slice(0, FIRST);
 
+	const hide = (key: string) => setGone((prev) => new Set(prev).add(key));
+	const show = (key: string) =>
+		setGone((prev) => {
+			const next = new Set(prev);
+			next.delete(key);
+			return next;
+		});
+
+	/** The row goes at once; the app's own act gives the feedback and brings it back on failure or undo. */
+	function handle(key: string, act: (back: () => void) => Promise<unknown>) {
+		hide(key);
+		void act(() => show(key));
+	}
+
 	function settle(key: string, run: () => Promise<{ error: string } | object>) {
 		setGone((prev) => new Set(prev).add(key));
 		void run()
@@ -93,7 +107,7 @@ export function TodayQueue({ items }: { items: QueueItem[] }) {
 	return (
 		<ul aria-label="Waiting today" className="inset-group lg:flex-1">
 			{shown.map((item) => (
-				<QueueRow key={item.key} item={item} settle={settle} />
+				<QueueRow key={item.key} item={item} settle={settle} handle={handle} />
 			))}
 			{left.length > FIRST && (
 				<li>
@@ -113,9 +127,11 @@ export function TodayQueue({ items }: { items: QueueItem[] }) {
 function QueueRow({
 	item,
 	settle,
+	handle,
 }: {
 	item: QueueItem;
 	settle: (key: string, run: () => Promise<{ error: string } | object>) => void;
+	handle: (key: string, act: (back: () => void) => Promise<unknown>) => void;
 }) {
 	const app = APPS_CONFIG[item.app];
 	const { act } = item;
@@ -150,7 +166,12 @@ function QueueRow({
 					className="shrink-0 gap-1.5"
 					aria-label={`Done: ${item.title}`}
 					onClick={() =>
-						settle(item.key, () => placeCard(act.cardId, item.title, { columnId: act.columnId }))
+						handle(item.key, (back) =>
+							finishCard({ id: act.cardId, title: item.title }, act.columnId, act.from, {
+								onFail: back,
+								onUndo: back,
+							}),
+						)
 					}
 				>
 					<HugeiconsIcon icon={Tick02Icon} className="size-3.5" />
@@ -165,7 +186,14 @@ function QueueRow({
 						className="text-muted-foreground"
 						aria-label={`Let go: ${item.title}`}
 						onClick={() =>
-							settle(item.key, () => sendMove({ id: act.itemId, title: item.title }, "released"))
+							handle(item.key, (back) =>
+								releaseWant(
+									{ id: act.itemId, title: item.title, base: act.base },
+									"cooling",
+									act.currency,
+									back,
+								),
+							)
 						}
 					>
 						Let go
@@ -175,7 +203,7 @@ function QueueRow({
 						size="sm"
 						aria-label={`Keep: ${item.title}`}
 						onClick={() =>
-							settle(item.key, () => sendMove({ id: act.itemId, title: item.title }, "plan"))
+							handle(item.key, (back) => keepWant({ id: act.itemId, title: item.title }, back))
 						}
 					>
 						Keep
