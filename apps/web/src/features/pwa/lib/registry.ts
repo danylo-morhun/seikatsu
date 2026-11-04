@@ -5,8 +5,13 @@ import { z } from "zod";
 import { addReading } from "@/features/aisha/actions/readings";
 import { logService } from "@/features/aisha/actions/services";
 import { serviceFormSchema } from "@/features/aisha/lib/aisha-schemas";
-import { createItem, moveItem, reorderPlan } from "@/features/hoshii/actions/items";
-import { fromSingleUrl, itemFormSchema, moveSchema } from "@/features/hoshii/lib/hoshii-schemas";
+import { buyItem, createItem, moveItem, reorderPlan } from "@/features/hoshii/actions/items";
+import {
+	buySchema,
+	fromSingleUrl,
+	itemFormSchema,
+	moveSchema,
+} from "@/features/hoshii/lib/hoshii-schemas";
 import { archiveHabit, unarchiveHabit, updateHabit } from "@/features/keizoku/actions/habits";
 import { checkDay, saveDayNote, uncheckDay } from "@/features/keizoku/actions/logs";
 import { habitPatchSchema } from "@/features/keizoku/lib/keizoku-schemas";
@@ -243,6 +248,16 @@ export const REGISTRY: { [N in OpName]: Entry<N> } = {
 			values: serviceFormSchema.extend({ id: z.uuid() }),
 		}) as z.ZodType<OfflineOps["aisha.logService"]>,
 		run: ({ vehicleId, values }) => logService(vehicleId, values),
+	},
+	"hoshii.buyItem": {
+		schema: z.object({
+			itemId: z.uuid(),
+			values: buySchema.extend({ expenseId: z.uuid() }),
+		}) as unknown as z.ZodType<OfflineOps["hoshii.buyItem"]>,
+		run: async ({ itemId, values }) => {
+			const result = await buyItem(itemId, values);
+			return "error" in result ? result : { success: true };
+		},
 	},
 	"hoshii.createItem": {
 		schema: z.preprocess(

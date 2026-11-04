@@ -20,8 +20,8 @@ import { FieldError, FOOTER, instantClass } from "@/features/aisha/components/Di
 import { parseNumber } from "@/features/aisha/lib/format";
 import { localToday } from "@/features/aisha/lib/today";
 import type { ChromeData, HoshiiItem } from "@/features/hoshii/actions/data";
-import { buyItem } from "@/features/hoshii/actions/items";
 import { CurrencySelect } from "@/features/hoshii/components/Parts";
+import { QUEUED_TOAST, sendBuy } from "@/features/hoshii/lib/offline";
 import { AccountPicker } from "@/features/kuroji/components/AccountSelect";
 import { useFormOptions } from "@/features/kuroji/lib/form-options-store";
 import { useHeld } from "@/hooks/useHeld";
@@ -102,7 +102,7 @@ export function BuyDialog({
 			return;
 		}
 		startSave(async () => {
-			const result = await buyItem(item.id, {
+			const result = await sendBuy(item, {
 				paid,
 				currency: form.currency,
 				date: form.date,
@@ -112,7 +112,9 @@ export function BuyDialog({
 				setError({ message: result.error });
 				return;
 			}
-			if (result.warning) toast.warning(result.warning);
+			if ("queued" in result) toast(QUEUED_TOAST);
+			else if ("warning" in result && typeof result.warning === "string")
+				toast.warning(result.warning);
 			else if (!editing) toast.success(toKuroji ? "Bought, and in Kuroji" : "Bought");
 			onOpenChange(false);
 		});

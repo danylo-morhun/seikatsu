@@ -5,7 +5,7 @@
 // creates with a client-made id), because a lost response gets it sent again.
 
 import type { ServiceFormValues } from "@/features/aisha/lib/aisha-schemas";
-import type { ItemFormValues, MoveTarget } from "@/features/hoshii/lib/hoshii-schemas";
+import type { BuyValues, ItemFormValues, MoveTarget } from "@/features/hoshii/lib/hoshii-schemas";
 import type { HabitPatch } from "@/features/keizoku/lib/keizoku-schemas";
 import type { TransactionInput } from "@/features/kuroji/actions/transactions";
 import type { EventInput } from "@/features/kyuu/actions/progress";
@@ -52,6 +52,8 @@ export interface OfflineOps {
 	"aisha.addReading": { vehicleId: string; id: string; date: string; km: number };
 	"aisha.logService": { vehicleId: string; values: ServiceFormValues & { id: string } };
 	"hoshii.createItem": ItemFormValues & { id: string };
+	/** Buying again sets the same purchase; the expense id makes Kuroji post it once. */
+	"hoshii.buyItem": { itemId: string; values: BuyValues & { expenseId: string } };
 	/** Always the state to set, with the day it was decided. */
 	"hoshii.moveItem": { itemId: string; to: MoveTarget; on: string };
 	"hoshii.reorderPlan": { itemId: string; position: string };

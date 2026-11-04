@@ -69,6 +69,8 @@ export const buySchema = z.object({
 	currency,
 	date: day,
 	kuroji: z.object({ walletId: z.uuid(), categoryId: z.uuid() }).nullable(),
+	/** Made on the device, so a purchase sent twice posts one expense. */
+	expenseId: z.uuid().optional(),
 });
 export type BuyValues = z.input<typeof buySchema>;
 
