@@ -89,7 +89,18 @@ async function getHabits(ws: Owner, range: Range, week: string[]) {
 						),
 					);
 	const byId = new Map(habits.map((h) => [h.id, h]));
+	const done = new Set(ticks.map((t) => `${t.habitId}:${t.date}`));
 	return {
+		rows: habits.map((h) => ({
+			id: h.id,
+			name: h.name,
+			emoji: h.emoji,
+			days: week.map((date) => ({
+				date,
+				scheduled: isScheduled(h, date),
+				done: done.has(`${h.id}:${date}`),
+			})),
+		})),
 		ticks: ticks.flatMap((t) => {
 			const habit = byId.get(t.habitId);
 			return habit ? [{ date: t.date, name: habit.name, emoji: habit.emoji }] : [];
@@ -292,7 +303,7 @@ export async function getWeekData(ws: Owner, today: string, week: string[]): Pro
 		safely(() => getSpent(ws, range)),
 		getHabits(ws, range, week).catch((error) => {
 			console.error("[week] read failed", error);
-			return { ticks: [], expected: [] };
+			return { ticks: [], expected: [], rows: [] };
 		}),
 		safely(() => getPages(ws, range)),
 		getCarWeek(ws, today, range).catch((error) => {
@@ -319,5 +330,6 @@ export async function getWeekData(ws: Owner, today: string, week: string[]): Pro
 		wants,
 		car: car.due,
 		bills,
+		habits: habits.rows,
 	};
 }

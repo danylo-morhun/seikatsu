@@ -32,6 +32,15 @@ export type WeekData = {
 	car: { date: string; name: string }[];
 	/** Recurring transactions that will post. */
 	bills: { date: string; title: string; amount: number; currency: string }[];
+	/** Each live habit across the week's seven days, Monday first (the dots on Week). */
+	habits?: WeekHabit[];
+};
+
+export type WeekHabit = {
+	id: string;
+	name: string;
+	emoji: string;
+	days: { date: string; scheduled: boolean; done: boolean }[];
 };
 
 export type JobWhat =
