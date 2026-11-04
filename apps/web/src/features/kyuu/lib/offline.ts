@@ -9,13 +9,15 @@ import type { Status } from "./stages";
 
 type AppRef = { id: string; company: string };
 
+/** Dated today on this device, so a late sync logs it on the day it happened. */
 export function changeStatus(app: AppRef, status: Status) {
+	const on = localToday();
 	return runOrQueue(
 		"kyuu.setStatus",
-		{ applicationId: app.id, status },
+		{ applicationId: app.id, status, on },
 		`${app.company} · ${status}`,
 		async () => {
-			const result = await setStatus(app.id, status);
+			const result = await setStatus(app.id, status, on);
 			return "error" in result ? result : { success: true };
 		},
 	);

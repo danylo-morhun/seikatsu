@@ -197,9 +197,13 @@ export const REGISTRY: { [N in OpName]: Entry<N> } = {
 		run: ({ bookId, ...input }) => logSession(bookId, input),
 	},
 	"kyuu.setStatus": {
-		schema: z.object({ applicationId: z.uuid(), status: z.enum(STATUSES) }),
-		run: async ({ applicationId, status }) => {
-			const result = await setStatus(applicationId, status);
+		schema: z.object({
+			applicationId: z.uuid(),
+			status: z.enum(STATUSES),
+			on: day.optional(),
+		}),
+		run: async ({ applicationId, status, on }) => {
+			const result = await setStatus(applicationId, status, on);
 			return "error" in result ? result : { success: true };
 		},
 	},
