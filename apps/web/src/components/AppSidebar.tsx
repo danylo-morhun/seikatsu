@@ -2,14 +2,17 @@
 
 import {
 	ArrowUpDownIcon,
+	Calendar03Icon,
+	DashboardSquare01Icon,
+	Home01Icon,
 	KeyboardIcon,
 	Logout01Icon,
+	Target02Icon,
 	UserCircleIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Avatar,
-	cn,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -29,10 +32,8 @@ import {
 } from "@seikatsu/ui";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 import { useDesign } from "@/components/DesignProvider";
 import { signOutAction } from "@/features/auth/actions/auth";
-import { readAppEntry } from "@/lib/app-entry";
 import { APPS_CONFIG } from "@/lib/app-themes";
 import { SHORTCUTS_EVENT } from "@/lib/shortcuts";
 
@@ -45,25 +46,23 @@ interface User {
 
 interface Props {
 	workspaceName: string;
-	/** Apps set aside from the home; the one open stays listed. */
-	hiddenApps: string[];
 	user?: User | null;
 }
 
-export function AppSidebar({ workspaceName, hiddenApps, user }: Props) {
+const isApp = (pathname: string) =>
+	pathname === "/apps" ||
+	Object.keys(APPS_CONFIG).some((href) => pathname === href || pathname.startsWith(`${href}/`));
+
+/** The shell's places, in the order of the phone's bar. Apps is lit inside any app. */
+export const SHELL = [
+	{ href: "/", label: "Today", icon: Home01Icon, match: (p: string) => p === "/" },
+	{ href: "/week", label: "Week", icon: Calendar03Icon, match: (p: string) => p === "/week" },
+	{ href: "/goals", label: "Goals", icon: Target02Icon, match: (p: string) => p === "/goals" },
+	{ href: "/apps", label: "Apps", icon: DashboardSquare01Icon, match: isApp },
+] as const;
+
+export function AppSidebar({ workspaceName, user }: Props) {
 	const pathname = usePathname();
-	const [entryHrefs, setEntryHrefs] = useState<Record<string, string>>({});
-
-	// Re-read on every navigation so the link follows the last project/page visited.
-	useEffect(() => {
-		const next: Record<string, string> = {};
-		for (const href of Object.keys(APPS_CONFIG)) {
-			const entry = readAppEntry(href);
-			if (entry) next[href] = entry;
-		}
-		setEntryHrefs(next);
-	}, [pathname]);
-
 	const { design } = useDesign();
 
 	return (
@@ -76,7 +75,6 @@ export function AppSidebar({ workspaceName, hiddenApps, user }: Props) {
 						<SidebarMenuButton
 							asChild
 							size="lg"
-							isActive={["/", "/week", "/goals"].includes(pathname)}
 							tooltip="Today"
 							className="data-active:bg-sidebar-accent"
 						>
@@ -108,42 +106,24 @@ export function AppSidebar({ workspaceName, hiddenApps, user }: Props) {
 			<SidebarContent>
 				<SidebarGroup>
 					<SidebarGroupContent>
+						{/* The shell's four places. The apps open from Apps (or Today's rows, or ⌘K);
+						    inside one, the header's switcher moves between them. */}
 						<SidebarMenu>
-							{Object.entries(APPS_CONFIG).map(([href, { name, label, kanji, theme }]) => {
-								const isActive = pathname.startsWith(href);
-								if (hiddenApps.includes(href) && !isActive) return null;
-								return (
-									<SidebarMenuItem key={href}>
-										<SidebarMenuButton
-											asChild
-											isActive={isActive}
-											tooltip={`${name} · ${label}`}
-											// The active app is lit from inside with its own pigment.
-											className="h-11 gap-2.5 p-1.5 group-data-[collapsible=icon]:p-1! data-active:bg-primary/15 data-active:hover:bg-primary/20"
-										>
-											<Link href={entryHrefs[href] ?? href} prefetch>
-												{/* The kanji is the app's mark, tinted with its own pigment. */}
-												<span
-													aria-hidden
-													className={cn(
-														theme,
-														"flex size-8 shrink-0 items-center justify-center rounded-md text-[15px] font-semibold leading-none transition-colors group-data-[collapsible=icon]:size-6 group-data-[collapsible=icon]:text-[13px]",
-														isActive
-															? "bg-primary text-primary-foreground"
-															: "bg-primary/10 text-primary",
-													)}
-												>
-													{kanji}
-												</span>
-												<span className="flex min-w-0 flex-col leading-tight">
-													<span className="truncate text-sm font-medium">{name}</span>
-													<span className="truncate text-xs text-muted-foreground">{label}</span>
-												</span>
-											</Link>
-										</SidebarMenuButton>
-									</SidebarMenuItem>
-								);
-							})}
+							{SHELL.map(({ href, label, icon, match }) => (
+								<SidebarMenuItem key={href}>
+									<SidebarMenuButton
+										asChild
+										isActive={match(pathname)}
+										tooltip={label}
+										className="h-10 gap-2.5"
+									>
+										<Link href={href} prefetch>
+											<HugeiconsIcon icon={icon} className="size-[18px]" />
+											<span className="truncate text-sm font-medium">{label}</span>
+										</Link>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							))}
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>
