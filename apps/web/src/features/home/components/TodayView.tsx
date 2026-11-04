@@ -12,10 +12,10 @@ import {
 	LogPages,
 } from "@/features/home/components/TodayIslands";
 import { CaptureBar, TodayQueue } from "@/features/home/components/TodayQueue";
+import { loadAgenda } from "@/features/home/lib/agenda";
 import { km, longDate, money, plural } from "@/features/home/lib/format";
 import { buildQueue } from "@/features/home/lib/queue";
 import {
-	loadCaptures,
 	loadCar,
 	loadCards,
 	loadHabits,
@@ -25,6 +25,7 @@ import {
 	loadWants,
 	type Started,
 } from "@/features/home/lib/today";
+import { formatMoney } from "@/features/hoshii/lib/format";
 import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTransactionModal";
 import { ProgressMeter } from "@/features/tsundoku/components/ProgressMeter";
 import { APPS_CONFIG } from "@/lib/app-themes";
@@ -274,15 +275,13 @@ async function Waiting({ ws, today }: { ws: Workspace; today: string }) {
 
 // ── The parts ─────────────────────────────────────────────────────────────────
 
+const asMoney = (amount: number, currency: string) => formatMoney(amount, currency, true);
+
 async function Queue({ ws, today }: { ws: Workspace; today: string }) {
-	const [captures, wants, cards, jobs, car] = await Promise.all([
-		loadCaptures(ws),
-		loadWants(ws, today),
-		loadCards(ws, today),
-		loadJobs(),
-		loadCar(today),
-	]);
-	return <TodayQueue items={buildQueue({ captures, wants, cards, jobs, car }, today)} />;
+	const agenda = await loadAgenda(ws, today);
+	return (
+		<TodayQueue items={buildQueue(agenda, today, asMoney)} workspaceId={ws.id} today={today} />
+	);
 }
 
 async function Habits() {

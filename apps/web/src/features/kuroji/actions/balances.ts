@@ -29,7 +29,21 @@ export async function getBalances(
 	const ws = await getOwnedWorkspace(workspaceId);
 
 	if (!ws) throw new Error("Forbidden");
+	return readBalances(ws, from, to, await getUserToday());
+}
 
+/**
+ * The same balances without a session: for the cron and other session-less readers, which
+ * pass a workspace they already trust. Never call it with a workspace id from the client.
+ */
+export async function readBalances(
+	ws: { id: string; baseCurrency: string },
+	from: string | undefined,
+	to: string | undefined,
+	/** The user's day: foreign balances are valued at the rate of `to`, never after it. */
+	today: string,
+): Promise<AccountBalance[]> {
+	const workspaceId = ws.id;
 	const assetLiabDateClause = to
 		? sql`and (${transactions.date} is null or ${transactions.date} <= ${to})`
 		: sql``;
@@ -80,7 +94,6 @@ export async function getBalances(
 	// rate, not the sum of historical base amounts (that would leave FX residue on an
 	// emptied account). Income/expense keep transaction-date values.
 	// Clamp to today: a future date would cache today's rate under that date for good.
-	const today = await getUserToday();
 	const rateDate = to && to < today ? to : today;
 	const foreign = [
 		...new Set(

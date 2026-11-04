@@ -1,7 +1,9 @@
 // What the day waits on: one list across the apps, most urgent first, each row with the one
 // thing to do about it. Pure — the home loads each app's summary (./today) and hands them in.
 
-import type { CardToday, CarToday, JobsToday, WantsToday } from "@/features/home/lib/today";
+import type { CardToday, CarToday, WantsToday } from "@/features/home/lib/today";
+import type { FundDue, MoneyAgenda } from "@/features/kuroji/lib/agenda";
+import type { JobsAgenda } from "@/features/kyuu/lib/agenda";
 import type { APPS_CONFIG } from "@/lib/app-themes";
 
 type AppHref = keyof typeof APPS_CONFIG;
@@ -13,6 +15,8 @@ export type QueueAct =
 	| { kind: "done"; cardId: string; columnId: string; from: { columnId: string; position: string } }
 	| { kind: "decide"; itemId: string; base: number | null; currency: string }
 	| { kind: "ghost"; ids: string[] }
+	| { kind: "followUp"; id: string; company: string }
+	| { kind: "fund"; fund: FundDue }
 	| { kind: "open" };
 
 export type QueueItem = {
@@ -25,17 +29,17 @@ export type QueueItem = {
 	act: QueueAct;
 };
 
+/** Each app's own rule for what waits, folded: past this many, one row stands for them all. */
+const APART = 3;
+
 /** Each app's summary as the home loads it; null when it couldn't be read or isn't set up. */
 export type QueueData = {
-	captures: number | null;
+	money: MoneyAgenda | null;
 	wants: WantsToday | null;
 	cards: CardToday[] | null;
-	jobs: JobsToday | null;
+	jobs: JobsAgenda | null;
 	car: CarToday | null;
 };
-
-/** Up to this many cooled wants get their own row; more fold into one. */
-const WANTS_APART = 3;
 
 const TONE_ORDER: Record<QueueTone, number> = { overdue: 0, due: 1, info: 2 };
 
@@ -46,7 +50,7 @@ function daysLate(dueDate: string, today: string) {
 }
 
 /** How far off (or past) the car's next service is, by distance when it has one. */
-function carWhen(next: NonNullable<CarToday["next"]>): string {
+function carWhen(next: CarToday["due"][number]): string {
 	const late = next.status === "overdue";
 	if (next.kmLeft != null) {
 		const km = `${Math.abs(next.kmLeft).toLocaleString("en-US")} km`;
@@ -83,7 +87,7 @@ function cardItems(cards: CardToday[], today: string): QueueItem[] {
 
 function wantItems(wants: WantsToday): QueueItem[] {
 	const items: QueueItem[] =
-		wants.toDecide.length <= WANTS_APART
+		wants.toDecide.length <= APART
 			? wants.toDecide.map((want) => ({
 					key: `hoshii:${want.id}`,
 					app: "/hoshii",
@@ -117,18 +121,57 @@ function wantItems(wants: WantsToday): QueueItem[] {
 	return items;
 }
 
-function jobItems(jobs: JobsToday): QueueItem[] {
-	const items: QueueItem[] = [];
+function jobItems(jobs: JobsAgenda, today: string): QueueItem[] {
+	const items: QueueItem[] = jobs.calls.map((call) => ({
+		key: `kyuu:call:${call.id}:${call.date}`,
+		app: "/kyuu",
+		title: `${call.kind === "interview" ? "Interview" : "Screening"} · ${call.company}`,
+		note: [call.date === today ? "Today" : "Tomorrow", call.time].filter(Boolean).join(" at "),
+		href: `/kyuu/${call.id}`,
+		tone: call.date === today ? "due" : "info",
+		act: { kind: "open" },
+	}));
+	if (jobs.mailReview > 0)
+		items.push({
+			key: "kyuu:mail",
+			app: "/kyuu",
+			title: `${plural(jobs.mailReview, "answer")} from mail to check`,
+			note: "Gemini wasn't sure which application it was",
+			href: "/kyuu",
+			tone: "due",
+			act: { kind: "open" },
+		});
 	if (jobs.toSend > 0)
 		items.push({
 			key: "kyuu:send",
 			app: "/kyuu",
 			title: `${plural(jobs.toSend, "application")} to send`,
-			note: "Drafted and ready",
-			href: "/kyuu",
+			note: "Not sent yet",
+			href: "/kyuu?view=queue",
 			tone: "due",
 			act: { kind: "open" },
 		});
+	if (jobs.followUps.length > APART)
+		items.push({
+			key: "kyuu:follow",
+			app: "/kyuu",
+			title: `${plural(jobs.followUps.length, "follow-up")} due`,
+			note: "A week with no answer: time to write again",
+			href: "/kyuu?view=waiting",
+			tone: "due",
+			act: { kind: "open" },
+		});
+	else
+		for (const app of jobs.followUps)
+			items.push({
+				key: `kyuu:follow:${app.id}`,
+				app: "/kyuu",
+				title: `Follow up · ${app.company}`,
+				note: "A week with no answer",
+				href: `/kyuu/${app.id}`,
+				tone: "due",
+				act: { kind: "followUp", id: app.id, company: app.company },
+			});
 	if (jobs.ghostIds.length > 0)
 		items.push({
 			key: "kyuu:ghost",
@@ -142,32 +185,69 @@ function jobItems(jobs: JobsToday): QueueItem[] {
 	return items;
 }
 
-/** The day's list: overdue first, then due today, then the rest; each group in app order. */
-export function buildQueue(data: QueueData, today: string): QueueItem[] {
-	const items: QueueItem[] = [...cardItems(data.cards ?? [], today)];
-	const next = data.car?.next;
-	if (data.car && next && (next.status === "overdue" || next.status === "soon"))
-		items.push({
-			key: "aisha:next",
-			app: "/aisha",
-			title: next.name,
-			note: `${data.car.name} · ${carWhen(next)}`,
-			href: "/aisha",
-			tone: next.status === "overdue" ? "overdue" : "due",
-			act: { kind: "open" },
-		});
-	if ((data.captures ?? 0) > 0)
+function moneyItems(money: MoneyAgenda, fmt: Money): QueueItem[] {
+	const items: QueueItem[] = [];
+	if (money.captures > 0)
 		items.push({
 			key: "kuroji:captures",
 			app: "/kuroji",
-			title: `${plural(data.captures ?? 0, "payment")} to add`,
+			title: `${plural(money.captures, "payment")} to add`,
 			note: "Apple Pay payments waiting in Kuroji",
 			href: "/kuroji",
 			tone: "due",
 			act: { kind: "open" },
 		});
-	if (data.wants) items.push(...wantItems(data.wants));
-	if (data.jobs) items.push(...jobItems(data.jobs));
+	if (money.uncategorized > 0)
+		items.push({
+			key: "kuroji:uncategorized",
+			app: "/kuroji",
+			title: `${plural(money.uncategorized, "bank payment")} without a category`,
+			note: "From the last 30 days",
+			href: "/kuroji?tab=transactions",
+			tone: "info",
+			act: { kind: "open" },
+		});
+	for (const fund of money.funds)
+		items.push({
+			key: `kuroji:fund:${fund.id}`,
+			app: "/kuroji",
+			title: `Put ${fmt(fund.amount, fund.currency)} into ${fund.name}`,
+			note: "This month's instalment",
+			href: "/kuroji?tab=plan",
+			tone: "info",
+			act: { kind: "fund", fund },
+		});
+	return items;
+}
+
+function carItems(car: CarToday): QueueItem[] {
+	return car.due.map((entry, i) => ({
+		key: `aisha:${i}:${entry.name}`,
+		app: "/aisha",
+		title: entry.name,
+		note: `${car.name} · ${carWhen(entry)}`,
+		href: "/aisha",
+		tone: entry.status === "overdue" ? "overdue" : "due",
+		act: { kind: "open" },
+	}));
+}
+
+/** Money as the app writes it ("500 zł"); the composer passes Kuroji's formatter. */
+export type Money = (amount: number, currency: string) => string;
+
+/** The day's list: overdue first, then due today, then the rest; each group in app order. */
+export function buildQueue(
+	data: QueueData,
+	today: string,
+	fmt: Money = (n, c) => `${Math.round(n)} ${c}`,
+): QueueItem[] {
+	const items: QueueItem[] = [
+		...cardItems(data.cards ?? [], today),
+		...(data.car ? carItems(data.car) : []),
+		...(data.money ? moneyItems(data.money, fmt) : []),
+		...(data.wants ? wantItems(data.wants) : []),
+		...(data.jobs ? jobItems(data.jobs, today) : []),
+	];
 	return items
 		.map((item, i) => ({ item, i }))
 		.sort((a, b) => TONE_ORDER[a.item.tone] - TONE_ORDER[b.item.tone] || a.i - b.i)

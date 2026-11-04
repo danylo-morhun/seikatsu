@@ -3,6 +3,7 @@
 // leaves the rest of the day readable, and each tile streams in as soon as its own is ready.
 
 import {
+	aishaVehicles,
 	and,
 	asc,
 	db,
@@ -11,7 +12,6 @@ import {
 	inArray,
 	isNotNull,
 	isNull,
-	kurojiCaptures,
 	kyuuApplications,
 	lte,
 	seiryuCards,
@@ -168,7 +168,7 @@ async function doneColumns(projectIds: string[]): Promise<Map<string, string>> {
 }
 
 /** Open cards due today or earlier, oldest deadline first. */
-async function getCardsDue(ws: Workspace, today: string): Promise<CardToday[]> {
+export async function getCardsDue(ws: Workspace, today: string): Promise<CardToday[]> {
 	const cards = await db
 		.select({
 			id: seiryuCards.id,
@@ -201,44 +201,64 @@ async function getCardsDue(ws: Workspace, today: string): Promise<CardToday[]> {
 	}));
 }
 
+type CarEntry = {
+	name: string;
+	status: "ok" | "soon" | "overdue" | "unknown";
+	kmLeft: number | null;
+	daysLeft: number | null;
+	/** Its estimated day (maintenance) or expiry (document), when known. */
+	when: string | null;
+};
+
 export type CarToday = {
 	vehicleId: string;
 	name: string;
 	currentKm: number;
-	next: {
-		name: string;
-		status: "ok" | "soon" | "overdue" | "unknown";
-		kmLeft: number | null;
-		daysLeft: number | null;
-	} | null;
+	/** The head of Aisha's queue, for the Now line. */
+	next: CarEntry | null;
+	/** Everything overdue or soon, most urgent first — Aisha's own Due group. */
+	due: CarEntry[];
 };
 
-/** What the car needs next: the head of Aisha's queue, maintenance or a document. */
-async function getCar(today: string): Promise<CarToday | null> {
-	const vehicle = await getCurrentVehicle();
+/** What the car needs: Aisha's queue for the workspace's first car. No session. */
+export async function readCar(workspaceId: string, today: string): Promise<CarToday | null> {
+	const [vehicle] = await db
+		.select()
+		.from(aishaVehicles)
+		.where(eq(aishaVehicles.workspaceId, workspaceId))
+		.orderBy(asc(aishaVehicles.createdAt))
+		.limit(1);
 	if (!vehicle) return null;
 	const car = await getAishaCar(vehicle, today);
+	const entry = (q: (typeof car.queue.due)[number]): CarEntry =>
+		q.entry.kind === "item"
+			? {
+					name: q.entry.item.name,
+					status: q.status,
+					kmLeft: q.entry.item.due.kmLeft,
+					daysLeft: q.entry.item.due.daysLeft,
+					when: q.when,
+				}
+			: {
+					name: q.entry.doc.name,
+					status: q.status,
+					kmLeft: null,
+					daysLeft: q.entry.doc.daysLeft,
+					when: q.when,
+				};
 	const head = car.queue.due[0] ?? car.queue.later[0];
 	return {
 		vehicleId: vehicle.id,
 		name: `${vehicle.make} ${vehicle.model}`,
 		currentKm: car.currentKm,
-		next: !head
-			? null
-			: head.entry.kind === "item"
-				? {
-						name: head.entry.item.name,
-						status: head.status,
-						kmLeft: head.entry.item.due.kmLeft,
-						daysLeft: head.entry.item.due.daysLeft,
-					}
-				: {
-						name: head.entry.doc.name,
-						status: head.status,
-						kmLeft: null,
-						daysLeft: head.entry.doc.daysLeft,
-					},
+		next: head ? entry(head) : null,
+		due: car.queue.due.map(entry),
 	};
+}
+
+async function getCar(today: string): Promise<CarToday | null> {
+	const vehicle = await getCurrentVehicle();
+	return vehicle ? readCar(vehicle.workspaceId, today) : null;
 }
 
 export type WantsToday = {
@@ -255,7 +275,7 @@ export type WantsToday = {
 };
 
 /** What Hoshii waits on: cooled wants to decide, and what the piggy can already buy. */
-async function getWants(ws: Workspace, today: string): Promise<WantsToday> {
+export async function getWants(ws: Workspace, today: string): Promise<WantsToday> {
 	const { queue, items, piggy } = await getHoshii(ws, today);
 	const ready = piggy ? queue.plan.filter((p) => p.share != null && p.share >= 1) : [];
 	return {
@@ -268,16 +288,6 @@ async function getWants(ws: Workspace, today: string): Promise<WantsToday> {
 		cooling: queue.cooling.length,
 		total: items.length,
 	};
-}
-
-/** Apple Pay payments captured but not yet added to Kuroji. */
-function getCaptureCount(ws: Workspace): Promise<number> {
-	return db
-		.select({ id: kurojiCaptures.id })
-		.from(kurojiCaptures)
-		.where(and(eq(kurojiCaptures.workspaceId, ws.id), eq(kurojiCaptures.state, "pending")))
-		.limit(100)
-		.then((rows) => rows.length);
 }
 
 /** Whether each app holds anything yet; null when that couldn't be read. An empty app waits
@@ -327,4 +337,3 @@ export const loadCards = cache((ws: Workspace, today: string) =>
 );
 export const loadCar = cache((today: string) => safely(() => getCar(today)));
 export const loadWants = cache((ws: Workspace, today: string) => safely(() => getWants(ws, today)));
-export const loadCaptures = cache((ws: Workspace) => safely(() => getCaptureCount(ws)));
