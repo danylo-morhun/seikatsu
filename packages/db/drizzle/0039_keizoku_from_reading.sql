@@ -1,0 +1,1 @@
+ALTER TABLE "keizoku_habits" ADD COLUMN "from_reading" boolean DEFAULT false NOT NULL;
