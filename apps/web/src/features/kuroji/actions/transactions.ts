@@ -17,6 +17,7 @@ import { auth } from "@/auth";
 import { CAPTURE_EXTERNAL_PREFIX } from "@/features/kuroji/lib/capture-intake";
 import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
 import type { Leg } from "@/features/kuroji/lib/transaction-edit";
+import { transactionInputSchema } from "@/features/kuroji/lib/transaction-schema";
 import { getOwnedWorkspace } from "@/lib/session";
 
 export type RecentTransaction = {
@@ -170,6 +171,8 @@ async function prepareEntries(
 	workspace: { id: string; baseCurrency: string },
 	input: TransactionInput,
 ): Promise<{ error: string } | { entries: EntryRow[] }> {
+	const checked = transactionInputSchema.safeParse(input);
+	if (!checked.success) return { error: checked.error.issues[0]?.message ?? "Invalid transaction" };
 	const { fromAccountId, toAccountId, amount, toSplits, fromSplits } = input;
 	const specs = buildEntrySpecs(fromAccountId, toAccountId, amount, toSplits, fromSplits);
 	if (!specs) return { error: "Invalid transaction params" };
