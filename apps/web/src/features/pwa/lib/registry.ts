@@ -15,6 +15,7 @@ import {
 	deleteTransaction,
 	updateTransaction,
 } from "@/features/kuroji/actions/transactions";
+import { transactionInputSchema } from "@/features/kuroji/lib/transaction-schema";
 import { followUp, logEvent, setArchived, setStatus } from "@/features/kyuu/actions/progress";
 import { EVENT_KINDS, STATUSES } from "@/features/kyuu/lib/stages";
 import type { OfflineOps, OpName, OpResult } from "@/features/pwa/lib/ops";
@@ -47,21 +48,8 @@ import { bookStatusSchema } from "@/features/tsundoku/lib/tsundoku-schemas";
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
-const money = z.number().finite().positive().max(1e12);
-const legs = z.array(z.object({ accountId: z.uuid(), amount: money })).max(50);
 // The capture form's payload (TransactionInput); the action checks accounts and tags belong.
-const transactionInput = z.object({
-	fromAccountId: z.uuid().optional(),
-	toAccountId: z.uuid().optional(),
-	amount: money.optional(),
-	toSplits: legs.optional(),
-	fromSplits: legs.optional(),
-	currency: z.string().regex(/^[A-Z]{3}$/),
-	received: money.optional(),
-	description: z.string().max(500).optional(),
-	date: day,
-	tagIds: z.array(z.uuid()).max(50).optional(),
-});
+const transactionInput = transactionInputSchema;
 
 type Entry<N extends OpName> = {
 	schema: z.ZodType<OfflineOps[N]>;

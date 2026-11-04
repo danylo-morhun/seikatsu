@@ -39,6 +39,28 @@ export const optionalAmountSchema = z
 	.positive("Amount must be more than zero")
 	.optional();
 
+const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date required");
+const legAmount = z.number().finite().positive("Amount must be more than zero").max(1e12);
+const legs = z.array(z.object({ accountId: z.uuid(), amount: legAmount })).max(50);
+
+/**
+ * What every write of a transaction sends (TransactionInput), checked on the server before
+ * anything is stored, whichever path it came from: form, capture, linked expense, replay.
+ * The action still checks the accounts and tags belong to the workspace.
+ */
+export const transactionInputSchema = z.object({
+	fromAccountId: z.uuid().optional(),
+	toAccountId: z.uuid().optional(),
+	amount: legAmount.optional(),
+	toSplits: legs.optional(),
+	fromSplits: legs.optional(),
+	currency: z.string().regex(/^[A-Z]{3}$/, "Unknown currency"),
+	received: legAmount.optional(),
+	description: z.string().max(500).optional(),
+	date: isoDay,
+	tagIds: z.array(z.uuid()).max(50).optional(),
+});
+
 const baseFields = {
 	description: z.string().optional(),
 	amount: amountSchema,
