@@ -32,6 +32,9 @@ export async function runOrQueue<N extends OpName>(
 	}
 }
 
+/** The toast for a change kept on this device until it syncs. */
+export const QUEUED_TOAST = "Saved on this device. It syncs when you're back online.";
+
 /** For actions that can't run offline (uploads, external lookups). */
 export const NEEDS_CONNECTION = "You're offline. This needs a connection.";
 

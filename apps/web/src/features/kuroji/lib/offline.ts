@@ -52,4 +52,4 @@ export function removeTransaction(transactionId: string, what: string): Promise<
 export const isQueued = (r: RunResult) => "queued" in r;
 
 /** The toast for a change kept on this device. */
-export const QUEUED_TOAST = "Saved on this device. It syncs when you're back online.";
+export { QUEUED_TOAST } from "@/features/pwa/lib/run";
