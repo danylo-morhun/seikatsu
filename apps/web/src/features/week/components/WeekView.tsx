@@ -107,6 +107,7 @@ export async function WeekView({ ws, today, day }: { ws: Workspace; today: strin
 														card={e.card}
 														from={d.date}
 														days={ahead.filter((x) => x !== d.date)}
+														weekEnd={week[6]}
 													/>
 												)
 											}
