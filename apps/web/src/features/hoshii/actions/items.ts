@@ -42,7 +42,7 @@ export async function createItem(
 	if (!ws) return { error: "Not signed in" };
 	const parsed = itemFormSchema.safeParse(values);
 	if (!parsed.success) return { error: issue(parsed.error) };
-	const { id, skipCooling, ...v } = parsed.data;
+	const { id, skipCooling, on, ...v } = parsed.data;
 
 	if (id) {
 		// Sent again (offline replay, lost response): the first one stands.
@@ -51,7 +51,9 @@ export async function createItem(
 	}
 	if (v.listId && !(await isOwnedList(v.listId, ws.id))) return { error: "List not found" };
 
-	const today = await getUserToday();
+	// Queued offline, it carries the day it was added; never a day still to come.
+	const userToday = await getUserToday();
+	const today = on && on < userToday ? on : userToday;
 	const settings = await getSettings(ws.id);
 	const base = v.price != null ? await convert(v.price, v.currency, ws.baseCurrency, today) : null;
 	const coolUntil = addDays(today, coolingDays(base, settings));
@@ -90,7 +92,7 @@ export async function updateItem(itemId: string, values: ItemFormValues): Promis
 	const { item, ws } = owned;
 	const parsed = itemFormSchema.safeParse(values);
 	if (!parsed.success) return { error: issue(parsed.error) };
-	const { id: _, skipCooling: __, ...v } = parsed.data;
+	const { id: _, skipCooling: __, on: ___, ...v } = parsed.data;
 	if (v.listId && !(await isOwnedList(v.listId, ws.id))) return { error: "List not found" };
 
 	let coolUntil = item.coolUntil;

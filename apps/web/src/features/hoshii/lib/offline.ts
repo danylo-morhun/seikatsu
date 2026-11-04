@@ -9,7 +9,7 @@ const VERB: Record<MoveTarget, string> = { plan: "Keep", released: "Let go", coo
 
 /** Its id is made here, so a replay lands once. */
 export function saveNewItem(values: ItemFormValues) {
-	const args = { ...values, id: crypto.randomUUID() };
+	const args = { ...values, id: crypto.randomUUID(), on: localToday() };
 	return runOrQueue("hoshii.createItem", args, `Want · ${values.title}`, async () => {
 		const result = await createItem(args);
 		return "error" in result ? result : { success: true as const };
