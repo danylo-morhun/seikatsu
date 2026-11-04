@@ -34,6 +34,7 @@ import {
 	updateCardSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
 import { generateKeyBetween } from "@/lib/position";
+import { revalidateShell } from "@/lib/revalidate";
 import { getUserToday } from "@/lib/timezone";
 
 type CardRow = Omit<typeof seiryuCards.$inferSelect, "description"> & {
@@ -194,6 +195,7 @@ export async function createCard(
 
 	// Open-card counts in the project list change too.
 	revalidatePath("/seiryu", "layout");
+	revalidateShell();
 	return { success: true, data: { id: card.id, position: card.position } };
 }
 
@@ -211,6 +213,7 @@ export async function updateCard(input: unknown): Promise<{ error: string } | { 
 	await db.update(seiryuCards).set(updates).where(eq(seiryuCards.id, cardId));
 
 	revalidatePath(`/seiryu/${card.projectId}`);
+	revalidateShell();
 	return { success: true };
 }
 
@@ -230,6 +233,7 @@ export async function archiveCard(input: unknown): Promise<{ error: string } | {
 
 	// Open-card counts in the project list change too.
 	revalidatePath("/seiryu", "layout");
+	revalidateShell();
 	revalidatePath("/settings/seiryu");
 	return { success: true };
 }
@@ -261,6 +265,7 @@ export async function moveCard(
 
 	// Open-card counts in the project list change too.
 	revalidatePath("/seiryu", "layout");
+	revalidateShell();
 	return { success: true, data: { position } };
 }
 
@@ -278,6 +283,7 @@ export async function reorderCards(input: unknown): Promise<{ error: string } | 
 	await db.update(seiryuCards).set({ position: newPosition }).where(eq(seiryuCards.id, cardId));
 
 	revalidatePath(`/seiryu/${card.projectId}`);
+	revalidateShell();
 	return { success: true };
 }
 
@@ -302,6 +308,7 @@ export async function restoreCard(
 
 	// Open-card counts in the project list change too.
 	revalidatePath("/seiryu", "layout");
+	revalidateShell();
 	revalidatePath("/settings/seiryu");
 	return { success: true, data: { columnId: card.columnId, position } };
 }
@@ -319,6 +326,7 @@ export async function deleteCard(input: unknown): Promise<{ error: string } | { 
 
 	// Open-card counts in the project list change too.
 	revalidatePath("/seiryu", "layout");
+	revalidateShell();
 	revalidatePath("/settings/seiryu");
 	return { success: true };
 }

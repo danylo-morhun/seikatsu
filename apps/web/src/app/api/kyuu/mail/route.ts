@@ -4,6 +4,7 @@ import { after, type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { fillCountries } from "@/features/kyuu/actions/country-fill";
 import { syncMail, workspaceOfMailKey } from "@/features/kyuu/actions/mail-sync";
+import { revalidateShell } from "@/lib/revalidate";
 
 // The Gmail script (Settings → Kyuu → Mail) posts the last few days of mail here every
 // 30 minutes with `Authorization: Bearer <key>`. Mail already read is skipped; the rest is
@@ -54,6 +55,7 @@ export async function POST(req: NextRequest) {
 		);
 		if (result.applied + result.review > 0 || countries?.filled) {
 			revalidatePath("/kyuu", "layout");
+			revalidateShell();
 		}
 		console.log("kyuu mail sync", { ...result, countries });
 	});

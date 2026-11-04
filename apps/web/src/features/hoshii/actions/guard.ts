@@ -16,6 +16,7 @@ import { revalidatePath } from "next/cache";
 import { DEFAULT_TIERS } from "@/features/hoshii/lib/cooling";
 import { getRate } from "@/features/kuroji/lib/exchange-rates";
 import { generateKeyBetween } from "@/lib/position";
+import { revalidateShell } from "@/lib/revalidate";
 import { getCurrentWorkspace } from "@/lib/session";
 
 export type HoshiiItemRow = typeof hoshiiItems.$inferSelect;
@@ -24,7 +25,7 @@ export type HoshiiSettingsRow = typeof hoshiiSettings.$inferSelect;
 export function revalidateHoshii() {
 	revalidatePath("/hoshii", "layout");
 	revalidatePath("/settings/hoshii");
-	revalidatePath("/");
+	revalidateShell();
 }
 
 /** The item, if it is in the current user's workspace. */

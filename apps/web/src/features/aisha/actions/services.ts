@@ -25,6 +25,7 @@ import {
 	recordLinkedExpense,
 	updateLinkedExpense,
 } from "@/features/kuroji/lib/linked-expense";
+import { revalidateShell } from "@/lib/revalidate";
 import { getCurrentWorkspace } from "@/lib/session";
 
 type Result = { error: string } | { success: true; warning?: string };
@@ -33,7 +34,7 @@ type VisitExpense = { amount: number; date: string; description: string };
 function revalidate() {
 	revalidatePath("/aisha", "layout");
 	revalidatePath("/settings/aisha");
-	revalidatePath("/");
+	revalidateShell();
 }
 
 async function getOwnedRecord(recordId: string) {

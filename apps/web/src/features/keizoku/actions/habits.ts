@@ -22,6 +22,7 @@ import {
 	habitFormSchema,
 	habitPatchSchema,
 } from "@/features/keizoku/lib/keizoku-schemas";
+import { revalidateShell } from "@/lib/revalidate";
 import { getCurrentWorkspace, requireWorkspace } from "@/lib/session";
 
 export type { KeizokuHabit };
@@ -34,7 +35,7 @@ type Result<T = undefined> =
 function revalidate(habitId?: string) {
 	revalidatePath("/keizoku", "layout");
 	revalidatePath("/settings/keizoku");
-	revalidatePath("/");
+	revalidateShell();
 	if (habitId) revalidatePath(`/keizoku/${habitId}`);
 }
 

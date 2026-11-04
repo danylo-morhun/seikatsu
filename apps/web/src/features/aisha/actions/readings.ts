@@ -6,13 +6,14 @@ import { getReadings } from "@/features/aisha/actions/data";
 import { getOwnedVehicle, isUuid } from "@/features/aisha/actions/guard";
 import { type ReadingValues, readingSchema } from "@/features/aisha/lib/aisha-schemas";
 import { readingConflict } from "@/features/aisha/lib/odometer";
+import { revalidateShell } from "@/lib/revalidate";
 import { getCurrentWorkspace } from "@/lib/session";
 
 type Result = { error: string } | { success: true };
 
 function revalidate() {
 	revalidatePath("/aisha", "layout");
-	revalidatePath("/");
+	revalidateShell();
 }
 
 async function getOwnedReading(readingId: string) {

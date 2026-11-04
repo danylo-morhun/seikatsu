@@ -38,6 +38,7 @@ import {
 	updateBookSchema,
 } from "@/features/tsundoku/lib/tsundoku-schemas";
 import { generateKeyBetween } from "@/lib/position";
+import { revalidateShell } from "@/lib/revalidate";
 import { getUserToday } from "@/lib/timezone";
 
 export type TsundokuBook = typeof tsundokuBooks.$inferSelect & { shelfIds: string[] };
@@ -80,7 +81,7 @@ function invalid(error: z.ZodError) {
 /** Every page that shows books: library, book pages, year, and the home's Reading now. */
 function revalidate() {
 	revalidatePath("/tsundoku", "layout");
-	revalidatePath("/");
+	revalidateShell();
 }
 
 export async function getBooks(): Promise<LibraryBook[]> {

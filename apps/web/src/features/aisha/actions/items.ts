@@ -15,6 +15,7 @@ import { revalidatePath } from "next/cache";
 import { getReadings } from "@/features/aisha/actions/data";
 import { getOwnedVehicle, isUuid } from "@/features/aisha/actions/guard";
 import { type ItemFormValues, itemFormSchema } from "@/features/aisha/lib/aisha-schemas";
+import { revalidateShell } from "@/lib/revalidate";
 import { getCurrentWorkspace } from "@/lib/session";
 
 type Result = { error: string } | { success: true };
@@ -22,7 +23,7 @@ type Result = { error: string } | { success: true };
 function revalidate() {
 	revalidatePath("/aisha", "layout");
 	revalidatePath("/settings/aisha");
-	revalidatePath("/");
+	revalidateShell();
 }
 
 async function getOwnedItem(itemId: string) {
