@@ -75,10 +75,10 @@ export function AppSidebar({ workspaceName, user }: Props) {
 						<SidebarMenuButton
 							asChild
 							size="lg"
-							tooltip="Today"
+							tooltip="seikatsu"
 							className="data-active:bg-sidebar-accent"
 						>
-							<Link href="/" prefetch aria-label="Today">
+							<Link href="/" prefetch aria-label="seikatsu">
 								{/* A bare ink mark, so the shell's logo never reads as one of the app tiles. */}
 								<div className="flex size-8 shrink-0 items-center justify-center">
 									<span className="text-[24px] font-bold leading-none text-sidebar-foreground">
@@ -87,15 +87,7 @@ export function AppSidebar({ workspaceName, user }: Props) {
 								</div>
 								<div className="flex min-w-0 flex-col text-left leading-none">
 									<span className="text-sm font-bold">seikatsu</span>
-									<span className="truncate text-xs text-muted-foreground">
-										{pathname === "/"
-											? "Today"
-											: pathname === "/week"
-												? "Week"
-												: pathname === "/goals"
-													? "Goals"
-													: workspaceName}
-									</span>
+									<span className="truncate text-xs text-muted-foreground">{workspaceName}</span>
 								</div>
 							</Link>
 						</SidebarMenuButton>
@@ -115,7 +107,7 @@ export function AppSidebar({ workspaceName, user }: Props) {
 										asChild
 										isActive={match(pathname)}
 										tooltip={label}
-										className="h-10 gap-2.5"
+										className="h-10 gap-2.5 data-active:bg-sidebar-accent data-active:font-semibold"
 									>
 										<Link href={href} prefetch>
 											<HugeiconsIcon icon={icon} className="size-[18px]" />
