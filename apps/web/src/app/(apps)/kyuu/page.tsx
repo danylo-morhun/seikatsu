@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { PageTitle } from "@/components/PageTitle";
+import { GoalChips } from "@/features/goals/components/GoalChips";
 import {
 	getApplicationsPage,
 	getGhostDue,
@@ -46,6 +48,12 @@ export default async function KyuuPage({
 	return (
 		<div className="px-4 pt-6 pb-28 sm:px-8 md:py-8">
 			<PageTitle title="Applications" />
+			<Suspense>
+				<GoalChips
+					kind="jobs"
+					className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground"
+				/>
+			</Suspense>
 			<MailInbox items={mail.items} choices={mail.choices} today={today} />
 			<AllView
 				rows={rows}

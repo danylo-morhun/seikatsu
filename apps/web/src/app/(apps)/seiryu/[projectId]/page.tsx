@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { GoalChips } from "@/features/goals/components/GoalChips";
 import { getBoard } from "@/features/seiryu/actions/cards";
 import { getProjects } from "@/features/seiryu/actions/projects";
 import { KanbanBoard } from "@/features/seiryu/components/KanbanBoard";
@@ -24,16 +25,25 @@ export default async function SeiryuProjectPage({
 	if (!project || !board) redirect("/seiryu");
 
 	return (
-		<Suspense>
-			<KanbanBoard
-				project={{ id: project.id, name: project.name }}
-				today={today}
-				columns={board.columns}
-				cards={board.cards}
-				projectLabels={board.labels}
-				archived={toArchivedRows(board.archived, timeZone)}
-				archivedTotal={board.archivedTotal}
-			/>
-		</Suspense>
+		<>
+			<Suspense>
+				<GoalChips
+					kind="project"
+					refIds={[project.id]}
+					className="flex flex-wrap items-center gap-1.5 px-4 pt-3 text-xs text-muted-foreground sm:px-8"
+				/>
+			</Suspense>
+			<Suspense>
+				<KanbanBoard
+					project={{ id: project.id, name: project.name }}
+					today={today}
+					columns={board.columns}
+					cards={board.cards}
+					projectLabels={board.labels}
+					archived={toArchivedRows(board.archived, timeZone)}
+					archivedTotal={board.archivedTotal}
+				/>
+			</Suspense>
+		</>
 	);
 }
