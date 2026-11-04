@@ -26,8 +26,8 @@ export type WeekData = {
 		projectId: string;
 		projectName: string;
 	}[];
-	/** Applications sent, and what came back. */
-	jobs: { date: string; company: string; what: JobWhat }[];
+	/** Applications sent, and what came back; booked calls ahead carry their application. */
+	jobs: { date: string; company: string; what: JobWhat; id?: string; time?: string | null }[];
 	wants: { date: string; title: string; what: WantWhat }[];
 	car: { date: string; name: string }[];
 	/** Recurring transactions that will post. */
@@ -248,6 +248,16 @@ function planOn(data: WeekData, date: string, money: Money): WeekEntry[] {
 			note: WANT_TEXT.cools,
 			href: "/hoshii",
 		});
+	for (const call of on(data.jobs, date).filter(
+		(j) => j.what === "screening" || j.what === "interview",
+	))
+		entries.push({
+			key: `kyuu:call:${date}:${call.id ?? call.company}`,
+			app: "/kyuu",
+			title: `${call.what === "interview" ? "Interview" : "Screening"} · ${call.company}`,
+			note: call.time ? `at ${call.time}` : "booked",
+			href: call.id ? `/kyuu/${call.id}` : "/kyuu",
+		});
 	for (const [i, bill] of on(data.bills, date).entries())
 		entries.push({
 			key: `kuroji:bill:${date}:${i}`,
@@ -266,16 +276,21 @@ export function buildWeek(
 	today: string,
 	week: string[],
 	money: Money,
+	/** What's overdue from earlier days (Today's own list): it heads today's plan. */
+	carried: WeekEntry[] = [],
 ): { days: WeekDay[]; totals: WeekTotals } {
 	const days = week.map((date) => {
 		const past = date < today;
-		// Today: what's done so far, and what's still planned.
+		const isToday = date === today;
+		const planned = past ? [] : planOn(data, date, money);
+		const keys = new Set(planned.map((e) => e.key));
+		// Today: what's done so far, then what's still planned, late things first.
 		return {
 			date,
-			isToday: date === today,
+			isToday,
 			past,
 			done: date <= today ? doneOn(data, date, money) : [],
-			plan: past ? [] : planOn(data, date, money),
+			plan: isToday ? [...carried.filter((e) => !keys.has(e.key)), ...planned] : planned,
 		};
 	});
 	const upTo = <T extends { date: string }>(rows: T[]) => rows.filter((r) => r.date <= today);
