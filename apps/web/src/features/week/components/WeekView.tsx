@@ -11,7 +11,13 @@ import { addDays } from "@/features/keizoku/lib/streak";
 import { MoveCard } from "@/features/week/components/MoveCard";
 import { WeekKeys } from "@/features/week/components/WeekKeys";
 import { getWeekData } from "@/features/week/lib/data";
-import { buildWeek, type WeekEntry, weekLine, weekOf } from "@/features/week/lib/week";
+import {
+	buildWeek,
+	type WeekEntry,
+	type WeekHabit,
+	weekLine,
+	weekOf,
+} from "@/features/week/lib/week";
 import type { Workspace } from "@/lib/session";
 
 const DAY_NAME = new Intl.DateTimeFormat("en-GB", { weekday: "long", timeZone: "UTC" });
@@ -96,6 +102,8 @@ export async function WeekView({ ws, today, day }: { ws: Workspace; today: strin
 					</WeekLink>
 				</nav>
 			</header>
+
+			{data.habits && data.habits.length > 0 && <HabitWeek habits={data.habits} today={today} />}
 
 			<ol aria-label="Days" className="space-y-5 md:space-y-6">
 				{days.map((d, i) => {
@@ -186,5 +194,66 @@ function Entry({ entry, move }: { entry: WeekEntry; move?: React.ReactNode }) {
 			</Link>
 			{move}
 		</li>
+	);
+}
+
+const WEEKDAY = [
+	{ key: "mon", letter: "M" },
+	{ key: "tue", letter: "T" },
+	{ key: "wed", letter: "W" },
+	{ key: "thu", letter: "T" },
+	{ key: "fri", letter: "F" },
+	{ key: "sat", letter: "S" },
+	{ key: "sun", letter: "S" },
+];
+
+/** Each habit as seven dots: filled when kept, a ring when it was due and missed. */
+function HabitWeek({ habits, today }: { habits: WeekHabit[]; today: string }) {
+	return (
+		<section aria-label="Habits this week" className="theme-keizoku animate-rise [--i:1]">
+			<div className="group-card overflow-x-auto">
+				<table className="w-full text-sm">
+					<thead>
+						<tr className="text-[11px] text-muted-foreground">
+							<th className="text-left font-normal">
+								<Link href="/keizoku" prefetch className="hover:text-foreground">
+									Habits
+								</Link>
+							</th>
+							{WEEKDAY.map((d) => (
+								<th key={d.key} className="w-7 text-center font-normal">
+									{d.letter}
+								</th>
+							))}
+						</tr>
+					</thead>
+					<tbody>
+						{habits.map((h) => (
+							<tr key={h.id}>
+								<td className="max-w-0 truncate py-1 pr-3">
+									<span aria-hidden>{h.emoji}</span> {h.name}
+								</td>
+								{h.days.map((day) => (
+									<td key={day.date} className="text-center">
+										<span
+											role="img"
+											aria-label={`${day.date}: ${day.done ? "done" : day.scheduled && day.date < today ? "missed" : "open"}`}
+											className={cn(
+												"inline-block size-2.5 rounded-full",
+												day.done
+													? "bg-primary"
+													: day.scheduled && day.date <= today
+														? "ring-1 ring-primary/50 ring-inset"
+														: "bg-muted-foreground/15",
+											)}
+										/>
+									</td>
+								))}
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+		</section>
 	);
 }
