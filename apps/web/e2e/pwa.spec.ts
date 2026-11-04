@@ -76,10 +76,9 @@ test("in-app navigation offline falls back to the saved page", async ({ page, co
 	await expect.poll(() => cachedPages(page), { timeout: 20_000 }).toContain("/tsundoku");
 
 	await context.setOffline(true);
-	await page
-		.getByRole("link", { name: /Tsundoku/ })
-		.first()
-		.click();
+	// The header's switcher is the way between apps.
+	await page.getByRole("button", { name: "Keizoku: switch app" }).click();
+	await page.getByRole("menuitem", { name: /Tsundoku/ }).click();
 	await expect(page).toHaveURL(/\/tsundoku$/);
 	await expect(page.getByRole("main").first()).toBeVisible();
 	await expect(page.getByText("You're offline")).toHaveCount(0);
