@@ -53,7 +53,6 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 	const isNew = APP_HREFS.every((href) => started[href] === false);
 	const shows = (href: AppHref) => listed.includes(href) && !fresh.includes(href);
 	const side = shows("/keizoku") || shows("/tsundoku") || shows("/kuroji") || shows("/aisha");
-	const strip = listed.filter(shows);
 
 	return (
 		<div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-5 pb-16 sm:px-8 md:space-y-8 md:py-8">
@@ -145,25 +144,11 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 							)}
 						</div>
 					</div>
-
-					<Section title="Apps" index={5}>
-						<ul className="grid grid-cols-4 gap-2 sm:grid-cols-7 lg:gap-3">
-							{strip.map((href, i) => (
-								// A phone's four columns: the first few widen so the last row has no hole.
-								<AppFigure key={href} href={href} wide={i < (4 - (strip.length % 4)) % 4}>
-									<Suspense fallback={<FigureText value={null} label={APPS_CONFIG[href].label} />}>
-										<Figure href={href} ws={ws} today={today} />
-									</Suspense>
-								</AppFigure>
-							))}
-						</ul>
-					</Section>
 				</>
 			)}
 
-			{(fresh.length > 0 || hidden.length > 0) && (
-				<StartHere apps={fresh} hidden={hidden} all={isNew} offset={isNew ? 1 : 6} />
-			)}
+			{/* First run: the start list is the page. After that it lives on Apps. */}
+			{isNew && <StartHere apps={fresh} hidden={hidden} all offset={1} />}
 		</div>
 	);
 }
@@ -208,34 +193,7 @@ function ListSkeleton({ rows, bare = false }: { rows: number; bare?: boolean }) 
 	return bare ? <ul>{lines}</ul> : <ul className="inset-group lg:flex-1">{lines}</ul>;
 }
 
-/** One app in the strip: its seal, one figure, its name. Opens the app. */
-function AppFigure({
-	href,
-	wide,
-	children,
-}: {
-	href: AppHref;
-	wide: boolean;
-	children: React.ReactNode;
-}) {
-	const app = APPS_CONFIG[href];
-	return (
-		<li className={cn(app.theme, "min-w-0", wide && "max-sm:col-span-2")}>
-			<Link
-				href={href}
-				prefetch
-				className="flex h-full flex-col gap-0.5 rounded-group bg-surface px-3 py-2.5 outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring"
-			>
-				<span aria-hidden className="text-[13px] font-semibold text-primary">
-					{app.kanji}
-				</span>
-				{children}
-			</Link>
-		</li>
-	);
-}
-
-function FigureText({ value, label }: { value: string | null; label: string }) {
+export function FigureText({ value, label }: { value: string | null; label: string }) {
 	return (
 		<>
 			<span
@@ -362,7 +320,7 @@ async function CarLine({ today }: { today: string }) {
 }
 
 /** The strip's one figure per app: short enough for a quarter of a phone. */
-async function Figure({ href, ws, today }: { href: AppHref; ws: Workspace; today: string }) {
+export async function Figure({ href, ws, today }: { href: AppHref; ws: Workspace; today: string }) {
 	const [value, label] = await figureOf(href, ws, today);
 	return <FigureText value={value} label={label} />;
 }
