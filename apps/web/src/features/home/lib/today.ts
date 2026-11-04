@@ -72,17 +72,25 @@ async function getMoney(ws: Workspace, today: string): Promise<MoneyToday> {
 	};
 }
 
-export type HabitToday = { id: string; name: string; emoji: string; done: boolean };
+export type HabitToday = {
+	id: string;
+	name: string;
+	emoji: string;
+	done: boolean;
+	/** Today holds a note or photo: clearing it asks first, as in Keizoku. */
+	kept: boolean;
+};
 
 async function getHabits(): Promise<{ today: string; habits: HabitToday[] }> {
 	const due = await getDueToday();
 	return {
 		today: due[0]?.today ?? "",
-		habits: due.map(({ habit, done }) => ({
+		habits: due.map(({ habit, done, kept }) => ({
 			id: habit.id,
 			name: habit.name,
 			emoji: habit.emoji,
 			done,
+			kept,
 		})),
 	};
 }

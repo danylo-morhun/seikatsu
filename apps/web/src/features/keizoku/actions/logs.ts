@@ -148,7 +148,7 @@ export async function getTodayHabits(today: string): Promise<TodayHabit[]> {
 
 /** The home card's list: habits due today and whether each is done. */
 export async function getDueToday(): Promise<
-	{ habit: KeizokuHabit; done: boolean; today: string }[]
+	{ habit: KeizokuHabit; done: boolean; kept: boolean; today: string }[]
 > {
 	const ws = await getCurrentWorkspace();
 	if (!ws) return [];

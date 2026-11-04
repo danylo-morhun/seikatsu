@@ -3,13 +3,14 @@ import type { KeizokuHabit } from "@/features/keizoku/actions/guard";
 import { isDue } from "@/features/keizoku/lib/streak";
 
 /**
- * A workspace's habits due on `today` and whether each is done. No session: the home card
+ * A workspace's habits due on `today`, whether each is done, and whether the day holds words
+ * or a picture (clearing it would delete them). No session: the home card
  * passes the current workspace, the evening reminder (cron) passes each subscriber's.
  */
 export async function listDueToday(
 	workspaceId: string,
 	today: string,
-): Promise<{ habit: KeizokuHabit; done: boolean; today: string }[]> {
+): Promise<{ habit: KeizokuHabit; done: boolean; kept: boolean; today: string }[]> {
 	const habits = await db
 		.select()
 		.from(keizokuHabits)
@@ -18,7 +19,11 @@ export async function listDueToday(
 	const due = habits.filter((h) => isDue(h, today));
 	if (due.length === 0) return [];
 	const done = await db
-		.select({ habitId: keizokuHabitLogs.habitId })
+		.select({
+			habitId: keizokuHabitLogs.habitId,
+			note: keizokuHabitLogs.note,
+			photoUrl: keizokuHabitLogs.photoUrl,
+		})
 		.from(keizokuHabitLogs)
 		.where(
 			and(
@@ -29,6 +34,9 @@ export async function listDueToday(
 				eq(keizokuHabitLogs.date, today),
 			),
 		);
-	const doneIds = new Set(done.map((d) => d.habitId));
-	return due.map((habit) => ({ habit, done: doneIds.has(habit.id), today }));
+	const logs = new Map(done.map((d) => [d.habitId, d]));
+	return due.map((habit) => {
+		const log = logs.get(habit.id);
+		return { habit, done: !!log, kept: !!(log?.note || log?.photoUrl), today };
+	});
 }

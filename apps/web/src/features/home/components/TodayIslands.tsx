@@ -8,6 +8,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { type AppHref, LineAction } from "@/features/home/components/Line";
 import { greeting } from "@/features/home/lib/format";
 import type { BookToday, HabitToday } from "@/features/home/lib/today";
@@ -86,40 +87,60 @@ export function HabitsToday({ habits: server, today }: { habits: HabitToday[]; t
 		list.map((h) => (h.id === p.id ? { ...h, done: p.done } : h)),
 	);
 
-	function toggle(h: (typeof habits)[number]) {
+	// A day with a note or photo is cleared only after asking, as in Keizoku.
+	const [clearing, setClearing] = useState<(typeof habits)[number] | null>(null);
+
+	function save(h: (typeof habits)[number], done: boolean) {
 		startTransition(async () => {
-			setDone({ id: h.id, done: !h.done });
-			const result = await tickDay(h, today, !h.done).catch(() => ({
+			setDone({ id: h.id, done });
+			const result = await tickDay(h, today, done).catch(() => ({
 				error: "Couldn't save. Check your connection.",
 			}));
 			if ("error" in result) toast.error(result.error);
 		});
 	}
 
+	function toggle(h: (typeof habits)[number]) {
+		if (h.done && h.kept) setClearing(h);
+		else save(h, !h.done);
+	}
+
 	return (
-		<ul className="-my-1">
-			{habits.map((h) => (
-				<li key={h.id} className="flex min-h-10 items-center gap-1.5">
-					<CheckButton
-						done={h.done}
-						label={`${h.name}: ${h.done ? "done today" : "mark done today"}`}
-						onClick={() => toggle(h)}
-						className="mr-1.5"
-					/>
-					<span aria-hidden className="shrink-0">
-						{h.emoji}
-					</span>
-					<span
-						className={cn(
-							"min-w-0 truncate text-sm",
-							h.done && "text-muted-foreground line-through decoration-muted-foreground/40",
-						)}
-					>
-						{h.name}
-					</span>
-				</li>
-			))}
-		</ul>
+		<>
+			<ul className="-my-1">
+				{habits.map((h) => (
+					<li key={h.id} className="flex min-h-10 items-center gap-1.5">
+						<CheckButton
+							done={h.done}
+							label={`${h.name}: ${h.done ? "done today" : "mark done today"}`}
+							onClick={() => toggle(h)}
+							className="mr-1.5"
+						/>
+						<span aria-hidden className="shrink-0">
+							{h.emoji}
+						</span>
+						<span
+							className={cn(
+								"min-w-0 truncate text-sm",
+								h.done && "text-muted-foreground line-through decoration-muted-foreground/40",
+							)}
+						>
+							{h.name}
+						</span>
+					</li>
+				))}
+			</ul>
+			<ConfirmDelete
+				confirmLabel="Clear day"
+				open={clearing != null}
+				onOpenChange={(open) => !open && setClearing(null)}
+				title="Clear today?"
+				description={`“${clearing?.name ?? "This habit"}” won't count as done today, and today's note and photo are deleted.`}
+				onConfirm={async () => {
+					if (clearing) save(clearing, false);
+				}}
+			/>
+		</>
 	);
 }
 
