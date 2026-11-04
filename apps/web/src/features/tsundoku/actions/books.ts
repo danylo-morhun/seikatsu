@@ -15,6 +15,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { z } from "zod";
+import { tickReadingHabits } from "@/features/keizoku/lib/from-reading";
 import {
 	assertShelvesInWorkspace,
 	getOwnedBook,
@@ -244,6 +245,7 @@ export async function updateStatus(bookId: string, status: unknown): Promise<Res
 		if (filled > 0) await moveDaySession(tx, bookId, today, filled);
 		await tx.update(tsundokuBooks).set(patch).where(eq(tsundokuBooks.id, bookId));
 	});
+	if (filled > 0) await tickReadingHabits(workspace.id, today);
 	revalidate();
 	return { success: true };
 }
@@ -340,6 +342,8 @@ export async function setProgress(bookId: string, input: unknown): Promise<Resul
 		await moveDaySession(tx, bookId, today, delta);
 		await tx.update(tsundokuBooks).set(patch).where(eq(tsundokuBooks.id, bookId));
 	});
+	// Pages read that day: a "Read" habit in Keizoku is done too.
+	if (delta > 0) await tickReadingHabits(workspace.id, today);
 
 	revalidate();
 	return { success: true };

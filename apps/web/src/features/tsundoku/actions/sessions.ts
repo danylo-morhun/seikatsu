@@ -2,6 +2,7 @@
 
 import { db, desc, eq, tsundokuBooks, tsundokuSessions } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
+import { tickReadingHabits } from "@/features/keizoku/lib/from-reading";
 import {
 	getOwnedBook,
 	getOwnedSession,
@@ -62,6 +63,8 @@ export async function logSession(bookId: string, input: unknown): Promise<Result
 		await tx.insert(tsundokuSessions).values({ id, bookId, date, pagesRead });
 		await tx.update(tsundokuBooks).set(patch).where(eq(tsundokuBooks.id, bookId));
 	});
+	// A day of reading logged: a "Read" habit in Keizoku is done that day too.
+	await tickReadingHabits(workspace.id, date);
 
 	revalidatePath("/tsundoku", "layout");
 	revalidateShell();
