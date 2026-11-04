@@ -171,4 +171,70 @@ describe("Apple Pay captures meet bank imports", () => {
 		});
 		expect(await captureState(paid.id)).toMatchObject({ state: "pending" });
 	});
+
+	it("a payment typed in by hand is claimed too, not doubled", async () => {
+		const { workspace, card, groceries, uncategorized } = await seed();
+		const { createTransaction } = await import("../actions/transactions");
+		const { insertImported } = await import("./import-core");
+
+		const typed = await createTransaction({
+			workspaceId: workspace.id,
+			fromAccountId: card.id,
+			toSplits: [{ accountId: groceries.id, amount: 45.99 }],
+			currency: "PLN",
+			description: "Lidl",
+			date: "2026-10-20",
+		});
+		expect(typed).toMatchObject({ success: true });
+
+		const booking = {
+			workspaceId: workspace.id,
+			externalId: "bank-4",
+			date: "2026-10-21",
+			description: "LIDL 12",
+			bankAccountId: card.id,
+			counterpartId: uncategorized.id,
+			isInflow: false,
+			// A cent off, as a converted payment can be.
+			amount: 46,
+			currency: "PLN",
+			baseCurrency: "PLN",
+		};
+		expect(await insertImported(booking)).toBe(false);
+		const all = await testDb.select().from(schema.transactions);
+		expect(all).toHaveLength(1);
+		expect(all[0]).toMatchObject({ externalId: "bank-4", description: "Lidl" });
+	});
+
+	it("money in typed by hand meets the bank's booking of it", async () => {
+		const { workspace, card, uncategorized } = await seed();
+		const [salary] = await testDb
+			.insert(schema.accounts)
+			.values({ workspaceId: workspace.id, name: "Salary", type: "INCOME", currency: "PLN" })
+			.returning();
+		const { createTransaction } = await import("../actions/transactions");
+		const { insertImported } = await import("./import-core");
+
+		await createTransaction({
+			workspaceId: workspace.id,
+			toAccountId: card.id,
+			fromSplits: [{ accountId: salary.id, amount: 5000 }],
+			currency: "PLN",
+			date: "2026-10-10",
+		});
+		const created = await insertImported({
+			workspaceId: workspace.id,
+			externalId: "bank-5",
+			date: "2026-10-10",
+			description: "SALARY",
+			bankAccountId: card.id,
+			counterpartId: uncategorized.id,
+			isInflow: true,
+			amount: 5000,
+			currency: "PLN",
+			baseCurrency: "PLN",
+		});
+		expect(created).toBe(false);
+		expect(await testDb.select().from(schema.transactions)).toHaveLength(1);
+	});
 });

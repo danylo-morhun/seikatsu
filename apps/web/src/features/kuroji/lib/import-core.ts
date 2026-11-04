@@ -3,7 +3,7 @@
 // No auth here — callers must authorize first.
 
 import { accounts, and, db, eq, transactionEntries, transactions } from "@seikatsu/db";
-import { claimSavedCapture, settlePendingCapture } from "./capture-intake";
+import { claimSavedEntry, settlePendingCapture } from "./capture-intake";
 import { getExchangeRate } from "./exchange-rates";
 
 export function isoDate(d: Date): string {
@@ -132,7 +132,7 @@ export async function insertImported(opts: {
 		if (seen) return false; // already imported
 
 		const booked = { workspaceId, externalId, date, bankAccountId, amount, currency };
-		if (!isInflow && (await claimSavedCapture(tx, booked))) return false;
+		if (await claimSavedEntry(tx, booked, isInflow)) return false;
 
 		const [txn] = await tx
 			.insert(transactions)
