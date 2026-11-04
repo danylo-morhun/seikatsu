@@ -31,7 +31,7 @@ const prefsSchema = z.object({
 	morningTime: time,
 	keizokuEnabled: z.boolean(),
 	keizokuTime: time,
-	kyuuEnabled: z.boolean(),
+	morningBrief: z.boolean(),
 	aishaEnabled: z.boolean(),
 	kurojiRecurring: z.boolean(),
 	kurojiBudget: z.boolean(),
@@ -144,6 +144,8 @@ export async function saveNotificationPrefs(input: PrefsInput): Promise<Result> 
 	if (!parsed.success) return { error: "Check the times and try again." };
 	const values = {
 		...parsed.data,
+		// One weekly summary: the old Monday one follows the Sunday recap's switch.
+		kurojiWeekly: parsed.data.weekRecap,
 		timeZone: safeTimeZone(parsed.data.timeZone),
 		updatedAt: new Date(),
 	};

@@ -2,24 +2,19 @@ import { db, eq, notificationPrefs, pushSubscriptions } from "@seikatsu/db";
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { notifyAisha } from "@/features/aisha/lib/notify";
+import { notifyToday } from "@/features/home/lib/notify";
 import { notifyKeizoku } from "@/features/keizoku/lib/notify";
-import {
-	notifyKurojiBudget,
-	notifyKurojiRecurring,
-	notifyKurojiWeekly,
-} from "@/features/kuroji/lib/notify";
-import { notifyKyuu } from "@/features/kyuu/lib/notify";
+import { notifyKurojiBudget, notifyKurojiRecurring } from "@/features/kuroji/lib/notify";
 import type { Notifier } from "@/features/pwa/lib/notifiers";
 import { localClock, safeTimeZone } from "@/features/pwa/lib/schedule";
 import { notifyWeek } from "@/features/week/lib/notify";
 
 const NOTIFIERS: Record<string, Notifier> = {
+	today: notifyToday,
 	keizoku: notifyKeizoku,
-	kyuu: notifyKyuu,
 	aisha: notifyAisha,
 	kurojiRecurring: notifyKurojiRecurring,
 	kurojiBudget: notifyKurojiBudget,
-	kurojiWeekly: notifyKurojiWeekly,
 	week: notifyWeek,
 };
 
