@@ -1,9 +1,10 @@
 // Aisha's offline-capable mutations: run the action or queue it when there's no connection.
 // Due dates need every reading and service, so the dashboard updates once they sync.
 
+import { updateDocument } from "@/features/aisha/actions/documents";
 import { addReading } from "@/features/aisha/actions/readings";
 import { logService } from "@/features/aisha/actions/services";
-import type { ServiceFormValues } from "@/features/aisha/lib/aisha-schemas";
+import type { DocumentFormValues, ServiceFormValues } from "@/features/aisha/lib/aisha-schemas";
 import { runOrQueue } from "@/features/pwa/lib/run";
 
 const KM = new Intl.NumberFormat("pl-PL");
@@ -24,6 +25,16 @@ export function saveService(vehicleId: string, values: ServiceFormValues) {
 		{ vehicleId, values: withId },
 		`Service at ${KM.format(values.km)} km`,
 		() => logService(vehicleId, withId),
+	);
+}
+
+/** An edit or renewal of a document: the whole document is set, so a replay lands once. */
+export function saveDocument(documentId: string, values: DocumentFormValues) {
+	return runOrQueue(
+		"aisha.updateDocument",
+		{ documentId, values },
+		`${values.name || "Document"} saved`,
+		() => updateDocument(documentId, values),
 	);
 }
 

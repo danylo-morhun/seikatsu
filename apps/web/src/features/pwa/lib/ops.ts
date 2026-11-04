@@ -4,7 +4,7 @@
 // Rule for adding one: replaying it twice must land the same state (set-style updates,
 // creates with a client-made id), because a lost response gets it sent again.
 
-import type { ServiceFormValues } from "@/features/aisha/lib/aisha-schemas";
+import type { DocumentFormValues, ServiceFormValues } from "@/features/aisha/lib/aisha-schemas";
 import type { BuyValues, ItemFormValues, MoveTarget } from "@/features/hoshii/lib/hoshii-schemas";
 import type { HabitPatch } from "@/features/keizoku/lib/keizoku-schemas";
 import type { TransactionInput } from "@/features/kuroji/actions/transactions";
@@ -51,6 +51,8 @@ export interface OfflineOps {
 	"kyuu.ghost": { ids: string[]; on: string };
 	"aisha.addReading": { vehicleId: string; id: string; date: string; km: number };
 	"aisha.logService": { vehicleId: string; values: ServiceFormValues & { id: string } };
+	/** Sets the whole document (a renewal is a new expiry), so a replay lands the same. */
+	"aisha.updateDocument": { documentId: string; values: DocumentFormValues };
 	"hoshii.createItem": ItemFormValues & { id: string };
 	/** Buying again sets the same purchase; the expense id makes Kuroji post it once. */
 	"hoshii.buyItem": { itemId: string; values: BuyValues & { expenseId: string } };

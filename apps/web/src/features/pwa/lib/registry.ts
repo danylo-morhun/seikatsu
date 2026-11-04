@@ -2,9 +2,10 @@
 // server action the online path calls, so ownership checks and revalidation live in one place.
 
 import { z } from "zod";
+import { updateDocument } from "@/features/aisha/actions/documents";
 import { addReading } from "@/features/aisha/actions/readings";
 import { logService } from "@/features/aisha/actions/services";
-import { serviceFormSchema } from "@/features/aisha/lib/aisha-schemas";
+import { documentFormSchema, serviceFormSchema } from "@/features/aisha/lib/aisha-schemas";
 import { buyItem, createItem, moveItem, reorderPlan } from "@/features/hoshii/actions/items";
 import {
 	buySchema,
@@ -248,6 +249,13 @@ export const REGISTRY: { [N in OpName]: Entry<N> } = {
 			values: serviceFormSchema.extend({ id: z.uuid() }),
 		}) as z.ZodType<OfflineOps["aisha.logService"]>,
 		run: ({ vehicleId, values }) => logService(vehicleId, values),
+	},
+	"aisha.updateDocument": {
+		schema: z.object({
+			documentId: z.uuid(),
+			values: documentFormSchema,
+		}) as unknown as z.ZodType<OfflineOps["aisha.updateDocument"]>,
+		run: ({ documentId, values }) => updateDocument(documentId, values),
 	},
 	"hoshii.buyItem": {
 		schema: z.object({
