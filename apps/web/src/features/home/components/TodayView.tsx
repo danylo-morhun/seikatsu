@@ -1,7 +1,6 @@
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { type CSSProperties, Suspense } from "react";
-import { DayTabs } from "@/features/home/components/DayTabs";
 import { type AppHref, Line, LineAction, LineSkeleton } from "@/features/home/components/Line";
 import { StartHere } from "@/features/home/components/StartHere";
 import {
@@ -55,9 +54,8 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 	const side = shows("/keizoku") || shows("/tsundoku") || shows("/kuroji") || shows("/aisha");
 
 	return (
-		<div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-5 pb-16 sm:px-8 md:space-y-8 md:py-8">
+		<div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-5 pb-28 sm:px-8 md:space-y-8 md:py-8">
 			<HomeKeys listed={listed} />
-			{!isNew && <DayTabs current="today" />}
 			{isNew ? (
 				<header className="max-w-2xl animate-rise">
 					<h1 className="text-xl font-semibold tracking-tight md:text-3xl">

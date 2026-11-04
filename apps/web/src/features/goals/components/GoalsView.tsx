@@ -1,7 +1,6 @@
 import { GoalCard, type GoalCardData, NewGoal } from "@/features/goals/components/GoalParts";
 import { getGoals, getLinkOptions } from "@/features/goals/lib/data";
 import { describeLink, goalProgress, timeLeft } from "@/features/goals/lib/progress";
-import { DayTabs } from "@/features/home/components/DayTabs";
 import { money } from "@/features/home/lib/format";
 
 const WHEN = new Intl.DateTimeFormat("en-GB", {
@@ -43,8 +42,7 @@ export async function GoalsView({
 	});
 
 	return (
-		<div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-5 pb-16 sm:px-8 md:space-y-8 md:py-8">
-			<DayTabs current="goals" />
+		<div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-5 pb-28 sm:px-8 md:space-y-8 md:py-8">
 			<header className="flex animate-rise flex-wrap items-end justify-between gap-3">
 				<div>
 					<h1 className="text-xl font-semibold tracking-tight md:text-3xl">Goals</h1>

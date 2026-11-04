@@ -31,7 +31,7 @@ export function AppsView({
 	const live = listed.filter((href) => !fresh.includes(href));
 
 	return (
-		<div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-5 pb-16 sm:px-8 md:space-y-8 md:py-8">
+		<div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-5 pb-28 sm:px-8 md:space-y-8 md:py-8">
 			<header className="animate-rise">
 				<h1 className="text-xl font-semibold tracking-tight md:text-3xl">Apps</h1>
 				<p className="mt-1 text-sm text-muted-foreground">

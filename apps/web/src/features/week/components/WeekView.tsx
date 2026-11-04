@@ -3,7 +3,6 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import { DayTabs } from "@/features/home/components/DayTabs";
 import { Seal } from "@/features/home/components/Line";
 import { loadAgenda } from "@/features/home/lib/agenda";
 import { money } from "@/features/home/lib/format";
@@ -65,8 +64,7 @@ export async function WeekView({ ws, today, day }: { ws: Workspace; today: strin
 	const ahead = week.filter((d) => d >= today);
 
 	return (
-		<div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-5 pb-16 sm:px-8 md:space-y-8 md:py-8">
-			<DayTabs current="week" />
+		<div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-5 pb-28 sm:px-8 md:space-y-8 md:py-8">
 			<header className="flex animate-rise flex-wrap items-end justify-between gap-3">
 				<div>
 					<h1 className="text-xl font-semibold tracking-tight md:text-3xl">{rangeTitle(week)}</h1>

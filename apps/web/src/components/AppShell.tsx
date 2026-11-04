@@ -7,6 +7,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { AppSidebar } from "@/components/AppSidebar";
 import { DesignProvider } from "@/components/DesignProvider";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
+import { ShellNav } from "@/components/ShellNav";
 import { OfflineWarmup } from "@/features/pwa/components/OfflineWarmup";
 import { APP_THEMES, getThemeForPath } from "@/lib/app-themes";
 import type { Design } from "@/lib/design";
@@ -71,11 +72,16 @@ export function AppShell({
 	return (
 		<DesignProvider initial={design}>
 			<SidebarProvider defaultOpen={sidebarDefaultOpen} className={theme}>
-				<AppSidebar workspaceName={workspaceName} hiddenApps={hiddenApps} user={user} />
+				<AppSidebar workspaceName={workspaceName} user={user} />
 				<SidebarInset className="min-w-0">
-					<AppHeader workspaceId={workspaceId} baseCurrency={baseCurrency} />
+					<AppHeader
+						workspaceId={workspaceId}
+						baseCurrency={baseCurrency}
+						hiddenApps={hiddenApps}
+					/>
 					{children}
 				</SidebarInset>
+				<ShellNav />
 				<KeyboardShortcuts />
 				<OfflineWarmup />
 			</SidebarProvider>

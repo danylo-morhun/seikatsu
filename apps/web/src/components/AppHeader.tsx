@@ -7,9 +7,11 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AppSwitcher, BackToShell } from "@/components/AppSwitcher";
 import { useDesign } from "@/components/DesignProvider";
 import { ShortcutsButton } from "@/components/KeyboardShortcuts";
 import { SectionNav } from "@/components/SectionNav";
+import { isShellPage } from "@/components/ShellNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { requestLogService } from "@/features/aisha/lib/events";
 import { CaptureButton } from "@/features/capture/components/CaptureButton";
@@ -22,7 +24,8 @@ import { requestNewApplication } from "@/features/kyuu/lib/events";
 import { OfflinePill } from "@/features/pwa/components/OfflinePill";
 import { requestNewCard } from "@/features/seiryu/lib/events";
 import { requestNewBook } from "@/features/tsundoku/lib/events";
-import { getAppForPath } from "@/lib/app-themes";
+import { type APPS_CONFIG, getAppForPath } from "@/lib/app-themes";
+import { AISHA_TABS, HOSHII_TABS, KEIZOKU_TABS, KYUU_TABS, TSUNDOKU_TABS } from "@/lib/places";
 
 // Kuroji-only controls load on demand so the other apps' shells don't ship the
 // form/date-picker code (zod, react-hook-form, react-day-picker).
@@ -30,34 +33,6 @@ const DateRangePicker = dynamic(
 	() => import("@/features/kuroji/components/DateRangePicker").then((m) => m.DateRangePicker),
 	{ loading: () => <div className="h-9 w-32" /> },
 );
-
-const TSUNDOKU_TABS = [
-	{ value: "/tsundoku", label: "Library" },
-	{ value: "/tsundoku/year", label: "Year" },
-] as const;
-
-const KEIZOKU_TABS = [
-	{ value: "/keizoku", label: "Today" },
-	{ value: "/keizoku/year", label: "Year" },
-	{ value: "/keizoku/archive", label: "Archive" },
-] as const;
-
-const KYUU_TABS = [
-	{ value: "/kyuu", label: "Applications" },
-	{ value: "/kyuu/stats", label: "Stats" },
-] as const;
-
-const AISHA_TABS = [
-	{ value: "/aisha", label: "Next" },
-	{ value: "/aisha/history", label: "History" },
-	{ value: "/aisha/year", label: "Year" },
-] as const;
-
-const HOSHII_TABS = [
-	{ value: "/hoshii", label: "Now" },
-	{ value: "/hoshii/lists", label: "Lists" },
-	{ value: "/hoshii/summary", label: "Summary" },
-] as const;
 
 const KUROJI_TABS: { value: KurojiTab; label: string }[] = [
 	{ value: "expense", label: "Expenses" },
@@ -76,10 +51,13 @@ const CAPTURE_CLASSIC = "xl:w-auto xl:gap-2 xl:px-3 max-md:hidden";
 interface Props {
 	workspaceId?: string;
 	baseCurrency?: string;
+	/** Apps set aside: the switcher leaves them out (unless one is open). */
+	hiddenApps?: string[];
 }
 
-export function AppHeader({ workspaceId, baseCurrency }: Props) {
+export function AppHeader({ workspaceId, baseCurrency, hiddenApps = [] }: Props) {
 	const pathname = usePathname();
+	const shellPage = isShellPage(pathname);
 	const searchParams = useSearchParams();
 	const app = getAppForPath(pathname);
 
@@ -172,27 +150,30 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 			)}
 		>
 			<div className={cn("flex min-w-0 items-center", glass ? "gap-3" : "gap-1")}>
+				{/* Phones: the shell's own pages have its bar below; anywhere else, back to it. */}
+				{!shellPage && <BackToShell className="md:hidden max-md:-ml-2" />}
 				<SidebarTrigger
 					className={cn(
-						"[&>svg]:h-4 [&>svg]:w-4",
+						"[&>svg]:h-4 [&>svg]:w-4 max-md:hidden",
 						glass ? "glass size-10 rounded-full md:size-9" : "size-10 max-md:-ml-2 md:size-8",
 					)}
 				/>
-				{!glass && <div aria-hidden className="mr-1 h-4 w-px shrink-0 bg-border" />}
-				<Link
-					href={app?.href ?? (isSettings ? "/settings" : "/")}
-					className={cn(
-						"flex min-w-0 items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-						tabs.length > 0 && "md:max-lg:hidden",
-					)}
-				>
-					{app && <span className="text-primary">{app.kanji}</span>}
-					<span className="truncate">
-						{app ? app.name : isSettings ? "Settings" : "seikatsu"}
-						{/* The sidebar already names the app's purpose; on a phone or beside tabs the label is noise. */}
-						{app && showPurpose && <span className="hidden md:inline"> · {app.label}</span>}
-					</span>
-				</Link>
+				{!glass && <div aria-hidden className="mr-1 h-4 w-px shrink-0 bg-border max-md:hidden" />}
+				{app ? (
+					<AppSwitcher
+						current={app.href as keyof typeof APPS_CONFIG}
+						hiddenApps={hiddenApps}
+						showPurpose={showPurpose}
+						className={cn(tabs.length > 0 && "md:max-lg:hidden")}
+					/>
+				) : (
+					<Link
+						href={isSettings ? "/settings" : "/"}
+						className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+					>
+						<span className="truncate">{isSettings ? "Settings" : "seikatsu"}</span>
+					</Link>
+				)}
 			</div>
 
 			{tabs.length > 0 && (
@@ -204,7 +185,7 @@ export function AppHeader({ workspaceId, baseCurrency }: Props) {
 				/>
 			)}
 
-			{(app || ["/", "/week", "/goals"].includes(pathname)) && (
+			{(app || shellPage) && (
 				<div className="ml-auto flex min-w-0 items-center gap-1.5">
 					<OfflinePill />
 					{/* The plan picks its own month. */}
