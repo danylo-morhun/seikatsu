@@ -13,7 +13,7 @@ import { useEffect, useState } from "react";
 import { TabBar, TabBarAction } from "@/components/TabBar";
 import type { ProjectSummary } from "@/features/seiryu/components/ProjectDialog";
 import { ProjectList } from "@/features/seiryu/components/ProjectList";
-import { requestNewCard } from "@/features/seiryu/lib/events";
+import { requestArchive, requestNewCard } from "@/features/seiryu/lib/events";
 import { readAppEntry } from "@/lib/app-entry";
 
 interface Props {
@@ -59,7 +59,15 @@ export function SeiryuNavTabs({ projects, cardCounts }: Props) {
 						onClick: () => setProjectsOpen(true),
 						"aria-haspopup": "dialog",
 					},
-					{ label: "Archive", icon: Archive01Icon, href: "/settings/seiryu?section=archive" },
+					// On a board: its own archive sheet, the same one A opens. Elsewhere: every project's.
+					isBoard
+						? {
+								label: "Archive",
+								icon: Archive01Icon,
+								onClick: requestArchive,
+								"aria-haspopup": "dialog" as const,
+							}
+						: { label: "Archive", icon: Archive01Icon, href: "/settings/seiryu?section=archive" },
 					{ label: "Settings", icon: Settings01Icon, href: "/settings/seiryu" },
 				]}
 				action={

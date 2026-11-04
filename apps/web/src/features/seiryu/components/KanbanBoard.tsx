@@ -58,7 +58,7 @@ import { NewCardDialog } from "@/features/seiryu/components/NewCardDialog";
 import { SettingsArchive } from "@/features/seiryu/components/SettingsArchive";
 import type { ArchivedCardRow } from "@/features/seiryu/lib/archive";
 import { PRIORITIES } from "@/features/seiryu/lib/constants";
-import { NEW_CARD_EVENT } from "@/features/seiryu/lib/events";
+import { NEW_CARD_EVENT, OPEN_ARCHIVE_EVENT } from "@/features/seiryu/lib/events";
 import {
 	applyFilters,
 	type Filters,
@@ -225,11 +225,14 @@ export function KanbanBoard({
 		function onRequest() {
 			setCapture({ open: true, instant: false });
 		}
+		const onArchive = () => setArchiveOpen(true);
 		window.addEventListener("keydown", onKeyDown);
 		window.addEventListener(NEW_CARD_EVENT, onRequest);
+		window.addEventListener(OPEN_ARCHIVE_EVENT, onArchive);
 		return () => {
 			window.removeEventListener("keydown", onKeyDown);
 			window.removeEventListener(NEW_CARD_EVENT, onRequest);
+			window.removeEventListener(OPEN_ARCHIVE_EVENT, onArchive);
 		};
 	}, [router]);
 
