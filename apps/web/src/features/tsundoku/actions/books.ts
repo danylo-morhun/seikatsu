@@ -233,10 +233,17 @@ export async function updateStatus(bookId: string, status: unknown): Promise<Res
 	if (book.status === parsed.data) return { success: true };
 
 	const today = await getUserToday();
-	await db
-		.update(tsundokuBooks)
-		.set(statusPatch(book, parsed.data, today))
-		.where(eq(tsundokuBooks.id, bookId));
+	const patch = statusPatch(book, parsed.data, today);
+	// Finishing a book being read fills its last pages: they were read today, so they go in
+	// today's session. A book never tracked as reading gets no invented reading days.
+	const filled =
+		book.status === "reading" && patch.currentPage != null
+			? patch.currentPage - book.currentPage
+			: 0;
+	await db.transaction(async (tx) => {
+		if (filled > 0) await moveDaySession(tx, bookId, today, filled);
+		await tx.update(tsundokuBooks).set(patch).where(eq(tsundokuBooks.id, bookId));
+	});
 	revalidate();
 	return { success: true };
 }
@@ -278,9 +285,43 @@ export async function setStartedAt(bookId: string, input: unknown): Promise<Resu
 	return { success: true };
 }
 
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * Keeps the reading log in step with the page: pages read forward go into that day's session
+ * (made if there is none); stepping back — a typo put right — takes them out of that day's
+ * session again, never below zero, so Week and Year don't count them twice.
+ */
+async function moveDaySession(tx: Tx, bookId: string, date: string, delta: number) {
+	if (delta === 0) return;
+	const [day] = await tx
+		.select({ id: tsundokuSessions.id, pagesRead: tsundokuSessions.pagesRead })
+		.from(tsundokuSessions)
+		.where(and(eq(tsundokuSessions.bookId, bookId), eq(tsundokuSessions.date, date)))
+		.limit(1);
+	if (delta > 0) {
+		if (day)
+			await tx
+				.update(tsundokuSessions)
+				.set({ pagesRead: day.pagesRead + delta })
+				.where(eq(tsundokuSessions.id, day.id));
+		else await tx.insert(tsundokuSessions).values({ bookId, date, pagesRead: delta });
+		return;
+	}
+	if (!day) return;
+	const left = day.pagesRead + delta;
+	if (left > 0)
+		await tx
+			.update(tsundokuSessions)
+			.set({ pagesRead: left })
+			.where(eq(tsundokuSessions.id, day.id));
+	else await tx.delete(tsundokuSessions).where(eq(tsundokuSessions.id, day.id));
+}
+
 /**
  * "I'm on page N". Reading forward is a session dated today (added to today's session if
- * there is one), so the streak and pace follow without a separate log.
+ * there is one), so the streak and pace follow without a separate log; stepping back takes
+ * the pages out of that day's session.
  */
 export async function setProgress(bookId: string, input: unknown): Promise<Result> {
 	const workspace = await requireWorkspace();
@@ -296,21 +337,7 @@ export async function setProgress(bookId: string, input: unknown): Promise<Resul
 	const delta = (patch.currentPage ?? book.currentPage) - book.currentPage;
 
 	await db.transaction(async (tx) => {
-		if (delta > 0) {
-			const [todays] = await tx
-				.select({ id: tsundokuSessions.id, pagesRead: tsundokuSessions.pagesRead })
-				.from(tsundokuSessions)
-				.where(and(eq(tsundokuSessions.bookId, bookId), eq(tsundokuSessions.date, today)))
-				.limit(1);
-			if (todays) {
-				await tx
-					.update(tsundokuSessions)
-					.set({ pagesRead: todays.pagesRead + delta })
-					.where(eq(tsundokuSessions.id, todays.id));
-			} else {
-				await tx.insert(tsundokuSessions).values({ bookId, date: today, pagesRead: delta });
-			}
-		}
+		await moveDaySession(tx, bookId, today, delta);
 		await tx.update(tsundokuBooks).set(patch).where(eq(tsundokuBooks.id, bookId));
 	});
 
