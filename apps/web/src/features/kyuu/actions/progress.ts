@@ -30,11 +30,13 @@ export type EventInput = z.infer<typeof eventSchema>;
 
 /**
  * Moves an application to a status. Reaching a stage or an answer logs it as an event dated
- * today (editable on the timeline); sending a drafted one dates it today.
+ * today (editable on the timeline); sending a drafted one dates it today. `on` is the user's
+ * day when it was done, so a change queued offline keeps its day; never a day still to come.
  */
 export async function setStatus(
 	applicationId: string,
 	status: Status,
+	on?: string,
 ): Promise<Result<{ status: Status }>> {
 	const parsed = statusSchema.safeParse(status);
 	if (!parsed.success) return { error: "Unknown status" };
@@ -42,7 +44,8 @@ export async function setStatus(
 	if (!app) return { error: "Application not found" };
 	if (app.status === parsed.data) return { success: true, data: { status: app.status } };
 
-	const today = await getUserToday();
+	const userToday = await getUserToday();
+	const today = on && /^\d{4}-\d{2}-\d{2}$/.test(on) && on < userToday ? on : userToday;
 	const kind = EVENT_OF_STATUS[parsed.data];
 	const sending =
 		parsed.data === "applied" && (app.status === "drafted" || app.status === "sourced");

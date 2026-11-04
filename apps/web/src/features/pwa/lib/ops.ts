@@ -43,7 +43,7 @@ export interface OfflineOps {
 	"tsundoku.updateStatus": { bookId: string; status: BookStatus };
 	"tsundoku.updateRating": { bookId: string; rating: number | null };
 	"tsundoku.logSession": { bookId: string; id: string; date: string; pagesRead: number };
-	"kyuu.setStatus": { applicationId: string; status: Status };
+	"kyuu.setStatus": { applicationId: string; status: Status; on?: string };
 	"kyuu.logEvent": { applicationId: string; event: EventInput & { id: string } };
 	"kyuu.followUp": { applicationId: string; id: string; date: string };
 	"kyuu.setArchived": { applicationId: string; archived: boolean };
