@@ -8,10 +8,13 @@ import {
 	desc,
 	eq,
 	gte,
+	isNull,
 	kurojiCaptureKeys,
 	kurojiCaptures,
 	like,
 	lte,
+	or,
+	sql,
 	transactionEntries,
 	transactions,
 	workspaces,
@@ -70,27 +73,40 @@ type Booked = {
 };
 
 /**
- * A card payment the bank booked may already be in the ledger, saved from Apple Pay.
- * If so it takes the bank's id (so later syncs skip it) and true is returned.
+ * A payment the bank booked may already be in the ledger: saved from Apple Pay, typed into
+ * the form or Capture, posted by Aisha, Hoshii or a recurring rule. If so it takes the bank's
+ * id (so later syncs skip it) and true is returned. Apple Pay saves are tried first; then any
+ * entry on that account with no bank id yet, the same amount (to the cent) and a day within
+ * the booking lag. Inflows match a positive entry, outflows a negative one.
  */
-export async function claimSavedCapture(tx: Tx, booked: Booked): Promise<boolean> {
+export async function claimSavedEntry(tx: Tx, booked: Booked, isInflow: boolean): Promise<boolean> {
+	const signed = isInflow ? booked.amount : -booked.amount;
 	const [saved] = await tx
-		.select({ id: transactions.id })
+		.select({ id: transactions.id, externalId: transactions.externalId })
 		.from(transactions)
 		.innerJoin(transactionEntries, eq(transactionEntries.transactionId, transactions.id))
 		.where(
 			and(
 				eq(transactions.workspaceId, booked.workspaceId),
-				like(transactions.externalId, `${CAPTURE_EXTERNAL_PREFIX}%`),
+				or(
+					like(transactions.externalId, `${CAPTURE_EXTERNAL_PREFIX}%`),
+					isNull(transactions.externalId),
+				),
 				eq(transactionEntries.accountId, booked.bankAccountId),
 				eq(transactionEntries.currency, booked.currency),
-				eq(transactionEntries.amount, (-booked.amount).toFixed(4)),
+				// A converted payment can differ from the bank's figure by a cent.
+				gte(transactionEntries.amount, (signed - 0.01).toFixed(4)),
+				lte(transactionEntries.amount, (signed + 0.01).toFixed(4)),
 				gte(transactions.date, shiftDay(booked.date, -BOOKING_LAG_DAYS)),
 				// A payment late in the evening can carry the next day in the phone's zone.
 				lte(transactions.date, shiftDay(booked.date, 1)),
 			),
 		)
-		.orderBy(desc(transactions.date))
+		.orderBy(
+			sql`${transactions.externalId} is null`,
+			sql`abs(${transactionEntries.amount} - ${signed})`,
+			desc(transactions.date),
+		)
 		.limit(1);
 	if (!saved) return false;
 	await tx
