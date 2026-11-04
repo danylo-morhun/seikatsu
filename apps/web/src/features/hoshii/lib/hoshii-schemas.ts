@@ -40,6 +40,8 @@ export const itemFormSchema = z.object({
 	note: optionalText(1000),
 	/** New wants only: straight to the Plan. */
 	skipCooling: z.boolean().optional(),
+	/** New wants only: the user's day when it was added, so a late sync dates it right. */
+	on: day.optional(),
 });
 export type ItemFormValues = z.input<typeof itemFormSchema>;
 
