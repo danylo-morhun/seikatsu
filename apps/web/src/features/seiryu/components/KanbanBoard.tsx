@@ -65,6 +65,7 @@ import {
 	readFilters,
 	writeFilters,
 } from "@/features/seiryu/lib/filters";
+import { finishCard } from "@/features/seiryu/lib/finish";
 import { addCard, placeCard, saveCard, shelveCard } from "@/features/seiryu/lib/offline";
 import { overlayCards } from "@/features/seiryu/lib/overlay";
 import { useServerState } from "@/features/seiryu/lib/server-state";
@@ -411,6 +412,29 @@ export function KanbanBoard({
 		});
 	}
 
+	// X, or Done in the menu: to the first finish column, with Undo — the same act as Today's Done.
+	const doneColumn = sortedColumns.find((c) => c.isDone);
+	function handleCardFinish(cardId: string) {
+		const card = cardsRef.current.find((c) => c.id === cardId);
+		if (!card || !doneColumn || card.columnId === doneColumn.id) return;
+		const from = { columnId: card.columnId, position: card.position };
+		const last = cardsRef.current
+			.filter((c) => c.columnId === doneColumn.id && c.id !== cardId)
+			.sort(byPosition)
+			.at(-1);
+		const position = generateKeyBetween(last?.position ?? null, null);
+		setCards((prev) =>
+			prev.map((c) => (c.id === cardId ? { ...c, columnId: doneColumn.id, position } : c)),
+		);
+		void trackCards(
+			finishCard(card, doneColumn.id, from, {
+				onFail: resetCards,
+				onUndo: (spot) =>
+					setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, ...spot } : c))),
+			}),
+		);
+	}
+
 	function handleColumnAdded(column: ColumnData) {
 		setColumns((prev) => [...prev, column]);
 	}
@@ -439,6 +463,7 @@ export function KanbanBoard({
 		setPriority: (cardId, priority) => handleCardSave(cardId, { priority }),
 		setDueDate: (cardId, dueDate) => handleCardSave(cardId, { dueDate }),
 		setLabels: handleCardLabels,
+		finish: doneColumn ? handleCardFinish : undefined,
 		archive: handleCardArchive,
 		delete: setDeletingCardId,
 	};
@@ -462,7 +487,8 @@ export function KanbanBoard({
 				: null;
 			handleCardArchive(card.id);
 			after?.focus();
-		} else if (key === "delete") setDeletingCardId(card.id);
+		} else if (key === "x") handleCardFinish(card.id);
+		else if (key === "delete") setDeletingCardId(card.id);
 		else if (key === ".") openContextMenu(tile);
 		else if (key === "0") handleCardSave(card.id, { priority: null });
 		else if (/^[1-4]$/.test(key)) {

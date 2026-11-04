@@ -199,6 +199,7 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 				{ keys: ["←", "↑", "↓", "→"], label: "Move focus between cards" },
 				{ keys: ["Enter"], label: "Open" },
 				{ keys: ["Space"], label: "Pick up, then arrows to move, Space to drop" },
+				{ keys: ["X"], label: "Done: to the finish column (Undo in the toast)" },
 				{ keys: ["[", "]"], label: "Move to the previous or next column" },
 				{ keys: ["1", "2", "3", "4"], label: "Priority: low to urgent" },
 				{ keys: ["0"], label: "Clear priority" },

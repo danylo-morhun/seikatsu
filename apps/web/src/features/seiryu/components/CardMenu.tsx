@@ -9,6 +9,7 @@ import {
 	Link01Icon,
 	SidebarRightIcon,
 	Tag01Icon,
+	Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -34,6 +35,8 @@ export interface CardActions {
 	setPriority: (cardId: string, priority: Priority | null) => void;
 	setDueDate: (cardId: string, dueDate: string | null) => void;
 	setLabels: (cardId: string, labels: LabelData[]) => void;
+	/** To the project's first finish column; absent when the project has none. */
+	finish?: (cardId: string) => void;
 	archive: (cardId: string) => void;
 	delete: (cardId: string) => void;
 }
@@ -82,6 +85,13 @@ export function CardMenuItems({ card, columns, projectLabels, today, actions }: 
 			</ContextMenuItem>
 			<ContextMenuSeparator />
 
+			{actions.finish && !columns.find((c) => c.id === card.columnId)?.isDone && (
+				<ContextMenuItem onSelect={() => actions.finish?.(id)}>
+					<HugeiconsIcon icon={Tick02Icon} />
+					Done
+					<ContextMenuShortcut>X</ContextMenuShortcut>
+				</ContextMenuItem>
+			)}
 			<ContextMenuSub>
 				<ContextMenuSubTrigger>
 					<HugeiconsIcon icon={ArrowLeftRightIcon} />
