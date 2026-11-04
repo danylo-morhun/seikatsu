@@ -4,6 +4,7 @@ import { aishaDocuments, aishaVehicles, and, db, eq } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 import { getOwnedVehicle, isUuid } from "@/features/aisha/actions/guard";
 import { type DocumentFormValues, documentFormSchema } from "@/features/aisha/lib/aisha-schemas";
+import { revalidateShell } from "@/lib/revalidate";
 import { getCurrentWorkspace } from "@/lib/session";
 
 async function getOwnedDocument(documentId: string) {
@@ -30,7 +31,7 @@ export async function createDocument(
 
 	await db.insert(aishaDocuments).values({ vehicleId, ...parsed.data });
 	revalidatePath("/aisha", "layout");
-	revalidatePath("/");
+	revalidateShell();
 	return { success: true };
 }
 
@@ -48,7 +49,7 @@ export async function updateDocument(
 		.set({ ...parsed.data, note: parsed.data.note ?? null })
 		.where(eq(aishaDocuments.id, documentId));
 	revalidatePath("/aisha", "layout");
-	revalidatePath("/");
+	revalidateShell();
 	return { success: true };
 }
 
@@ -58,6 +59,6 @@ export async function deleteDocument(
 	if (!(await getOwnedDocument(documentId))) return { error: "Document not found" };
 	await db.delete(aishaDocuments).where(eq(aishaDocuments.id, documentId));
 	revalidatePath("/aisha", "layout");
-	revalidatePath("/");
+	revalidateShell();
 	return { success: true };
 }

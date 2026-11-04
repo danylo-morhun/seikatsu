@@ -3,6 +3,7 @@
 
 import { and, db, eq, kyuuApplications, kyuuEvents } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
+import { revalidateShell } from "@/lib/revalidate";
 import { getCurrentWorkspace, isUuid } from "@/lib/session";
 import { type Status, toStatus } from "../lib/stages";
 
@@ -57,5 +58,5 @@ export function isDay(value: unknown): value is string {
 export function revalidateKyuu() {
 	revalidatePath("/kyuu", "layout");
 	revalidatePath("/settings/kyuu");
-	revalidatePath("/");
+	revalidateShell();
 }

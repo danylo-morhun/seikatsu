@@ -23,6 +23,7 @@ import {
 	updateProjectSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
 import { generateKeyBetween, generateNKeysBetween } from "@/lib/position";
+import { revalidateShell } from "@/lib/revalidate";
 
 // Layout and page both need the list; cache() makes it one query per request.
 const listProjects = cache((workspaceId: string) =>
@@ -104,6 +105,7 @@ export async function createProject(
 
 	revalidatePath("/seiryu", "layout");
 	revalidatePath("/settings/seiryu");
+	revalidateShell();
 	return { success: true, data: { id: project.id } };
 }
 
@@ -126,6 +128,7 @@ export async function updateProject(
 
 	revalidatePath("/seiryu", "layout");
 	revalidatePath("/settings/seiryu");
+	revalidateShell();
 	return { success: true };
 }
 
@@ -150,6 +153,7 @@ export async function deleteProject(
 
 	revalidatePath("/seiryu", "layout");
 	revalidatePath("/settings/seiryu");
+	revalidateShell();
 	return { success: true };
 }
 
@@ -175,5 +179,6 @@ export async function reorderProject(
 
 	revalidatePath("/seiryu", "layout");
 	revalidatePath("/settings/seiryu");
+	revalidateShell();
 	return { success: true };
 }

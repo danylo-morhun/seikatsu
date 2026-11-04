@@ -18,6 +18,7 @@ import { CAPTURE_EXTERNAL_PREFIX } from "@/features/kuroji/lib/capture-intake";
 import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
 import type { Leg } from "@/features/kuroji/lib/transaction-edit";
 import { transactionInputSchema } from "@/features/kuroji/lib/transaction-schema";
+import { revalidateShell } from "@/lib/revalidate";
 import { getOwnedWorkspace } from "@/lib/session";
 
 export type RecentTransaction = {
@@ -276,8 +277,8 @@ export async function createTransaction({
 		revalidatePath("/kuroji");
 		// The Apple Pay inbox sits in Kuroji's layout.
 		if (captureId) revalidatePath("/kuroji", "layout");
-		// The home's Today figures read the same ledger.
-		revalidatePath("/");
+		// Today, Week and Goals read the same ledger.
+		revalidateShell();
 		return { success: true, data: { id: created } };
 	} catch (e) {
 		const msg = e instanceof Error ? e.message : "Unknown error";
@@ -307,6 +308,7 @@ export async function deleteTransaction(
 
 	await db.delete(transactions).where(eq(transactions.id, transactionId));
 	revalidatePath("/kuroji");
+	revalidateShell();
 	return { success: true };
 }
 
@@ -326,6 +328,7 @@ export async function deleteTransactions(
 		.returning({ id: transactions.id });
 
 	revalidatePath("/kuroji");
+	revalidateShell();
 	return { success: true, deleted: deleted.length };
 }
 
@@ -390,6 +393,7 @@ export async function recategorizeTransactions(
 				),
 			);
 		revalidatePath("/kuroji");
+		revalidateShell();
 	}
 
 	return {
@@ -444,6 +448,7 @@ export async function updateTransaction({
 		});
 
 		revalidatePath("/kuroji");
+		revalidateShell();
 		return { success: true };
 	} catch (e) {
 		const msg = e instanceof Error ? e.message : "Unknown error";

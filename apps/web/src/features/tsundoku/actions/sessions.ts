@@ -10,6 +10,7 @@ import {
 } from "@/features/tsundoku/actions/guard";
 import { pagesLeft, progressPatch, sessionEditPatch } from "@/features/tsundoku/lib/progress";
 import { logSessionSchema } from "@/features/tsundoku/lib/tsundoku-schemas";
+import { revalidateShell } from "@/lib/revalidate";
 import { getUserToday } from "@/lib/timezone";
 
 export type TsundokuSession = typeof tsundokuSessions.$inferSelect;
@@ -63,6 +64,7 @@ export async function logSession(bookId: string, input: unknown): Promise<Result
 	});
 
 	revalidatePath("/tsundoku", "layout");
+	revalidateShell();
 	return { success: true };
 }
 
@@ -89,6 +91,7 @@ export async function updateSession(sessionId: string, input: unknown): Promise<
 	});
 
 	revalidatePath("/tsundoku", "layout");
+	revalidateShell();
 	return { success: true };
 }
 
@@ -109,5 +112,6 @@ export async function deleteSession(sessionId: string): Promise<Result> {
 	});
 
 	revalidatePath("/tsundoku", "layout");
+	revalidateShell();
 	return { success: true };
 }

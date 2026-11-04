@@ -10,6 +10,7 @@ import {
 	updateColumnSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
 import { generateKeyBetween, generateNKeysBetween } from "@/lib/position";
+import { revalidateShell } from "@/lib/revalidate";
 import { getUserToday } from "@/lib/timezone";
 
 export async function getColumns(projectId: string) {
@@ -80,8 +81,10 @@ export async function updateColumn(input: unknown): Promise<{ error: string } | 
 	});
 
 	// The finish line decides the open-card counts in the project list.
-	if (updates.isDone !== undefined) revalidatePath("/seiryu", "layout");
-	else revalidatePath(`/seiryu/${column.projectId}`);
+	if (updates.isDone !== undefined) {
+		revalidatePath("/seiryu", "layout");
+		revalidateShell();
+	} else revalidatePath(`/seiryu/${column.projectId}`);
 	return { success: true };
 }
 

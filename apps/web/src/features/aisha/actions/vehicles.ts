@@ -19,6 +19,7 @@ import {
 	vehicleFormSchema,
 } from "@/features/aisha/lib/aisha-schemas";
 import { presetsFor } from "@/features/aisha/lib/constants";
+import { revalidateShell } from "@/lib/revalidate";
 
 export type AishaVehicle = typeof aishaVehicles.$inferSelect;
 
@@ -57,7 +58,7 @@ export async function createVehicle(
 
 	revalidatePath("/aisha", "layout");
 	revalidatePath("/settings/aisha");
-	revalidatePath("/");
+	revalidateShell();
 	return { success: true, data: vehicle };
 }
 
@@ -79,7 +80,7 @@ export async function updateVehicle(
 
 	revalidatePath("/aisha", "layout");
 	revalidatePath("/settings/aisha");
-	revalidatePath("/");
+	revalidateShell();
 	return { success: true };
 }
 

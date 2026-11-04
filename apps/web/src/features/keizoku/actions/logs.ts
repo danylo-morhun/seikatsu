@@ -34,6 +34,7 @@ import {
 	type StreakResult,
 	thisWeek,
 } from "@/features/keizoku/lib/streak";
+import { revalidateShell } from "@/lib/revalidate";
 import { getCurrentWorkspace } from "@/lib/session";
 import { dayIn, getUserTimeZone, getUserToday } from "@/lib/timezone";
 
@@ -72,7 +73,7 @@ const PHOTO_TYPES: Record<string, string> = {
 
 function revalidate(habitId: string) {
 	revalidatePath("/keizoku", "layout");
-	revalidatePath("/");
+	revalidateShell();
 	revalidatePath(`/keizoku/${habitId}`);
 }
 
