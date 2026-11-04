@@ -18,8 +18,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@seikatsu/ui";
+import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { Kbd } from "@/components/Kbd";
+import { startNavigationProgress } from "@/components/NavigationProgress";
 import { Spinner } from "@/components/Spinner";
 import { FieldError, FOOTER } from "@/features/aisha/components/DialogParts";
 import { parseNumber } from "@/features/aisha/lib/format";
@@ -33,6 +36,7 @@ import { readCaptureMemory } from "@/features/kuroji/lib/capture-memory";
 import type { AddTransactionFormValues } from "@/features/kuroji/lib/transaction-schema";
 import { PRIORITIES, PRIORITY_CONFIG, type Priority } from "@/features/seiryu/lib/constants";
 import { APPS_CONFIG } from "@/lib/app-themes";
+import { matchPlaces } from "@/lib/places";
 
 type Row = { action: PlannedAction; on: boolean };
 
@@ -55,6 +59,16 @@ export function CaptureDialog({
 	const [isReading, startRead] = useTransition();
 	const [isSaving, startSave] = useTransition();
 	const busy = isReading || isSaving;
+	const router = useRouter();
+	// A short line that names a place ("kuroji", "plan", "week") goes there, at once and offline;
+	// anything else is read as a capture.
+	const places = plan || busy ? [] : matchPlaces(text);
+
+	function go(href: string) {
+		onOpenChange(false);
+		startNavigationProgress();
+		router.push(href);
+	}
 
 	useEffect(() => {
 		if (open) return;
@@ -67,6 +81,10 @@ export function CaptureDialog({
 
 	function read(e: React.FormEvent) {
 		e.preventDefault();
+		if (places.length > 0) {
+			go(places[0].href);
+			return;
+		}
 		readLine(text);
 	}
 
@@ -76,7 +94,10 @@ export function CaptureDialog({
 		if (!open || !line || readFor.current === line) return;
 		readFor.current = line;
 		setText(line.text);
-		readLine(line.text);
+		// Typed on Today: a place's name goes there, as Enter does here.
+		const place = matchPlaces(line.text)[0];
+		if (place) go(place.href);
+		else readLine(line.text);
 	}, [open, line]);
 
 	function readLine(text: string) {
@@ -197,7 +218,8 @@ export function CaptureDialog({
 				<DialogHeader>
 					<DialogTitle>Capture</DialogTitle>
 					<DialogDescription>
-						One line about what happened. It goes to the right app, after you check it.
+						One line about what happened, or where to go. It goes to the right app, after you check
+						it.
 					</DialogDescription>
 				</DialogHeader>
 
@@ -222,9 +244,38 @@ export function CaptureDialog({
 						disabled={busy || !text.trim()}
 					>
 						{isReading && <Spinner />}
-						{isReading ? "Reading…" : plan ? "Read again" : "Read"}
+						{isReading ? "Reading…" : places.length > 0 ? "Go" : plan ? "Read again" : "Read"}
 					</Button>
 				</form>
+
+				{places.length > 0 && (
+					<ul aria-label="Go to" className="inset-group">
+						{places.map((place, i) => {
+							const app = place.app ? APPS_CONFIG[place.app] : null;
+							return (
+								<li key={place.href}>
+									<button
+										type="button"
+										onClick={() => go(place.href)}
+										className={cn(
+											app?.theme,
+											"flex min-h-11 w-full items-center gap-3 text-left text-sm outline-none focus-visible:underline",
+										)}
+									>
+										<span
+											aria-hidden
+											className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-[13px] font-semibold text-primary"
+										>
+											{app?.kanji ?? "生"}
+										</span>
+										<span className="min-w-0 flex-1 truncate">Go to {place.name}</span>
+										{i === 0 && <Kbd className="max-sm:hidden">↵</Kbd>}
+									</button>
+								</li>
+							);
+						})}
+					</ul>
+				)}
 
 				{plan && rows.length > 0 && (
 					<ul aria-label="What it will save" className="inset-group">
