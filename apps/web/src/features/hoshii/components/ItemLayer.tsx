@@ -89,7 +89,7 @@ export function useItemLayer({
 	const sheetItem = sheetId ? byId.get(sheetId) : undefined;
 
 	const move = useCallback(
-		async (item: HoshiiItem, to: MoveTarget, done: string, undoTo: MoveTarget) => {
+		async (item: HoshiiItem, to: MoveTarget, done: string, undoTo: MoveTarget | null) => {
 			if (hideOnMove) setHidden((h) => new Set(h).add(item.id));
 			const result = await sendMove(item, to).catch(() => FAILED);
 			if ("error" in result) {
@@ -103,6 +103,10 @@ export function useItemLayer({
 			}
 			if ("queued" in result) {
 				toast(QUEUED_TOAST);
+				return;
+			}
+			if (!undoTo) {
+				toast(done);
 				return;
 			}
 			toast(done, {
@@ -149,7 +153,8 @@ export function useItemLayer({
 					item.kurojiTransactionId
 						? "Back in the Plan. Its expense stays in Kuroji"
 						: "Back in the Plan",
-					"plan",
+					// The purchase is gone with the move: buying again is the way back.
+					null,
 				),
 		}),
 		[move, today, chrome.currency],
