@@ -41,7 +41,7 @@ interface Props {
 	accounts: { id: string; name: string }[];
 }
 
-/** A dated goal (a trip) whose money sits in an asset account. */
+/** A dated fund (a trip) whose money sits in an asset account; a goal in Goals can gather it. */
 export function FundDialog({ open, onOpenChange, workspaceId, fund, accounts }: Props) {
 	const [name, setName] = useState("");
 	const [target, setTarget] = useState("");
@@ -177,7 +177,7 @@ export function FundDialog({ open, onOpenChange, workspaceId, fund, accounts }: 
 					open={confirming}
 					onOpenChange={setConfirming}
 					title={`Delete ${fund.name}?`}
-					description="The money stays in its account; only the goal goes."
+					description="The money stays in its account; only the fund goes."
 					onConfirm={async () => {
 						const result =
 							offlineError() ??

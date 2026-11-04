@@ -72,7 +72,7 @@ test("decide: keep joins the Plan, undo, then let go counts as saved", async ({ 
 	await page.getByRole("button", { name: `${name}: let go` }).click();
 	await expect(row()).toHaveCount(0);
 
-	await page.goto("/hoshii/summary");
+	await page.goto("/hoshii/year");
 	await expect(page.getByText("1 want let go after cooling")).toBeVisible();
 	await expect(page.getByText(name)).toBeVisible();
 });

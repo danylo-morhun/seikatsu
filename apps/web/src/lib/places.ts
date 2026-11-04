@@ -29,7 +29,7 @@ export const AISHA_TABS = [
 export const HOSHII_TABS = [
 	{ value: "/hoshii", label: "Now" },
 	{ value: "/hoshii/lists", label: "Lists" },
-	{ value: "/hoshii/summary", label: "Summary" },
+	{ value: "/hoshii/year", label: "Year" },
 ] as const;
 
 const KUROJI_PLACES = [
