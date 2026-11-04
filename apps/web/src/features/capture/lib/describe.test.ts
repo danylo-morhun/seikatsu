@@ -71,7 +71,15 @@ describe("describeAction", () => {
 
 	it("counts pages read", () => {
 		const text = describeAction(
-			{ key: "a", kind: "pages", bookId: "b", title: "1984", page: 52, from: 26 },
+			{
+				key: "a",
+				kind: "pages",
+				bookId: "b",
+				title: "1984",
+				page: 52,
+				from: 26,
+				date: "2026-11-03",
+			},
 			options,
 		);
 		expect(text).toEqual({ app: "/tsundoku", title: "1984: page 52", detail: "+26 pages" });

@@ -409,7 +409,7 @@ function Fields({
 						</div>
 					</Field>
 					{date()}
-					<Field label={action.kind === "income" ? "To wallet" : "From wallet"}>
+					<Field label={action.kind === "income" ? "Received in" : "Paid from"}>
 						<Pick
 							label="Wallet"
 							value={action.walletId}

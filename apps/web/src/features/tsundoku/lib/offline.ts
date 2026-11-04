@@ -16,8 +16,14 @@ function localDay() {
 
 const quote = (title: string) => `“${title.length > 40 ? `${title.slice(0, 40)}…` : title}”`;
 
-export function saveProgress(book: { id: string; title: string }, currentPage: number) {
-	const args = { bookId: book.id, currentPage, asOf: localDay() };
+/** "I'm on page N", read today — or on `on`, a past day named elsewhere (Capture). */
+export function saveProgress(
+	book: { id: string; title: string },
+	currentPage: number,
+	on?: string,
+) {
+	const today = localDay();
+	const args = { bookId: book.id, currentPage, asOf: on && on < today ? on : today };
 	return runOrQueue(
 		"tsundoku.setProgress",
 		args,

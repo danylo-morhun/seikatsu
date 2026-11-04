@@ -172,6 +172,7 @@ describe("toPlan", () => {
 				title: "Nineteen Eighty-Four",
 				page: 46,
 				from: 26,
+				date: "2026-11-03",
 			},
 			{
 				key: "a1",
@@ -180,6 +181,7 @@ describe("toPlan", () => {
 				title: "Nineteen Eighty-Four",
 				page: 318,
 				from: 26,
+				date: "2026-11-03",
 			},
 		]);
 	});
@@ -299,5 +301,34 @@ describe("buildPrompt", () => {
 		expect(prompt).toContain("- c-fuel: Transport / Fuel");
 		expect(prompt).toContain("Current reading 84210 km");
 		expect(prompt).toContain('The line: "бенз 240 zł \\"Orlen\\""');
+	});
+
+	it("follows Keizoku: skips a habit already done today or not on today's list", () => {
+		const habits = [
+			{ id: "h-gym", name: "Gym", emoji: "💪", today: { due: true, done: true } },
+			{ id: "h-run", name: "Run", emoji: "🏃", today: { due: false, done: false } },
+		];
+		const { actions, skipped } = toPlan(
+			{
+				actions: [
+					raw({ kind: "habit", habitId: "h-gym" }),
+					raw({ kind: "habit", habitId: "h-run" }),
+				],
+			},
+			{ ...ctx, habits },
+		);
+		expect(actions).toEqual([]);
+		expect(skipped).toEqual([
+			"💪 Gym: already done today.",
+			"🏃 Run: not on today's list in Keizoku.",
+		]);
+	});
+
+	it("puts pages read on the day the line names", () => {
+		const { actions } = toPlan(
+			{ actions: [raw({ kind: "pages", pagesRead: 10, date: "2026-11-02" })] },
+			ctx,
+		);
+		expect(actions[0]).toMatchObject({ kind: "pages", date: "2026-11-02" });
 	});
 });

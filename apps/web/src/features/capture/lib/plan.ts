@@ -21,7 +21,8 @@ export type CaptureContext = {
 	projects: (Named & { columnId: string })[];
 	/** Hoshii's lists. */
 	lists: Named[];
-	habits: (Named & { emoji: string })[];
+	/** `today`: on today's list (Keizoku's schedule), and whether it's already done. */
+	habits: (Named & { emoji: string; today?: { due: boolean; done: boolean } })[];
 	books: { id: string; title: string; currentPage: number; pageCount: number | null }[];
 };
 
@@ -264,7 +265,7 @@ export type PlannedAction = Base &
 				priority: Priority | null;
 		  }
 		| { kind: "habit"; habitId: string; name: string; emoji: string; date: string }
-		| { kind: "pages"; bookId: string; title: string; page: number; from: number }
+		| { kind: "pages"; bookId: string; title: string; page: number; from: number; date: string }
 	);
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -315,7 +316,10 @@ function plan(raw: RawAction, ctx: CaptureContext, key: string): PlannedAction |
 			const car = ctx.vehicle;
 			if (raw.km == null || !Number.isInteger(raw.km)) return null;
 			if (!car) return `Mileage ${KM.format(raw.km)} km: there's no car in Aisha yet.`;
-			if (raw.km <= car.currentKm)
+			// Aisha's rule: the odometer only goes up. Today's reading can't be below the last one;
+			// an earlier day is checked by Aisha against the readings around it.
+			const date = dayOf(raw.date, ctx.today);
+			if (date === ctx.today && raw.km <= car.currentKm)
 				return `Mileage ${KM.format(raw.km)} km: the odometer already reads ${KM.format(car.currentKm)} km.`;
 			return {
 				key,
@@ -324,7 +328,7 @@ function plan(raw: RawAction, ctx: CaptureContext, key: string): PlannedAction |
 				vehicleName: car.name,
 				km: raw.km,
 				from: car.currentKm,
-				date: dayOf(raw.date, ctx.today),
+				date,
 			};
 		}
 		case "want": {
@@ -359,13 +363,18 @@ function plan(raw: RawAction, ctx: CaptureContext, key: string): PlannedAction |
 		case "habit": {
 			const habit = known(ctx.habits, raw.habitId);
 			if (!habit) return "A habit that isn't in Keizoku: add it there first.";
+			const date = dayOf(raw.date, ctx.today);
+			if (date === ctx.today && habit.today?.done)
+				return `${habit.emoji} ${habit.name}: already done today.`.trim();
+			if (date === ctx.today && habit.today && !habit.today.due)
+				return `${habit.emoji} ${habit.name}: not on today's list in Keizoku.`.trim();
 			return {
 				key,
 				kind: "habit",
 				habitId: habit.id,
 				name: habit.name,
 				emoji: habit.emoji,
-				date: dayOf(raw.date, ctx.today),
+				date,
 			};
 		}
 		case "pages": {
@@ -392,6 +401,8 @@ function plan(raw: RawAction, ctx: CaptureContext, key: string): PlannedAction |
 				title: book.title,
 				page: capped,
 				from: book.currentPage,
+				// "Read 20 pages yesterday" goes on yesterday, as in Tsundoku's own log.
+				date: dayOf(raw.date, ctx.today),
 			};
 		}
 		default:

@@ -5,6 +5,7 @@ import { saveReading } from "@/features/aisha/lib/offline";
 import type { PlannedAction } from "@/features/capture/lib/plan";
 import { saveNewItem } from "@/features/hoshii/lib/offline";
 import { tickDay } from "@/features/keizoku/lib/offline";
+import { rememberCapture } from "@/features/kuroji/lib/capture-memory";
 import { captureTransaction } from "@/features/kuroji/lib/offline";
 import type { RunResult } from "@/features/pwa/lib/run";
 import { addCard, saveCard } from "@/features/seiryu/lib/offline";
@@ -23,12 +24,20 @@ export async function applyAction(action: PlannedAction, ctx: Ctx): Promise<RunR
 				description: action.description || undefined,
 				date: action.date,
 			};
-			return captureTransaction(
+			const result = await captureTransaction(
 				ctx.workspaceId,
 				action.kind === "expense"
 					? { ...common, fromAccountId: action.walletId, toSplits: leg }
 					: { ...common, toAccountId: action.walletId, fromSplits: leg },
 			);
+			// As the Kuroji form does: the next capture, here or there, starts from this wallet.
+			if (!("error" in result))
+				rememberCapture(ctx.workspaceId, {
+					type: action.kind,
+					walletId: action.walletId,
+					categoryIds: [action.categoryId],
+				});
+			return result;
 		}
 		case "mileage":
 			return saveReading(action.vehicleId, { date: action.date, km: action.km });
@@ -59,6 +68,6 @@ export async function applyAction(action: PlannedAction, ctx: Ctx): Promise<RunR
 				true,
 			);
 		case "pages":
-			return saveProgress({ id: action.bookId, title: action.title }, action.page);
+			return saveProgress({ id: action.bookId, title: action.title }, action.page, action.date);
 	}
 }
