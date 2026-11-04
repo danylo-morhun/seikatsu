@@ -39,6 +39,8 @@ export const keizokuHabits = pgTable(
 		frequencyTarget: integer("frequency_target"),
 		timeOfDay: keizokuTimeOfDayEnum("time_of_day").notNull().default("anytime"),
 		requiresPhoto: boolean("requires_photo").notNull().default(false),
+		/** Ticked by itself on a day pages are logged in Tsundoku ("Read"). */
+		fromReading: boolean("from_reading").notNull().default(false),
 		archivedAt: timestamp("archived_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
