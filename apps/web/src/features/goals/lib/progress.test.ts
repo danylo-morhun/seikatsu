@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeLink, goalProgress, type LinkReading, timeLeft } from "./progress";
+import { describeLink, goalAttention, goalProgress, type LinkReading, timeLeft } from "./progress";
 
 const money = (n: number, c: string) => `${n} ${c}`;
 const view = (r: LinkReading) => describeLink(r, money);
@@ -61,5 +61,28 @@ describe("timeLeft", () => {
 		expect(timeLeft("2026-11-15", "2026-11-03")).toBe("in 12 days");
 		expect(timeLeft("2027-02-14", "2026-11-03")).toBe("in 3 months");
 		expect(timeLeft("2026-10-29", "2026-11-03")).toBe("5 days over");
+	});
+});
+
+describe("goalAttention", () => {
+	const goal = (over: Partial<Parameters<typeof goalAttention>[0]>) => ({
+		id: "g",
+		name: "Tatry",
+		targetDate: "2027-02-01",
+		startedOn: "2026-11-01",
+		ratio: 0.5,
+		...over,
+	});
+
+	it("speaks up when the date is near, passed, or the work lags the time", () => {
+		expect(goalAttention(goal({ ratio: 0.1 }), "2026-12-15")).toBe("behind");
+		expect(goalAttention(goal({ ratio: 0.9 }), "2027-01-10")).toBe("soon");
+		expect(goalAttention(goal({ ratio: 0.9 }), "2027-02-03")).toBe("over");
+	});
+
+	it("stays quiet on track, done, or with no date", () => {
+		expect(goalAttention(goal({ ratio: 0.5 }), "2026-12-15")).toBeNull();
+		expect(goalAttention(goal({ ratio: 1 }), "2027-01-30")).toBeNull();
+		expect(goalAttention(goal({ targetDate: null }), "2027-01-30")).toBeNull();
 	});
 });

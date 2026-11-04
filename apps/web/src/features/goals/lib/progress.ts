@@ -135,3 +135,31 @@ export function timeLeft(targetDate: string, today: string): string {
 	if (days < 365) return `in ${plural(Math.round(days / 30), "month")}`;
 	return `in ${plural(Math.round(days / 365), "year")}`;
 }
+
+/** A goal on Today's list: due within this many days, or behind its own pace. */
+export const GOAL_SOON_DAYS = 30;
+
+export type GoalPace = {
+	id: string;
+	name: string;
+	targetDate: string | null;
+	/** When it was set: the start of its pace. */
+	startedOn: string;
+	/** 0–1 across its links; null when none has a finish line. */
+	ratio: number | null;
+};
+
+/**
+ * Whether a goal asks for attention today, and why: its date is near (or passed), or it's
+ * behind — less done than the share of its time that's gone, by a tenth or more. Pure.
+ */
+export function goalAttention(goal: GoalPace, today: string): "soon" | "behind" | "over" | null {
+	if (!goal.targetDate) return null;
+	const left = Math.round((Date.parse(goal.targetDate) - Date.parse(today)) / DAY_MS);
+	if (left < 0) return goal.ratio != null && goal.ratio >= 1 ? null : "over";
+	if (goal.ratio != null && goal.ratio >= 1) return null;
+	const span = Date.parse(goal.targetDate) - Date.parse(goal.startedOn);
+	const gone = span > 0 ? (Date.parse(today) - Date.parse(goal.startedOn)) / span : 1;
+	if (goal.ratio != null && goal.ratio + 0.1 < gone) return "behind";
+	return left <= GOAL_SOON_DAYS ? "soon" : null;
+}

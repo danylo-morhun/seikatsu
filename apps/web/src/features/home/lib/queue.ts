@@ -1,12 +1,15 @@
 // What the day waits on: one list across the apps, most urgent first, each row with the one
 // thing to do about it. Pure — the home loads each app's summary (./today) and hands them in.
 
+import { type GoalPace, goalAttention } from "@/features/goals/lib/progress";
 import type { CardToday, CarToday, WantsToday } from "@/features/home/lib/today";
 import type { FundDue, MoneyAgenda } from "@/features/kuroji/lib/agenda";
 import type { JobsAgenda } from "@/features/kyuu/lib/agenda";
 import type { APPS_CONFIG } from "@/lib/app-themes";
 
 type AppHref = keyof typeof APPS_CONFIG;
+/** Where a row belongs: an app, or Goals (the shell's own). */
+export type QueueSource = AppHref | "/goals";
 
 export type QueueTone = "overdue" | "due" | "info";
 
@@ -21,7 +24,7 @@ export type QueueAct =
 
 export type QueueItem = {
 	key: string;
-	app: AppHref;
+	app: QueueSource;
 	title: string;
 	note: string;
 	href: string;
@@ -39,6 +42,8 @@ export type QueueData = {
 	cards: CardToday[] | null;
 	jobs: JobsAgenda | null;
 	car: CarToday | null;
+	/** Absent where goals aren't read (older callers, tests). */
+	goals?: GoalPace[] | null;
 };
 
 const TONE_ORDER: Record<QueueTone, number> = { overdue: 0, due: 1, info: 2 };
@@ -232,6 +237,32 @@ function carItems(car: CarToday): QueueItem[] {
 	}));
 }
 
+const GOAL_NOTE = {
+	soon: "Its day is close",
+	behind: "Behind its pace",
+	over: "Its day has passed",
+};
+
+/** Goals that ask for attention; never "overdue", so Week doesn't carry them as late work. */
+function goalItems(goals: GoalPace[], today: string): QueueItem[] {
+	return goals.flatMap((goal) => {
+		const why = goalAttention(goal, today);
+		if (!why) return [];
+		const done = goal.ratio != null ? ` · ${Math.round(goal.ratio * 100)}%` : "";
+		return [
+			{
+				key: `goals:${goal.id}`,
+				app: "/goals" as const,
+				title: goal.name,
+				note: `${GOAL_NOTE[why]}${done}`,
+				href: "/goals",
+				tone: why === "soon" ? ("info" as const) : ("due" as const),
+				act: { kind: "open" as const },
+			},
+		];
+	});
+}
+
 /** Money as the app writes it ("500 zł"); the composer passes Kuroji's formatter. */
 export type Money = (amount: number, currency: string) => string;
 
@@ -247,6 +278,7 @@ export function buildQueue(
 		...(data.money ? moneyItems(data.money, fmt) : []),
 		...(data.wants ? wantItems(data.wants) : []),
 		...(data.jobs ? jobItems(data.jobs, today) : []),
+		...(data.goals ? goalItems(data.goals, today) : []),
 	];
 	return items
 		.map((item, i) => ({ item, i }))

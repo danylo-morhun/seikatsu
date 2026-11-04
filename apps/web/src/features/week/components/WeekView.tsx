@@ -46,7 +46,7 @@ export async function WeekView({ ws, today, day }: { ws: Workspace; today: strin
 	// What's late from before today, as Today lists it: it doesn't drop off the week.
 	const carried: WeekEntry[] = agenda
 		? buildQueue(agenda, today, fmt)
-				.filter((q) => q.tone === "overdue")
+				.flatMap((q) => (q.tone === "overdue" && q.app !== "/goals" ? [{ ...q, app: q.app }] : []))
 				.map((q) => {
 					const cardId = q.app === "/seiryu" ? q.key.slice("seiryu:".length) : null;
 					return {
