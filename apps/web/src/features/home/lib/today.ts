@@ -147,6 +147,9 @@ export type CardToday = {
 	dueDate: string;
 	projectId: string;
 	projectName: string;
+	/** Where it is now, so Done can be undone. */
+	columnId: string;
+	position: string;
 	/** Where "done" moves it: the project's finish column, if it has one. */
 	doneColumnId: string | null;
 };
@@ -171,6 +174,8 @@ async function getCardsDue(ws: Workspace, today: string): Promise<CardToday[]> {
 			id: seiryuCards.id,
 			title: seiryuCards.title,
 			dueDate: seiryuCards.dueDate,
+			columnId: seiryuCards.columnId,
+			position: seiryuCards.position,
 			projectId: seiryuProjects.id,
 			projectName: seiryuProjects.name,
 		})
@@ -238,8 +243,9 @@ async function getCar(today: string): Promise<CarToday | null> {
 
 export type WantsToday = {
 	decide: number;
-	/** The cooled wants, oldest first. */
-	toDecide: { id: string; title: string }[];
+	/** The cooled wants, oldest first; `base` is the price in `currency` (null if unknown). */
+	toDecide: { id: string; title: string; base: number | null }[];
+	currency: string;
 	canBuy: number;
 	/** The first want in the Plan the piggy fully covers. */
 	nextBuy: string | null;
@@ -254,7 +260,8 @@ async function getWants(ws: Workspace, today: string): Promise<WantsToday> {
 	const ready = piggy ? queue.plan.filter((p) => p.share != null && p.share >= 1) : [];
 	return {
 		decide: queue.decide.length,
-		toDecide: queue.decide.map(({ id, title }) => ({ id, title })),
+		toDecide: queue.decide.map(({ id, title, base }) => ({ id, title, base })),
+		currency: ws.baseCurrency,
 		canBuy: ready.length,
 		nextBuy: ready[0]?.item.title ?? null,
 		plan: queue.plan.length,
