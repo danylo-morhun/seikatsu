@@ -13,7 +13,9 @@ const SUNDAY = 7;
 const AT = "18:00";
 
 export const notifyWeek: Notifier = async ({ workspaceId, prefs, clock }) => {
-	if (!prefs.weekRecap || clock.weekday !== SUNDAY || !isTimeDue(AT, clock)) return 0;
+	// The old Monday money summary folded in here: on if either switch is.
+	const on = prefs.weekRecap || prefs.kurojiWeekly;
+	if (!on || clock.weekday !== SUNDAY || !isTimeDue(AT, clock)) return 0;
 
 	const [ws] = await db
 		.select({ baseCurrency: workspaces.baseCurrency })

@@ -27,10 +27,12 @@ export const notificationPrefs = pgTable("notification_prefs", {
 	morningTime: time("morning_time").notNull().default("09:00"),
 	keizokuEnabled: boolean("keizoku_enabled").notNull().default(true),
 	keizokuTime: time("keizoku_time").notNull().default("21:00"),
-	kyuuEnabled: boolean("kyuu_enabled").notNull().default(true),
+	/** Morning: what waits today, across the apps (Today's list). Was Kyuu's brief: same column. */
+	morningBrief: boolean("kyuu_enabled").notNull().default(true),
 	aishaEnabled: boolean("aisha_enabled").notNull().default(true),
 	kurojiRecurring: boolean("kuroji_recurring").notNull().default(true),
 	kurojiBudget: boolean("kuroji_budget").notNull().default(true),
+	/** No longer sent on its own: Monday's summary is the Sunday week recap (weekRecap). */
 	kurojiWeekly: boolean("kuroji_weekly").notNull().default(true),
 	/** Sunday evening: the week in one line. Off unless asked for. */
 	weekRecap: boolean("week_recap").notNull().default(false),

@@ -163,38 +163,3 @@ export const notifyKurojiBudget: Notifier = async ({ workspaceId, prefs, clock }
 	}));
 	return sent ? 1 : 0;
 };
-
-/** Monday morning: last week's income, spending and what's left over. */
-export const notifyKurojiWeekly: Notifier = async ({ workspaceId, prefs, clock }) => {
-	if (!prefs.kurojiWeekly || clock.weekday !== 1 || !isTimeDue(prefs.morningTime, clock)) return 0;
-
-	const from = addDays(clock.day, -7);
-	const to = addDays(clock.day, -1);
-	const rows = await db
-		.select({ type: accounts.type, total: sum(transactionEntries.baseAmount) })
-		.from(transactionEntries)
-		.innerJoin(transactions, eq(transactions.id, transactionEntries.transactionId))
-		.innerJoin(accounts, eq(accounts.id, transactionEntries.accountId))
-		.where(
-			and(
-				eq(transactions.workspaceId, workspaceId),
-				inArray(accounts.type, ["INCOME", "EXPENSE"]),
-				gte(transactions.date, from),
-				lte(transactions.date, to),
-			),
-		)
-		.groupBy(accounts.type);
-	// Income is credit-normal: its entries are negative.
-	const income = -Number(rows.find((r) => r.type === "INCOME")?.total ?? 0);
-	const spent = Number(rows.find((r) => r.type === "EXPENSE")?.total ?? 0);
-	if (income === 0 && spent === 0) return 0;
-
-	const currency = await baseCurrencyOf(workspaceId);
-	const sent = await sendOnce(workspaceId, `kuroji:weekly:${clock.day}`, {
-		title: "Last week",
-		body: `Spent ${formatCurrency(spent, currency)} · Earned ${formatCurrency(income, currency)} · Net ${formatCurrency(income - spent, currency)}`,
-		url: "/kuroji",
-		tag: "kuroji-weekly",
-	});
-	return sent ? 1 : 0;
-};

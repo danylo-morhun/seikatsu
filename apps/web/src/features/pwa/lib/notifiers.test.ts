@@ -26,11 +26,9 @@ vi.mock("@seikatsu/db", async () => ({
 	},
 }));
 
-const { notifyKyuu } = await import("@/features/kyuu/lib/notify");
+const { notifyToday } = await import("@/features/home/lib/notify");
 const { notifyAisha } = await import("@/features/aisha/lib/notify");
-const { notifyKurojiBudget, notifyKurojiRecurring, notifyKurojiWeekly } = await import(
-	"@/features/kuroji/lib/notify"
-);
+const { notifyKurojiBudget, notifyKurojiRecurring } = await import("@/features/kuroji/lib/notify");
 
 // Monday 2026-10-26, 09:10 local — past the default 09:00 morning time.
 const DAY = "2026-10-26";
@@ -68,8 +66,8 @@ beforeAll(async () => {
 });
 beforeEach(() => sendNotification.mockClear());
 
-describe("notifyKyuu", () => {
-	it("sums up calls, follow-ups and ghosts in one morning push", async () => {
+describe("notifyToday", () => {
+	it("sends Today's list in one morning push", async () => {
 		const ctx = await workspace();
 		const [acme, quiet, ghost] = await testDb
 			.insert(schema.kyuuApplications)
@@ -85,15 +83,15 @@ describe("notifyKyuu", () => {
 		]);
 		expect(quiet && ghost).toBeTruthy();
 
-		expect(await notifyKyuu({ ...ctx, clock: { ...MORNING, minutes: 8 * 60 } })).toBe(0);
-		expect(await notifyKyuu({ ...ctx, clock: MORNING })).toBe(1);
+		expect(await notifyToday({ ...ctx, clock: { ...MORNING, minutes: 8 * 60 } })).toBe(0);
+		expect(await notifyToday({ ...ctx, clock: MORNING })).toBe(1);
 		expect(lastPayload()).toEqual(
 			expect.objectContaining({
-				title: "1 call today",
-				body: "Acme today at 14:00 · 1 follow-up due · 1 application to close as ghosted",
+				title: "3 things waiting today",
+				body: "Interview · Acme · Follow up · Quiet · 1 application with no answer",
 			}),
 		);
-		expect(await notifyKyuu({ ...ctx, clock: MORNING })).toBe(0);
+		expect(await notifyToday({ ...ctx, clock: MORNING })).toBe(0);
 	});
 });
 
@@ -209,17 +207,5 @@ describe("Kuroji notifiers", () => {
 		expect(await notifyKurojiBudget({ ...ctx, clock: { ...noon, minutes: 23 * 60 } })).toBe(0);
 		expect(await notifyKurojiBudget({ ...ctx, clock: noon })).toBe(1);
 		expect(lastPayload().title).toBe("Over budget");
-	});
-
-	it("sums up last week on Monday", async () => {
-		const { ctx, bank, salary, food, txn } = await ledger();
-		await txn("2026-10-20", salary.id, bank.id, 5000);
-		await txn("2026-10-22", bank.id, food.id, 300);
-		await txn(DAY, bank.id, food.id, 999); // this week — not counted
-
-		expect(await notifyKurojiWeekly({ ...ctx, clock: { ...MORNING, weekday: 2 } })).toBe(0);
-		expect(await notifyKurojiWeekly({ ...ctx, clock: MORNING })).toBe(1);
-		const { body } = lastPayload();
-		expect(body).toMatch(/^Spent 300,00\s?zł · Earned 5\s?000,00\s?zł · Net 4\s?700,00\s?zł$/);
 	});
 });

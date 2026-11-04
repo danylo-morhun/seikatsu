@@ -30,10 +30,11 @@ const ROWS: Row[] = [
 		time: "keizokuTime",
 	},
 	{
-		key: "kyuuEnabled",
-		app: "求 Kyuu",
-		label: "Morning brief",
-		detail: "Calls today and tomorrow, follow-ups due, applications gone quiet.",
+		key: "morningBrief",
+		app: "生 Today",
+		label: "Morning: what's waiting",
+		detail:
+			"Today's list in one push: cards due, calls, follow-ups, wants to decide, payments to add, the car.",
 	},
 	{
 		key: "aishaEnabled",
@@ -54,16 +55,10 @@ const ROWS: Row[] = [
 		detail: "When a category passes 80% and 100% of its monthly budget. Daytime only.",
 	},
 	{
-		key: "kurojiWeekly",
-		app: "黒 Kuroji",
-		label: "Weekly summary",
-		detail: "Monday morning: last week's spending, income and net.",
-	},
-	{
 		key: "weekRecap",
 		app: "週 Week",
 		label: "Week in one line",
-		detail: "Sunday at 18:00: what the week held across the apps. Off unless you want it.",
+		detail: "Sunday at 18:00: what the week held across the apps, spending included.",
 	},
 ];
 
@@ -72,7 +67,7 @@ const DEFAULTS: PrefsInput = {
 	morningTime: "09:00",
 	keizokuEnabled: true,
 	keizokuTime: "21:00",
-	kyuuEnabled: true,
+	morningBrief: true,
 	aishaEnabled: true,
 	kurojiRecurring: true,
 	kurojiBudget: true,
@@ -85,7 +80,13 @@ const hhmm = (t: string) => t.slice(0, 5);
 function fromPrefs(prefs: NotificationPrefs | null): PrefsInput {
 	if (!prefs) return DEFAULTS;
 	const { workspaceId: _, updatedAt: __, ...rest } = prefs;
-	return { ...rest, keizokuTime: hhmm(rest.keizokuTime), morningTime: hhmm(rest.morningTime) };
+	return {
+		...rest,
+		// Monday's Kuroji summary became the Sunday recap: on if either was.
+		weekRecap: rest.weekRecap || rest.kurojiWeekly,
+		keizokuTime: hhmm(rest.keizokuTime),
+		morningTime: hhmm(rest.morningTime),
+	};
 }
 
 /** What gets sent and when. Saves as you go; times are in this device's time zone. */
