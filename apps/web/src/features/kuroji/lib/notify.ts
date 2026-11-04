@@ -25,10 +25,6 @@ const AWAKE_FROM = 8 * 60;
 const AWAKE_UNTIL = 22 * 60;
 const BUDGET_MARKS = [100, 80] as const;
 
-function addDays(day: string, n: number): string {
-	return new Date(Date.parse(`${day}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
-}
-
 async function baseCurrencyOf(workspaceId: string): Promise<string> {
 	const [ws] = await db
 		.select({ baseCurrency: workspaces.baseCurrency })
