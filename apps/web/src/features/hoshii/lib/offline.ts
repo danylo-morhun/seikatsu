@@ -1,8 +1,8 @@
 // Hoshii's offline-capable mutations: run the action or queue it when there's no connection.
 
 import { localToday } from "@/features/aisha/lib/today";
-import { createItem, moveItem, reorderPlan } from "@/features/hoshii/actions/items";
-import type { ItemFormValues, MoveTarget } from "@/features/hoshii/lib/hoshii-schemas";
+import { buyItem, createItem, moveItem, reorderPlan } from "@/features/hoshii/actions/items";
+import type { BuyValues, ItemFormValues, MoveTarget } from "@/features/hoshii/lib/hoshii-schemas";
 import { runOrQueue } from "@/features/pwa/lib/run";
 
 const VERB: Record<MoveTarget, string> = { plan: "Keep", released: "Let go", cooling: "Undo" };
@@ -14,6 +14,17 @@ export function saveNewItem(values: ItemFormValues) {
 		const result = await createItem(args);
 		return "error" in result ? result : { success: true as const };
 	});
+}
+
+/**
+ * Bought it. Kuroji's expense gets its id here, so a purchase sent twice posts it once.
+ * Online, Kuroji's warning (it refused the expense) comes back with the result.
+ */
+export function sendBuy(item: { id: string; title: string }, values: BuyValues) {
+	const args = { itemId: item.id, values: { ...values, expenseId: crypto.randomUUID() } };
+	return runOrQueue("hoshii.buyItem", args, `Bought · ${item.title}`, () =>
+		buyItem(args.itemId, args.values),
+	);
 }
 
 /** Keep, let go or undo, dated today on this device. */

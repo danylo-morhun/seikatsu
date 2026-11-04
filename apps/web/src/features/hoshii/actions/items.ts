@@ -190,7 +190,7 @@ export async function buyItem(itemId: string, values: BuyValues): Promise<Result
 	const { item, ws } = owned;
 	const parsed = buySchema.safeParse(values);
 	if (!parsed.success) return { error: issue(parsed.error) };
-	const { paid, currency, date, kuroji } = parsed.data;
+	const { paid, currency, date, kuroji, expenseId } = parsed.data;
 	if (kuroji && !(await kurojiValid(ws.id, kuroji))) {
 		return { error: "Pick the account it's paid from and an expense category" };
 	}
@@ -214,7 +214,7 @@ export async function buyItem(itemId: string, values: BuyValues): Promise<Result
 	if (wasBought && item.kurojiTransactionId) {
 		warning = await updateExpense(item.kurojiTransactionId, expense);
 	} else if (kuroji && paid > 0) {
-		warning = await recordExpense(ws.id, itemId, kuroji, expense);
+		warning = await recordExpense(ws.id, itemId, kuroji, expense, expenseId);
 	}
 	revalidateHoshii();
 	return { success: true, warning };
@@ -233,21 +233,28 @@ async function recordExpense(
 	itemId: string,
 	k: ExpenseAccounts,
 	expense: LinkedExpense,
+	expenseId?: string,
 ): Promise<string | undefined> {
-	const failed = await recordLinkedExpense(workspaceId, k, expense, async (tx, transactionId) => {
-		await tx
-			.update(hoshiiItems)
-			.set({ kurojiTransactionId: transactionId })
-			.where(eq(hoshiiItems.id, itemId));
-		// The next purchase offers the same accounts.
-		await tx
-			.insert(hoshiiSettings)
-			.values({ workspaceId, walletId: k.walletId, categoryId: k.categoryId })
-			.onConflictDoUpdate({
-				target: hoshiiSettings.workspaceId,
-				set: { walletId: k.walletId, categoryId: k.categoryId },
-			});
-	});
+	const failed = await recordLinkedExpense(
+		workspaceId,
+		k,
+		expense,
+		async (tx, transactionId) => {
+			await tx
+				.update(hoshiiItems)
+				.set({ kurojiTransactionId: transactionId })
+				.where(eq(hoshiiItems.id, itemId));
+			// The next purchase offers the same accounts.
+			await tx
+				.insert(hoshiiSettings)
+				.values({ workspaceId, walletId: k.walletId, categoryId: k.categoryId })
+				.onConflictDoUpdate({
+					target: hoshiiSettings.workspaceId,
+					set: { walletId: k.walletId, categoryId: k.categoryId },
+				});
+		},
+		expenseId,
+	);
 	return failed && `Saved, but Kuroji didn't take the expense: ${failed.error}`;
 }
 

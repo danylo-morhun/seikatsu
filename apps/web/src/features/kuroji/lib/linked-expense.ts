@@ -11,16 +11,19 @@ export type ExpenseAccounts = { walletId: string; categoryId: string };
 
 /**
  * Posts wallet → category, then `link` stores the new id (and anything else) in one transaction.
- * Returns Kuroji's error when it refused the expense.
+ * Returns Kuroji's error when it refused the expense. With an `id` made by the caller, sending
+ * it again (an offline replay, a lost response) posts nothing new and only links it again.
  */
 export async function recordLinkedExpense(
 	workspaceId: string,
 	k: ExpenseAccounts,
 	expense: LinkedExpense,
 	link: (tx: Tx, transactionId: string) => Promise<void>,
+	id?: string,
 ): Promise<{ error: string } | undefined> {
 	const result = await createTransaction({
 		workspaceId,
+		id,
 		fromAccountId: k.walletId,
 		toAccountId: k.categoryId,
 		...expense,
