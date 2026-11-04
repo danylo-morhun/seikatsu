@@ -38,11 +38,18 @@ import {
 import { toast } from "sonner";
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
 import { startNavigationProgress } from "@/components/NavigationProgress";
+import { QUEUED_TOAST } from "@/features/pwa/lib/run";
 import { usePendingOps } from "@/features/pwa/lib/use-outbox";
 import { pageKey } from "@/lib/capture-shortcut";
-import { ghostApplications } from "../actions/progress";
 import { requestDeleteApplication } from "../lib/events";
-import { archiveApplication, changeStatus, logFollowUp, queuedPatches } from "../lib/offline";
+import {
+	archiveApplication,
+	changeStatus,
+	ghostAll,
+	ghostedText,
+	logFollowUp,
+	queuedPatches,
+} from "../lib/offline";
 import { STATUS_CONFIG, STATUSES, type Status } from "../lib/stages";
 import type { ApplicationRow } from "../lib/types";
 import { StatusMark } from "./StatusMark";
@@ -146,9 +153,10 @@ export function ApplicationArea({
 			run(
 				ids.map((id) => ({ id, changes: { status: "ghosted" as const, waiting: null } })),
 				async () => {
-					const result = await ghostApplications(ids);
-					if ("success" in result && ids.length > 1)
-						toast(`${result.data.count} closed as ghosted`);
+					const result = await ghostAll(ids);
+					if ("queued" in result) toast(QUEUED_TOAST);
+					else if ("success" in result)
+						toast(ghostedText(ids.length, byId.get(ids[0] ?? "")?.company));
 					return result;
 				},
 			),

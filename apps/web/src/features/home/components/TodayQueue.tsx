@@ -15,7 +15,8 @@ import { loadDialog } from "@/features/capture/components/CaptureButton";
 import { openCapture } from "@/features/capture/lib/key";
 import type { QueueItem } from "@/features/home/lib/queue";
 import { keepWant, releaseWant } from "@/features/hoshii/lib/decide";
-import { ghostApplications } from "@/features/kyuu/actions/progress";
+import { ghostAll, ghostedText } from "@/features/kyuu/lib/offline";
+import { QUEUED_TOAST } from "@/features/pwa/lib/run";
 import { finishCard } from "@/features/seiryu/lib/finish";
 import { APPS_CONFIG } from "@/lib/app-themes";
 
@@ -241,7 +242,14 @@ function GhostAll({
 				confirmLabel={`Close ${ids.length}`}
 				title={`Close ${ids.length} as ghosted?`}
 				description="They move to Closed, logged today; any can be reopened if the company comes back."
-				onConfirm={async () => onDone(() => ghostApplications(ids))}
+				onConfirm={async () =>
+					onDone(async () => {
+						const result = await ghostAll(ids);
+						if ("queued" in result) toast(QUEUED_TOAST);
+						else if ("success" in result) toast(ghostedText(ids.length));
+						return result;
+					})
+				}
 			/>
 		</>
 	);

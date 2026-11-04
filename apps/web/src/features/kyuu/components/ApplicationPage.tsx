@@ -25,13 +25,14 @@ import {
 import Link from "next/link";
 import { type CSSProperties, useId, useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { QUEUED_TOAST } from "@/features/pwa/lib/run";
 import { useDraft } from "@/hooks/useDraft";
 import { patchApplication } from "../actions/applications";
-import { followUp, setArchived, setStatus } from "../actions/progress";
 import { COUNTRY_CODES, countryName, parseCountry } from "../lib/country";
 import { requestDeleteApplication } from "../lib/events";
 import { formatAge } from "../lib/format";
 import type { ApplicationPatch } from "../lib/kyuu-schemas";
+import { archiveApplication, logFollowUp, changeStatus as sendStatus } from "../lib/offline";
 import { type EventKind, STATUSES, type Status } from "../lib/stages";
 import type { ApplicationDetail } from "../lib/types";
 import { FIELD_TEXTAREA } from "./ApplicationDialog";
@@ -78,11 +79,17 @@ export function ApplicationPage({
 	const [status, setOptimisticStatus] = useOptimistic(app.status);
 	const [composer, setComposer] = useState<EventKind | null>(logKind);
 
-	function run(action: () => Promise<{ error: string } | { success: true }>, done?: string) {
+	// The list's own offline-capable acts: the same queue, the same words.
+	function run(
+		action: () => Promise<{ error: string } | { success: true; queued?: true }>,
+		done?: string,
+		undo?: () => void,
+	) {
 		startTransition(async () => {
 			const result = await action().catch(() => FAILED);
 			if ("error" in result) toast.error(result.error);
-			else if (done) toast(done);
+			else if ("queued" in result) toast(QUEUED_TOAST);
+			else if (done) toast(done, undo ? { action: { label: "Undo", onClick: undo } } : undefined);
 		});
 	}
 
@@ -90,7 +97,8 @@ export function ApplicationPage({
 		if (next === status) return;
 		startTransition(async () => {
 			setOptimisticStatus(next);
-			const result = await setStatus(app.id, next).catch(() => FAILED);
+			const result = await sendStatus(app, next).catch(() => FAILED);
+			if ("queued" in result) toast(QUEUED_TOAST);
 			if ("error" in result) toast.error(result.error);
 		});
 	}
@@ -183,7 +191,7 @@ export function ApplicationPage({
 								{status === "applied" && (
 									<DropdownMenuItem
 										onClick={() =>
-											run(() => followUp(app.id), "Follow-up logged: the clock restarts")
+											run(() => logFollowUp(app), "Follow-up logged: the clock restarts")
 										}
 									>
 										Followed up
@@ -199,8 +207,12 @@ export function ApplicationPage({
 								<DropdownMenuItem
 									onClick={() =>
 										run(
-											() => setArchived(app.id, !app.archived),
-											app.archived ? "Restored" : "Archived: it's out of the table's views",
+											() => archiveApplication(app, !app.archived),
+											app.archived ? `“${app.company}” restored` : `“${app.company}” archived`,
+											() =>
+												void archiveApplication(app, app.archived).then(
+													(r) => "error" in r && toast.error(r.error),
+												),
 										)
 									}
 								>

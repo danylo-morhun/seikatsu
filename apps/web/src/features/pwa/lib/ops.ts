@@ -47,6 +47,8 @@ export interface OfflineOps {
 	"kyuu.logEvent": { applicationId: string; event: EventInput & { id: string } };
 	"kyuu.followUp": { applicationId: string; id: string; date: string };
 	"kyuu.setArchived": { applicationId: string; archived: boolean };
+	/** Only applications still waiting close, so a replay closes nothing twice. */
+	"kyuu.ghost": { ids: string[]; on: string };
 	"aisha.addReading": { vehicleId: string; id: string; date: string; km: number };
 	"aisha.logService": { vehicleId: string; values: ServiceFormValues & { id: string } };
 	"hoshii.createItem": ItemFormValues & { id: string };
