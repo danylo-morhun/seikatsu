@@ -10,6 +10,7 @@ import {
 	updateColumnSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
 import { generateKeyBetween, generateNKeysBetween } from "@/lib/position";
+import { getUserToday } from "@/lib/timezone";
 
 export async function getColumns(projectId: string) {
 	const workspace = await requireWorkspace();
@@ -64,7 +65,19 @@ export async function updateColumn(input: unknown): Promise<{ error: string } | 
 	const column = await getOwnedColumn(columnId, workspace.id);
 	if (!column) return { error: "Column not found" };
 
-	await db.update(seiryuColumns).set(updates).where(eq(seiryuColumns.id, columnId));
+	const today = await getUserToday();
+	await db.transaction(async (tx) => {
+		await tx.update(seiryuColumns).set(updates).where(eq(seiryuColumns.id, columnId));
+		// Becoming a finish column finishes its cards today (Week's recap counts them);
+		// no longer one, they're open again — as a move in or out would do.
+		if (updates.isDone === true && !column.isDone)
+			await tx
+				.update(seiryuCards)
+				.set({ doneOn: today })
+				.where(and(eq(seiryuCards.columnId, columnId), isNull(seiryuCards.doneOn)));
+		if (updates.isDone === false && column.isDone)
+			await tx.update(seiryuCards).set({ doneOn: null }).where(eq(seiryuCards.columnId, columnId));
+	});
 
 	// The finish line decides the open-card counts in the project list.
 	if (updates.isDone !== undefined) revalidatePath("/seiryu", "layout");
