@@ -17,7 +17,7 @@ interface Props {
 }
 
 /**
- * The year's goal as a capacity bar that fills toward the target, with the pace in words:
+ * The year's target (books to read; Goals are something else) as a capacity bar that fills toward the target, with the pace in words:
  * where the reading stands against where it would be by now at an even pace.
  */
 export function GoalSection({ year, target: saved, booksRead, yearShare }: Props) {
@@ -39,7 +39,7 @@ export function GoalSection({ year, target: saved, booksRead, yearShare }: Props
 		startSave(async () => {
 			setTarget(targetBooks);
 			const result = await setGoal({ year, targetBooks }).catch(() => ({
-				error: "Couldn't save the goal.",
+				error: "Couldn't save the target.",
 			}));
 			if ("error" in result) toast.error(result.error);
 			else setEditing(false);
@@ -49,7 +49,7 @@ export function GoalSection({ year, target: saved, booksRead, yearShare }: Props
 	function remove() {
 		startSave(async () => {
 			setTarget(null);
-			const result = await clearGoal(year).catch(() => ({ error: "Couldn't remove the goal." }));
+			const result = await clearGoal(year).catch(() => ({ error: "Couldn't remove the target." }));
 			if ("error" in result) toast.error(result.error);
 			setEditing(false);
 		});
@@ -111,7 +111,7 @@ export function GoalSection({ year, target: saved, booksRead, yearShare }: Props
 					<div className="ml-auto flex gap-2">
 						{saved != null && (
 							<Button type="button" variant="ghost" onClick={remove} disabled={isSaving}>
-								Remove goal
+								Remove target
 							</Button>
 						)}
 						<Button type="submit" className="gap-1.5" disabled={isSaving || !(Number(value) > 0)}>
@@ -121,7 +121,7 @@ export function GoalSection({ year, target: saved, booksRead, yearShare }: Props
 					</div>
 				</form>
 			) : target == null ? (
-				<QuietAdd onClick={open}>Set a goal for {year}</QuietAdd>
+				<QuietAdd onClick={open}>Set a target for {year}</QuietAdd>
 			) : (
 				<div className="flex items-center gap-3">
 					<span aria-hidden className="relative h-1 flex-1 rounded-full bg-surface-2">

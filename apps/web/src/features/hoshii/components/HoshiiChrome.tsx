@@ -18,7 +18,7 @@ import { pageKey } from "@/lib/capture-shortcut";
 
 /**
  * Hoshii's chrome around every page of the app: the phone's bottom pill (Now, Lists, add,
- * Summary, Settings), the Add dialog it, the header and a shared shop link open, and the
+ * Year, Settings), the Add dialog it, the header and a shared shop link open, and the
  * app-wide keys.
  */
 export function HoshiiChrome({ chrome }: { chrome: ChromeData }) {
@@ -32,7 +32,7 @@ export function HoshiiChrome({ chrome }: { chrome: ChromeData }) {
 
 	const lit = pathname.startsWith("/settings/hoshii")
 		? 3
-		: pathname === "/hoshii/summary"
+		: pathname === "/hoshii/year"
 			? 2
 			: pathname === "/hoshii/lists"
 				? 1
@@ -57,7 +57,7 @@ export function HoshiiChrome({ chrome }: { chrome: ChromeData }) {
 			if (k === "n") setAdd({ open: true, instant: true });
 			else if (k === "1") go("/hoshii");
 			else if (k === "2") go("/hoshii/lists");
-			else if (k === "3") go("/hoshii/summary");
+			else if (k === "3") go("/hoshii/year");
 			else if (k === ",") go("/settings/hoshii");
 			else return;
 			e.preventDefault();
@@ -82,7 +82,7 @@ export function HoshiiChrome({ chrome }: { chrome: ChromeData }) {
 				items={[
 					{ label: "Now", icon: InboxIcon, href: "/hoshii" },
 					{ label: "Lists", icon: GridViewIcon, href: "/hoshii/lists" },
-					{ label: "Summary", icon: ChartHistogramIcon, href: "/hoshii/summary" },
+					{ label: "Year", icon: ChartHistogramIcon, href: "/hoshii/year" },
 					{ label: "Settings", icon: Settings01Icon, href: "/settings/hoshii" },
 				]}
 				action={

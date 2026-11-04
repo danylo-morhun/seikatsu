@@ -189,7 +189,7 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 				{ keys: ["N"], label: "Add a want" },
 				{ keys: ["1"], label: "Now" },
 				{ keys: ["2"], label: "Lists" },
-				{ keys: ["3"], label: "Summary" },
+				{ keys: ["3"], label: "Year" },
 				{ keys: [","], label: "Settings" },
 			],
 		},
