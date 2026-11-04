@@ -3,10 +3,12 @@
 // callers must pass a workspace they already authorized (or run as the cron).
 
 import {
+	accounts,
 	and,
 	db,
 	eq,
 	gte,
+	inArray,
 	isNull,
 	lte,
 	or,
@@ -20,14 +22,16 @@ import { advanceDate, type Frequency } from "@/features/kuroji/lib/recurring-dat
 
 export { advanceDate, type Frequency };
 
-/** Materializes every due period of the workspace's active recurring transactions. */
-export async function generateDueForWorkspace(ws: {
-	id: string;
-	baseCurrency: string;
-}): Promise<{ generated: number }> {
-	const today = new Date().toISOString().slice(0, 10);
-
-	const due = await db
+/**
+ * Materializes every due period of the workspace's active recurring transactions, up to
+ * `today` — the user's day, not the server's. Each side is stored in its own account's
+ * currency (converted at the day's rate), as the transaction form does.
+ */
+export async function generateDueForWorkspace(
+	ws: { id: string; baseCurrency: string },
+	today: string,
+): Promise<{ generated: number }> {
+	const rows = await db
 		.select()
 		.from(recurringTransactions)
 		.where(
@@ -41,6 +45,21 @@ export async function generateDueForWorkspace(ws: {
 				),
 			),
 		);
+	if (rows.length === 0) return { generated: 0 };
+	const accountIds = [...new Set(rows.flatMap((r) => [r.fromAccountId, r.toAccountId]))];
+	const currencyOf = new Map(
+		(
+			await db
+				.select({ id: accounts.id, currency: accounts.currency })
+				.from(accounts)
+				.where(and(eq(accounts.workspaceId, ws.id), inArray(accounts.id, accountIds)))
+		).map((a) => [a.id, a.currency]),
+	);
+	const due = rows.map((rt) => ({
+		...rt,
+		fromCurrency: currencyOf.get(rt.fromAccountId) ?? rt.currency,
+		toCurrency: currencyOf.get(rt.toAccountId) ?? rt.currency,
+	}));
 
 	let generated = 0;
 	const MAX_ITERATIONS = 365;
@@ -48,22 +67,34 @@ export async function generateDueForWorkspace(ws: {
 	for (const rt of due) {
 		// Fetch every rate this RT needs up front, in parallel and outside the DB transaction,
 		// so no connection is held during network I/O. Generation stops at the first gap.
+		// Rates from the recurring currency to the base and to each side's account currency.
+		const targets = [
+			...new Set(
+				[ws.baseCurrency, rt.fromCurrency, rt.toCurrency].filter((c) => c !== rt.currency),
+			),
+		];
 		const rateCache = new Map<string, number>();
-		if (rt.currency !== ws.baseCurrency) {
+		if (targets.length > 0) {
 			const dates: string[] = [];
 			for (let d = rt.nextDate; d <= today && dates.length < MAX_ITERATIONS; ) {
 				if (rt.endDate && d > rt.endDate) break;
 				dates.push(d);
 				d = advanceDate(d, rt.frequency as Frequency);
 			}
+			const pairs = dates.flatMap((d) => targets.map((to) => ({ d, to })));
 			const rates = await Promise.allSettled(
-				dates.map((d) => getExchangeRate(rt.currency, ws.baseCurrency, d)),
+				pairs.map(({ d, to }) => getExchangeRate(rt.currency, to, d)),
 			);
 			for (const [i, r] of rates.entries()) {
-				if (r.status === "rejected") break;
-				rateCache.set(dates[i], r.value);
+				if (r.status === "fulfilled") rateCache.set(`${pairs[i].d}:${pairs[i].to}`, r.value);
 			}
 		}
+		/** The amount in another currency on that day; undefined when its rate is missing. */
+		const inCurrency = (amount: number, to: string, date: string) => {
+			if (to === rt.currency) return amount;
+			const rate = rateCache.get(`${date}:${to}`);
+			return rate === undefined ? undefined : amount * rate;
+		};
 
 		let rtGenerated = 0;
 
@@ -88,14 +119,11 @@ export async function generateDueForWorkspace(ws: {
 				if (rt.endDate && currentDate > rt.endDate) break;
 
 				const amount = Number(rt.amount);
-				let baseAmount: number;
-				if (rt.currency === ws.baseCurrency) {
-					baseAmount = amount;
-				} else {
-					const rate = rateCache.get(currentDate);
-					if (rate === undefined) break;
-					baseAmount = amount * rate;
-				}
+				// Generation stops at the first day a rate is missing; the next run resumes there.
+				const baseAmount = inCurrency(amount, ws.baseCurrency, currentDate);
+				const fromAmount = inCurrency(amount, rt.fromCurrency, currentDate);
+				const toAmount = inCurrency(amount, rt.toCurrency, currentDate);
+				if (baseAmount === undefined || fromAmount === undefined || toAmount === undefined) break;
 
 				const [txn] = await tx
 					.insert(transactions)
@@ -106,15 +134,15 @@ export async function generateDueForWorkspace(ws: {
 					{
 						transactionId: txn.id,
 						accountId: rt.fromAccountId,
-						amount: String(-amount),
-						currency: rt.currency,
+						amount: (-fromAmount).toFixed(4),
+						currency: rt.fromCurrency,
 						baseAmount: (-baseAmount).toFixed(4),
 					},
 					{
 						transactionId: txn.id,
 						accountId: rt.toAccountId,
-						amount: String(amount),
-						currency: rt.currency,
+						amount: toAmount.toFixed(4),
+						currency: rt.toCurrency,
 						baseAmount: baseAmount.toFixed(4),
 					},
 				]);

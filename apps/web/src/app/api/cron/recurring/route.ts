@@ -7,6 +7,7 @@ import {
 	isNull,
 	lte,
 	ne,
+	notificationPrefs,
 	recurringTransactions,
 	workspaces,
 } from "@seikatsu/db";
@@ -15,6 +16,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
 import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
 import { pruneOldRows } from "@/lib/retention";
+import { dayIn } from "@/lib/timezone";
 
 // Daily Vercel Cron (see vercel.json): materializes recurring transactions due today and
 // stores today's exchange rates, so page renders never have to. Guarded by CRON_SECRET.
@@ -28,10 +30,16 @@ export async function GET(req: NextRequest) {
 	}
 
 	const today = new Date().toISOString().slice(0, 10);
+	// Each workspace runs up to its own day (the zone saved with its notification settings).
 	const due = await db
-		.selectDistinct({ id: workspaces.id, baseCurrency: workspaces.baseCurrency })
+		.selectDistinct({
+			id: workspaces.id,
+			baseCurrency: workspaces.baseCurrency,
+			timeZone: notificationPrefs.timeZone,
+		})
 		.from(recurringTransactions)
 		.innerJoin(workspaces, eq(recurringTransactions.workspaceId, workspaces.id))
+		.leftJoin(notificationPrefs, eq(notificationPrefs.workspaceId, workspaces.id))
 		.where(
 			and(eq(recurringTransactions.isActive, true), lte(recurringTransactions.nextDate, today)),
 		);
@@ -40,7 +48,8 @@ export async function GET(req: NextRequest) {
 	const failures: { id: string; error: string }[] = [];
 	for (const ws of due) {
 		try {
-			generated += (await generateDueForWorkspace(ws)).generated;
+			const day = safeDay(ws.timeZone);
+			generated += (await generateDueForWorkspace(ws, day)).generated;
 		} catch (e) {
 			Sentry.captureException(e, { tags: { cron: "recurring" } });
 			failures.push({ id: ws.id, error: e instanceof Error ? e.message : "unknown" });
@@ -72,4 +81,13 @@ async function warmRates(today: string) {
 		[...pairs.values()].map((p) => getExchangeRate(p.from, p.to, today)),
 	);
 	return { pairs: pairs.size, failed: results.filter((r) => r.status === "rejected").length };
+}
+
+/** The workspace's day; a zone the runtime doesn't know falls back to UTC. */
+function safeDay(timeZone: string | null) {
+	try {
+		return dayIn(timeZone ?? "UTC");
+	} catch {
+		return dayIn("UTC");
+	}
 }

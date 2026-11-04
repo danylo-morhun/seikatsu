@@ -92,7 +92,8 @@ export default async function KurojiPage({
 	const workspace = await initializeWorkspace(session.user.id);
 	// The daily cron materializes recurring transactions; this only covers a missed run,
 	// after the response is sent, so it never delays the page.
-	after(() => generateDueForWorkspace(workspace));
+	const recurringDay = await getUserToday();
+	after(() => generateDueForWorkspace(workspace, recurringDay));
 
 	// ── Overview ────────────────────────────────────────────────────────────────
 	if (tab === "expense") {
