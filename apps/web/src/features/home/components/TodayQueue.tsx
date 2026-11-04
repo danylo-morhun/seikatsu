@@ -15,7 +15,10 @@ import { loadDialog } from "@/features/capture/components/CaptureButton";
 import { openCapture } from "@/features/capture/lib/key";
 import type { QueueItem } from "@/features/home/lib/queue";
 import { keepWant, releaseWant } from "@/features/hoshii/lib/decide";
-import { ghostAll, ghostedText } from "@/features/kyuu/lib/offline";
+import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTransactionModal";
+import type { FundDue } from "@/features/kuroji/lib/agenda";
+import type { AddTransactionFormValues } from "@/features/kuroji/lib/transaction-schema";
+import { ghostAll, ghostedText, logFollowUp } from "@/features/kyuu/lib/offline";
 import { QUEUED_TOAST } from "@/features/pwa/lib/run";
 import { finishCard } from "@/features/seiryu/lib/finish";
 import { APPS_CONFIG } from "@/lib/app-themes";
@@ -60,7 +63,16 @@ const failed = (result: { error: string } | object): string | null =>
 	"error" in result ? result.error : null;
 
 /** The day's list: each row opens its app; its button does the one thing it waits for. */
-export function TodayQueue({ items }: { items: QueueItem[] }) {
+export function TodayQueue({
+	items,
+	workspaceId,
+	today,
+}: {
+	items: QueueItem[];
+	/** For acts that open Kuroji's form (a fund's instalment). */
+	workspaceId?: string;
+	today: string;
+}) {
 	// Rows handled here go at once; a failure brings them back.
 	const [gone, setGone] = useState<Set<string>>(new Set());
 	const [all, setAll] = useState(false);
@@ -108,7 +120,15 @@ export function TodayQueue({ items }: { items: QueueItem[] }) {
 	return (
 		<ul aria-label="Waiting today" className="inset-group lg:flex-1">
 			{shown.map((item) => (
-				<QueueRow key={item.key} item={item} settle={settle} handle={handle} />
+				<QueueRow
+					key={item.key}
+					item={item}
+					settle={settle}
+					handle={handle}
+					hide={hide}
+					workspaceId={workspaceId}
+					today={today}
+				/>
 			))}
 			{left.length > FIRST && (
 				<li>
@@ -129,8 +149,14 @@ function QueueRow({
 	item,
 	settle,
 	handle,
+	hide,
+	workspaceId,
+	today,
 }: {
 	item: QueueItem;
+	hide: (key: string) => void;
+	workspaceId?: string;
+	today: string;
 	settle: (key: string, run: () => Promise<{ error: string } | object>) => void;
 	handle: (key: string, act: (back: () => void) => Promise<unknown>) => void;
 }) {
@@ -212,6 +238,32 @@ function QueueRow({
 				</div>
 			)}
 			{act.kind === "ghost" && <GhostAll ids={act.ids} onDone={(run) => settle(item.key, run)} />}
+			{act.kind === "followUp" && (
+				<Button
+					variant="outline"
+					size="sm"
+					className="shrink-0"
+					aria-label={`Followed up: ${act.company}`}
+					onClick={() =>
+						settle(item.key, async () => {
+							const result = await logFollowUp({ id: act.id, company: act.company });
+							if ("queued" in result) toast(QUEUED_TOAST);
+							else if ("success" in result) toast("Follow-up logged: the clock restarts");
+							return result;
+						})
+					}
+				>
+					Followed up
+				</Button>
+			)}
+			{act.kind === "fund" && workspaceId && (
+				<FundTransfer
+					fund={act.fund}
+					workspaceId={workspaceId}
+					today={today}
+					onSaved={() => hide(item.key)}
+				/>
+			)}
 			{act.kind === "open" && (
 				<HugeiconsIcon
 					icon={ArrowRight01Icon}
@@ -220,6 +272,58 @@ function QueueRow({
 				/>
 			)}
 		</li>
+	);
+}
+
+/** A fund's instalment: Kuroji's own transfer form, filled in, paying into the fund's account. */
+function FundTransfer({
+	fund,
+	workspaceId,
+	today,
+	onSaved,
+}: {
+	fund: FundDue;
+	workspaceId: string;
+	today: string;
+	onSaved: () => void;
+}) {
+	const [open, setOpen] = useState(false);
+	const [opened, setOpened] = useState(false);
+	return (
+		<>
+			<Button
+				variant="outline"
+				size="sm"
+				className="shrink-0"
+				onPointerEnter={() => setOpened(true)}
+				onClick={() => {
+					setOpened(true);
+					setOpen(true);
+				}}
+			>
+				Transfer
+			</Button>
+			{opened && (
+				<LazyAddTransactionModal
+					workspaceId={workspaceId}
+					baseCurrency={fund.currency}
+					start={
+						{
+							txType: "transfer",
+							amount: fund.amount,
+							currency: fund.currency,
+							date: today,
+							fromWalletId: "",
+							toWalletId: fund.accountId,
+							description: fund.name,
+						} as AddTransactionFormValues
+					}
+					open={open}
+					onOpenChange={setOpen}
+					onSaved={onSaved}
+				/>
+			)}
+		</>
 	);
 }
 

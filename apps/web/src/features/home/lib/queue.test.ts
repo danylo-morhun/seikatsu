@@ -3,7 +3,10 @@ import { buildQueue, type QueueData } from "./queue";
 
 const TODAY = "2026-11-03";
 
-const empty: QueueData = { captures: null, wants: null, cards: null, jobs: null, car: null };
+const empty: QueueData = { money: null, wants: null, cards: null, jobs: null, car: null };
+
+const noJobs = { toSend: 0, followUps: [], calls: [], ghostIds: [], mailReview: 0 };
+const noMoney = { captures: 0, uncategorized: 0, funds: [] };
 
 const card = (id: string, dueDate: string, doneColumnId: string | null = "col-done") => ({
 	id,
@@ -37,8 +40,8 @@ describe("buildQueue", () => {
 			{
 				...empty,
 				cards: [card("today", TODAY), card("late", "2026-11-01")],
-				jobs: { toSend: 0, waiting: 0, ghostDue: 2, ghostIds: ["a", "b"], active: 0, total: 2 },
-				captures: 1,
+				jobs: { ...noJobs, ghostIds: ["a", "b"] },
+				money: { ...noMoney, captures: 1 },
 			},
 			TODAY,
 		);
@@ -75,15 +78,70 @@ describe("buildQueue", () => {
 		expect(many).toMatchObject({ title: "5 wants to decide", act: { kind: "open" } });
 	});
 
-	it("shows the car only when its next service is close", () => {
-		const car = (status: "ok" | "soon" | "overdue") => ({
+	it("lists every car item Aisha has as due, most urgent first", () => {
+		const entry = (name: string, status: "soon" | "overdue", kmLeft: number) => ({
+			name,
+			status,
+			kmLeft,
+			daysLeft: null,
+			when: null,
+		});
+		const car = {
 			vehicleId: "v",
 			name: "Hyundai i30",
 			currentKm: 84_000,
-			next: { name: "Tyres", status, kmLeft: -1200, daysLeft: null },
-		});
-		expect(buildQueue({ ...empty, car: car("ok") }, TODAY)).toEqual([]);
-		const [late] = buildQueue({ ...empty, car: car("overdue") }, TODAY);
+			next: entry("Tyres", "overdue", -1200),
+			due: [entry("Tyres", "overdue", -1200), entry("Oil", "soon", 600)],
+		};
+		expect(buildQueue({ ...empty, car: { ...car, due: [] } }, TODAY)).toEqual([]);
+		const [late, soon] = buildQueue({ ...empty, car }, TODAY);
 		expect(late).toMatchObject({ tone: "overdue", note: "Hyundai i30 · 1,200 km overdue" });
+		expect(soon).toMatchObject({ tone: "due", note: "Hyundai i30 · in 600 km" });
+	});
+
+	it("brings Kyuu's calls, follow-ups and mail to check", () => {
+		const queue = buildQueue(
+			{
+				...empty,
+				jobs: {
+					...noJobs,
+					calls: [
+						{ id: "c1", company: "Acme", kind: "interview", date: TODAY, time: "14:30" },
+						{ id: "c2", company: "Initech", kind: "screening", date: "2026-11-04", time: null },
+					],
+					followUps: [{ id: "f1", company: "Globex" }],
+					mailReview: 2,
+				},
+			},
+			TODAY,
+		);
+		expect(queue.map((q) => q.title)).toEqual([
+			"Interview · Acme",
+			"2 answers from mail to check",
+			"Follow up · Globex",
+			"Screening · Initech",
+		]);
+		expect(queue[0].note).toBe("Today at 14:30");
+		expect(queue[2].act).toEqual({ kind: "followUp", id: "f1", company: "Globex" });
+	});
+
+	it("asks for a fund's instalment and the bank's loose payments", () => {
+		const fund = {
+			id: "f",
+			name: "Tatry",
+			accountId: "acc",
+			amount: 825,
+			currency: "PLN",
+			dueDate: "2027-02-01",
+		};
+		const queue = buildQueue(
+			{ ...empty, money: { captures: 0, uncategorized: 3, funds: [fund] } },
+			TODAY,
+		);
+		expect(queue.map((q) => q.title)).toEqual([
+			"3 bank payments without a category",
+			"Put 825 PLN into Tatry",
+		]);
+		expect(queue[1].act).toEqual({ kind: "fund", fund });
 	});
 });
