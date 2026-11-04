@@ -22,7 +22,7 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 		{
 			title: "Today",
 			items: [
-				{ keys: ["N"], label: "New transaction" },
+				{ keys: ["N"], label: "Capture: one line into any app" },
 				{ keys: ["P"], label: "Log pages of the book you're reading" },
 				{ keys: ["M"], label: "Update the car's mileage" },
 				{
@@ -60,10 +60,10 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 			title: "Tsundoku",
 			items: [
 				{ keys: ["N"], label: "Add book" },
+				{ keys: ["1"], label: "Library" },
+				{ keys: ["2"], label: "Year" },
 				{ keys: ["/"], label: "Search the library" },
 				{ keys: ["F"], label: "Filter the library" },
-				{ keys: ["B"], label: "Library" },
-				{ keys: ["Y"], label: "Year" },
 				{ keys: [","], label: "Settings" },
 			],
 		},
@@ -73,7 +73,10 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 				{ keys: ["←", "↑", "↓", "→"], label: "Move focus between books" },
 				{ keys: ["Enter"], label: "Open" },
 				{ keys: ["L"], label: "Update progress" },
-				{ keys: ["1", "2", "3", "4", "5"], label: "Rate in stars" },
+				{
+					keys: ["1", "2", "3", "4", "5"],
+					label: "Rate in stars (over a book; else 1 and 2 are tabs)",
+				},
 				{ keys: ["0"], label: "Clear the rating" },
 				{ keys: ["P", "R", "D"], label: "Pile, Reading, Done" },
 				{ keys: ["E"], label: "Edit details (book page)" },
@@ -88,8 +91,9 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 			title: "Keizoku",
 			items: [
 				{ keys: ["N"], label: "New habit" },
-				{ keys: ["T"], label: "Today" },
-				{ keys: ["Y"], label: "Year" },
+				{ keys: ["1"], label: "Today" },
+				{ keys: ["2"], label: "Year" },
+				{ keys: ["3"], label: "Archive" },
 				{ keys: [","], label: "Settings" },
 			],
 		},
@@ -190,20 +194,21 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 			items: [
 				{ keys: ["N"], label: "New card" },
 				{ keys: ["F"], label: "Filter" },
-				{ keys: ["A"], label: "Archived cards" },
+				{ keys: ["A"], label: "Archived cards (with no card in focus)" },
+				{ keys: [","], label: "Settings" },
 			],
 		},
 		{
 			title: "Card in focus or under the pointer",
 			items: [
 				{ keys: ["←", "↑", "↓", "→"], label: "Move focus between cards" },
-				{ keys: ["Enter"], label: "Open" },
+				{ keys: ["Enter", "E"], label: "Open" },
 				{ keys: ["Space"], label: "Pick up, then arrows to move, Space to drop" },
 				{ keys: ["X"], label: "Done: to the finish column (Undo in the toast)" },
 				{ keys: ["[", "]"], label: "Move to the previous or next column" },
 				{ keys: ["1", "2", "3", "4"], label: "Priority: low to urgent" },
 				{ keys: ["0"], label: "Clear priority" },
-				{ keys: ["E"], label: "Archive" },
+				{ keys: ["A"], label: "Archive" },
 				{ keys: ["⌫"], label: "Delete" },
 				{ keys: ["."], label: "Open its menu" },
 			],

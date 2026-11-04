@@ -73,7 +73,7 @@ export function LineAction({
 	keys,
 	children,
 	...props
-}: { label: string; keys: string } & React.ComponentProps<typeof Button>) {
+}: { label: string; keys?: string } & React.ComponentProps<typeof Button>) {
 	return (
 		<Button variant="outline" size="sm" aria-label={label} aria-keyshortcuts={keys} {...props}>
 			{children}

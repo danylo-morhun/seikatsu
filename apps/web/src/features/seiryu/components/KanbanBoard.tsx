@@ -42,6 +42,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState, useTransition
 import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
+import { startNavigationProgress } from "@/components/NavigationProgress";
 import { NOTE_LINK } from "@/components/SettingsSection";
 import { usePendingOps } from "@/features/pwa/lib/use-outbox";
 import { deleteCard, restoreCard } from "@/features/seiryu/actions/cards";
@@ -203,7 +204,8 @@ export function KanbanBoard({
 		[cards, selectedCardId],
 	);
 
-	// N captures (as does the header's New Card button), F opens the filter, A the archive.
+	// N captures (as does the header's New Card button), F opens the filter, A the archive
+	// (or archives the card in focus), "," the settings.
 	// A card in focus, or else under the pointer, takes the card keys (the "?" sheet lists them).
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
@@ -211,8 +213,13 @@ export function KanbanBoard({
 			if (!k) return;
 			if (k === "n") setCapture({ open: true, instant: true });
 			else if (k === "f") setFilterOpen(true);
-			else if (k === "a") setArchiveOpen(true);
-			else if (!cardKeyRef.current(k)) return;
+			// A archives the card in focus or under the pointer; with none, opens the archive.
+			else if (k === "a") {
+				if (!cardKeyRef.current(k)) setArchiveOpen(true);
+			} else if (k === ",") {
+				startNavigationProgress();
+				router.push("/settings/seiryu");
+			} else if (!cardKeyRef.current(k)) return;
 			e.preventDefault();
 		}
 		function onRequest() {
@@ -224,7 +231,7 @@ export function KanbanBoard({
 			window.removeEventListener("keydown", onKeyDown);
 			window.removeEventListener(NEW_CARD_EVENT, onRequest);
 		};
-	}, []);
+	}, [router]);
 
 	// Arrows walk a focused tile through the board: up and down its lane, left and right to the
 	// nearest tile in the next lane. Off while a card is lifted (the arrows then move it).
@@ -480,7 +487,8 @@ export function KanbanBoard({
 		if (!tile || !card || isTempId(card.id)) return false;
 		const focused = document.activeElement === tile;
 
-		if (key === "e") {
+		if (key === "e") handleCardOpen(card.id);
+		else if (key === "a") {
 			// Focus stays in the lane: on the next card, or the one above.
 			const after = focused
 				? (neighbourTile(tile, "ArrowDown") ?? neighbourTile(tile, "ArrowUp"))
