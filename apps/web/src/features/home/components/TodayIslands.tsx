@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
+import { openCapture } from "@/features/capture/lib/key";
 import { type AppHref, LineAction } from "@/features/home/components/Line";
 import { greeting } from "@/features/home/lib/format";
 import type { BookToday, HabitToday } from "@/features/home/lib/today";
@@ -35,12 +36,17 @@ export function Greeting({ firstName }: { firstName: string | null }) {
 }
 
 /** 1–7 open the apps in sidebar order (set-aside ones skipped). P and M belong to their tiles;
- * N is the transaction dialog's. */
+ * N captures, as on every app's own page it makes that app's new thing. */
 export function HomeKeys({ listed }: { listed: AppHref[] }) {
 	const router = useRouter();
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
 			const key = pageKey(e);
+			if (key === "n") {
+				e.preventDefault();
+				openCapture();
+				return;
+			}
 			const app = key && /^[1-7]$/.test(key) ? listed[Number(key) - 1] : undefined;
 			if (!app) return;
 			e.preventDefault();

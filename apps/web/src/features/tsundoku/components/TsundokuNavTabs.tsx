@@ -40,7 +40,8 @@ export function TsundokuNavTabs() {
 	const isYear = pathname === "/tsundoku/year";
 	const lit = isSettings ? 3 : isYear ? 2 : segment === "pile" ? 1 : 0;
 
-	// N captures anywhere in the app; B and Y go to the library and the year, "," to settings.
+	// N captures anywhere in the app; 1 and 2 go to the library and the year, "," to settings.
+	// A digit over a book rates it instead: the book's own key runs first (it marks the event).
 	useEffect(() => {
 		function go(href: string) {
 			startNavigationProgress();
@@ -49,9 +50,13 @@ export function TsundokuNavTabs() {
 		function onKeyDown(e: KeyboardEvent) {
 			const k = pageKey(e);
 			if (k === "n") setCapture({ open: true, instant: true });
-			else if (k === "b") go("/tsundoku");
-			else if (k === "y") go("/tsundoku/year");
-			else if (k === ",") go("/settings/tsundoku");
+			else if (k === "1" || k === "2") {
+				// Rating keys listen after this one: decide once they've had the event.
+				queueMicrotask(() => {
+					if (!e.defaultPrevented) go(k === "1" ? "/tsundoku" : "/tsundoku/year");
+				});
+				return;
+			} else if (k === ",") go("/settings/tsundoku");
 			else return;
 			e.preventDefault();
 		}

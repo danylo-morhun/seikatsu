@@ -199,7 +199,7 @@ export function CardMenuItems({ card, columns, projectLabels, today, actions }: 
 			<ContextMenuItem onSelect={() => actions.archive(id)}>
 				<HugeiconsIcon icon={Archive01Icon} />
 				Archive
-				<ContextMenuShortcut>E</ContextMenuShortcut>
+				<ContextMenuShortcut>A</ContextMenuShortcut>
 			</ContextMenuItem>
 			<ContextMenuItem
 				className="text-destructive focus:text-destructive"

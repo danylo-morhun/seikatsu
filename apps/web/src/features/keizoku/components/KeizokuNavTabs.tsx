@@ -40,7 +40,7 @@ export function KeizokuNavTabs() {
 	const isYear = pathname === "/keizoku/year";
 	const lit = isArchive ? 2 : isSettings ? 3 : isYear ? 1 : 0;
 
-	// N captures anywhere in the app; T and Y go to today and the year, "," to settings.
+	// N captures anywhere in the app; 1, 2, 3 go to Today, Year and Archive, "," to settings.
 	useEffect(() => {
 		function go(href: string) {
 			startNavigationProgress();
@@ -49,8 +49,9 @@ export function KeizokuNavTabs() {
 		function onKeyDown(e: KeyboardEvent) {
 			const k = pageKey(e);
 			if (k === "n") setCapture({ open: true, instant: true });
-			else if (k === "t") go("/keizoku");
-			else if (k === "y") go("/keizoku/year");
+			else if (k === "1") go("/keizoku");
+			else if (k === "2") go("/keizoku/year");
+			else if (k === "3") go("/keizoku/archive");
 			else if (k === ",") go("/settings/keizoku");
 			else return;
 			e.preventDefault();

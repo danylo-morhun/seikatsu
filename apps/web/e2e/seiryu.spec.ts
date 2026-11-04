@@ -156,7 +156,7 @@ test("card keys set priority, move between columns and archive", async ({ page }
 	await expect(done).toBeVisible();
 	await expect(done).toBeFocused();
 
-	await page.keyboard.press("e");
+	await page.keyboard.press("a");
 	await expect(page.getByRole("button", { name: "Write tests" })).toBeHidden();
 	await expect.poll(async () => (await cardRow())?.archivedAt).not.toBeNull();
 });

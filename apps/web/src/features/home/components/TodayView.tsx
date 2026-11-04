@@ -332,12 +332,7 @@ async function MoneyLine({ ws, today }: { ws: Workspace; today: string }) {
 				<LazyAddTransactionModal
 					workspaceId={ws.id}
 					baseCurrency={ws.baseCurrency}
-					shortcut
-					trigger={
-						<LineAction label="Add transaction" keys="N">
-							Add
-						</LineAction>
-					}
+					trigger={<LineAction label="Add transaction">Add</LineAction>}
 				/>
 			}
 		/>
