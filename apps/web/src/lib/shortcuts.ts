@@ -27,11 +27,21 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 				{ keys: ["M"], label: "Update the car's mileage" },
 				{
 					keys: ["1", "2", "3", "4", "5", "6", "7"],
-					label: "Open Kuroji, Seiryu, Tsundoku, Keizoku, Kyuu, Aisha, Hoshii",
+					label: "Open the apps, in the order they're listed (hidden ones skipped)",
 				},
 			],
 		},
 	],
+	"/week": [
+		{
+			title: "Week",
+			items: [
+				{ keys: ["[", "]"], label: "Previous / next week" },
+				{ keys: ["T"], label: "This week" },
+			],
+		},
+	],
+	"/goals": [{ title: "Goals", items: [{ keys: ["N"], label: "New goal" }] }],
 	"/kuroji": [
 		{
 			title: "Kuroji",

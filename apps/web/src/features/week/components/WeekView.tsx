@@ -10,6 +10,7 @@ import { money } from "@/features/home/lib/format";
 import { buildQueue } from "@/features/home/lib/queue";
 import { addDays } from "@/features/keizoku/lib/streak";
 import { MoveCard } from "@/features/week/components/MoveCard";
+import { WeekKeys } from "@/features/week/components/WeekKeys";
 import { getWeekData } from "@/features/week/lib/data";
 import { buildWeek, type WeekEntry, weekLine, weekOf } from "@/features/week/lib/week";
 import type { Workspace } from "@/lib/session";
@@ -75,6 +76,10 @@ export async function WeekView({ ws, today, day }: { ws: Workspace; today: strin
 						{weekLine(totals, fmt) ?? "nothing logged yet"}
 					</p>
 				</div>
+				<WeekKeys
+					prev={`/week?w=${addDays(week[0], -7)}`}
+					next={`/week?w=${addDays(week[0], 7)}`}
+				/>
 				<nav aria-label="Weeks" className="flex items-center gap-1">
 					<WeekLink href={`/week?w=${addDays(week[0], -7)}`} label="Previous week">
 						<HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />

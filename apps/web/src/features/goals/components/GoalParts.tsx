@@ -42,6 +42,7 @@ import type { LinkOptions } from "@/features/goals/lib/data";
 import { LINK_APPS, LINK_KINDS, type LinkKind, type LinkView } from "@/features/goals/lib/progress";
 import { Seal } from "@/features/home/components/Line";
 import { APPS_CONFIG } from "@/lib/app-themes";
+import { pageKey } from "@/lib/capture-shortcut";
 
 export type GoalCardData = {
 	id: string;
@@ -200,9 +201,21 @@ export function GoalCard({
 
 export function NewGoal() {
 	const [open, setOpen] = useState(false);
+	// N: a new goal, as N makes each app's new thing.
+	useEffect(() => {
+		function onKeyDown(e: KeyboardEvent) {
+			if (pageKey(e) !== "n") return;
+			e.preventDefault();
+			setOpen(true);
+		}
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, []);
 	return (
 		<>
-			<Button onClick={() => setOpen(true)}>New goal</Button>
+			<Button onClick={() => setOpen(true)} aria-keyshortcuts="N">
+				New goal
+			</Button>
 			<GoalDialog open={open} onOpenChange={setOpen} />
 		</>
 	);
