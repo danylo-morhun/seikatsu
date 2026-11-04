@@ -160,7 +160,8 @@ function QueueRow({
 	settle: (key: string, run: () => Promise<{ error: string } | object>) => void;
 	handle: (key: string, act: (back: () => void) => Promise<unknown>) => void;
 }) {
-	const app = APPS_CONFIG[item.app];
+	// Goals are the shell's own: its ink seal, no app pigment.
+	const app = item.app === "/goals" ? { theme: "", kanji: "志" } : APPS_CONFIG[item.app];
 	const { act } = item;
 	return (
 		<li className="flex min-h-14 items-center gap-3 py-2">

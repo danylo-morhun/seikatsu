@@ -36,7 +36,7 @@ import {
 	type LinkReading,
 } from "@/features/goals/lib/progress";
 import { addDays, isScheduled, lastDays } from "@/features/keizoku/lib/streak";
-import { getBalances } from "@/features/kuroji/actions/balances";
+import { readBalances } from "@/features/kuroji/actions/balances";
 import { displayBalance } from "@/features/kuroji/lib/balance";
 import { allocateFunds } from "@/features/kuroji/lib/plan";
 
@@ -61,7 +61,8 @@ async function readFunds(
 			.from(kurojiFunds)
 			.where(eq(kurojiFunds.workspaceId, ws.id))
 			.orderBy(asc(kurojiFunds.dueDate)),
-		getBalances(ws.id, undefined, today),
+		// No session needed: Today's agenda and the morning push read goals too.
+		readBalances(ws, undefined, today, today),
 	]);
 	const now = new Map(
 		balances

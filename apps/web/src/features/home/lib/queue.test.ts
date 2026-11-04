@@ -144,4 +144,34 @@ describe("buildQueue", () => {
 		]);
 		expect(queue[1].act).toEqual({ kind: "fund", fund });
 	});
+
+	it("brings a goal that's behind or near its day, never as late work", () => {
+		const queue = buildQueue(
+			{
+				...empty,
+				goals: [
+					{
+						id: "g1",
+						name: "Tatry",
+						targetDate: "2026-11-20",
+						startedOn: "2026-10-01",
+						ratio: 0.9,
+					},
+					{
+						id: "g2",
+						name: "New job",
+						targetDate: "2027-06-01",
+						startedOn: "2026-06-01",
+						ratio: 0.1,
+					},
+					{ id: "g3", name: "Calm", targetDate: "2027-06-01", startedOn: "2026-11-01", ratio: 0.1 },
+				],
+			},
+			TODAY,
+		);
+		expect(queue.map((q) => [q.title, q.tone, q.note])).toEqual([
+			["New job", "due", "Behind its pace · 10%"],
+			["Tatry", "info", "Its day is close · 90%"],
+		]);
+	});
 });
