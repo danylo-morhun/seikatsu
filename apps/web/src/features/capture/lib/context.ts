@@ -20,6 +20,7 @@ import { type CaptureContext, type Named, pickMerchants } from "@/features/captu
 import { loadCar, loadReading } from "@/features/home/lib/today";
 import { getChromeData } from "@/features/hoshii/actions/data";
 import { getHabits } from "@/features/keizoku/actions/habits";
+import { getDueToday } from "@/features/keizoku/actions/logs";
 import { getAccounts } from "@/features/kuroji/actions/data";
 import { getProjects } from "@/features/seiryu/actions/projects";
 import type { Workspace } from "@/lib/session";
@@ -80,11 +81,12 @@ async function merchantUses(workspaceId: string, today: string) {
 }
 
 export async function getCaptureContext(ws: Workspace, today: string): Promise<CaptureContext> {
-	const [all, car, projects, habits, books, hoshii, spent] = await Promise.all([
+	const [all, car, projects, habits, dueToday, books, hoshii, spent] = await Promise.all([
 		getAccounts(ws.id),
 		loadCar(today),
 		getProjects(),
 		getHabits(),
+		getDueToday(),
 		loadReading(),
 		getChromeData(ws),
 		merchantUses(ws.id, today),
@@ -116,7 +118,15 @@ export async function getCaptureContext(ws: Workspace, today: string): Promise<C
 			return columnId ? [{ id: p.id, name: p.name, columnId }] : [];
 		}),
 		lists: hoshii.lists,
-		habits: habits.map((h) => ({ id: h.id, name: h.name, emoji: h.emoji })),
+		habits: habits.map((h) => {
+			const due = dueToday.find((d) => d.habit.id === h.id);
+			return {
+				id: h.id,
+				name: h.name,
+				emoji: h.emoji,
+				today: { due: !!due, done: due?.done ?? false },
+			};
+		}),
 		books: (books ?? []).map((b) => ({
 			id: b.id,
 			title: b.title,
