@@ -75,6 +75,8 @@ export function AddTransactionModal({
 	shortcut = false,
 	editing,
 	prefill,
+	start,
+	onSaved,
 	open: openProp,
 	onOpenChange: onOpenChangeProp,
 }: {
@@ -93,6 +95,10 @@ export function AddTransactionModal({
 		/** One unit of the paid currency in other wallet currencies. */
 		rates: Record<string, number>;
 	};
+	/** A new transaction that starts from these values (Capture's "Full form"). */
+	start?: AddTransactionFormValues;
+	/** Called once a new transaction is saved (or kept offline). */
+	onSaved?: () => void;
 	open?: boolean;
 	onOpenChange?: (open: boolean) => void;
 }) {
@@ -104,12 +110,12 @@ export function AddTransactionModal({
 	};
 	// Opened from the keyboard, the dialog appears and leaves instantly: a shortcut is for speed.
 	const [openedByKey, setOpenedByKey] = React.useState(false);
-	const initialType: TxType = editing?.values.txType ?? "expense";
+	const initialType: TxType = editing?.values.txType ?? start?.txType ?? "expense";
 	const [selectedTagIds, setSelectedTagIds] = React.useState<string[]>(editing?.tagIds ?? []);
 	const [txType, setTxType] = React.useState<TxType>(initialType);
 	// Text as typed ("12,50"); the form holds the parsed number.
 	const [amountText, setAmountText] = React.useState(() =>
-		prefill ? decimalText(prefill.paid.amount) : amountTextOf(editing?.values),
+		prefill ? decimalText(prefill.paid.amount) : amountTextOf(editing?.values ?? start),
 	);
 	const [tagsOpen, setTagsOpen] = React.useState(false);
 
@@ -132,6 +138,7 @@ export function AddTransactionModal({
 		defaultValues:
 			editing?.values ??
 			prefill?.values ??
+			start ??
 			({
 				txType: "expense",
 				description: "",
@@ -167,9 +174,13 @@ export function AddTransactionModal({
 	const watchToId = watch("toWalletId" as never) as unknown as string | undefined;
 	const currencyOf = (id: string | undefined) => accounts.find((a) => a.id === id)?.currency;
 	const sourceCurrency = currencyOf(txType === "transfer" ? watchFromId : watchWalletId);
+	// Values handed in keep their currency until another account is picked.
+	const startWallet = start && "walletId" in start ? start.walletId : undefined;
 	React.useEffect(() => {
-		if (sourceCurrency && !prefill) setValue("currency", toCurrency(sourceCurrency));
-	}, [sourceCurrency, setValue, prefill]);
+		if (!sourceCurrency || prefill) return;
+		if (startWallet && watchWalletId === startWallet) return;
+		setValue("currency", toCurrency(sourceCurrency));
+	}, [sourceCurrency, setValue, prefill, startWallet, watchWalletId]);
 
 	// A Wallet payment goes in the paying account's currency, as the card was charged: a UAH
 	// card paying in PLN is converted at the day's rate (plus what its bank charged on top
@@ -255,10 +266,10 @@ export function AddTransactionModal({
 	// Escape, a click outside or × keep a new capture's draft; Cancel and Save start the next
 	// one blank. Reset on opening, so the closing dialog never flashes back to an empty form.
 	const draft = useKeptDraft();
-	const keepable = !editing && !prefill;
+	const keepable = !editing && !prefill && !start;
 	React.useEffect(() => {
-		// An Apple Pay payment mounts fresh for each opening, already filled in.
-		if (!open || prefill || draft.resume(keepable)) return;
+		// An Apple Pay payment, or values handed in, mount fresh for each opening, already filled in.
+		if (!open || prefill || start || draft.resume(keepable)) return;
 		resetToType(initialType);
 		setTxType(initialType);
 		setSelectedTagIds(editing?.tagIds ?? []);
@@ -336,6 +347,7 @@ export function AddTransactionModal({
 		);
 		if (isQueued(result)) toast(QUEUED_TOAST);
 		else toast.success("Transaction recorded.");
+		onSaved?.();
 		onOpenChange(false);
 	};
 

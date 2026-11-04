@@ -28,7 +28,9 @@ import { applyAction } from "@/features/capture/lib/apply";
 import { describeAction } from "@/features/capture/lib/describe";
 import { isReady, type PlannedAction, withWallet } from "@/features/capture/lib/plan";
 import { CurrencySelect, Toggle } from "@/features/hoshii/components/Parts";
+import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTransactionModal";
 import { readCaptureMemory } from "@/features/kuroji/lib/capture-memory";
+import type { AddTransactionFormValues } from "@/features/kuroji/lib/transaction-schema";
 import { PRIORITIES, PRIORITY_CONFIG, type Priority } from "@/features/seiryu/lib/constants";
 import { APPS_CONFIG } from "@/lib/app-themes";
 
@@ -111,6 +113,31 @@ export function CaptureDialog({
 			if (result.data.actions.length === 0 && result.data.skipped.length === 0)
 				setError("Nothing to save in that. Try naming an amount, a task or a habit.");
 		});
+	}
+
+	// A money row handed to Kuroji's own form: what it saves there leaves the list here.
+	const [fullForm, setFullForm] = useState<{
+		key: string;
+		values: AddTransactionFormValues;
+	} | null>(null);
+	function openFullForm(action: PlannedAction) {
+		if (action.kind !== "expense" && action.kind !== "income") return;
+		setFullForm({
+			key: action.key,
+			values: {
+				txType: action.kind,
+				description: action.description,
+				currency: action.currency,
+				date: action.date,
+				walletId: action.walletId ?? "",
+				splits: [{ categoryId: action.categoryId ?? "", amount: action.amount }],
+			} as AddTransactionFormValues,
+		});
+	}
+	function savedInFullForm(key: string) {
+		const left = rows.filter((r) => r.action.key !== key);
+		setRows(left);
+		if (left.length === 0) onOpenChange(false);
 	}
 
 	const chosen = rows.filter((r) => r.on);
@@ -214,9 +241,25 @@ export function CaptureDialog({
 									)
 								}
 								onChange={(patch) => update(row.action.key, patch)}
+								onFullForm={
+									row.action.kind === "expense" || row.action.kind === "income"
+										? () => openFullForm(row.action)
+										: undefined
+								}
 							/>
 						))}
 					</ul>
+				)}
+				{plan && fullForm && (
+					<LazyAddTransactionModal
+						key={fullForm.key}
+						workspaceId={plan.workspaceId}
+						baseCurrency={fullForm.values.currency}
+						start={fullForm.values}
+						open
+						onOpenChange={(v) => !v && setFullForm(null)}
+						onSaved={() => savedInFullForm(fullForm.key)}
+					/>
 				)}
 
 				{plan && plan.skipped.length > 0 && (
@@ -266,6 +309,7 @@ function ActionRow({
 	disabled,
 	onToggle,
 	onChange,
+	onFullForm,
 }: {
 	row: Row;
 	options: CapturePlan["options"];
@@ -273,6 +317,8 @@ function ActionRow({
 	disabled: boolean;
 	onToggle: (on: boolean) => void;
 	onChange: (patch: Partial<PlannedAction>) => void;
+	/** Opens the app's own form with this row's values (money only). */
+	onFullForm?: () => void;
 }) {
 	const id = useId();
 	const { action } = row;
@@ -336,6 +382,17 @@ function ActionRow({
 							disabled={disabled}
 							onChange={onChange}
 						/>
+						{onFullForm && (
+							<Button
+								type="button"
+								variant="link"
+								className="col-span-2 h-auto justify-start px-0 text-xs text-muted-foreground"
+								disabled={disabled}
+								onClick={onFullForm}
+							>
+								Tags, split or transfer: open the Kuroji form
+							</Button>
+						)}
 					</div>
 				)}
 			</div>
