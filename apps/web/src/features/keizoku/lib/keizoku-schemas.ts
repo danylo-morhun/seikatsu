@@ -8,6 +8,8 @@ const habitFields = z.object({
 	frequencyDays: z.array(z.number().int().min(0).max(6)).max(7).nullable().optional(),
 	frequencyTarget: z.number().int().min(1).max(7).nullable().optional(),
 	timeOfDay: z.enum(TIME_OF_DAY_VALUES),
+	/** Ticked by itself when pages are logged in Tsundoku. */
+	fromReading: z.boolean().optional(),
 });
 
 function checkSchedule(v: z.infer<typeof habitFields>, ctx: z.RefinementCtx) {

@@ -2,6 +2,7 @@
 
 import {
 	Button,
+	Checkbox,
 	cn,
 	Dialog,
 	DialogContent,
@@ -40,6 +41,7 @@ type Form = {
 	frequencyDays: number[];
 	frequencyTarget: number;
 	timeOfDay: TimeOfDay;
+	fromReading: boolean;
 };
 
 const BLANK: Form = {
@@ -49,6 +51,7 @@ const BLANK: Form = {
 	frequencyDays: [1, 2, 3, 4, 5],
 	frequencyTarget: 3,
 	timeOfDay: "anytime",
+	fromReading: false,
 };
 
 function formOf(habit: KeizokuHabit | null): Form {
@@ -60,6 +63,7 @@ function formOf(habit: KeizokuHabit | null): Form {
 		frequencyDays: habit.frequencyDays ?? BLANK.frequencyDays,
 		frequencyTarget: habit.frequencyTarget ?? BLANK.frequencyTarget,
 		timeOfDay: habit.timeOfDay,
+		fromReading: habit.fromReading,
 	};
 }
 
@@ -71,6 +75,7 @@ function valuesOf(form: Form): HabitFormValues {
 		frequencyDays: form.frequencyType === "weekdays" ? form.frequencyDays : null,
 		frequencyTarget: form.frequencyType === "times_per_week" ? form.frequencyTarget : null,
 		timeOfDay: form.timeOfDay,
+		fromReading: form.fromReading,
 	};
 }
 
@@ -376,6 +381,21 @@ export function HabitDialog({
 							onChange={(v) => set("timeOfDay", v)}
 						/>
 						<p className="text-xs text-muted-foreground">Orders Today: morning habits first.</p>
+					</div>
+
+					<div className="flex items-start gap-3 text-sm">
+						<Checkbox
+							id={`${id}-reading`}
+							checked={form.fromReading}
+							onCheckedChange={(v) => set("fromReading", v === true)}
+							className="mt-0.5"
+						/>
+						<label htmlFor={`${id}-reading`}>
+							Done when I log pages in Tsundoku
+							<span className="block text-xs text-muted-foreground">
+								A day with pages read ticks it by itself.
+							</span>
+						</label>
 					</div>
 
 					{error && (

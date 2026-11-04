@@ -101,6 +101,7 @@ export async function createHabit(values: HabitFormValues): Promise<Result<Keizo
 			name: v.name,
 			emoji: v.emoji,
 			timeOfDay: v.timeOfDay,
+			fromReading: v.fromReading ?? false,
 			...scheduleFields(v),
 		})
 		.returning();
@@ -123,7 +124,13 @@ export async function updateHabit(habitId: string, patch: HabitPatch): Promise<R
 
 	await db
 		.update(keizokuHabits)
-		.set({ name: v.name, emoji: v.emoji, timeOfDay: v.timeOfDay, ...scheduleFields(v) })
+		.set({
+			name: v.name,
+			emoji: v.emoji,
+			timeOfDay: v.timeOfDay,
+			fromReading: v.fromReading ?? false,
+			...scheduleFields(v),
+		})
 		.where(eq(keizokuHabits.id, habitId));
 
 	revalidate(habitId);
