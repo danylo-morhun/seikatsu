@@ -152,6 +152,7 @@ async function getCards(ws: Owner, range: Range) {
 			doneOn: seiryuCards.doneOn,
 			isDone: seiryuColumns.isDone,
 			archivedAt: seiryuCards.archivedAt,
+			projectArchivedAt: seiryuProjects.archivedAt,
 		})
 		.from(seiryuCards)
 		.innerJoin(seiryuColumns, eq(seiryuColumns.id, seiryuCards.columnId))
@@ -169,7 +170,13 @@ async function getCards(ws: Owner, range: Range) {
 				: [],
 		),
 		due: cards.flatMap((c) =>
-			c.dueDate && !c.isDone && !c.archivedAt && c.dueDate >= range.from && c.dueDate <= range.to
+			// As Today: an archived project's cards wait on nobody.
+			c.dueDate &&
+			!c.isDone &&
+			!c.archivedAt &&
+			!c.projectArchivedAt &&
+			c.dueDate >= range.from &&
+			c.dueDate <= range.to
 				? [
 						{
 							date: c.dueDate,
@@ -199,6 +206,8 @@ async function getJobs(ws: Owner, range: Range): Promise<WeekData["jobs"]> {
 		db
 			.select({
 				date: kyuuEvents.date,
+				time: kyuuEvents.time,
+				id: kyuuApplications.id,
 				company: kyuuApplications.company,
 				what: kyuuEvents.kind,
 			})
@@ -208,7 +217,19 @@ async function getJobs(ws: Owner, range: Range): Promise<WeekData["jobs"]> {
 	]);
 	return [
 		...sent.map((s) => ({ ...s, what: "applied" as const })),
-		...events.flatMap((e) => (e.date ? [{ date: e.date, company: e.company, what: e.what }] : [])),
+		...events.flatMap((e) =>
+			e.date
+				? [
+						{
+							date: e.date,
+							company: e.company,
+							what: e.what,
+							id: e.id,
+							time: e.time?.slice(0, 5) ?? null,
+						},
+					]
+				: [],
+		),
 	];
 }
 

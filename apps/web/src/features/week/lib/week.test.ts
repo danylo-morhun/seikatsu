@@ -128,4 +128,35 @@ describe("buildWeek", () => {
 			applied: 1,
 		});
 	});
+
+	it("heads today's plan with what's late, and books calls ahead", () => {
+		const late = {
+			key: "seiryu:due:c1",
+			app: "/seiryu" as const,
+			title: "Tax form",
+			note: "Home · 3 days overdue",
+			href: "/seiryu/p/c1",
+			card: { id: "c1", title: "Tax form" },
+		};
+		const { days } = buildWeek(
+			{
+				...empty,
+				jobs: [{ date: "2026-11-06", company: "Acme", what: "interview", id: "a1", time: "14:30" }],
+			},
+			TODAY,
+			WEEK,
+			money,
+			[late],
+		);
+		expect(days[2].plan[0]).toEqual(late);
+		expect(days[4].plan).toEqual([
+			{
+				key: "kyuu:call:2026-11-06:a1",
+				app: "/kyuu",
+				title: "Interview · Acme",
+				note: "at 14:30",
+				href: "/kyuu/a1",
+			},
+		]);
+	});
 });

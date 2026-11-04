@@ -5,7 +5,9 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { DayTabs } from "@/features/home/components/DayTabs";
 import { Seal } from "@/features/home/components/Line";
+import { loadAgenda } from "@/features/home/lib/agenda";
 import { money } from "@/features/home/lib/format";
+import { buildQueue } from "@/features/home/lib/queue";
 import { addDays } from "@/features/keizoku/lib/streak";
 import { MoveCard } from "@/features/week/components/MoveCard";
 import { getWeekData } from "@/features/week/lib/data";
@@ -36,9 +38,28 @@ function rangeTitle(week: string[]) {
 export async function WeekView({ ws, today, day }: { ws: Workspace; today: string; day: string }) {
 	const week = weekOf(day);
 	const current = week.includes(today);
-	const data = await getWeekData(ws, today, week);
+	const [data, agenda] = await Promise.all([
+		getWeekData(ws, today, week),
+		current ? loadAgenda(ws, today) : null,
+	]);
 	const fmt = (amount: number, currency = ws.baseCurrency) => money(amount, currency);
-	const { days, totals } = buildWeek(data, today, week, fmt);
+	// What's late from before today, as Today lists it: it doesn't drop off the week.
+	const carried: WeekEntry[] = agenda
+		? buildQueue(agenda, today, fmt)
+				.filter((q) => q.tone === "overdue")
+				.map((q) => {
+					const cardId = q.app === "/seiryu" ? q.key.slice("seiryu:".length) : null;
+					return {
+						key: cardId ? `seiryu:due:${cardId}` : `late:${q.key}`,
+						app: q.app,
+						title: q.title,
+						note: q.note,
+						href: q.href,
+						card: cardId ? { id: cardId, title: q.title } : undefined,
+					};
+				})
+		: [];
+	const { days, totals } = buildWeek(data, today, week, fmt, carried);
 	// Days a due card can move to: the rest of this week, from today.
 	const ahead = week.filter((d) => d >= today);
 
