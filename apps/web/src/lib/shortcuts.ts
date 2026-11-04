@@ -32,6 +32,15 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 			],
 		},
 	],
+	"/apps": [
+		{
+			title: "Apps",
+			items: [
+				{ keys: ["N"], label: "Capture: one line into any app" },
+				{ keys: ["1", "2", "3", "4", "5", "6", "7"], label: "Open the apps, in the order shown" },
+			],
+		},
+	],
 	"/week": [
 		{
 			title: "Week",

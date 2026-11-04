@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import type { AppHref } from "@/features/home/components/Line";
 import { StartHere } from "@/features/home/components/StartHere";
+import { HomeKeys } from "@/features/home/components/TodayIslands";
 import { Figure, FigureText } from "@/features/home/components/TodayView";
 import { loadAgenda } from "@/features/home/lib/agenda";
 import { buildQueue } from "@/features/home/lib/queue";
@@ -32,6 +33,7 @@ export function AppsView({
 
 	return (
 		<div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-5 pb-28 sm:px-8 md:space-y-8 md:py-8">
+			<HomeKeys listed={live} />
 			<header className="animate-rise">
 				<h1 className="text-xl font-semibold tracking-tight md:text-3xl">Apps</h1>
 				<p className="mt-1 text-sm text-muted-foreground">
