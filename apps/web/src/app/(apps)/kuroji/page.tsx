@@ -2,8 +2,10 @@ import { format, subMonths } from "date-fns";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import type { CSSProperties } from "react";
+import { Suspense } from "react";
 import { auth } from "@/auth";
 import { PageTitle } from "@/components/PageTitle";
+import { GoalChips } from "@/features/goals/components/GoalChips";
 import { getBalances } from "@/features/kuroji/actions/balances";
 import {
 	getAccounts,
@@ -214,6 +216,13 @@ export default async function KurojiPage({
 			<div className="flex flex-col pb-28 md:pb-0">
 				<div className="px-4 py-6 sm:px-8 md:py-8">
 					<PageTitle title="Plan" />
+					<Suspense>
+						<GoalChips
+							kind="fund"
+							refIds={plan.funds.map((f) => f.id)}
+							className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground"
+						/>
+					</Suspense>
 					<PlanView
 						data={plan}
 						workspaceId={workspace.id}

@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { GoalChips } from "@/features/goals/components/GoalChips";
 import { getOwnedHabit } from "@/features/keizoku/actions/guard";
 import { getHabitDays, getHabitJournal } from "@/features/keizoku/actions/logs";
 import { getHabitSummary } from "@/features/keizoku/actions/stats";
@@ -22,5 +24,16 @@ export default async function KeizokuHabitPage({
 		getHabitJournal(habitId),
 	]);
 
-	return <HabitPage habit={habit} summary={summary} days={days} journal={journal} today={today} />;
+	return (
+		<>
+			<Suspense>
+				<GoalChips
+					kind="habit"
+					refIds={[habit.id]}
+					className="mx-auto flex max-w-3xl flex-wrap items-center gap-1.5 px-4 pt-4 text-xs text-muted-foreground sm:px-8"
+				/>
+			</Suspense>
+			<HabitPage habit={habit} summary={summary} days={days} journal={journal} today={today} />
+		</>
+	);
 }
