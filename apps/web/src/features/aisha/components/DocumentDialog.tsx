@@ -12,9 +12,10 @@ import {
 	Label,
 } from "@seikatsu/ui";
 import { useEffect, useId, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Spinner } from "@/components/Spinner";
 import type { AishaDocument } from "@/features/aisha/actions/data";
-import { createDocument, updateDocument } from "@/features/aisha/actions/documents";
+import { createDocument } from "@/features/aisha/actions/documents";
 import {
 	FieldError,
 	FOOTER,
@@ -28,6 +29,7 @@ import {
 	type DocumentType,
 } from "@/features/aisha/lib/constants";
 import { addMonths } from "@/features/aisha/lib/due";
+import { QUEUED_TOAST, saveDocument } from "@/features/aisha/lib/offline";
 import { localToday } from "@/features/aisha/lib/today";
 import { useHeld } from "@/hooks/useHeld";
 import { useKeptDraft } from "@/hooks/useKeptDraft";
@@ -105,11 +107,16 @@ export function DocumentDialog({
 		}
 		startSave(async () => {
 			const result = await (doc
-				? updateDocument(doc.id, form)
+				? saveDocument(doc.id, form)
 				: createDocument(vehicleId, form)
 			).catch(() => ({ error: "Couldn't save. Check your connection." }));
-			if ("error" in result) setError({ message: result.error });
-			else onOpenChange(false);
+			if ("error" in result) {
+				setError({ message: result.error });
+				return;
+			}
+			if ("queued" in result) toast(QUEUED_TOAST);
+			else if (renew) toast(`${form.name.trim()} renewed`);
+			onOpenChange(false);
 		});
 	}
 
