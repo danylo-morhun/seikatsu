@@ -23,6 +23,17 @@ const book = (over: Partial<ProgressState> = {}): ProgressState => ({
 });
 
 describe("progressPatch", () => {
+	it("back to page 0 is not started after all", () => {
+		expect(progressPatch(book({ currentPage: 12 }), 0, TODAY)).toEqual({
+			currentPage: 0,
+			status: "want",
+			startedAt: null,
+		});
+		expect(progressPatch(book({ status: "dnf", currentPage: 12 }), 0, TODAY)).toEqual({
+			currentPage: 0,
+		});
+	});
+
 	it("starts a want book on the first pages", () => {
 		expect(
 			progressPatch(book({ status: "want", currentPage: 0, startedAt: null }), 20, TODAY),
