@@ -109,7 +109,7 @@ test("deleting a reading day takes its pages back", async ({ page }) => {
 	await expect(page.getByRole("heading", { name: "Finished" })).toBeVisible();
 
 	await page.getByRole("button", { name: "Reading day actions" }).click();
-	await page.getByRole("menuitem", { name: /Delete/ }).click();
+	await page.getByRole("menuitem", { name: "Delete — takes its pages back" }).click();
 	await expect.poll(async () => (await bookRow())?.currentPage).toBe(0);
 	expect((await bookRow())?.status).toBe("reading");
 });
@@ -127,7 +127,7 @@ test("editing a reading day moves its date and pages", async ({ page }) => {
 	const dialog = page.getByRole("dialog", { name: "Edit Reading Day" });
 	await expect(dialog.getByLabel("Pages read")).toHaveValue("30");
 	await dialog.getByLabel("Pages read").fill("45");
-	await dialog.getByLabel("Day").fill("2026-01-05");
+	await dialog.getByLabel("Day", { exact: true }).fill("2026-01-05");
 	await dialog.getByRole("button", { name: "Save" }).click();
 	await expect(dialog).toBeHidden();
 
@@ -135,6 +135,47 @@ test("editing a reading day moves its date and pages", async ({ page }) => {
 	expect((await bookRow())?.startedAt).toBe("2026-01-05");
 	const [day] = await db.select().from(tsundokuSessions).where(eq(tsundokuSessions.bookId, bookId));
 	expect(day).toMatchObject({ date: "2026-01-05", pagesRead: 45 });
+});
+
+test("a mistaken reading day is put right without moving the book", async ({ page }) => {
+	await db.insert(tsundokuSessions).values({ bookId, date: "2026-01-10", pagesRead: 50 });
+	await db
+		.update(tsundokuBooks)
+		.set({ status: "reading", currentPage: 30, startedAt: "2026-01-10" })
+		.where(eq(tsundokuBooks.id, bookId));
+	await page.goto(`/tsundoku/${bookId}`);
+
+	await page.getByRole("button", { name: "Reading day actions" }).click();
+	await page.getByRole("menuitem", { name: "Edit…" }).click();
+	const dialog = page.getByRole("dialog", { name: "Edit Reading Day" });
+	await dialog.getByLabel("Pages read").fill("30");
+	await dialog.getByRole("checkbox", { name: /Keep the book on page 30/ }).check();
+	await dialog.getByRole("button", { name: "Save" }).click();
+	await expect(dialog).toBeHidden();
+
+	await expect
+		.poll(
+			async () =>
+				(await db.select().from(tsundokuSessions).where(eq(tsundokuSessions.bookId, bookId)))[0]
+					?.pagesRead,
+		)
+		.toBe(30);
+	expect((await bookRow())?.currentPage).toBe(30);
+});
+
+test("+pages moves the book on by the pages read", async ({ page }) => {
+	await db
+		.update(tsundokuBooks)
+		.set({ status: "reading", currentPage: 46, startedAt: "2026-01-10" })
+		.where(eq(tsundokuBooks.id, bookId));
+	await page.goto(`/tsundoku/${bookId}`);
+	const field = page.getByLabel("Page you're on, or percent");
+	await field.fill("1");
+	await expect(page.getByText("Back from page 46 to 1.")).toBeVisible();
+	await page.getByRole("button", { name: "Pages read instead of the page you're on" }).click();
+	await expect(field).toHaveValue("+1");
+	await page.getByRole("button", { name: "Update" }).click();
+	await expect.poll(async () => (await bookRow())?.currentPage).toBe(47);
 });
 
 test("a cover loads only for its owner", async ({ page, browser }) => {
