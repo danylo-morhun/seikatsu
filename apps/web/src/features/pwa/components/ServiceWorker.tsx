@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { SW_URL, swSupported } from "@/features/pwa/lib/sw-client";
@@ -9,6 +10,21 @@ import { SW_URL, swSupported } from "@/features/pwa/lib/sw-client";
  * Production only: in dev the worker would cache Turbopack's chunks across edits.
  */
 export function ServiceWorker() {
+	const router = useRouter();
+
+	// A slow (cold) server lost to the cached page: once the fresh one has landed, show it.
+	useEffect(() => {
+		const controller = swSupported() ? navigator.serviceWorker.controller : null;
+		if (!controller) return;
+		const channel = new MessageChannel();
+		channel.port1.onmessage = (e) => {
+			if (e.data === true) router.refresh();
+			channel.port1.close();
+		};
+		controller.postMessage({ type: "fresh?" }, [channel.port2]);
+		return () => channel.port1.close();
+	}, [router]);
+
 	useEffect(() => {
 		if (!swSupported() || process.env.NODE_ENV !== "production") return;
 		let reloading = false;
