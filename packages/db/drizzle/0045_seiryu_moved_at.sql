@@ -1,0 +1,1 @@
+ALTER TABLE "seiryu_cards" ADD COLUMN "moved_at" timestamp with time zone DEFAULT now() NOT NULL;
