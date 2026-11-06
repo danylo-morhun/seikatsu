@@ -56,10 +56,11 @@ export async function applyAction(action: PlannedAction, ctx: Ctx): Promise<RunR
 			const columnId = action.projectId ? ctx.columnOf(action.projectId) : undefined;
 			if (!action.projectId || !columnId) return { error: "Pick a project" };
 			const id = crypto.randomUUID();
-			const added = await addCard(id, columnId, action.projectId, action.title);
-			if ("error" in added || (!action.dueDate && !action.priority)) return added;
-			// A new card takes only a title; the rest goes on as an edit, queued after it.
-			return saveCard(id, action.title, { dueDate: action.dueDate, priority: action.priority });
+			const due = action.dueDate ? { dueDate: action.dueDate, dueTime: action.dueTime } : null;
+			const added = await addCard(id, columnId, action.projectId, action.title, due);
+			if ("error" in added || !action.priority) return added;
+			// A new card takes a title and its due; the rest goes on as an edit, queued after it.
+			return saveCard(id, action.title, { priority: action.priority });
 		}
 		case "habit":
 			return tickDay(

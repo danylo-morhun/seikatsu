@@ -33,7 +33,15 @@ describe("describeAction", () => {
 	it("asks for what's missing", () => {
 		expect(
 			describeAction(
-				{ key: "a", kind: "card", title: "Call", projectId: null, dueDate: null, priority: null },
+				{
+					key: "a",
+					kind: "card",
+					title: "Call",
+					projectId: null,
+					dueDate: null,
+					dueTime: null,
+					priority: null,
+				},
 				options,
 			).detail,
 		).toBe("pick a project");
@@ -61,6 +69,7 @@ describe("describeAction", () => {
 				title: "Call",
 				projectId: "p",
 				dueDate: "2026-11-04",
+				dueTime: null,
 				priority: "high",
 			},
 			options,

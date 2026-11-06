@@ -56,7 +56,8 @@ export function describeAction(
 				title: `Card: ${action.title}`,
 				detail: line(
 					options.projects.find((p) => p.id === action.projectId)?.name ?? "pick a project",
-					action.dueDate && `due ${action.dueDate === today ? "today" : when(action.dueDate)}`,
+					action.dueDate &&
+						`due ${action.dueDate === today ? "today" : when(action.dueDate)}${action.dueTime ? ` ${action.dueTime}` : ""}`,
 					action.priority && PRIORITY_CONFIG[action.priority].label,
 				),
 			};
