@@ -274,6 +274,7 @@ export const KanbanColumn = memo(function KanbanColumn({
 							key={card.clientKey ?? card.id}
 							card={card}
 							today={today}
+							inProgress={index > 0 && !column.isDone}
 							onOpen={onCardOpen}
 						/>
 					))}

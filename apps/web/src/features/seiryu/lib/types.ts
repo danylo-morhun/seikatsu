@@ -47,6 +47,8 @@ export type CardData = {
 	repeatEvery: number | null;
 	repeatUnit: RepeatUnit | null;
 	repeatFromDone: boolean;
+	/** ISO instant it last changed column. */
+	movedAt: string;
 	position: string;
 	checklistItems: ChecklistItemData[];
 	labels: LabelData[];
@@ -80,3 +82,12 @@ export type ActionResult = { error: string } | { success: true };
 
 /** Not saved yet: shown at once, but can't be opened, dragged or edited until the server answers. */
 export const isTempId = (id: string) => id.startsWith("temp-");
+
+/** Days in one in-progress column before a card is shown as stuck. */
+export const STUCK_DAYS = 7;
+
+/** Whole days since `movedAt` when that's STUCK_DAYS or more, else null. */
+export function stuckDays(movedAt: string, now: number = Date.now()): number | null {
+	const days = Math.floor((now - Date.parse(movedAt)) / 86_400_000);
+	return days >= STUCK_DAYS ? days : null;
+}

@@ -75,6 +75,7 @@ export function overlayCards(cards: CardData[], ops: Op[], projectId: string): C
 					repeatEvery: null,
 					repeatUnit: null,
 					repeatFromDone: false,
+					movedAt: new Date().toISOString(),
 					position,
 					checklistItems: [],
 					labels: [],

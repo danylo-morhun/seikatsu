@@ -301,6 +301,7 @@ export function KanbanBoard({
 				repeatEvery: null,
 				repeatUnit: null,
 				repeatFromDone: false,
+				movedAt: new Date().toISOString(),
 				position: generateKeyBetween(last?.position ?? null, null),
 				checklistItems: [],
 				labels: [],
@@ -384,7 +385,16 @@ export function KanbanBoard({
 			.at(-1);
 		const newPosition = generateKeyBetween(last?.position ?? null, null);
 		setCards((prev) =>
-			prev.map((c) => (c.id === cardId ? { ...c, columnId, position: newPosition } : c)),
+			prev.map((c) =>
+				c.id === cardId
+					? {
+							...c,
+							columnId,
+							position: newPosition,
+							...(c.columnId !== columnId && { movedAt: new Date().toISOString() }),
+						}
+					: c,
+			),
 		);
 		const title = cardsRef.current.find((c) => c.id === cardId)?.title ?? "card";
 		trackCards(placeCard(cardId, title, { columnId, position: newPosition })).then((result) => {

@@ -2,7 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CheckListIcon, Note01Icon, RepeatIcon } from "@hugeicons/core-free-icons";
+import { CheckListIcon, HourglassIcon, Note01Icon, RepeatIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import { memo, useId, useState } from "react";
@@ -11,7 +11,7 @@ import { DueDateChip } from "@/features/seiryu/components/DueDateChip";
 import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
 import { PRIORITY_CONFIG } from "@/features/seiryu/lib/constants";
 import { repeatLabel } from "@/features/seiryu/lib/repeat";
-import { type CardData, isTempId } from "@/features/seiryu/lib/types";
+import { type CardData, isTempId, stuckDays } from "@/features/seiryu/lib/types";
 import { BAR_FILL, barClip } from "@/lib/bar";
 
 export type { CardData, ChecklistItemData, LabelData } from "@/features/seiryu/lib/types";
@@ -32,11 +32,18 @@ const TILE =
 interface Props {
 	card: CardData;
 	today: string;
+	/** In a lane between the first and the finish line, where a card can get stuck. */
+	inProgress?: boolean;
 	onOpen?: (cardId: string) => void;
 }
 
 // Every sortable re-renders on each drag move (dnd-kit context); the body skips that work.
-export const KanbanCard = memo(function KanbanCard({ card, today, onOpen }: Props) {
+export const KanbanCard = memo(function KanbanCard({
+	card,
+	today,
+	inProgress = false,
+	onOpen,
+}: Props) {
 	const isTemp = isTempId(card.id);
 	const id = useId();
 	const [fresh] = useState(() => freshCards.delete(card.clientKey ?? card.id));
@@ -73,7 +80,7 @@ export const KanbanCard = memo(function KanbanCard({ card, today, onOpen }: Prop
 				isTemp && "cursor-default opacity-70",
 			)}
 		>
-			<CardBody card={card} today={today} id={id} />
+			<CardBody card={card} today={today} id={id} inProgress={inProgress} />
 		</div>
 	);
 }, sameCardProps);
@@ -87,112 +94,129 @@ export function KanbanCardOverlay({ card, today }: { card: CardData; today: stri
 	);
 }
 
-const CardBody = memo(function CardBody({
-	card,
-	today,
-	id,
-}: {
-	card: CardData;
-	today: string;
-	id?: string;
-}) {
-	const total = card.checklistItems.length;
-	const done = card.checklistItems.filter((i) => i.isCompleted).length;
-	const hasMeta =
-		card.priority || card.dueDate || card.repeatUnit || total > 0 || card.hasDescription;
+const CardBody = memo(
+	function CardBody({
+		card,
+		today,
+		id,
+		inProgress = false,
+	}: {
+		card: CardData;
+		today: string;
+		id?: string;
+		inProgress?: boolean;
+	}) {
+		const stuck = inProgress ? stuckDays(card.movedAt) : null;
+		const total = card.checklistItems.length;
+		const done = card.checklistItems.filter((i) => i.isCompleted).length;
+		const hasMeta =
+			card.priority || card.dueDate || card.repeatUnit || stuck || total > 0 || card.hasDescription;
 
-	return (
-		<div className="flex flex-col gap-2">
-			<span id={id && `${id}-meta`} className="sr-only">
-				{[
-					card.labels.length > 0 && `Labels: ${card.labels.map((l) => l.name).join(", ")}.`,
-					card.priority && `${PRIORITY_CONFIG[card.priority].label} priority.`,
-					card.dueDate &&
-						`Due ${formatShortDate(card.dueDate, today)}${card.dueTime ? ` at ${card.dueTime}` : ""}${card.dueDate < today ? ", overdue" : ""}.`,
-					card.repeatUnit &&
-						card.repeatEvery &&
-						`Repeats ${repeatLabel(card.repeatEvery, card.repeatUnit).toLowerCase()}.`,
-					total > 0 && `${done} of ${total} checklist items done.`,
-					card.hasDescription && "Has a description.",
-				]
-					.filter(Boolean)
-					.join(" ")}
-			</span>
-			{card.labels.length > 0 && (
-				<ul aria-hidden className="flex flex-wrap gap-x-2.5 gap-y-1">
-					{card.labels.slice(0, MAX_LABELS).map((label) => (
-						<li
-							key={label.id}
-							className="inline-flex min-w-0 max-w-full items-center gap-1 text-[11px] leading-none font-medium text-muted-foreground"
-						>
-							<span
-								className="size-1.5 shrink-0 rounded-full"
-								style={{ backgroundColor: label.color }}
-							/>
-							<span className="truncate">{label.name}</span>
-						</li>
-					))}
-					{card.labels.length > MAX_LABELS && (
-						<li className="font-figures text-[11px] leading-none text-muted-foreground">
-							+{card.labels.length - MAX_LABELS}
-						</li>
-					)}
-				</ul>
-			)}
-
-			<p id={id && `${id}-title`} className="text-sm leading-snug [overflow-wrap:anywhere]">
-				{card.title}
-			</p>
-
-			{hasMeta && (
-				<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-					{card.priority && <PriorityBadge priority={card.priority} />}
-					{card.dueDate && (
-						<DueDateChip dueDate={card.dueDate} dueTime={card.dueTime} today={today} />
-					)}
-					{card.repeatUnit && (
-						<HugeiconsIcon
-							aria-hidden
-							icon={RepeatIcon}
-							className="h-3.5 w-3.5 text-muted-foreground"
-						/>
-					)}
-					{total > 0 && (
-						<span
-							className={cn(
-								"inline-flex items-center gap-1 text-xs tabular-nums",
-								done === total ? "text-foreground" : "text-muted-foreground",
-							)}
-						>
-							<HugeiconsIcon icon={CheckListIcon} className="h-3.5 w-3.5" />
-							{done}/{total}
-							<span className="sr-only"> checklist items done</span>
-							<span
-								aria-hidden
-								className="relative ml-0.5 h-1 w-8 overflow-hidden rounded-full bg-surface-2"
+		return (
+			<div className="flex flex-col gap-2">
+				<span id={id && `${id}-meta`} className="sr-only">
+					{[
+						card.labels.length > 0 && `Labels: ${card.labels.map((l) => l.name).join(", ")}.`,
+						card.priority && `${PRIORITY_CONFIG[card.priority].label} priority.`,
+						card.dueDate &&
+							`Due ${formatShortDate(card.dueDate, today)}${card.dueTime ? ` at ${card.dueTime}` : ""}${card.dueDate < today ? ", overdue" : ""}.`,
+						card.repeatUnit &&
+							card.repeatEvery &&
+							`Repeats ${repeatLabel(card.repeatEvery, card.repeatUnit).toLowerCase()}.`,
+						stuck && `In this column for ${stuck} days.`,
+						total > 0 && `${done} of ${total} checklist items done.`,
+						card.hasDescription && "Has a description.",
+					]
+						.filter(Boolean)
+						.join(" ")}
+				</span>
+				{card.labels.length > 0 && (
+					<ul aria-hidden className="flex flex-wrap gap-x-2.5 gap-y-1">
+						{card.labels.slice(0, MAX_LABELS).map((label) => (
+							<li
+								key={label.id}
+								className="inline-flex min-w-0 max-w-full items-center gap-1 text-[11px] leading-none font-medium text-muted-foreground"
 							>
 								<span
-									className={cn(BAR_FILL, "absolute inset-0 rounded-full bg-primary/80")}
-									style={barClip(done / total)}
+									className="size-1.5 shrink-0 rounded-full"
+									style={{ backgroundColor: label.color }}
 								/>
+								<span className="truncate">{label.name}</span>
+							</li>
+						))}
+						{card.labels.length > MAX_LABELS && (
+							<li className="font-figures text-[11px] leading-none text-muted-foreground">
+								+{card.labels.length - MAX_LABELS}
+							</li>
+						)}
+					</ul>
+				)}
+
+				<p id={id && `${id}-title`} className="text-sm leading-snug [overflow-wrap:anywhere]">
+					{card.title}
+				</p>
+
+				{hasMeta && (
+					<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+						{card.priority && <PriorityBadge priority={card.priority} />}
+						{card.dueDate && (
+							<DueDateChip dueDate={card.dueDate} dueTime={card.dueTime} today={today} />
+						)}
+						{stuck && (
+							<span
+								aria-hidden
+								title={`In this column for ${stuck} days`}
+								className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums"
+							>
+								<HugeiconsIcon icon={HourglassIcon} className="h-3.5 w-3.5" />
+								{stuck}d
 							</span>
-						</span>
-					)}
-					{card.hasDescription && (
-						<HugeiconsIcon
-							icon={Note01Icon}
-							aria-label="Has a description"
-							className="h-3.5 w-3.5 text-muted-foreground"
-						/>
-					)}
-				</div>
-			)}
-		</div>
-	);
-}, sameCard);
+						)}
+						{card.repeatUnit && (
+							<HugeiconsIcon
+								aria-hidden
+								icon={RepeatIcon}
+								className="h-3.5 w-3.5 text-muted-foreground"
+							/>
+						)}
+						{total > 0 && (
+							<span
+								className={cn(
+									"inline-flex items-center gap-1 text-xs tabular-nums",
+									done === total ? "text-foreground" : "text-muted-foreground",
+								)}
+							>
+								<HugeiconsIcon icon={CheckListIcon} className="h-3.5 w-3.5" />
+								{done}/{total}
+								<span className="sr-only"> checklist items done</span>
+								<span
+									aria-hidden
+									className="relative ml-0.5 h-1 w-8 overflow-hidden rounded-full bg-surface-2"
+								>
+									<span
+										className={cn(BAR_FILL, "absolute inset-0 rounded-full bg-primary/80")}
+										style={barClip(done / total)}
+									/>
+								</span>
+							</span>
+						)}
+						{card.hasDescription && (
+							<HugeiconsIcon
+								icon={Note01Icon}
+								aria-label="Has a description"
+								className="h-3.5 w-3.5 text-muted-foreground"
+							/>
+						)}
+					</div>
+				)}
+			</div>
+		);
+	},
+	(a, b) => a.inProgress === b.inProgress && sameCard(a, b),
+);
 
 function sameCardProps(a: Props, b: Props) {
-	return a.onOpen === b.onOpen && a.today === b.today && sameCard(a, b);
+	return a.onOpen === b.onOpen && a.inProgress === b.inProgress && sameCard(a, b);
 }
 
 // Field-wise: a server re-render sends new objects for unchanged cards.
@@ -211,6 +235,7 @@ function sameCard(
 		a.dueDate === b.dueDate &&
 		a.dueTime === b.dueTime &&
 		a.repeatUnit === b.repeatUnit &&
+		a.movedAt === b.movedAt &&
 		a.position === b.position &&
 		a.labels.length === b.labels.length &&
 		a.labels.every(

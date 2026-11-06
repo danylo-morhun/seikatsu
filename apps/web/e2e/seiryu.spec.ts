@@ -325,3 +325,26 @@ test("the calendar link serves due cards as iCalendar, and stops when turned off
 	await page.getByRole("alertdialog").getByRole("button", { name: "Turn off" }).click();
 	await expect.poll(async () => (await page.request.get(url ?? "")).status()).toBe(404);
 });
+
+test("a card a week or more in an in-progress column shows how long", async ({ page }) => {
+	const [doing] = await db
+		.insert(seiryuColumns)
+		.values({ projectId, name: "Doing", position: "a0V" })
+		.returning({ id: seiryuColumns.id });
+	await db
+		.update(seiryuCards)
+		.set({ columnId: doing?.id, movedAt: new Date(Date.now() - 10 * 86_400_000) })
+		.where(eq(seiryuCards.projectId, projectId));
+	await page.goto(`/seiryu/${projectId}`);
+	const card = lane(page, "Doing").getByRole("button", { name: "Write tests" });
+	await expect(card).toContainText("10d");
+
+	// Moved since: no marker.
+	await db
+		.update(seiryuCards)
+		.set({ movedAt: new Date() })
+		.where(eq(seiryuCards.projectId, projectId));
+	await page.reload();
+	await expect(card).toBeVisible();
+	await expect(card).not.toContainText("10d");
+});

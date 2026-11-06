@@ -22,6 +22,7 @@ const card = (id: string, columnId: string, position: string): CardData => ({
 	repeatEvery: null,
 	repeatUnit: null,
 	repeatFromDone: false,
+	movedAt: "2026-11-01T00:00:00.000Z",
 	position,
 	checklistItems: [],
 	labels: [],
