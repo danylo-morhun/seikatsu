@@ -91,11 +91,33 @@ describe("pagesLeft", () => {
 	});
 });
 
+describe("sessionEditPatch keepPage", () => {
+	it("fixes the day's count and leaves the page alone", () => {
+		const day = { date: "2026-10-10", pagesRead: 50 };
+		const { pagesRead, patch } = sessionEditPatch(
+			book(),
+			100,
+			day,
+			{ ...day, pagesRead: 30 },
+			TODAY,
+			true,
+		);
+		expect(pagesRead).toBe(30);
+		expect(patch.currentPage).toBeUndefined();
+		expect(patch.status).toBeUndefined();
+	});
+});
+
 describe("parseProgressInput", () => {
 	it("reads pages and percents", () => {
 		expect(parseProgressInput("140", 300)).toBe(140);
 		expect(parseProgressInput("45%", 300)).toBe(135);
 		expect(parseProgressInput("12,5 %", 200)).toBe(25);
+	});
+
+	it("reads +pages as pages read on from the current one", () => {
+		expect(parseProgressInput("+1", 300, 46)).toBe(47);
+		expect(parseProgressInput("+ 20", null, 0)).toBe(20);
 	});
 
 	it("rejects what it can't read", () => {
