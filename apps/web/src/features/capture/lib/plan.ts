@@ -45,6 +45,7 @@ export type RawAction = {
 	now: boolean | null;
 	projectId: string | null;
 	dueDate: string | null;
+	dueTime: string | null;
 	priority: Priority | null;
 	habitId: string | null;
 	bookId: string | null;
@@ -76,6 +77,7 @@ export const RESPONSE_SCHEMA = {
 					now: nullable("boolean", "want: true only when it's needed now, not to cool"),
 					projectId: nullable("string", "card: id from the project list"),
 					dueDate: nullable("string", "card: YYYY-MM-DD when a day to do it by is named"),
+					dueTime: nullable("string", "card: HH:MM (24h) when a time of day is named"),
 					priority: {
 						type: ["string", "null"],
 						enum: [...PRIORITIES, null],
@@ -101,6 +103,7 @@ export const RESPONSE_SCHEMA = {
 					"now",
 					"projectId",
 					"dueDate",
+					"dueTime",
 					"priority",
 					"habitId",
 					"bookId",
@@ -141,7 +144,8 @@ Kinds:
 - want: something to buy ("хочу Kindle", "надо шапку купить"). Title, price if given, the
   list it fits. now = true only when it's needed right away ("срочно", "закончился").
 - card: a task to do ("позвонить в СТО"). Title, the project it belongs to if one fits, a due
-  date when a day is named ("завтра", "до пятницы"), priority only when urgency is said.
+  date when a day is named ("завтра", "до пятницы"), a due time when an hour is named ("в 15" →
+  15:00), priority only when urgency is said.
 - habit: a habit done ("был в зале" → the gym habit). Only habits from the list.
 - pages: reading progress. page = the page reached ("до 52"); pagesRead when only a count
   is given ("прочитал 20 страниц").
@@ -262,6 +266,8 @@ export type PlannedAction = Base &
 				title: string;
 				projectId: string | null;
 				dueDate: string | null;
+				/** "HH:MM"; only with a day. */
+				dueTime: string | null;
 				priority: Priority | null;
 		  }
 		| { kind: "habit"; habitId: string; name: string; emoji: string; date: string }
@@ -278,6 +284,12 @@ function dayOf(date: string | null, today: string): string {
 /** A due day: any valid date, past or future. */
 function dueOf(date: string | null): string | null {
 	return date && DAY.test(date) && !Number.isNaN(Date.parse(date)) ? date : null;
+}
+
+/** A time of day, "HH:MM", or null. */
+function timeOf(time: string | null): string | null {
+	const m = time?.match(/^([01]?\d|2[0-3]):([0-5]\d)/);
+	return m ? `${(m[1] ?? "").padStart(2, "0")}:${m[2]}` : null;
 }
 
 function currencyOf(code: string | null, fallback: string): string {
@@ -351,12 +363,14 @@ function plan(raw: RawAction, ctx: CaptureContext, key: string): PlannedAction |
 			if (!title) return null;
 			const project =
 				known(ctx.projects, raw.projectId) ?? (ctx.projects.length === 1 ? ctx.projects[0] : null);
+			const dueDate = dueOf(raw.dueDate);
 			return {
 				key,
 				kind: "card",
 				title: title.slice(0, 500),
 				projectId: project?.id ?? null,
-				dueDate: dueOf(raw.dueDate),
+				dueDate,
+				dueTime: dueDate ? timeOf(raw.dueTime) : null,
 				priority: raw.priority && PRIORITIES.includes(raw.priority) ? raw.priority : null,
 			};
 		}
@@ -449,6 +463,7 @@ function withNulls(raw: RawAction): RawAction {
 		now: typeof raw.now === "boolean" ? raw.now : null,
 		projectId: str(raw.projectId),
 		dueDate: str(raw.dueDate),
+		dueTime: str(raw.dueTime),
 		priority: str(raw.priority) as Priority | null,
 		habitId: str(raw.habitId),
 		bookId: str(raw.bookId),

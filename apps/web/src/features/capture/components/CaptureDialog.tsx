@@ -609,9 +609,25 @@ function Fields({
 							value={action.dueDate ?? ""}
 							disabled={disabled}
 							className="h-9"
-							onChange={(e) => onChange({ dueDate: e.target.value || null })}
+							onChange={(e) =>
+								onChange({
+									dueDate: e.target.value || null,
+									...(!e.target.value && { dueTime: null }),
+								})
+							}
 						/>
 					</Field>
+					{action.dueDate && (
+						<Field label="Time">
+							<Input
+								type="time"
+								value={action.dueTime ?? ""}
+								disabled={disabled}
+								className="h-9"
+								onChange={(e) => onChange({ dueTime: e.target.value || null })}
+							/>
+						</Field>
+					)}
 					<Field label="Priority" className="col-span-2" as="div">
 						<Chips
 							value={action.priority}

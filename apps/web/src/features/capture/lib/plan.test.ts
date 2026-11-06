@@ -48,6 +48,7 @@ const raw = (fields: Partial<RawAction> & Pick<RawAction, "kind">): RawAction =>
 	now: null,
 	projectId: null,
 	dueDate: null,
+	dueTime: null,
 	priority: null,
 	habitId: null,
 	bookId: null,
@@ -226,14 +227,20 @@ describe("toPlan", () => {
 		const [card, other] = actions(
 			{
 				actions: [
-					raw({ kind: "card", title: "Call", dueDate: "2026-11-04", priority: "high" }),
+					raw({
+						kind: "card",
+						title: "Call",
+						dueDate: "2026-11-04",
+						dueTime: "9:30",
+						priority: "high",
+					}),
 					raw({ kind: "card", title: "Fix", dueDate: "tomorrow", priority: "asap" as never }),
 				],
 			},
 			ctx,
 		);
-		expect(card).toMatchObject({ dueDate: "2026-11-04", priority: "high" });
-		expect(other).toMatchObject({ dueDate: null, priority: null });
+		expect(card).toMatchObject({ dueDate: "2026-11-04", dueTime: "09:30", priority: "high" });
+		expect(other).toMatchObject({ dueDate: null, dueTime: null, priority: null });
 	});
 });
 
