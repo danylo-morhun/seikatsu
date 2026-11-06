@@ -21,7 +21,7 @@ import {
 	getOwnedBook,
 	requireWorkspace,
 } from "@/features/tsundoku/actions/guard";
-import { dropCover, storeCover } from "@/features/tsundoku/lib/cover-store";
+import { dropCover, dropUpload, storeCover } from "@/features/tsundoku/lib/cover-store";
 import { computePace } from "@/features/tsundoku/lib/pace";
 import {
 	finishDatePatch,
@@ -218,6 +218,7 @@ export async function updateBook(bookId: string, input: unknown): Promise<Result
 	if (newCover) {
 		after(async () => {
 			await dropCover(book.coverBlob);
+			await dropUpload(book.coverUrl, workspace.id);
 			if (coverUrl) await storeCover(bookId, coverUrl);
 		});
 	}
@@ -373,7 +374,10 @@ export async function deleteBook(
 	if (!book) return { error: "Book not found" };
 
 	await db.delete(tsundokuBooks).where(eq(tsundokuBooks.id, bookId));
-	after(() => dropCover(book.coverBlob));
+	after(async () => {
+		await dropCover(book.coverBlob);
+		await dropUpload(book.coverUrl, workspace.id);
+	});
 	revalidate();
 	if (options.redirect) redirect("/tsundoku");
 	return { success: true };
