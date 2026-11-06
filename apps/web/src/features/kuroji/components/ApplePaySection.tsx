@@ -126,6 +126,10 @@ export function ApplePaySection({
 							in the installed app: each payment sends a push that opens it filled in.
 						</li>
 					</ol>
+					<p className="text-xs text-muted-foreground">
+						iOS runs the automation for payments made by tapping the iPhone or Watch. Apple Pay in
+						apps and on websites doesn't trigger it: add those with N or Capture (⌘K).
+					</p>
 				</div>
 			)}
 
