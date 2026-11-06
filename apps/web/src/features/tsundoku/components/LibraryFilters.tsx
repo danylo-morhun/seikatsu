@@ -52,7 +52,7 @@ export function SegmentSwitch({
 		<nav aria-label="Piles" className="relative flex rounded-button bg-surface p-0.5">
 			<span
 				aria-hidden
-				className="absolute inset-y-0.5 left-0.5 w-[calc((100%-0.25rem)/4)] rounded-button bg-surface-2 shadow-sm transition-transform duration-250 ease-in-out motion-reduce:transition-none"
+				className="absolute inset-y-0.5 left-0.5 w-[calc((100%-0.25rem)/4)] rounded-button-inset bg-surface-2 shadow-sm transition-transform duration-250 ease-in-out motion-reduce:transition-none"
 				style={{ transform: `translateX(${index * 100}%)` }}
 			/>
 			{options.map((o) => {
@@ -67,7 +67,7 @@ export function SegmentSwitch({
 						aria-pressed={active}
 						onClick={() => onChange(o.value)}
 						className={cn(
-							"relative flex h-8 flex-1 items-center justify-center gap-1.5 rounded-button px-3 text-sm whitespace-nowrap outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring sm:flex-none sm:min-w-20",
+							"relative flex h-8 flex-1 items-center justify-center gap-1.5 rounded-button-inset px-3 text-sm whitespace-nowrap outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring sm:flex-none sm:min-w-20",
 							active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
 						)}
 					>
@@ -129,7 +129,7 @@ export function ViewSwitch({
 		>
 			<span
 				aria-hidden
-				className="absolute inset-y-0.5 left-0.5 w-9 rounded-button bg-surface-2 shadow-sm transition-transform duration-200 ease-in-out motion-reduce:transition-none"
+				className="absolute inset-y-0.5 left-0.5 w-9 rounded-button-inset bg-surface-2 shadow-sm transition-transform duration-200 ease-in-out motion-reduce:transition-none"
 				style={{ transform: `translateX(${view === "list" ? 100 : 0}%)` }}
 			/>
 			{(
@@ -146,7 +146,7 @@ export function ViewSwitch({
 					aria-label={label}
 					onClick={() => onChange(value)}
 					className={cn(
-						"relative flex h-9 w-9 items-center justify-center rounded-button outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring md:h-7",
+						"relative flex h-9 w-9 items-center justify-center rounded-button-inset outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring md:h-7",
 						view === value ? "text-foreground" : "text-muted-foreground hover:text-foreground",
 					)}
 				>

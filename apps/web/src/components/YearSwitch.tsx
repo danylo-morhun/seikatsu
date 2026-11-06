@@ -16,11 +16,11 @@ export function YearSwitch({
 	return (
 		<nav
 			aria-label="Year"
-			className="relative inline-flex max-w-full overflow-x-auto rounded-md bg-surface p-0.5"
+			className="relative inline-flex max-w-full overflow-x-auto rounded-button bg-surface p-0.5"
 		>
 			<span
 				aria-hidden
-				className="absolute inset-y-0.5 left-0.5 w-14 rounded bg-surface-2 transition-transform duration-250 ease-in-out motion-reduce:transition-none"
+				className="absolute inset-y-0.5 left-0.5 w-14 rounded-button-inset bg-surface-2 shadow-sm transition-transform duration-250 ease-in-out motion-reduce:transition-none"
 				style={{ transform: `translateX(${index * 100}%)` }}
 			/>
 			{years.map((y, i) => (
@@ -30,7 +30,7 @@ export function YearSwitch({
 					prefetch
 					aria-current={y === year ? "page" : undefined}
 					className={cn(
-						"relative w-14 shrink-0 rounded py-1 text-center font-figures text-xs font-medium transition-colors",
+						"relative w-14 shrink-0 rounded-button-inset py-1 text-center font-figures text-xs font-medium transition-colors",
 						y === year ? "text-foreground" : "text-muted-foreground hover:text-foreground",
 					)}
 				>

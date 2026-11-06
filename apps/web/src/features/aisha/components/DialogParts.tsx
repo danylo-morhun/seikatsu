@@ -33,12 +33,12 @@ export function Segmented<T extends string>({
 		<div
 			role="radiogroup"
 			aria-labelledby={labelledBy}
-			className="relative grid rounded-md bg-surface p-0.5"
+			className="relative grid rounded-button bg-surface p-0.5"
 			style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
 		>
 			<span
 				aria-hidden
-				className="absolute inset-y-0.5 left-0.5 rounded bg-surface-2 transition-transform duration-200 ease-in-out motion-reduce:transition-none"
+				className="absolute inset-y-0.5 left-0.5 rounded-button-inset bg-surface-2 shadow-sm transition-transform duration-200 ease-in-out motion-reduce:transition-none"
 				style={{
 					width: `calc((100% - 0.25rem) / ${options.length})`,
 					transform: `translateX(${Math.max(index, 0) * 100}%)`,
@@ -52,7 +52,7 @@ export function Segmented<T extends string>({
 					aria-checked={value === o.value}
 					onClick={() => onChange(o.value)}
 					className={cn(
-						"relative h-9 truncate rounded px-1 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring max-sm:h-10",
+						"relative h-9 truncate rounded-button-inset px-1 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring max-sm:h-10",
 						value === o.value ? "text-foreground" : "text-muted-foreground hover:text-foreground",
 					)}
 				>
