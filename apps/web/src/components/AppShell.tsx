@@ -8,6 +8,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { DesignProvider } from "@/components/DesignProvider";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { ShellNav } from "@/components/ShellNav";
+import { LaunchTiming } from "@/features/pwa/components/LaunchTiming";
 import { OfflineWarmup } from "@/features/pwa/components/OfflineWarmup";
 import { APP_THEMES, getThemeForPath } from "@/lib/app-themes";
 import type { Design } from "@/lib/design";
@@ -84,6 +85,7 @@ export function AppShell({
 				<ShellNav />
 				<KeyboardShortcuts />
 				<OfflineWarmup />
+				<LaunchTiming />
 			</SidebarProvider>
 		</DesignProvider>
 	);
