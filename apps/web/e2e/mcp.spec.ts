@@ -48,21 +48,26 @@ test("an MCP client connects through consent and reads Today", async ({ page, re
 	const tokens = await tokenRes.json();
 	expect(tokens.scope).toBe("read");
 
-	const rpc = (method: string, params: object) =>
-		request.post("/api/mcp", {
+	// A JSON body or a one-event SSE stream: the spec allows both, clients read both.
+	const rpc = async (method: string, params: object) => {
+		const res = await request.post("/api/mcp", {
 			headers: {
 				authorization: `Bearer ${tokens.access_token}`,
 				accept: "application/json, text/event-stream",
 			},
 			data: { jsonrpc: "2.0", id: 1, method, params },
 		});
-	const list = await (await rpc("tools/list", {})).json();
+		const text = await res.text();
+		const data = text.startsWith("{") ? text : (text.match(/^data: (.*)$/m)?.[1] ?? "null");
+		return JSON.parse(data);
+	};
+	const list = await rpc("tools/list", {});
 	const names: string[] = list.result.tools.map((t: { name: string }) => t.name);
 	expect(names).toContain("today");
 	// Write was unticked on the consent page: no write tools.
 	expect(names).not.toContain("kuroji_add_transaction");
 
-	const today = await (await rpc("tools/call", { name: "today", arguments: {} })).json();
+	const today = await rpc("tools/call", { name: "today", arguments: {} });
 	expect(today.result.isError).toBeUndefined();
 	expect(JSON.parse(today.result.content[0].text)).toHaveProperty("today");
 

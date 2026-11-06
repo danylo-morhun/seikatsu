@@ -1,10 +1,11 @@
 // The MCP server for one request: the caller's tools (write tools only with the write
 // scope), each run as the token's user (lib/actor.ts) and logged to mcp_calls.
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import { db, mcpCalls } from "@seikatsu/db";
 import * as Sentry from "@sentry/nextjs";
 import { after } from "next/server";
+import { z } from "zod";
 import { ALL_TOOLS } from "@/features/mcp/tools";
 import { actAs } from "@/lib/actor";
 import { dayIn } from "@/lib/timezone";
@@ -41,7 +42,7 @@ export function buildServer(caller: Caller): McpServer {
 			{
 				title: def.title,
 				description: def.description,
-				inputSchema: def.input,
+				inputSchema: z.object(def.input),
 				annotations: {
 					readOnlyHint: !def.write,
 					destructiveHint: false,

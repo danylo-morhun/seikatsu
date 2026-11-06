@@ -1,4 +1,4 @@
-import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
+import { createMcpHandler } from "@modelcontextprotocol/server";
 import { db, eq, mcpGrants } from "@seikatsu/db";
 import { after, type NextRequest } from "next/server";
 import { CORS, json, preflight } from "@/features/mcp/lib/http";
@@ -6,8 +6,9 @@ import { originOf, verifyAccessToken } from "@/features/mcp/lib/oauth";
 import { allowCall } from "@/features/mcp/lib/rate";
 import { buildServer } from "@/features/mcp/lib/server";
 
-// seikatsu's MCP endpoint (docs/mcp-prd.md): Streamable HTTP, stateless — every POST builds
-// the caller's server, answers in JSON and is done. Auth is an OAuth bearer token
+// seikatsu's MCP endpoint (docs/mcp-prd.md): stateless — every POST builds the caller's
+// server, answers in JSON and is done. Serves the 2026-07-28 revision (claude.ai asks for it
+// first) and the 2025 ones. Auth is an OAuth bearer token
 // (features/mcp/lib/oauth.ts) or a personal token from Settings.
 
 export const maxDuration = 30;
@@ -38,13 +39,14 @@ export async function POST(req: NextRequest) {
 		);
 	}
 
-	const server = buildServer(caller);
-	const transport = new WebStandardStreamableHTTPServerTransport({
-		sessionIdGenerator: undefined,
-		enableJsonResponse: true,
+	const handler = createMcpHandler(() => buildServer(caller), {
+		legacy: "stateless",
+		responseMode: "json",
+		// Rejected requests (a version the client tries first, bad JSON) are routine: log only.
+		// Tool failures reach Sentry from lib/server.ts.
+		onerror: (error) => console.warn("[mcp]", error.message),
 	});
-	await server.connect(transport);
-	const res = await transport.handleRequest(req);
+	const res = await handler.fetch(req);
 	const headers = new Headers(res.headers);
 	for (const [k, v] of Object.entries(CORS)) headers.set(k, v);
 	return new Response(res.body, { status: res.status, headers });
