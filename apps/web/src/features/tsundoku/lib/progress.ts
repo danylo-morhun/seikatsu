@@ -70,7 +70,8 @@ export interface SessionDay {
 
 /**
  * Correcting a logged day: the book moves by the change in pages (never past its end); an
- * earlier day can move the start back, and the finish follows the day it was set on.
+ * earlier day can move the start back, and the finish follows the day it was set on. With
+ * `keepPage` only the log is put right — the page was right, the day's count was the typo.
  */
 export function sessionEditPatch(
 	book: ProgressState,
@@ -78,10 +79,11 @@ export function sessionEditPatch(
 	before: SessionDay,
 	after: SessionDay,
 	today: string,
+	keepPage = false,
 ): { pagesRead: number; patch: ProgressPatch } {
 	const change = after.pagesRead - before.pagesRead;
 	const moved = change > 0 ? pagesLeft(book.pageCount, logged, change) : change;
-	const patch = progressPatch(book, book.currentPage + moved, today);
+	const patch: ProgressPatch = keepPage ? {} : progressPatch(book, book.currentPage + moved, today);
 	const startedAt = patch.startedAt ?? book.startedAt;
 	if (!startedAt || after.date < startedAt) patch.startedAt = after.date;
 	const finishedHere = patch.finishedAt === undefined && book.finishedAt === before.date;
@@ -114,9 +116,18 @@ export function finishDatePatch(book: ProgressState, date: string | null): Progr
 	return patch;
 }
 
-/** "140" is a page, "45%" a share of `pageCount`. Null when it can't be read. */
-export function parseProgressInput(raw: string, pageCount: number | null): number | null {
+/**
+ * "140" is a page, "+12" pages read on from `currentPage`, "45%" a share of `pageCount`.
+ * Null when it can't be read.
+ */
+export function parseProgressInput(
+	raw: string,
+	pageCount: number | null,
+	currentPage = 0,
+): number | null {
 	const value = raw.trim().replace(",", ".");
+	const more = value.match(/^\+\s*(\d+)$/);
+	if (more) return currentPage + Number(more[1]);
 	const percent = value.match(/^(\d+(?:\.\d+)?)\s*%$/);
 	if (percent) {
 		if (!pageCount) return null;
