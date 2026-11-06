@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
 	}
 
 	const rates = await warmRates(today);
-	// Same daily slot: old outbox receipts and send-once keys go.
+	// Same daily slot: old outbox receipts, send-once keys and stale MCP rows go.
 	const pruned = await pruneOldRows();
 	return NextResponse.json({ workspaces: due.length, generated, failures, rates, pruned });
 }
