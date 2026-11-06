@@ -2,10 +2,9 @@ import { StarIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 
-/** 1–10 as stars in halves: 7 → "3½". */
+/** 1–10 as stars in halves, as a decimal: 7 → "3.5", 8 → "4". */
 export function formatStars(rating: number): string {
-	const whole = Math.floor(rating / 2);
-	return rating % 2 ? `${whole || ""}½` : String(whole);
+	return String(rating / 2);
 }
 
 export function Star({ fill, className }: { fill: 0 | 0.5 | 1; className?: string }) {
