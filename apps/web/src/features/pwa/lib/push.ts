@@ -11,6 +11,9 @@ export interface PushPayload {
 	url: string;
 	/** Same tag replaces the previous notification instead of stacking. */
 	tag?: string;
+	/** Buttons on the notification; a press posts `{ action }` to `actUrl` (signed in). */
+	actions?: { action: string; title: string }[];
+	actUrl?: string;
 }
 
 let configured = false;
