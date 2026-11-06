@@ -39,14 +39,17 @@ const DropdownMenuSubContent = React.forwardRef<
 	React.ComponentRef<typeof DropdownMenuPrimitive.SubContent>,
 	React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubContent>
 >(({ className, ...props }, ref) => (
-	<DropdownMenuPrimitive.SubContent
-		ref={ref}
-		className={cn(
-			"z-50 min-w-[8rem] overflow-hidden glass glass-thick rounded-menu p-1.5 text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 origin-(--radix-dropdown-menu-content-transform-origin) duration-150 ease-out data-[state=closed]:duration-100",
-			className,
-		)}
-		{...props}
-	/>
+	// In a portal like the menu itself: inside it, the menu's clipping and glass layer would cover it.
+	<DropdownMenuPrimitive.Portal>
+		<DropdownMenuPrimitive.SubContent
+			ref={ref}
+			className={cn(
+				"z-50 min-w-[8rem] overflow-hidden glass glass-thick rounded-menu p-1.5 text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 origin-(--radix-dropdown-menu-content-transform-origin) duration-150 ease-out data-[state=closed]:duration-100",
+				className,
+			)}
+			{...props}
+		/>
+	</DropdownMenuPrimitive.Portal>
 ));
 DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayName;
 
