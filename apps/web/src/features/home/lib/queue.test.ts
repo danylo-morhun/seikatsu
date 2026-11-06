@@ -12,6 +12,7 @@ const card = (id: string, dueDate: string, doneColumnId: string | null = "col-do
 	id,
 	title: `Card ${id}`,
 	dueDate,
+	dueTime: null,
 	projectId: "p",
 	projectName: "Home",
 	columnId: "col-todo",

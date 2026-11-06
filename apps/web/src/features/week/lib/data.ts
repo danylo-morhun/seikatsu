@@ -160,6 +160,7 @@ async function getCards(ws: Owner, range: Range) {
 			projectId: seiryuCards.projectId,
 			projectName: seiryuProjects.name,
 			dueDate: seiryuCards.dueDate,
+			dueTime: seiryuCards.dueTime,
 			doneOn: seiryuCards.doneOn,
 			isDone: seiryuColumns.isDone,
 			archivedAt: seiryuCards.archivedAt,
@@ -195,6 +196,7 @@ async function getCards(ws: Owner, range: Range) {
 							title: c.title,
 							projectId: c.projectId,
 							projectName: c.projectName,
+							time: c.dueTime?.slice(0, 5) ?? null,
 						},
 					]
 				: [],

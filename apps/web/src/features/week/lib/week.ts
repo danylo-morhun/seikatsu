@@ -25,6 +25,8 @@ export type WeekData = {
 		title: string;
 		projectId: string;
 		projectName: string;
+		/** "HH:MM" when it's due at a time. */
+		time?: string | null;
 	}[];
 	/** Applications sent, and what came back; booked calls ahead carry their application. */
 	jobs: { date: string; company: string; what: JobWhat; id?: string; time?: string | null }[];
@@ -230,12 +232,16 @@ function doneOn(data: WeekData, date: string, money: Money): WeekEntry[] {
 /** What's dated that day ahead: cards due, the car, wants done cooling, bills. */
 function planOn(data: WeekData, date: string, money: Money): WeekEntry[] {
 	const entries: WeekEntry[] = [];
-	for (const card of on(data.cardsDue, date))
+	// Timed ones in their order; the rest after.
+	const cards = on(data.cardsDue, date).sort((a, b) =>
+		(a.time ?? "99").localeCompare(b.time ?? "99"),
+	);
+	for (const card of cards)
 		entries.push({
 			key: `seiryu:due:${card.id}`,
 			app: "/seiryu",
 			title: card.title,
-			note: card.projectName,
+			note: card.time ? `${card.time} · ${card.projectName}` : card.projectName,
 			href: `/seiryu/${card.projectId}/${card.id}`,
 			card: { id: card.id, title: card.title },
 		});

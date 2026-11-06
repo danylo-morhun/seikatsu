@@ -75,7 +75,7 @@ function cardItems(cards: CardToday[], today: string): QueueItem[] {
 			key: `seiryu:${card.id}`,
 			app: "/seiryu",
 			title: card.title,
-			note: `${card.projectName} · ${late > 0 ? `${plural(late, "day")} overdue` : "due today"}`,
+			note: `${card.projectName} · ${late > 0 ? `${plural(late, "day")} overdue` : card.dueTime ? `due ${card.dueTime}` : "due today"}`,
 			href: `/seiryu/${card.projectId}/${card.id}`,
 			tone: late > 0 ? "overdue" : "due",
 			act: card.doneColumnId
