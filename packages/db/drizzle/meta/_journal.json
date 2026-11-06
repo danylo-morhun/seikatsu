@@ -281,6 +281,13 @@
 			"when": 1793821915849,
 			"tag": "0039_keizoku_from_reading",
 			"breakpoints": true
+		},
+		{
+			"idx": 40,
+			"version": "7",
+			"when": 1793965573962,
+			"tag": "0040_mcp",
+			"breakpoints": true
 		}
 	]
 }

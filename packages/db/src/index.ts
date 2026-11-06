@@ -5,6 +5,7 @@ export {
 	countDistinct,
 	desc,
 	eq,
+	gt,
 	gte,
 	ilike,
 	inArray,

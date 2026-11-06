@@ -7,6 +7,7 @@ export * from "./kuroji";
 export * from "./kuroji-bank";
 export * from "./kuroji-capture";
 export * from "./kyuu";
+export * from "./mcp";
 export * from "./notifications";
 export * from "./offline";
 export * from "./seiryu";
