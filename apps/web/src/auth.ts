@@ -6,6 +6,7 @@ import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import Resend from "next-auth/providers/resend";
+import { currentActor } from "@/lib/actor";
 import { authConfig } from "./auth.config";
 
 declare module "next-auth" {
@@ -14,7 +15,7 @@ declare module "next-auth" {
 	}
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const nextAuth = NextAuth({
 	...authConfig,
 	adapter: DrizzleAdapter(db, {
 		usersTable: authUsers,
@@ -52,3 +53,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 		}),
 	],
 });
+
+export const { handlers, signIn, signOut } = nextAuth;
+
+/**
+ * NextAuth's `auth`, except that inside an MCP call (lib/actor.ts) the session is the token's
+ * user. Only the no-argument form (read the session) is redirected.
+ */
+export const auth = ((...args: unknown[]) => {
+	const actor = currentActor();
+	if (actor && args.length === 0) {
+		return Promise.resolve({
+			user: { id: actor.userId, name: actor.name },
+			expires: new Date(Date.now() + 60_000).toISOString(),
+		});
+	}
+	return (nextAuth.auth as (...a: unknown[]) => unknown)(...args);
+}) as typeof nextAuth.auth;
