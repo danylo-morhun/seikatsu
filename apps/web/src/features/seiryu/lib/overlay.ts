@@ -3,6 +3,7 @@
 
 import { generateKeyBetween } from "fractional-indexing";
 import type { OfflineOps, Op } from "@/features/pwa/lib/ops";
+import { newCardDue } from "@/features/seiryu/lib/reminder";
 import {
 	type CardData,
 	type ChecklistItemData,
@@ -68,9 +69,9 @@ export function overlayCards(cards: CardData[], ops: Op[], projectId: string): C
 					description: null,
 					hasDescription: false,
 					priority: null,
-					dueDate: null,
-					dueTime: null,
-					remindMinutes: null,
+					...(a.dueDate
+						? newCardDue(a.dueDate, a.dueTime)
+						: { dueDate: null, dueTime: null, remindMinutes: null }),
 					repeatEvery: null,
 					repeatUnit: null,
 					repeatFromDone: false,

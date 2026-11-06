@@ -270,3 +270,35 @@ test("a repeating card, finished, comes back due a step later; Undo takes it bac
 		)
 		.toBe(1);
 });
+
+test("a day and time typed into a new card's title become its due", async ({ page }) => {
+	await page.goto(`/seiryu/${projectId}`);
+	const dialog = page.getByRole("dialog", { name: "New Card" });
+	await expect(async () => {
+		await page.keyboard.press("n");
+		await expect(dialog).toBeVisible({ timeout: 500 });
+	}).toPass();
+	await dialog.getByLabel("Title").fill("Call the garage tomorrow 15:00");
+	await expect(dialog.getByText("Tomorrow 15:00")).toBeVisible();
+	await dialog.getByRole("button", { name: "Add card" }).click();
+
+	await expect(lane(page, "Todo").getByRole("button", { name: "Call the garage" })).toContainText(
+		"15:00",
+	);
+	await expect
+		.poll(async () => {
+			const [row] = await db
+				.select()
+				.from(seiryuCards)
+				.where(eq(seiryuCards.title, "Call the garage"));
+			return [row?.dueTime, row?.remindMinutes];
+		})
+		.toEqual(["15:00:00", 0]);
+
+	// "Keep as text": the title stays as typed, no date.
+	await page.keyboard.press("n");
+	await dialog.getByLabel("Title").fill("Read Tomorrow by Taylor");
+	await dialog.getByRole("button", { name: "Keep as text" }).click();
+	await dialog.getByRole("button", { name: "Add card" }).click();
+	await expect(lane(page, "Todo").getByText("Read Tomorrow by Taylor")).toBeVisible();
+});

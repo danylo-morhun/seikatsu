@@ -77,6 +77,12 @@ export const createCardSchema = z.object({
 	columnId: z.string().uuid(),
 	projectId: z.string().uuid(),
 	title: z.string().min(1, "Title is required").max(500),
+	/** Read from the title as it was typed ("… tomorrow 15:00"). */
+	dueDate: z.iso.date().optional(),
+	dueTime: z
+		.string()
+		.regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+		.optional(),
 });
 
 export const updateCardSchema = z.object({
