@@ -157,7 +157,7 @@ export function PlanAmountDialog({
 
 					<fieldset className="space-y-2">
 						<legend className="text-sm font-medium">Applies to</legend>
-						<div className="grid grid-cols-2 gap-1 rounded-md bg-surface p-0.5">
+						<div className="grid grid-cols-2 gap-1 rounded-button bg-surface p-0.5">
 							{(
 								[
 									["month", `${monthLabel} only`],
@@ -170,9 +170,9 @@ export function PlanAmountDialog({
 									aria-pressed={scope === value}
 									onClick={() => setScope(value)}
 									className={cn(
-										"truncate rounded px-2 py-1.5 text-xs font-medium transition-colors",
+										"truncate rounded-button-inset px-2 py-1.5 text-xs font-medium transition-colors",
 										scope === value
-											? "bg-surface-2 text-foreground"
+											? "bg-surface-2 text-foreground shadow-sm"
 											: "text-muted-foreground hover:text-foreground",
 									)}
 								>

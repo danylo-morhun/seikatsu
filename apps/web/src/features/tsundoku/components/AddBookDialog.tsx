@@ -230,12 +230,12 @@ export function AddBookDialog({ open, onOpenChange, instant = false, defaultStat
 						<div
 							role="radiogroup"
 							aria-labelledby={`${id}-as`}
-							className="relative grid grid-cols-3 rounded-md bg-surface p-0.5"
+							className="relative grid grid-cols-3 rounded-button bg-surface p-0.5"
 						>
 							{/* One chip slides under the chosen pile. */}
 							<span
 								aria-hidden
-								className="absolute inset-y-0.5 left-0.5 w-[calc((100%-0.25rem)/3)] rounded bg-surface-2 transition-transform duration-200 ease-in-out motion-reduce:transition-none"
+								className="absolute inset-y-0.5 left-0.5 w-[calc((100%-0.25rem)/3)] rounded-button-inset bg-surface-2 shadow-sm transition-transform duration-200 ease-in-out motion-reduce:transition-none"
 								style={{
 									transform: `translateX(${ADD_AS.findIndex((a) => a.value === status) * 100}%)`,
 								}}
@@ -248,7 +248,7 @@ export function AddBookDialog({ open, onOpenChange, instant = false, defaultStat
 									aria-checked={status === a.value}
 									onClick={() => setStatus(a.value)}
 									className={cn(
-										"relative h-8 rounded text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+										"relative h-8 rounded-button-inset text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
 										status === a.value
 											? "text-foreground"
 											: "text-muted-foreground hover:text-foreground",

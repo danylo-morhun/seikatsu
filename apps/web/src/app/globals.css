@@ -24,6 +24,8 @@
 	--radius-4xl: calc(var(--radius) * 2.6);
 	/* Design radii: set per look (see Design tokens). */
 	--radius-button: var(--design-radius-button);
+	/* What sits 2px inside a button-shaped track (a segmented control's lens): concentric. */
+	--radius-button-inset: max(0px, calc(var(--design-radius-button) - 0.125rem));
 	--radius-field: var(--design-radius-field);
 	--radius-group: var(--design-radius-group);
 	--radius-menu: var(--design-radius-menu);
