@@ -63,6 +63,9 @@ export const logSessionSchema = z.object({
 });
 export type LogSessionValues = z.infer<typeof logSessionSchema>;
 
+/** Correcting a day; `keepPage` puts the log right without moving the book. */
+export const editSessionSchema = logSessionSchema.extend({ keepPage: z.boolean().optional() });
+
 // Optional: a book read before it was tracked has no known start or finish.
 export const finishedAtSchema = day.nullable();
 export const startedAtSchema = day.nullable();

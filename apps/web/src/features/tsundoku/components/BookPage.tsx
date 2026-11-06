@@ -481,11 +481,12 @@ export function BookPage({ book: server, sessions, quotes, shelves, seriesBooks,
 				onOpenChange={(open) => setDayDialog((d) => ({ ...d, open }))}
 				today={today}
 				day={dayDialog.session}
+				currentPage={book.currentPage}
 				onLog={async (values) => {
 					const { session } = dayDialog;
 					const result = await (session
 						? updateSession(session.id, values)
-						: logDay(book, values)
+						: logDay(book, { date: values.date, pagesRead: values.pagesRead })
 					).catch(offline);
 					return "error" in result ? result.error : undefined;
 				}}
