@@ -1,4 +1,5 @@
 import { aishaTools } from "./aisha";
+import { keizokuTools } from "./keizoku";
 import { kurojiTools } from "./kuroji";
 import { kyuuTools } from "./kyuu";
 import { seiryuTools } from "./seiryu";
@@ -14,4 +15,5 @@ export const ALL_TOOLS: ToolDef[] = [
 	...tsundokuTools,
 	...kyuuTools,
 	...aishaTools,
+	...keizokuTools,
 ];
