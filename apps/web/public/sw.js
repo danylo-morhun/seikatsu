@@ -5,7 +5,7 @@
 // - Page loads: network-first with a short timeout, then the last cached copy, then /offline.
 // - RSC fetches (client navigation): network-only; offline, answer with a non-RSC response so
 //   the router falls back to a full page load, which the page cache then serves.
-// - Anything else (server actions, POSTs, /api): untouched.
+// - Anything else (server actions, POSTs, /api): untouched — /api navigations get the preload.
 // - Push: shows the payload sent by features/pwa/lib/push.ts; a tap opens its url.
 
 const VERSION = new URL(self.location.href).searchParams.get("v") || "dev";
@@ -70,7 +70,14 @@ self.addEventListener("fetch", (event) => {
 		event.respondWith(cacheFirst(request));
 		return;
 	}
-	if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/_next/")) return;
+	if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/_next/")) {
+		// Navigation preload is on, and a navigation the worker leaves unanswered goes out twice:
+		// the preload, then the browser's own request. A sign-in callback (/api/auth/callback/*)
+		// carries a one-time code, so the second one fails ("Server error" after Google sign-in).
+		// Answer it with the preload: one request, untouched otherwise.
+		if (request.mode === "navigate") event.respondWith(preloadOrFetch(event));
+		return;
+	}
 
 	// Prefetches may carry only the _rsc cache-buster, not the RSC header.
 	if (request.headers.get("RSC") === "1" || url.searchParams.has("_rsc")) {
@@ -81,6 +88,10 @@ self.addEventListener("fetch", (event) => {
 		event.respondWith(page(event));
 	}
 });
+
+async function preloadOrFetch(event) {
+	return (await event.preloadResponse) || fetch(event.request);
+}
 
 async function cacheFirst(request) {
 	const cached = await caches.match(request);
