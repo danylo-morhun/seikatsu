@@ -3,10 +3,12 @@ import {
 	boolean,
 	date,
 	index,
+	integer,
 	pgEnum,
 	pgTable,
 	primaryKey,
 	text,
+	time,
 	timestamp,
 	uniqueIndex,
 	uuid,
@@ -69,6 +71,12 @@ export const seiryuCards = pgTable(
 		description: text("description"),
 		priority: seiryuCardPriorityEnum("priority"),
 		dueDate: date("due_date"),
+		/** Local time on the due day; null = any time that day. Cleared with the date. */
+		dueTime: time("due_time"),
+		/** Minutes before the due moment (time, else 09:00) to push a reminder; null = none. */
+		remindMinutes: integer("remind_minutes"),
+		/** That moment as an instant, saved in the user's zone; snoozing moves it. Null = none. */
+		remindAt: timestamp("remind_at", { withTimezone: true }),
 		/** The user's day it reached a finish column; null while open. Feeds the week's recap. */
 		doneOn: date("done_on"),
 		position: varchar("position", { length: 255 }).notNull(),
@@ -78,6 +86,7 @@ export const seiryuCards = pgTable(
 	(t) => [
 		index("seiryu_cards_project_id_idx").on(t.projectId),
 		index("seiryu_cards_column_id_idx").on(t.columnId),
+		index("seiryu_cards_remind_at_idx").on(t.remindAt),
 	],
 );
 

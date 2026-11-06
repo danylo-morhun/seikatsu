@@ -36,6 +36,8 @@ export const notificationPrefs = pgTable("notification_prefs", {
 	kurojiWeekly: boolean("kuroji_weekly").notNull().default(true),
 	/** Sunday evening: the week in one line. Off unless asked for. */
 	weekRecap: boolean("week_recap").notNull().default(false),
+	/** Seiryu: a card's own reminder, at the time set on it. */
+	seiryuReminders: boolean("seiryu_reminders").notNull().default(true),
 	updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
