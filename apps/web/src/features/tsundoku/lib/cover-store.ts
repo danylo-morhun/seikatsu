@@ -77,3 +77,27 @@ export async function dropCover(base: string | null): Promise<void> {
 		console.error("[tsundoku] cover delete failed", error),
 	);
 }
+
+/** Where covers uploaded from a workspace's devices live. */
+export const uploadPrefix = (workspaceId: string) =>
+	`tsundoku/uploads/${process.env.VERCEL_ENV ?? "local"}/${workspaceId}/`;
+
+/** A cover uploaded from this workspace, so it's ours to delete once no book points at it. */
+export function isOwnUpload(url: string | null, workspaceId: string): url is string {
+	if (!url) return false;
+	try {
+		const { hostname, pathname } = new URL(url);
+		return (
+			hostname.endsWith(".public.blob.vercel-storage.com") &&
+			pathname.startsWith(`/${uploadPrefix(workspaceId)}`)
+		);
+	} catch {
+		return false;
+	}
+}
+
+/** Removes an uploaded cover the book let go of (replaced, or the book deleted). */
+export async function dropUpload(url: string | null, workspaceId: string): Promise<void> {
+	if (!isOwnUpload(url, workspaceId) || !process.env.BLOB_READ_WRITE_TOKEN) return;
+	await del(url).catch((error) => console.warn("[tsundoku] upload not deleted", error));
+}

@@ -17,9 +17,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@seikatsu/ui";
-import { useEffect, useId, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { Spinner } from "@/components/Spinner";
 import type { TsundokuBook } from "@/features/tsundoku/actions/books";
+import { uploadCover } from "@/features/tsundoku/actions/cover-upload";
 import { GENRE_OPTIONS } from "@/features/tsundoku/lib/constants";
 import type { UpdateBookValues } from "@/features/tsundoku/lib/tsundoku-schemas";
 
@@ -118,7 +119,25 @@ export function EditDetailsDialog({
 	const [form, setForm] = useState(() => formOf(book));
 	const [error, setError] = useState<string | null>(null);
 	const [isSaving, startSave] = useTransition();
+	const [isUploading, startUpload] = useTransition();
+	const fileRef = useRef<HTMLInputElement>(null);
 	const set = (key: keyof Form, value: string) => setForm((f) => ({ ...f, [key]: value }));
+
+	/** A cover from the computer or phone: stored now, saved with the rest. */
+	function upload(file: File) {
+		startUpload(async () => {
+			const data = new FormData();
+			data.set("cover", file);
+			const result = await uploadCover(data).catch(() => ({
+				error: "Couldn't upload. Check your connection.",
+			}));
+			if ("error" in result) setError(result.error);
+			else {
+				setError(null);
+				set("coverUrl", result.data.url);
+			}
+		});
+	}
 
 	useEffect(() => {
 		if (open) {
@@ -238,14 +257,39 @@ export function EditDetailsDialog({
 					<div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
 						<div className="space-y-2">
 							<Label htmlFor={`${id}-cover`}>Cover image URL</Label>
-							<Input
-								id={`${id}-cover`}
-								value={form.coverUrl}
-								inputMode="url"
-								autoComplete="off"
-								placeholder="https://…"
-								onChange={(e) => set("coverUrl", e.target.value)}
-							/>
+							<div className="flex gap-2">
+								<Input
+									id={`${id}-cover`}
+									value={form.coverUrl}
+									inputMode="url"
+									autoComplete="off"
+									placeholder="https://…"
+									onChange={(e) => set("coverUrl", e.target.value)}
+								/>
+								<Button
+									type="button"
+									variant="outline"
+									className="shrink-0 gap-1.5"
+									disabled={isUploading || isSaving}
+									onClick={() => fileRef.current?.click()}
+								>
+									{isUploading && <Spinner />}
+									{isUploading ? "Uploading…" : "Upload…"}
+								</Button>
+								<input
+									ref={fileRef}
+									type="file"
+									accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
+									className="sr-only"
+									tabIndex={-1}
+									aria-hidden
+									onChange={(e) => {
+										const file = e.target.files?.[0];
+										if (file) upload(file);
+										e.target.value = "";
+									}}
+								/>
+							</div>
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor={`${id}-isbn`}>ISBN</Label>
@@ -284,7 +328,11 @@ export function EditDetailsDialog({
 						>
 							Cancel
 						</Button>
-						<Button type="submit" className="gap-1.5 max-sm:flex-1" disabled={isSaving}>
+						<Button
+							type="submit"
+							className="gap-1.5 max-sm:flex-1"
+							disabled={isSaving || isUploading}
+						>
 							{isSaving && <Spinner />}
 							{isSaving ? "Saving…" : "Save"}
 						</Button>
