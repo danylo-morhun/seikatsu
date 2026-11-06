@@ -145,6 +145,8 @@ export type CardToday = {
 	id: string;
 	title: string;
 	dueDate: string;
+	/** "HH:MM" when it's due at a time. */
+	dueTime: string | null;
 	projectId: string;
 	projectName: string;
 	/** Where it is now, so Done can be undone. */
@@ -174,6 +176,7 @@ export async function getCardsDue(ws: Workspace, today: string): Promise<CardTod
 			id: seiryuCards.id,
 			title: seiryuCards.title,
 			dueDate: seiryuCards.dueDate,
+			dueTime: seiryuCards.dueTime,
 			columnId: seiryuCards.columnId,
 			position: seiryuCards.position,
 			projectId: seiryuProjects.id,
@@ -192,11 +195,12 @@ export async function getCardsDue(ws: Workspace, today: string): Promise<CardTod
 				lte(seiryuCards.dueDate, today),
 			),
 		)
-		.orderBy(asc(seiryuCards.dueDate));
+		.orderBy(asc(seiryuCards.dueDate), asc(seiryuCards.dueTime));
 	const done = await doneColumns([...new Set(cards.map((c) => c.projectId))]);
 	return cards.map((c) => ({
 		...c,
 		dueDate: c.dueDate ?? today,
+		dueTime: c.dueTime?.slice(0, 5) ?? null,
 		doneColumnId: done.get(c.projectId) ?? null,
 	}));
 }
