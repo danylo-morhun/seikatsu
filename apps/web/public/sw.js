@@ -85,7 +85,10 @@ self.addEventListener("fetch", (event) => {
 		return;
 	}
 	if (request.mode === "navigate") {
-		event.respondWith(page(event));
+		// Sign-in and consent pages carry one-time params (OAuth state, reset tokens): never a
+		// cached copy of an older one.
+		const oneTime = url.pathname.startsWith("/oauth/") || url.pathname.startsWith("/auth/");
+		event.respondWith(oneTime ? preloadOrFetch(event) : page(event));
 	}
 });
 
