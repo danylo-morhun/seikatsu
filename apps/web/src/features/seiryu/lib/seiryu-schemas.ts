@@ -93,6 +93,10 @@ export const updateCardSchema = z.object({
 		.optional(),
 	/** Minutes before the due moment; null = no reminder. */
 	remindMinutes: z.number().int().min(0).max(10080).nullable().optional(),
+	/** Every N units; null = once. Unit and every are set together. */
+	repeatEvery: z.number().int().min(1).max(365).nullable().optional(),
+	repeatUnit: z.enum(["day", "week", "month", "year"]).nullable().optional(),
+	repeatFromDone: z.boolean().optional(),
 });
 
 export const snoozeCardSchema = z.object({

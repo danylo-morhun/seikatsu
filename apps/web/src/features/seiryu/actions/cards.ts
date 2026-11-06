@@ -9,6 +9,7 @@ import {
 	eq,
 	isNotNull,
 	isNull,
+	seiryuCardLabels,
 	seiryuCards,
 	seiryuChecklistItems,
 	seiryuColumns,
@@ -25,6 +26,7 @@ import {
 } from "@/features/seiryu/actions/guard";
 import { getLabels } from "@/features/seiryu/actions/labels";
 import { nextDue, reminderAt, shortTime } from "@/features/seiryu/lib/reminder";
+import { nextDueDate } from "@/features/seiryu/lib/repeat";
 import {
 	archiveCardSchema,
 	createCardSchema,
@@ -39,7 +41,7 @@ import { generateKeyBetween } from "@/lib/position";
 import { revalidateShell } from "@/lib/revalidate";
 import { getUserTimeZone, getUserToday } from "@/lib/timezone";
 
-type CardRow = Omit<typeof seiryuCards.$inferSelect, "description" | "remindAt"> & {
+type CardRow = Omit<typeof seiryuCards.$inferSelect, "description" | "remindAt" | "nextCardId"> & {
 	description?: string | null;
 	hasDescription?: boolean;
 	checklistItems: (typeof seiryuChecklistItems.$inferSelect)[];
@@ -103,7 +105,7 @@ export async function getBoard(projectId: string) {
 	const [columns, rows, labels, archived, [archivedTotal]] = await Promise.all([
 		getColumns(projectId),
 		db.query.seiryuCards.findMany({
-			columns: { description: false, remindAt: false },
+			columns: { description: false, remindAt: false, nextCardId: false },
 			extras: (card, { sql }) => ({
 				hasDescription: sql<boolean>`${card.description} is not null`.as("has_description"),
 			}),
@@ -214,6 +216,11 @@ export async function updateCard(input: unknown): Promise<{ error: string } | { 
 	if (!card) return { error: "Card not found" };
 
 	const { dueDate, dueTime, remindMinutes, ...rest } = updates;
+	// A rule is both parts or neither.
+	if (rest.repeatEvery === null || rest.repeatUnit === null) {
+		rest.repeatEvery = null;
+		rest.repeatUnit = null;
+	}
 	const dueEdit = Object.fromEntries(
 		Object.entries({ dueDate, dueTime, remindMinutes }).filter(([, v]) => v !== undefined),
 	);
@@ -303,6 +310,10 @@ export async function moveCard(
 		.set({ columnId: newColumnId, position, doneOn })
 		.where(eq(seiryuCards.id, cardId));
 
+	// A repeating card: finished, the next one waits where this one was; reopened, it goes.
+	if (doneOn && !card.doneOn) await repeatCard(cardId, card.columnId, doneOn);
+	if (!doneOn && card.doneOn) await takeBackRepeat(cardId);
+
 	// Open-card counts in the project list change too.
 	revalidatePath("/seiryu", "layout");
 	revalidateShell();
@@ -326,6 +337,100 @@ export async function finishOnServer(input: unknown) {
 	if (!done) return { error: "This project has no finish column" };
 	if (card.columnId === done.id) return { success: true as const };
 	return moveCard({ cardId: card.id, newColumnId: done.id });
+}
+
+/** Another request made the next card first: this one's insert is rolled back. */
+class AlreadyRepeated extends Error {}
+
+/** Makes a finished repeating card's next one, once (a replayed move finds it made). */
+async function repeatCard(cardId: string, fromColumnId: string, doneOn: string) {
+	const card = await db.query.seiryuCards.findFirst({
+		where: eq(seiryuCards.id, cardId),
+		with: { checklistItems: true, cardLabels: true },
+	});
+	if (!card?.repeatEvery || !card.repeatUnit || card.nextCardId) return;
+
+	// Into the lane it was in; from a finish lane (a column turned done), the first open one.
+	const lanes = await db
+		.select({ id: seiryuColumns.id, isDone: seiryuColumns.isDone })
+		.from(seiryuColumns)
+		.where(eq(seiryuColumns.projectId, card.projectId))
+		.orderBy(asc(seiryuColumns.position));
+	const from = lanes.find((l) => l.id === fromColumnId);
+	const columnId = from && !from.isDone ? from.id : lanes.find((l) => !l.isDone)?.id;
+	if (!columnId) return;
+
+	const rule = { every: card.repeatEvery, unit: card.repeatUnit, fromDone: card.repeatFromDone };
+	const due = {
+		dueDate: nextDueDate(rule, card.dueDate, doneOn),
+		dueTime: shortTime(card.dueTime),
+		remindMinutes: card.remindMinutes,
+	};
+	const [position, timeZone] = await Promise.all([endOfColumn(columnId), getUserTimeZone()]);
+
+	await db
+		.transaction(async (tx) => {
+			const [next] = await tx
+				.insert(seiryuCards)
+				.values({
+					projectId: card.projectId,
+					columnId,
+					title: card.title,
+					description: card.description,
+					priority: card.priority,
+					...due,
+					remindAt: reminderAt(due, timeZone),
+					repeatEvery: card.repeatEvery,
+					repeatUnit: card.repeatUnit,
+					repeatFromDone: card.repeatFromDone,
+					position,
+				})
+				.returning({ id: seiryuCards.id });
+			if (!next) throw new AlreadyRepeated();
+			// Claimed only if no other request made one meanwhile.
+			const claimed = await tx
+				.update(seiryuCards)
+				.set({ nextCardId: next.id })
+				.where(and(eq(seiryuCards.id, cardId), isNull(seiryuCards.nextCardId)))
+				.returning({ id: seiryuCards.id });
+			if (claimed.length === 0) throw new AlreadyRepeated();
+			if (card.checklistItems.length > 0)
+				await tx.insert(seiryuChecklistItems).values(
+					card.checklistItems.map((i) => ({
+						cardId: next.id,
+						title: i.title,
+						position: i.position,
+					})),
+				);
+			if (card.cardLabels.length > 0)
+				await tx
+					.insert(seiryuCardLabels)
+					.values(card.cardLabels.map((l) => ({ cardId: next.id, labelId: l.labelId })));
+		})
+		.catch((e: unknown) => {
+			if (!(e instanceof AlreadyRepeated)) throw e;
+		});
+}
+
+/** Reopened (or Undo): the next card it made goes, unless that one was already worked on. */
+async function takeBackRepeat(cardId: string) {
+	const [card] = await db
+		.select({ nextCardId: seiryuCards.nextCardId })
+		.from(seiryuCards)
+		.where(eq(seiryuCards.id, cardId));
+	if (!card?.nextCardId) return;
+	await db.transaction(async (tx) => {
+		await tx
+			.delete(seiryuCards)
+			.where(
+				and(
+					eq(seiryuCards.id, card.nextCardId as string),
+					isNull(seiryuCards.doneOn),
+					isNull(seiryuCards.archivedAt),
+				),
+			);
+		await tx.update(seiryuCards).set({ nextCardId: null }).where(eq(seiryuCards.id, cardId));
+	});
 }
 
 export async function reorderCards(input: unknown): Promise<{ error: string } | { success: true }> {

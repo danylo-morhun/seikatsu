@@ -1,4 +1,5 @@
 import type { Priority } from "@/features/seiryu/lib/constants";
+import type { RepeatUnit } from "@/features/seiryu/lib/repeat";
 
 export type ChecklistItemData = {
 	id: string;
@@ -42,6 +43,10 @@ export type CardData = {
 	dueTime: string | null;
 	/** Minutes before the due moment; null = no reminder. */
 	remindMinutes: number | null;
+	/** Repeats every N units (null = once); finishing it makes the next card. */
+	repeatEvery: number | null;
+	repeatUnit: RepeatUnit | null;
+	repeatFromDone: boolean;
 	position: string;
 	checklistItems: ChecklistItemData[];
 	labels: LabelData[];
@@ -50,7 +55,18 @@ export type CardData = {
 };
 
 export type CardFieldUpdates = Partial<
-	Pick<CardData, "title" | "description" | "priority" | "dueDate" | "dueTime" | "remindMinutes">
+	Pick<
+		CardData,
+		| "title"
+		| "description"
+		| "priority"
+		| "dueDate"
+		| "dueTime"
+		| "remindMinutes"
+		| "repeatEvery"
+		| "repeatUnit"
+		| "repeatFromDone"
+	>
 >;
 
 /** The card with saved field changes; a new description moves its marker too. */
