@@ -14,14 +14,14 @@ const item = (
 
 describe("coolingDays", () => {
 	it("follows the price tiers", () => {
-		expect(coolingDays(89, DEFAULT_TIERS)).toBe(7);
-		expect(coolingDays(100, DEFAULT_TIERS)).toBe(30);
-		expect(coolingDays(999, DEFAULT_TIERS)).toBe(30);
-		expect(coolingDays(1000, DEFAULT_TIERS)).toBe(60);
+		expect(coolingDays(89, DEFAULT_TIERS)).toBe(3);
+		expect(coolingDays(100, DEFAULT_TIERS)).toBe(14);
+		expect(coolingDays(999, DEFAULT_TIERS)).toBe(14);
+		expect(coolingDays(1000, DEFAULT_TIERS)).toBe(30);
 	});
 
 	it("gives an unknown price the middle tier", () => {
-		expect(coolingDays(null, DEFAULT_TIERS)).toBe(30);
+		expect(coolingDays(null, DEFAULT_TIERS)).toBe(14);
 	});
 });
 

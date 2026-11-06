@@ -11,9 +11,9 @@ export type CoolingTiers = {
 export const DEFAULT_TIERS: CoolingTiers = {
 	smallBelow: 100,
 	largeFrom: 1000,
-	smallDays: 7,
-	midDays: 30,
-	largeDays: 60,
+	smallDays: 3,
+	midDays: 14,
+	largeDays: 30,
 };
 
 /** Days to cool by price in the base currency. An unknown price takes the middle tier. */

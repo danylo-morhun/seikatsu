@@ -100,9 +100,9 @@ export const hoshiiSettings = pgTable("hoshii_settings", {
 	/** Cooling by price in the base currency: below `smallBelow`, below `largeFrom`, else. */
 	smallBelow: integer("small_below").notNull().default(100),
 	largeFrom: integer("large_from").notNull().default(1000),
-	smallDays: integer("small_days").notNull().default(7),
-	midDays: integer("mid_days").notNull().default(30),
-	largeDays: integer("large_days").notNull().default(60),
+	smallDays: integer("small_days").notNull().default(3),
+	midDays: integer("mid_days").notNull().default(14),
+	largeDays: integer("large_days").notNull().default(30),
 });
 
 export const hoshiiListsRelations = relations(hoshiiLists, ({ many }) => ({
