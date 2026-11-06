@@ -10,6 +10,7 @@ import {
 } from "@/features/seiryu/actions/cards";
 import { createChecklistItem, toggleChecklistItem } from "@/features/seiryu/actions/checklist";
 import { getOpenCardCounts, getProjects } from "@/features/seiryu/actions/projects";
+import { repeatLabel } from "@/features/seiryu/lib/repeat";
 import { day } from "./shell";
 import { tool } from "./types";
 
@@ -37,6 +38,10 @@ const cardLine = (c: Board["cards"][number], columns: Board["columns"]) => ({
 	due: c.dueDate,
 	dueTime: c.dueTime ?? undefined,
 	remindMinutesBefore: c.remindMinutes ?? undefined,
+	repeat:
+		c.repeatEvery && c.repeatUnit
+			? `${repeatLabel(c.repeatEvery, c.repeatUnit)}${c.repeatFromDone ? ", from done" : ""}`
+			: undefined,
 	doneOn: c.doneOn,
 	labels: c.labels.map((l) => l.name),
 	checklist: c.checklistItems.length
@@ -162,7 +167,7 @@ export const seiryuTools = [
 		name: "seiryu_update_card",
 		title: "Update a Seiryu card",
 		description:
-			"Change only the given fields. `dueDate`/`dueTime`/`remindMinutes`/`priority`/`description` = null clears it; clearing the date clears its time and reminder. Setting a first time turns a reminder on at that time unless `remindMinutes` is given.",
+			"Change only the given fields. `dueDate`/`dueTime`/`remindMinutes`/`priority`/`description` = null clears it; clearing the date clears its time and reminder. Setting a first time turns a reminder on at that time unless `remindMinutes` is given. `repeatEvery` + `repeatUnit` make it repeat: finishing it creates the next card, due one step later (from its due date, or from the day it's done with `repeatFromDone`); null stops it.",
 		input: {
 			cardId: id,
 			title: z.string().min(1).max(500).optional(),
@@ -171,6 +176,9 @@ export const seiryuTools = [
 			dueDate: day.nullable().optional(),
 			dueTime: hhmm.nullable().optional(),
 			remindMinutes: remind.nullable().optional(),
+			repeatEvery: z.number().int().min(1).max(365).nullable().optional(),
+			repeatUnit: z.enum(["day", "week", "month", "year"]).nullable().optional(),
+			repeatFromDone: z.boolean().optional(),
 		},
 		write: true,
 		idempotent: true,
