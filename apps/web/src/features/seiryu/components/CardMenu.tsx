@@ -56,10 +56,11 @@ const NONE = "none";
 export function CardMenuItems({ card, columns, projectLabels, today, actions }: Props) {
 	const id = card.id;
 	const dueOptions = [
-		{ label: "Today", date: today },
+		{ label: "Today", date: today, key: "T" },
 		{ label: "Tomorrow", date: addDays(today, 1) },
 		{ label: "In a week", date: addDays(today, 7) },
 	];
+	const dayLater = addDays(card.dueDate && card.dueDate > today ? card.dueDate : today, 1);
 	const picked = new Set(card.labels.map((l) => l.id));
 
 	function toggleLabel(labelId: string) {
@@ -150,10 +151,20 @@ export function CardMenuItems({ card, columns, projectLabels, today, actions }: 
 						{dueOptions.map((option) => (
 							<ContextMenuRadioItem key={option.label} value={option.date}>
 								{option.label}
+								{"key" in option && <ContextMenuShortcut>{option.key}</ContextMenuShortcut>}
 							</ContextMenuRadioItem>
 						))}
 						<ContextMenuRadioItem value={NONE}>No date</ContextMenuRadioItem>
 					</ContextMenuRadioGroup>
+					{card.dueDate && (
+						<>
+							<ContextMenuSeparator />
+							<ContextMenuItem onSelect={() => actions.setDueDate(id, dayLater)}>
+								A day later
+								<ContextMenuShortcut>D</ContextMenuShortcut>
+							</ContextMenuItem>
+						</>
+					)}
 				</ContextMenuSubContent>
 			</ContextMenuSub>
 

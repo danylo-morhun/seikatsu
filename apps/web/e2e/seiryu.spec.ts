@@ -193,3 +193,42 @@ test("a dismissed new card keeps its title; Cancel drops it", async ({ page }) =
 	await open();
 	await expect(dialog.getByLabel("Title")).toHaveValue("");
 });
+
+test("a due time turns a reminder on; T and D set the day", async ({ page }) => {
+	const cardRow = async () => {
+		const [row] = await db
+			.select({
+				dueDate: seiryuCards.dueDate,
+				dueTime: seiryuCards.dueTime,
+				remindMinutes: seiryuCards.remindMinutes,
+				remindAt: seiryuCards.remindAt,
+			})
+			.from(seiryuCards)
+			.where(eq(seiryuCards.projectId, projectId));
+		return row;
+	};
+	await page.goto(`/seiryu/${projectId}`);
+	const card = page.getByRole("button", { name: "Write tests" });
+
+	// Hydration first: press until the key lands.
+	await expect(async () => {
+		await card.focus();
+		await page.keyboard.press("t");
+		expect((await cardRow())?.dueDate).not.toBeNull();
+	}).toPass();
+	const today = (await cardRow())?.dueDate as string;
+	await page.keyboard.press("d");
+	await expect.poll(async () => (await cardRow())?.dueDate).not.toBe(today);
+
+	await card.click();
+	const sheet = page.getByRole("dialog");
+	await sheet.getByLabel("Due time").fill("15:30");
+	await expect
+		.poll(async () => {
+			const row = await cardRow();
+			return [row?.dueTime, row?.remindMinutes, row?.remindAt != null];
+		})
+		.toEqual(["15:30:00", 0, true]);
+	await page.keyboard.press("Escape");
+	await expect(card).toContainText("15:30");
+});

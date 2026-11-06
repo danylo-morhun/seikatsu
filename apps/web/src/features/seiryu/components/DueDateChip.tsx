@@ -5,13 +5,15 @@ import { formatShortDate, localToday } from "@/features/kuroji/lib/dates";
 
 interface Props {
 	dueDate: string;
+	/** "HH:MM", shown after the day. */
+	dueTime?: string | null;
 	/** YYYY-MM-DD in the user's calendar; defaults to the browser's today. */
 	today?: string;
 	className?: string;
 }
 
 /** The due date in Kuroji's date style; late is told in vermilion, due today in ink. */
-export function DueDateChip({ dueDate, today = localToday(), className }: Props) {
+export function DueDateChip({ dueDate, dueTime, today = localToday(), className }: Props) {
 	const overdue = dueDate < today;
 	const dueToday = dueDate === today;
 	return (
@@ -25,6 +27,7 @@ export function DueDateChip({ dueDate, today = localToday(), className }: Props)
 			<HugeiconsIcon icon={Calendar03Icon} className="h-3.5 w-3.5" />
 			<span className="sr-only">Due </span>
 			{dueToday ? "Today" : formatShortDate(dueDate, today)}
+			{dueTime && ` ${dueTime}`}
 			{overdue && <span className="sr-only">, overdue</span>}
 		</span>
 	);

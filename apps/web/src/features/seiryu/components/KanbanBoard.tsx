@@ -60,6 +60,7 @@ import type { ArchivedCardRow } from "@/features/seiryu/lib/archive";
 import { PRIORITIES } from "@/features/seiryu/lib/constants";
 import { NEW_CARD_EVENT, OPEN_ARCHIVE_EVENT } from "@/features/seiryu/lib/events";
 import {
+	addDays,
 	applyFilters,
 	type Filters,
 	filterCount,
@@ -69,6 +70,7 @@ import {
 import { finishCard } from "@/features/seiryu/lib/finish";
 import { addCard, placeCard, saveCard, shelveCard } from "@/features/seiryu/lib/offline";
 import { overlayCards } from "@/features/seiryu/lib/overlay";
+import { type Due, nextDue } from "@/features/seiryu/lib/reminder";
 import { useServerState } from "@/features/seiryu/lib/server-state";
 import {
 	type CardData,
@@ -289,6 +291,8 @@ export function KanbanBoard({
 				hasDescription: false,
 				priority: null,
 				dueDate: null,
+				dueTime: null,
+				remindMinutes: null,
 				position: generateKeyBetween(last?.position ?? null, null),
 				checklistItems: [],
 				labels: [],
@@ -356,6 +360,12 @@ export function KanbanBoard({
 				resetCards();
 			}
 		});
+	}
+
+	// Date, time and reminder hang together (no date: no time), so they save as one.
+	function handleCardDue(cardId: string, edit: Partial<Due>) {
+		const card = cardsRef.current.find((c) => c.id === cardId);
+		if (card) handleCardSave(cardId, nextDue(card, edit));
 	}
 
 	// From the sheet's Column picker: to the end of that column.
@@ -471,7 +481,7 @@ export function KanbanBoard({
 		copyLink: handleCopyLink,
 		move: handleCardMove,
 		setPriority: (cardId, priority) => handleCardSave(cardId, { priority }),
-		setDueDate: (cardId, dueDate) => handleCardSave(cardId, { dueDate }),
+		setDueDate: (cardId, dueDate) => handleCardDue(cardId, { dueDate }),
 		setLabels: handleCardLabels,
 		finish: doneColumn ? handleCardFinish : undefined,
 		archive: handleCardArchive,
@@ -499,7 +509,12 @@ export function KanbanBoard({
 			handleCardArchive(card.id);
 			after?.focus();
 		} else if (key === "x") handleCardFinish(card.id);
-		else if (key === "delete") setDeletingCardId(card.id);
+		else if (key === "t") handleCardDue(card.id, { dueDate: today });
+		else if (key === "d") {
+			// A day later than it was due, or than today when it's late or has no date.
+			const from = card.dueDate && card.dueDate > today ? card.dueDate : today;
+			handleCardDue(card.id, { dueDate: addDays(from, 1) });
+		} else if (key === "delete") setDeletingCardId(card.id);
 		else if (key === ".") openContextMenu(tile);
 		else if (key === "0") handleCardSave(card.id, { priority: null });
 		else if (/^[1-4]$/.test(key)) {

@@ -224,6 +224,8 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 				{ keys: ["Enter", "E"], label: "Open" },
 				{ keys: ["Space"], label: "Pick up, then arrows to move, Space to drop" },
 				{ keys: ["X"], label: "Done: to the finish column (Undo in the toast)" },
+				{ keys: ["T"], label: "Due today" },
+				{ keys: ["D"], label: "Due a day later (from today when it's late or has no date)" },
 				{ keys: ["[", "]"], label: "Move to the previous or next column" },
 				{ keys: ["1", "2", "3", "4"], label: "Priority: low to urgent" },
 				{ keys: ["0"], label: "Clear priority" },

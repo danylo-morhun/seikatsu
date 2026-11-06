@@ -61,3 +61,21 @@ export function safeTimeZone(zone: string | null | undefined): string {
 		return "UTC";
 	}
 }
+
+/**
+ * The instant a wall-clock `day` + `time` ("HH:MM") falls on in `timeZone`. In a gap (the
+ * hour skipped when clocks go forward) it lands just after; in an overlap, on the first one.
+ */
+export function zonedInstant(day: string, time: string, timeZone: string): Date {
+	const [y, mo, d] = day.split("-").map(Number);
+	const wall = Date.UTC(y ?? 1970, (mo ?? 1) - 1, d ?? 1) + timeToMinutes(time) * 60_000;
+	// The zone's offset at a guess, then once more at the corrected instant (DST edges).
+	const offsetAt = (at: number) => {
+		const c = localClock(timeZone, new Date(at));
+		const [cy, cm, cd] = c.day.split("-").map(Number);
+		const local = Date.UTC(cy ?? 1970, (cm ?? 1) - 1, cd ?? 1) + c.minutes * 60_000;
+		return local - Math.floor(at / 60_000) * 60_000;
+	};
+	const first = wall - offsetAt(wall);
+	return new Date(wall - offsetAt(first));
+}
