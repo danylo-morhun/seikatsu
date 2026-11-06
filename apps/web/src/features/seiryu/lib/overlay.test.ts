@@ -17,6 +17,8 @@ const card = (id: string, columnId: string, position: string): CardData => ({
 	hasDescription: false,
 	priority: null,
 	dueDate: null,
+	dueTime: null,
+	remindMinutes: null,
 	position,
 	checklistItems: [],
 	labels: [],

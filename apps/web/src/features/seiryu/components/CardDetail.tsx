@@ -17,6 +17,7 @@ import { DueDateChip } from "@/features/seiryu/components/DueDateChip";
 import { LabelPicker } from "@/features/seiryu/components/LabelPicker";
 import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
 import { PRIORITIES, PRIORITY_CONFIG, type Priority } from "@/features/seiryu/lib/constants";
+import { DAY_START, type Due, nextDue, REMIND_OPTIONS, TIME } from "@/features/seiryu/lib/reminder";
 import type { CardData, CardFieldUpdates, LabelData } from "@/features/seiryu/lib/types";
 import { useDraft } from "@/hooks/useDraft";
 
@@ -70,6 +71,8 @@ export function CardDetail({
 		if (trimmed && trimmed !== card.title) onSave({ title: trimmed });
 		else title.revert();
 	});
+	// Date, time and reminder hang together (no date: no time), so they save as one.
+	const saveDue = (edit: Partial<Due>) => onSave(nextDue(card, edit));
 	const description = useDraft(card.description ?? "", (next) => {
 		const value = next.trim() ? next : null;
 		if (value !== card.description) onSave({ description: value });
@@ -141,25 +144,73 @@ export function CardDetail({
 
 					<div className="space-y-2">
 						<div className="flex items-baseline justify-between gap-2">
-							<Label htmlFor={`${id}-due`}>Due date</Label>
+							<Label htmlFor={`${id}-due`}>Due</Label>
 							{/* The tile's wording beside the browser's own date format. */}
-							{card.dueDate && <DueDateChip dueDate={card.dueDate} today={today} />}
+							{card.dueDate && (
+								<DueDateChip dueDate={card.dueDate} dueTime={card.dueTime} today={today} />
+							)}
 						</div>
-						<Input
-							id={`${id}-due`}
-							type="date"
-							readOnly={readOnly}
-							// Uncontrolled while typing: a half-typed date reads as "" and must not clear it.
-							key={card.dueDate ?? "none"}
-							defaultValue={card.dueDate ?? ""}
-							onChange={(e) => {
-								const value = e.target.value;
-								if (DATE.test(value) && value !== card.dueDate) onSave({ dueDate: value });
+						<div className="flex gap-2">
+							<Input
+								id={`${id}-due`}
+								type="date"
+								aria-label="Due date"
+								readOnly={readOnly}
+								className="min-w-0 flex-[3]"
+								// Uncontrolled while typing: a half-typed date reads as "" and must not clear it.
+								key={card.dueDate ?? "none"}
+								defaultValue={card.dueDate ?? ""}
+								onChange={(e) => {
+									const value = e.target.value;
+									if (DATE.test(value) && value !== card.dueDate) saveDue({ dueDate: value });
+								}}
+								onBlur={(e) => {
+									if (!e.target.value && card.dueDate) saveDue({ dueDate: null });
+								}}
+							/>
+							<Input
+								type="time"
+								aria-label="Due time"
+								readOnly={readOnly}
+								disabled={!card.dueDate}
+								className="min-w-0 flex-[2]"
+								key={`${card.dueDate ?? "none"}-${card.dueTime ?? "any"}`}
+								defaultValue={card.dueTime ?? ""}
+								onChange={(e) => {
+									const value = e.target.value;
+									if (TIME.test(value) && value !== card.dueTime) saveDue({ dueTime: value });
+								}}
+								onBlur={(e) => {
+									if (!e.target.value && card.dueTime) saveDue({ dueTime: null });
+								}}
+							/>
+						</div>
+					</div>
+
+					<div className="space-y-2">
+						<Label htmlFor={`${id}-remind`}>Remind</Label>
+						<Select
+							value={card.remindMinutes == null ? "none" : String(card.remindMinutes)}
+							disabled={readOnly || !card.dueDate}
+							onValueChange={(v) => {
+								const remindMinutes = v === "none" ? null : Number(v);
+								if (remindMinutes !== card.remindMinutes) saveDue({ remindMinutes });
 							}}
-							onBlur={(e) => {
-								if (!e.target.value && card.dueDate) onSave({ dueDate: null });
-							}}
-						/>
+						>
+							<SelectTrigger id={`${id}-remind`}>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="none">
+									{card.dueDate ? "No reminder" : "Set a date first"}
+								</SelectItem>
+								{REMIND_OPTIONS.map((o) => (
+									<SelectItem key={o.minutes} value={String(o.minutes)}>
+										{o.minutes === 0 && !card.dueTime ? `At ${DAY_START}` : o.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 					</div>
 				</div>
 

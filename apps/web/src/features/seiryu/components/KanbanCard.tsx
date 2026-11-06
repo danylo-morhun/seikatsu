@@ -106,7 +106,7 @@ const CardBody = memo(function CardBody({
 					card.labels.length > 0 && `Labels: ${card.labels.map((l) => l.name).join(", ")}.`,
 					card.priority && `${PRIORITY_CONFIG[card.priority].label} priority.`,
 					card.dueDate &&
-						`Due ${formatShortDate(card.dueDate, today)}${card.dueDate < today ? ", overdue" : ""}.`,
+						`Due ${formatShortDate(card.dueDate, today)}${card.dueTime ? ` at ${card.dueTime}` : ""}${card.dueDate < today ? ", overdue" : ""}.`,
 					total > 0 && `${done} of ${total} checklist items done.`,
 					card.hasDescription && "Has a description.",
 				]
@@ -142,7 +142,9 @@ const CardBody = memo(function CardBody({
 			{hasMeta && (
 				<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
 					{card.priority && <PriorityBadge priority={card.priority} />}
-					{card.dueDate && <DueDateChip dueDate={card.dueDate} today={today} />}
+					{card.dueDate && (
+						<DueDateChip dueDate={card.dueDate} dueTime={card.dueTime} today={today} />
+					)}
 					{total > 0 && (
 						<span
 							className={cn(
@@ -195,6 +197,7 @@ function sameCard(
 		a.hasDescription === b.hasDescription &&
 		a.priority === b.priority &&
 		a.dueDate === b.dueDate &&
+		a.dueTime === b.dueTime &&
 		a.position === b.position &&
 		a.labels.length === b.labels.length &&
 		a.labels.every(

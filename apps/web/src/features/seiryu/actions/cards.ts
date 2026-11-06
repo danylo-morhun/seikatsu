@@ -24,6 +24,7 @@ import {
 	requireWorkspace,
 } from "@/features/seiryu/actions/guard";
 import { getLabels } from "@/features/seiryu/actions/labels";
+import { nextDue, reminderAt, shortTime } from "@/features/seiryu/lib/reminder";
 import {
 	archiveCardSchema,
 	createCardSchema,
@@ -31,13 +32,14 @@ import {
 	moveCardSchema,
 	reorderCardSchema,
 	restoreCardSchema,
+	snoozeCardSchema,
 	updateCardSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
 import { generateKeyBetween } from "@/lib/position";
 import { revalidateShell } from "@/lib/revalidate";
-import { getUserToday } from "@/lib/timezone";
+import { getUserTimeZone, getUserToday } from "@/lib/timezone";
 
-type CardRow = Omit<typeof seiryuCards.$inferSelect, "description"> & {
+type CardRow = Omit<typeof seiryuCards.$inferSelect, "description" | "remindAt"> & {
 	description?: string | null;
 	hasDescription?: boolean;
 	checklistItems: (typeof seiryuChecklistItems.$inferSelect)[];
@@ -52,6 +54,7 @@ const cardWith = {
 function toCardData({ cardLabels, checklistItems, hasDescription, ...rest }: CardRow) {
 	return {
 		...rest,
+		dueTime: shortTime(rest.dueTime),
 		hasDescription: hasDescription ?? rest.description != null,
 		checklistItems: checklistItems.map(({ id, title, isCompleted, position }) => ({
 			id,
@@ -100,7 +103,7 @@ export async function getBoard(projectId: string) {
 	const [columns, rows, labels, archived, [archivedTotal]] = await Promise.all([
 		getColumns(projectId),
 		db.query.seiryuCards.findMany({
-			columns: { description: false },
+			columns: { description: false, remindAt: false },
 			extras: (card, { sql }) => ({
 				hasDescription: sql<boolean>`${card.description} is not null`.as("has_description"),
 			}),
@@ -210,10 +213,47 @@ export async function updateCard(input: unknown): Promise<{ error: string } | { 
 	const card = await getOwnedCard(cardId, workspace.id);
 	if (!card) return { error: "Card not found" };
 
-	await db.update(seiryuCards).set(updates).where(eq(seiryuCards.id, cardId));
+	const { dueDate, dueTime, remindMinutes, ...rest } = updates;
+	const dueEdit = Object.fromEntries(
+		Object.entries({ dueDate, dueTime, remindMinutes }).filter(([, v]) => v !== undefined),
+	);
+	let due = {};
+	if (Object.keys(dueEdit).length > 0) {
+		const next = nextDue(
+			{
+				dueDate: card.dueDate,
+				dueTime: shortTime(card.dueTime),
+				remindMinutes: card.remindMinutes,
+			},
+			dueEdit,
+		);
+		due = { ...next, remindAt: reminderAt(next, await getUserTimeZone()) };
+	}
+
+	await db
+		.update(seiryuCards)
+		.set({ ...rest, ...due })
+		.where(eq(seiryuCards.id, cardId));
 
 	revalidatePath(`/seiryu/${card.projectId}`);
 	revalidateShell();
+	return { success: true };
+}
+
+/** "Remind me later": the reminder goes off again in `minutes`, the due date stays. */
+export async function snoozeCard(input: unknown): Promise<{ error: string } | { success: true }> {
+	const workspace = await requireWorkspace();
+
+	const parsed = snoozeCardSchema.safeParse(input);
+	if (!parsed.success) return { error: "Invalid input" };
+
+	const card = await getOwnedCard(parsed.data.cardId, workspace.id);
+	if (!card) return { error: "Card not found" };
+
+	await db
+		.update(seiryuCards)
+		.set({ remindAt: new Date(Date.now() + parsed.data.minutes * 60_000) })
+		.where(eq(seiryuCards.id, card.id));
 	return { success: true };
 }
 
@@ -267,6 +307,25 @@ export async function moveCard(
 	revalidatePath("/seiryu", "layout");
 	revalidateShell();
 	return { success: true, data: { position } };
+}
+
+/** Done from outside the board (a reminder's button): to the project's first finish column. */
+export async function finishOnServer(input: unknown) {
+	const workspace = await requireWorkspace();
+	const parsed = snoozeCardSchema.pick({ cardId: true }).safeParse(input);
+	if (!parsed.success) return { error: "Invalid input" };
+
+	const card = await getOwnedCard(parsed.data.cardId, workspace.id);
+	if (!card) return { error: "Card not found" };
+	const [done] = await db
+		.select({ id: seiryuColumns.id })
+		.from(seiryuColumns)
+		.where(and(eq(seiryuColumns.projectId, card.projectId), eq(seiryuColumns.isDone, true)))
+		.orderBy(asc(seiryuColumns.position))
+		.limit(1);
+	if (!done) return { error: "This project has no finish column" };
+	if (card.columnId === done.id) return { success: true as const };
+	return moveCard({ cardId: card.id, newColumnId: done.id });
 }
 
 export async function reorderCards(input: unknown): Promise<{ error: string } | { success: true }> {

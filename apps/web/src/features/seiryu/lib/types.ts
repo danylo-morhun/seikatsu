@@ -38,6 +38,10 @@ export type CardData = {
 	hasDescription: boolean;
 	priority: Priority | null;
 	dueDate: string | null;
+	/** "HH:MM" on the due day, or null for any time. */
+	dueTime: string | null;
+	/** Minutes before the due moment; null = no reminder. */
+	remindMinutes: number | null;
 	position: string;
 	checklistItems: ChecklistItemData[];
 	labels: LabelData[];
@@ -46,7 +50,7 @@ export type CardData = {
 };
 
 export type CardFieldUpdates = Partial<
-	Pick<CardData, "title" | "description" | "priority" | "dueDate">
+	Pick<CardData, "title" | "description" | "priority" | "dueDate" | "dueTime" | "remindMinutes">
 >;
 
 /** The card with saved field changes; a new description moves its marker too. */

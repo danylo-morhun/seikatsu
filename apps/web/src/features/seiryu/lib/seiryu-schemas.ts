@@ -84,7 +84,20 @@ export const updateCardSchema = z.object({
 	title: z.string().min(1).max(500).optional(),
 	description: z.string().max(5000).nullable().optional(),
 	priority: z.enum(["low", "medium", "high", "urgent"]).nullable().optional(),
-	dueDate: z.string().nullable().optional(),
+	dueDate: z.iso.date().nullable().optional(),
+	/** "HH:MM", local on the due day. */
+	dueTime: z
+		.string()
+		.regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+		.nullable()
+		.optional(),
+	/** Minutes before the due moment; null = no reminder. */
+	remindMinutes: z.number().int().min(0).max(10080).nullable().optional(),
+});
+
+export const snoozeCardSchema = z.object({
+	cardId: z.string().uuid(),
+	minutes: z.number().int().min(5).max(1440),
 });
 
 export const archiveCardSchema = z.object({

@@ -69,6 +69,8 @@ export function overlayCards(cards: CardData[], ops: Op[], projectId: string): C
 					hasDescription: false,
 					priority: null,
 					dueDate: null,
+					dueTime: null,
+					remindMinutes: null,
 					position,
 					checklistItems: [],
 					labels: [],

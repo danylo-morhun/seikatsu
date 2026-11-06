@@ -11,6 +11,8 @@ const card = (over: Partial<CardData>): CardData => ({
 	hasDescription: false,
 	priority: null,
 	dueDate: null,
+	dueTime: null,
+	remindMinutes: null,
 	position: "a0",
 	checklistItems: [],
 	labels: [],

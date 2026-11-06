@@ -32,10 +32,14 @@ export const isOwnedProject = cache(async (projectId: string, workspaceId: strin
 export async function getOwnedCard(cardId: string, workspaceId: string) {
 	const [card] = await db
 		.select({
+			id: seiryuCards.id,
 			projectId: seiryuCards.projectId,
 			columnId: seiryuCards.columnId,
 			position: seiryuCards.position,
 			doneOn: seiryuCards.doneOn,
+			dueDate: seiryuCards.dueDate,
+			dueTime: seiryuCards.dueTime,
+			remindMinutes: seiryuCards.remindMinutes,
 		})
 		.from(seiryuCards)
 		.innerJoin(seiryuProjects, eq(seiryuProjects.id, seiryuCards.projectId))
