@@ -43,6 +43,7 @@ const cardLine = (c: Board["cards"][number], columns: Board["columns"]) => ({
 			? `${repeatLabel(c.repeatEvery, c.repeatUnit)}${c.repeatFromDone ? ", from done" : ""}`
 			: undefined,
 	doneOn: c.doneOn,
+	inColumnSince: c.movedAt.slice(0, 10),
 	labels: c.labels.map((l) => l.name),
 	checklist: c.checklistItems.length
 		? `${c.checklistItems.filter((i) => i.isCompleted).length}/${c.checklistItems.length}`

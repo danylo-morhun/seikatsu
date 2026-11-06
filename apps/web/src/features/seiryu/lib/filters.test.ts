@@ -16,6 +16,7 @@ const card = (over: Partial<CardData>): CardData => ({
 	repeatEvery: null,
 	repeatUnit: null,
 	repeatFromDone: false,
+	movedAt: "2026-11-01T00:00:00.000Z",
 	position: "a0",
 	checklistItems: [],
 	labels: [],

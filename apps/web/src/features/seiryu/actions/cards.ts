@@ -57,6 +57,7 @@ function toCardData({ cardLabels, checklistItems, hasDescription, ...rest }: Car
 	return {
 		...rest,
 		dueTime: shortTime(rest.dueTime),
+		movedAt: rest.movedAt.toISOString(),
 		hasDescription: hasDescription ?? rest.description != null,
 		checklistItems: checklistItems.map(({ id, title, isCompleted, position }) => ({
 			id,
@@ -315,7 +316,12 @@ export async function moveCard(
 	const doneOn = column.isDone ? (card.doneOn ?? (await getUserToday())) : null;
 	await db
 		.update(seiryuCards)
-		.set({ columnId: newColumnId, position, doneOn })
+		.set({
+			columnId: newColumnId,
+			position,
+			doneOn,
+			...(newColumnId !== card.columnId && { movedAt: new Date() }),
+		})
 		.where(eq(seiryuCards.id, cardId));
 
 	// A repeating card: finished, the next one waits where this one was; reopened, it goes.
