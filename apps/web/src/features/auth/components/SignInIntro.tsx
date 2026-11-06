@@ -2,6 +2,9 @@ import { cn } from "@seikatsu/ui";
 import type { CSSProperties } from "react";
 import { APPS_CONFIG } from "@/lib/app-themes";
 
+const APP_COUNT = Object.keys(APPS_CONFIG).length;
+const COUNT: Record<number, string> = { 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten" };
+
 /** Beside the sign-in: what seikatsu is, and the apps inside, for someone who has never seen it. */
 export function SignInIntro() {
 	return (
@@ -17,8 +20,8 @@ export function SignInIntro() {
 				Everyday life, kept in one place.
 			</h2>
 			<p className="mt-3 animate-rise text-muted-foreground" style={{ "--i": 2 } as CSSProperties}>
-				seikatsu is six small apps under one sign-in. Use the ones you need; the rest stay out of
-				the way.
+				seikatsu is {COUNT[APP_COUNT] ?? APP_COUNT} small apps under one sign-in. Use the ones you
+				need; the rest stay out of the way.
 			</p>
 			<ul className="mt-8 space-y-4 max-lg:hidden">
 				{Object.entries(APPS_CONFIG).map(([href, app], i) => (
