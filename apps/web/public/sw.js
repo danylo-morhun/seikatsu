@@ -19,7 +19,10 @@ const SHELL_URLS = [
 	"/icons/icon-192.png",
 	"/icons/favicon.svg",
 ];
-const NAV_TIMEOUT_MS = 2500;
+// A cold server start takes ~3 s: past this the cached page shows, and the fresh one follows.
+const NAV_TIMEOUT_MS = 1000;
+// Pages answered from the cache, by the client they opened in: did a fresh copy land since?
+const freshFor = new Map();
 // Several builds' worth: pages cached under an older build still find their chunks.
 const STATIC_LIMIT = 800;
 
@@ -54,6 +57,16 @@ self.addEventListener("message", (event) => {
 	if (data.type === "skipWaiting") self.skipWaiting();
 	if (data.type === "warm" && Array.isArray(data.urls)) event.waitUntil(warm(data.urls));
 	if (data.type === "clear") event.waitUntil(caches.delete(PAGES));
+	// The page asks once it's running; true = refresh, the server has newer than what it shows.
+	if (data.type === "fresh?" && event.ports[0]) {
+		const port = event.ports[0];
+		const fresh = event.source && freshFor.get(event.source.id);
+		if (!fresh) port.postMessage(false);
+		else {
+			freshFor.delete(event.source.id);
+			event.waitUntil(fresh.then((ok) => port.postMessage(ok)));
+		}
+	}
 });
 
 self.addEventListener("fetch", (event) => {
@@ -151,11 +164,23 @@ async function page(event) {
 	// A slow network loses to the cached copy after NAV_TIMEOUT_MS; the fetch still lands in
 	// the cache for next time.
 	const timeout = new Promise((resolve) => setTimeout(() => resolve(null), NAV_TIMEOUT_MS));
+	let answer;
 	try {
-		return (await Promise.race([network, timeout])) || cached;
+		answer = await Promise.race([network, timeout]);
 	} catch {
-		return cached;
+		answer = null;
 	}
+	if (answer) return answer;
+	// The cached copy shows now; the page asks whether to refresh once it's up.
+	const clientId = event.resultingClientId;
+	if (clientId) {
+		freshFor.set(
+			clientId,
+			network.then((r) => r.ok && !r.redirected).catch(() => false),
+		);
+		setTimeout(() => freshFor.delete(clientId), 60_000);
+	}
+	return cached;
 }
 
 function isHtml(response) {
