@@ -21,7 +21,7 @@ export function clampPage(page: number, pageCount: number | null): number {
 /**
  * The patch for moving to `nextPage`. Reading forward starts a want/paused book; reading
  * forward to the last page finishes it; going back from a finished book reopens it; going back
- * to page 0 puts it back on the want list (not started after all). Standing still changes
+ * to page 0 puts a book being read back on the want list (not started after all). Standing still changes
  * nothing, so a book reopened at 100% stays open until it moves.
  */
 export function progressPatch(book: ProgressState, nextPage: number, today: string): ProgressPatch {
@@ -29,10 +29,13 @@ export function progressPatch(book: ProgressState, nextPage: number, today: stri
 	const patch: ProgressPatch = { currentPage: page };
 	const done = book.pageCount != null && page >= book.pageCount && page > book.currentPage;
 
-	if (page === 0 && page < book.currentPage && book.status !== "dnf") {
-		if (book.status !== "want") patch.status = "want";
+	if (
+		page === 0 &&
+		page < book.currentPage &&
+		(book.status === "reading" || book.status === "paused")
+	) {
+		patch.status = "want";
 		if (book.startedAt) patch.startedAt = null;
-		if (book.finishedAt) patch.finishedAt = null;
 	} else if (done) {
 		if (book.status !== "read") {
 			patch.status = "read";
