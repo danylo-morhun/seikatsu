@@ -208,3 +208,12 @@ export const seiryuCardLabelsRelations = relations(seiryuCardLabels, ({ one }) =
 		references: [seiryuLabels.id],
 	}),
 }));
+
+/** A private calendar feed of the cards with a due date; the link's secret is kept hashed. */
+export const seiryuCalendarFeeds = pgTable("seiryu_calendar_feeds", {
+	workspaceId: uuid("workspace_id")
+		.primaryKey()
+		.references(() => workspaces.id, { onDelete: "cascade" }),
+	tokenHash: text("token_hash").notNull().unique(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
