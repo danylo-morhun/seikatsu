@@ -52,9 +52,8 @@ export type PendingCapture = {
 
 // How far back the guesses look.
 const HISTORY = 300;
-// Converted payments a markup is learned from, and pending ones that get rates.
+// Converted payments a markup is learned from.
 const MARKUP_SAMPLES = 10;
-const RATED = 5;
 
 /** Payments waiting to be added, newest first, each with what the last ones suggest. */
 export async function getPendingCaptures(workspaceId: string): Promise<PendingCapture[]> {
@@ -69,7 +68,7 @@ export async function getPendingCaptures(workspaceId: string): Promise<PendingCa
 
 	const timeZone = await getUserTimeZone();
 	const clock = new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit" });
-	const [history, rules, walletCurrencies] = await Promise.all([
+	const [history, rules, wallets] = await Promise.all([
 		db
 			.select({
 				card: kurojiCaptures.card,
@@ -102,7 +101,7 @@ export async function getPendingCaptures(workspaceId: string): Promise<PendingCa
 			.where(eq(bankRules.workspaceId, workspaceId))
 			.orderBy(asc(bankRules.priority), asc(bankRules.createdAt)),
 		db
-			.selectDistinct({ currency: accounts.currency })
+			.select({ id: accounts.id, name: accounts.name, currency: accounts.currency })
 			.from(accounts)
 			.where(
 				and(
@@ -131,14 +130,43 @@ export async function getPendingCaptures(workspaceId: string): Promise<PendingCa
 	);
 	const markups = cardMarkups(samples);
 
-	async function ratesFor(currency: string, day: string) {
-		const rates: Record<string, number> = {};
-		for (const { currency: to } of walletCurrencies) {
-			if (to === currency) continue;
-			const rate = await official(currency, to, day);
-			if (rate) rates[to] = rate * (markups.get(`${currency}>${to}`) ?? 1);
+	// Every payment gets them, so each opens in its card's currency, not only the newest few.
+	const walletCurrencies = [...new Set(wallets.map((w) => w.currency))];
+	const rateCache = new Map<string, Promise<Record<string, number>>>();
+	function ratesFor(currency: string, day: string) {
+		const key = `${currency}:${day}`;
+		let rates = rateCache.get(key);
+		if (!rates) {
+			rates = (async () => {
+				const out: Record<string, number> = {};
+				for (const to of walletCurrencies) {
+					if (to === currency) continue;
+					const rate = await official(currency, to, day);
+					if (rate) out[to] = rate * (markups.get(`${currency}>${to}`) ?? 1);
+				}
+				return out;
+			})();
+			rateCache.set(key, rates);
 		}
 		return rates;
+	}
+
+	/**
+	 * A card never added before: the one wallet its name points at most ("Privat UAH" →
+	 * "PrivatBank"), by the words they share. A tie is no guess.
+	 */
+	function walletByName(card: string): string | null {
+		const words = card.toLowerCase().match(/[\p{L}\p{N}]{3,}/gu) ?? [];
+		let best: string | null = null;
+		let top = 0;
+		let tie = false;
+		for (const w of wallets) {
+			const name = w.name.toLowerCase();
+			const score = words.filter((word) => name.includes(word)).length;
+			if (score > top) [best, top, tie] = [w.id, score, false];
+			else if (score === top && score > 0) tie = true;
+		}
+		return top > 0 && !tie ? best : null;
 	}
 
 	// Newest first, so the first one seen per card / merchant wins.
@@ -154,7 +182,7 @@ export async function getPendingCaptures(workspaceId: string): Promise<PendingCa
 	}
 
 	return Promise.all(
-		pending.map(async (c, i) => {
+		pending.map(async (c) => {
 			const day = dayIn(timeZone, c.paidAt);
 			return {
 				id: c.id,
@@ -164,10 +192,10 @@ export async function getPendingCaptures(workspaceId: string): Promise<PendingCa
 				card: c.card,
 				day,
 				time: clock.format(c.paidAt),
-				walletId: (c.card && walletByCard.get(c.card)) || null,
+				walletId: c.card ? (walletByCard.get(c.card) ?? walletByName(c.card)) : null,
 				categoryId:
 					categoryByMerchant.get(c.merchant.toLowerCase()) ?? matchRule(c.merchant, rules),
-				rates: i < RATED ? await ratesFor(c.currency, day) : {},
+				rates: await ratesFor(c.currency, day),
 			};
 		}),
 	);
