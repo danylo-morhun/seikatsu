@@ -11,17 +11,23 @@ const buttonVariants = cva(
 	{
 		variants: {
 			variant: {
-				default: "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
-				destructive: "bg-destructive text-white shadow-xs hover:bg-destructive/90",
+				// Hover is one step of the button's own colour, never a see-through wash of it.
+				default:
+					"bg-primary text-primary-foreground shadow-xs hover:bg-[color-mix(in_oklch,var(--primary),black_10%)]",
+				destructive:
+					"bg-destructive text-white shadow-xs hover:bg-[color-mix(in_oklch,var(--destructive),black_10%)]",
 				outline:
-					"border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
+					"border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
 				secondary: "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
-				ghost: "hover:bg-accent hover:text-accent-foreground",
+				// A trigger whose menu is open keeps its pressed look.
+				ghost:
+					"hover:bg-accent hover:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
 				link: "text-primary underline-offset-4 hover:underline active:scale-100",
 			},
 			size: {
-				default: "h-10 px-4 py-2 md:h-9",
-				sm: "h-8 rounded-button px-3 text-xs",
+				// A glyph reads as further in than words: its side gets the smaller inset.
+				default: "h-10 px-4 py-2 md:h-9 has-[>svg:first-child]:pl-3 has-[>svg:last-child]:pr-3",
+				sm: "h-8 rounded-button px-3 text-xs has-[>svg:first-child]:pl-2.5 has-[>svg:last-child]:pr-2.5",
 				lg: "h-11 rounded-button px-8",
 				icon: "size-10 md:size-9",
 			},
