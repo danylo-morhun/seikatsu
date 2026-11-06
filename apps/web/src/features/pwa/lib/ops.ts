@@ -28,7 +28,14 @@ export interface OfflineOps {
 	};
 	"kuroji.updateTransaction": TransactionInput & { transactionId: string };
 	"kuroji.deleteTransaction": { transactionId: string };
-	"seiryu.createCard": { id: string; columnId: string; projectId: string; title: string };
+	"seiryu.createCard": {
+		id: string;
+		columnId: string;
+		projectId: string;
+		title: string;
+		dueDate?: string;
+		dueTime?: string;
+	};
 	"seiryu.updateCard": { cardId: string } & CardFieldUpdates;
 	"seiryu.moveCard": { cardId: string; newColumnId: string; newPosition?: string };
 	"seiryu.reorderCards": { cardId: string; newPosition: string };

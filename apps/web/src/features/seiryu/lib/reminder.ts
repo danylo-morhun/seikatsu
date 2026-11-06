@@ -73,3 +73,7 @@ export function dueLabel(dueDate: string, dueTime: string | null, today: string,
 					});
 	return dueTime ? `${day} ${dueTime}` : day;
 }
+
+/** A new card's due fields from a day and maybe a time (a time turns the reminder on). */
+export const newCardDue = (dueDate: string, dueTime: string | null = null): Due =>
+	nextDue({ dueDate: null, dueTime: null, remindMinutes: null }, { dueDate, dueTime });
