@@ -14,6 +14,18 @@ import { day } from "./shell";
 import { tool } from "./types";
 
 const id = z.uuid();
+const hhmm = z
+	.string()
+	.regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+	.describe("Local time HH:MM on the due day (needs a due date)");
+const remind = z
+	.number()
+	.int()
+	.min(0)
+	.max(10080)
+	.describe(
+		"Push a reminder this many minutes before the due moment (its time, else 09:00); 0 = at the time",
+	);
 const NOT_FOUND = { error: "Not found" };
 
 type Board = NonNullable<Awaited<ReturnType<typeof getBoard>>>;
@@ -23,6 +35,8 @@ const cardLine = (c: Board["cards"][number], columns: Board["columns"]) => ({
 	column: columns.find((col) => col.id === c.columnId)?.name,
 	priority: c.priority,
 	due: c.dueDate,
+	dueTime: c.dueTime ?? undefined,
+	remindMinutesBefore: c.remindMinutes ?? undefined,
 	doneOn: c.doneOn,
 	labels: c.labels.map((l) => l.name),
 	checklist: c.checklistItems.length
@@ -96,12 +110,14 @@ export const seiryuTools = [
 		name: "seiryu_create_card",
 		title: "Create a Seiryu card",
 		description:
-			"Add a card at the end of a column (ids from seiryu_board), then optionally set due date, priority, description and checklist items. Pass a fresh `requestId` (uuid) so a retry never adds it twice.",
+			"Add a card at the end of a column (ids from seiryu_board), then optionally set due date (and time + reminder), priority, description and checklist items. Pass a fresh `requestId` (uuid) so a retry never adds it twice.",
 		input: {
 			projectId: id,
 			columnId: id,
 			title: z.string().min(1).max(500),
 			dueDate: day.optional(),
+			dueTime: hhmm.optional(),
+			remindMinutes: remind.optional(),
 			priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
 			description: z.string().max(5000).optional(),
 			checklist: z.array(z.string().min(1).max(500)).max(30).optional(),
@@ -114,6 +130,8 @@ export const seiryuTools = [
 			columnId,
 			title,
 			dueDate,
+			dueTime,
+			remindMinutes,
 			priority,
 			description,
 			checklist,
@@ -123,7 +141,14 @@ export const seiryuTools = [
 			if ("error" in created) return created;
 			const cardId = created.data.id;
 			if (dueDate || priority || description) {
-				const updated = await updateCard({ cardId, dueDate, priority, description });
+				const updated = await updateCard({
+					cardId,
+					dueDate,
+					dueTime: dueDate ? dueTime : undefined,
+					remindMinutes: dueDate ? remindMinutes : undefined,
+					priority,
+					description,
+				});
 				if ("error" in updated) return updated;
 			}
 			for (const item of checklist ?? []) {
@@ -137,13 +162,15 @@ export const seiryuTools = [
 		name: "seiryu_update_card",
 		title: "Update a Seiryu card",
 		description:
-			"Change only the given fields. `dueDate`/`priority`/`description` = null clears it.",
+			"Change only the given fields. `dueDate`/`dueTime`/`remindMinutes`/`priority`/`description` = null clears it; clearing the date clears its time and reminder. Setting a first time turns a reminder on at that time unless `remindMinutes` is given.",
 		input: {
 			cardId: id,
 			title: z.string().min(1).max(500).optional(),
 			description: z.string().max(5000).nullable().optional(),
 			priority: z.enum(["low", "medium", "high", "urgent"]).nullable().optional(),
 			dueDate: day.nullable().optional(),
+			dueTime: hhmm.nullable().optional(),
+			remindMinutes: remind.nullable().optional(),
 		},
 		write: true,
 		idempotent: true,
