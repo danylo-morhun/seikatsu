@@ -51,7 +51,7 @@ export const ProgressField = forwardRef<HTMLInputElement, Props>(function Progre
 		<form onSubmit={submit} className={cn("space-y-1.5", className)}>
 			<div className="flex gap-2">
 				<label htmlFor={id} className="sr-only">
-					Page you're on, pages read with +, or percent
+					Page you're on, or percent
 				</label>
 				{/* Phone number pads have no "+": this puts it in front (or takes it away). */}
 				<Button
