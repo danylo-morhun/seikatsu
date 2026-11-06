@@ -5,7 +5,8 @@ import { authConfig } from "@/auth.config";
 const { auth } = NextAuth(authConfig);
 
 const PUBLIC_EXACT = ["/", "/privacy", "/terms", "/offline"];
-const PUBLIC_PREFIXES = ["/auth/"];
+// /oauth/authorize signs the user in itself, then comes back to the consent.
+const PUBLIC_PREFIXES = ["/auth/", "/oauth/"];
 
 export default auth((req) => {
 	const { pathname } = req.nextUrl;

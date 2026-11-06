@@ -8,16 +8,21 @@ import { signIn, signOut } from "@/auth";
 
 export type AuthState = { error: string } | { success: true } | null;
 
+/** Where to land after signing in: "/" or an OAuth consent page (MCP), nothing else. */
+function landing(returnTo: unknown): string {
+	return typeof returnTo === "string" && returnTo.startsWith("/oauth/authorize?") ? returnTo : "/";
+}
+
 export async function signOutAction() {
 	await signOut({ redirectTo: "/" });
 }
 
-export async function signInWithGitHub() {
-	await signIn("github", { redirectTo: "/" });
+export async function signInWithGitHub(returnTo?: string) {
+	await signIn("github", { redirectTo: landing(returnTo) });
 }
 
-export async function signInWithGoogle() {
-	await signIn("google", { redirectTo: "/" });
+export async function signInWithGoogle(returnTo?: string) {
+	await signIn("google", { redirectTo: landing(returnTo) });
 }
 
 export async function signInWithMagicLink(
@@ -28,7 +33,7 @@ export async function signInWithMagicLink(
 	const parsed = z.string().email().safeParse(email);
 	if (!parsed.success) return { error: "Invalid email" };
 	try {
-		await signIn("resend", { email: parsed.data, redirectTo: "/" });
+		await signIn("resend", { email: parsed.data, redirectTo: landing(formData.get("returnTo")) });
 	} catch (e) {
 		if (e instanceof AuthError) return { error: "Failed to send magic link" };
 		throw e;
@@ -72,7 +77,7 @@ export async function handleCredentials(_prev: AuthState, formData: FormData): P
 		await signIn("credentials", {
 			email: formData.get("email"),
 			password: formData.get("password"),
-			redirectTo: "/",
+			redirectTo: landing(formData.get("returnTo")),
 		});
 	} catch (e) {
 		if (e instanceof AuthError) {
