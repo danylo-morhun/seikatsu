@@ -241,10 +241,10 @@ export function SessionsSection({
 	);
 	const thisYear = today.slice(0, 4);
 
-	function handleDelete(sessionId: string) {
+	function handleDelete(sessionId: string, keepPage = false) {
 		startDelete(async () => {
 			removeSession(sessionId);
-			const result = await deleteSession(sessionId).catch(failed);
+			const result = await deleteSession(sessionId, { keepPage }).catch(failed);
 			if ("error" in result) toast.error(result.error);
 		});
 	}
@@ -297,6 +297,10 @@ export function SessionsSection({
 									>
 										<HugeiconsIcon icon={Delete01Icon} className="mr-2 h-4 w-4" />
 										Delete — takes its pages back
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => handleDelete(s.id, true)}>
+										<HugeiconsIcon icon={Delete01Icon} className="mr-2 h-4 w-4" />
+										Delete — keep the page
 									</DropdownMenuItem>
 								</DropdownMenuContent>
 							</DropdownMenu>

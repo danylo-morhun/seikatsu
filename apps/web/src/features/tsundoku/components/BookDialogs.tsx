@@ -2,6 +2,7 @@
 
 import {
 	Button,
+	Checkbox,
 	cn,
 	Dialog,
 	DialogContent,
@@ -301,17 +302,25 @@ export function LogDayDialog({
 	onOpenChange,
 	today,
 	day,
+	currentPage,
 	onLog,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	today: string;
 	day?: { date: string; pagesRead: number } | null;
+	/** The book's page now: editing a day can leave it where it is. */
+	currentPage?: number;
 	/** Resolves with an error message, or nothing when saved. */
-	onLog: (values: { date: string; pagesRead: number }) => Promise<string | undefined>;
+	onLog: (values: {
+		date: string;
+		pagesRead: number;
+		keepPage?: boolean;
+	}) => Promise<string | undefined>;
 }) {
 	const id = useId();
 	const [pages, setPages] = useState("");
+	const [keepPage, setKeepPage] = useState(false);
 	const [date, setDate] = useState(today);
 	const [error, setError] = useState<string | null>(null);
 	const [isSaving, startSave] = useTransition();
@@ -320,6 +329,7 @@ export function LogDayDialog({
 		if (open) {
 			setPages(day ? String(day.pagesRead) : "");
 			setDate(day?.date ?? today);
+			setKeepPage(false);
 			setError(null);
 		}
 	}, [open, today, day]);
@@ -331,7 +341,7 @@ export function LogDayDialog({
 		e.preventDefault();
 		if (!valid) return;
 		startSave(async () => {
-			const failed = await onLog({ date, pagesRead });
+			const failed = await onLog(day ? { date, pagesRead, keepPage } : { date, pagesRead });
 			if (failed) setError(failed);
 			else onOpenChange(false);
 		});
@@ -352,7 +362,9 @@ export function LogDayDialog({
 					<DialogTitle>{day ? "Edit Reading Day" : "Log a Reading Day"}</DialogTitle>
 					<DialogDescription>
 						{day
-							? "The book's progress follows the pages."
+							? keepPage
+								? "Only the day changes; the book stays where it is."
+								: "The book's progress follows the pages."
 							: "For a day you forgot; the pages move the book on."}
 					</DialogDescription>
 				</DialogHeader>
@@ -381,6 +393,22 @@ export function LogDayDialog({
 							/>
 						</div>
 					</div>
+					{day && currentPage != null && (
+						<div className="flex items-start gap-3 text-sm">
+							<Checkbox
+								id={`${id}-keep`}
+								checked={keepPage}
+								onCheckedChange={(v) => setKeepPage(v === true)}
+								className="mt-0.5"
+							/>
+							<label htmlFor={`${id}-keep`}>
+								Keep the book on page {currentPage}
+								<span className="block text-xs text-muted-foreground">
+									The page is right; this day was logged wrong.
+								</span>
+							</label>
+						</div>
+					)}
 					{error && (
 						<p role="alert" className="text-[0.8rem] text-destructive">
 							{error}
