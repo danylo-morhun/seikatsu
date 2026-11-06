@@ -302,3 +302,26 @@ test("a day and time typed into a new card's title become its due", async ({ pag
 	await dialog.getByRole("button", { name: "Add card" }).click();
 	await expect(lane(page, "Todo").getByText("Read Tomorrow by Taylor")).toBeVisible();
 });
+
+test("the calendar link serves due cards as iCalendar, and stops when turned off", async ({
+	page,
+}) => {
+	await db
+		.update(seiryuCards)
+		.set({ dueDate: "2026-11-10", dueTime: "15:00" })
+		.where(eq(seiryuCards.projectId, projectId));
+	await page.goto("/settings/seiryu?section=calendar");
+	await page.getByRole("button", { name: "Make a link" }).click();
+	const url = await page.locator("code").filter({ hasText: ".ics" }).textContent();
+	expect(url).toMatch(/\/api\/seiryu\/calendar\/cal_.+\.ics$/);
+
+	const res = await page.request.get(url ?? "");
+	expect(res.headers()["content-type"]).toContain("text/calendar");
+	const ics = await res.text();
+	expect(ics).toContain("SUMMARY:Write tests");
+	expect(ics).toMatch(/DTSTART:20261110T\d{6}Z/);
+
+	await page.getByRole("button", { name: "Turn off" }).click();
+	await page.getByRole("alertdialog").getByRole("button", { name: "Turn off" }).click();
+	await expect.poll(async () => (await page.request.get(url ?? "")).status()).toBe(404);
+});
