@@ -407,6 +407,8 @@ export function BookPage({ book: server, sessions, quotes, shelves, seriesBooks,
 							</h2>
 							{!notes.draft && !writingNotes ? (
 								<QuietAdd onClick={() => setWritingNotes(true)}>Add notes</QuietAdd>
+							) : !writingNotes && isLong(notes.draft) ? (
+								<LongNotes text={notes.draft} onEdit={() => setWritingNotes(true)} />
 							) : (
 								<div className="animate-swap">
 									<label htmlFor={`${id}-notes-field`} className="sr-only">
@@ -416,7 +418,8 @@ export function BookPage({ book: server, sessions, quotes, shelves, seriesBooks,
 										id={`${id}-notes-field`}
 										value={notes.draft}
 										maxLength={20000}
-										autoFocus={writingNotes && !book.review}
+										// Opened from "Add notes" or a folded long note: straight into typing.
+										autoFocus={writingNotes && (!book.review || isLong(book.review))}
 										onChange={(e) => notes.change(e.target.value)}
 										// Emptying it while typing keeps the field; leaving it empty folds it away.
 										onFocus={() => setWritingNotes(true)}
@@ -535,6 +538,34 @@ function StatusAndRating({
 			</span>
 			<StarRating value={book.rating} onChange={onRating} aria-labelledby={`${id}-rating`} />
 		</>
+	);
+}
+
+/** Long enough to fold: about six lines of the page's measure. */
+const isLong = (text: string) => text.length > 480 || text.split("\n").length > 6;
+
+/** A long note, read rather than edited: six lines, the rest on request, Edit to change it. */
+function LongNotes({ text, onEdit }: { text: string; onEdit: () => void }) {
+	const [open, setOpen] = useState(false);
+	return (
+		<div className="animate-swap">
+			<p className={cn("text-sm leading-relaxed whitespace-pre-wrap", !open && "line-clamp-6")}>
+				{text}
+			</p>
+			<div className="mt-1 flex gap-3 text-xs text-muted-foreground">
+				<button
+					type="button"
+					aria-expanded={open}
+					className="hover:text-foreground"
+					onClick={() => setOpen((o) => !o)}
+				>
+					{open ? "Show less" : "Show more"}
+				</button>
+				<button type="button" className="hover:text-foreground" onClick={onEdit}>
+					Edit
+				</button>
+			</div>
+		</div>
 	);
 }
 
