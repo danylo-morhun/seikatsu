@@ -11,6 +11,8 @@ export function LaunchTiming() {
 	useEffect(() => {
 		const hydrated = performance.now();
 		const send = () => {
+			// Offline (a launch from the cache) there's nobody to tell, and a failed beacon is noise.
+			if (!navigator.onLine) return;
 			const [nav] = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
 			if (!nav) return;
 			const at = (v: number) => (v > 0 ? Math.round(v) : undefined);
