@@ -232,3 +232,41 @@ test("a due time turns a reminder on; T and D set the day", async ({ page }) => 
 	await page.keyboard.press("Escape");
 	await expect(card).toContainText("15:30");
 });
+
+test("a repeating card, finished, comes back due a step later; Undo takes it back", async ({
+	page,
+}) => {
+	await db.update(seiryuColumns).set({ isDone: true }).where(eq(seiryuColumns.name, "Done"));
+	await page.goto(`/seiryu/${projectId}`);
+	await page.getByRole("button", { name: "Write tests" }).click();
+	const sheet = page.getByRole("dialog");
+	await sheet.getByLabel("Due date").fill("2026-11-06");
+	await sheet.getByLabel("Repeat").click();
+	await page.getByRole("option", { name: "Every month" }).click();
+	await expect
+		.poll(
+			async () =>
+				(await db.select().from(seiryuCards).where(eq(seiryuCards.projectId, projectId)))[0]
+					?.repeatUnit,
+		)
+		.toBe("month");
+	await sheet.getByRole("button", { name: "Close" }).click();
+	await expect(sheet).toBeHidden();
+
+	const card = lane(page, "Todo").getByRole("button", { name: "Write tests" });
+	await card.focus();
+	await page.keyboard.press("x");
+	await expect(lane(page, "Done").getByRole("button", { name: "Write tests" })).toBeVisible();
+	await expect(lane(page, "Todo").getByRole("button", { name: "Write tests" })).toContainText(
+		"Dec 6",
+	);
+
+	await page.getByRole("button", { name: "Undo" }).click();
+	await expect(lane(page, "Done").getByRole("button", { name: "Write tests" })).toBeHidden();
+	await expect
+		.poll(
+			async () =>
+				(await db.select().from(seiryuCards).where(eq(seiryuCards.projectId, projectId))).length,
+		)
+		.toBe(1);
+});

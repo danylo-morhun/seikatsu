@@ -2,7 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CheckListIcon, Note01Icon } from "@hugeicons/core-free-icons";
+import { CheckListIcon, Note01Icon, RepeatIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import { memo, useId, useState } from "react";
@@ -10,6 +10,7 @@ import { formatShortDate } from "@/features/kuroji/lib/dates";
 import { DueDateChip } from "@/features/seiryu/components/DueDateChip";
 import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
 import { PRIORITY_CONFIG } from "@/features/seiryu/lib/constants";
+import { repeatLabel } from "@/features/seiryu/lib/repeat";
 import { type CardData, isTempId } from "@/features/seiryu/lib/types";
 import { BAR_FILL, barClip } from "@/lib/bar";
 
@@ -97,7 +98,8 @@ const CardBody = memo(function CardBody({
 }) {
 	const total = card.checklistItems.length;
 	const done = card.checklistItems.filter((i) => i.isCompleted).length;
-	const hasMeta = card.priority || card.dueDate || total > 0 || card.hasDescription;
+	const hasMeta =
+		card.priority || card.dueDate || card.repeatUnit || total > 0 || card.hasDescription;
 
 	return (
 		<div className="flex flex-col gap-2">
@@ -107,6 +109,9 @@ const CardBody = memo(function CardBody({
 					card.priority && `${PRIORITY_CONFIG[card.priority].label} priority.`,
 					card.dueDate &&
 						`Due ${formatShortDate(card.dueDate, today)}${card.dueTime ? ` at ${card.dueTime}` : ""}${card.dueDate < today ? ", overdue" : ""}.`,
+					card.repeatUnit &&
+						card.repeatEvery &&
+						`Repeats ${repeatLabel(card.repeatEvery, card.repeatUnit).toLowerCase()}.`,
 					total > 0 && `${done} of ${total} checklist items done.`,
 					card.hasDescription && "Has a description.",
 				]
@@ -144,6 +149,13 @@ const CardBody = memo(function CardBody({
 					{card.priority && <PriorityBadge priority={card.priority} />}
 					{card.dueDate && (
 						<DueDateChip dueDate={card.dueDate} dueTime={card.dueTime} today={today} />
+					)}
+					{card.repeatUnit && (
+						<HugeiconsIcon
+							aria-hidden
+							icon={RepeatIcon}
+							className="h-3.5 w-3.5 text-muted-foreground"
+						/>
 					)}
 					{total > 0 && (
 						<span
@@ -198,6 +210,7 @@ function sameCard(
 		a.priority === b.priority &&
 		a.dueDate === b.dueDate &&
 		a.dueTime === b.dueTime &&
+		a.repeatUnit === b.repeatUnit &&
 		a.position === b.position &&
 		a.labels.length === b.labels.length &&
 		a.labels.every(

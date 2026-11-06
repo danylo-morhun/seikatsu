@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	Checkbox,
 	cn,
 	Input,
 	Label,
@@ -18,6 +19,7 @@ import { LabelPicker } from "@/features/seiryu/components/LabelPicker";
 import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
 import { PRIORITIES, PRIORITY_CONFIG, type Priority } from "@/features/seiryu/lib/constants";
 import { DAY_START, type Due, nextDue, REMIND_OPTIONS, TIME } from "@/features/seiryu/lib/reminder";
+import { REPEAT_PRESETS, type RepeatUnit, repeatLabel } from "@/features/seiryu/lib/repeat";
 import type { CardData, CardFieldUpdates, LabelData } from "@/features/seiryu/lib/types";
 import { useDraft } from "@/hooks/useDraft";
 
@@ -71,6 +73,15 @@ export function CardDetail({
 		if (trimmed && trimmed !== card.title) onSave({ title: trimmed });
 		else title.revert();
 	});
+	// The presets, plus the card's own rule when it's another (set through Claude, say).
+	const repeatValue = card.repeatUnit ? `${card.repeatEvery}-${card.repeatUnit}` : "none";
+	const repeatChoices =
+		card.repeatUnit &&
+		card.repeatEvery &&
+		!REPEAT_PRESETS.some((r) => `${r.every}-${r.unit}` === repeatValue)
+			? [...REPEAT_PRESETS, { every: card.repeatEvery, unit: card.repeatUnit }]
+			: REPEAT_PRESETS;
+
 	// Date, time and reminder hang together (no date: no time), so they save as one.
 	const saveDue = (edit: Partial<Due>) => onSave(nextDue(card, edit));
 	const description = useDraft(card.description ?? "", (next) => {
@@ -212,6 +223,46 @@ export function CardDetail({
 							</SelectContent>
 						</Select>
 					</div>
+
+					<div className="space-y-2">
+						<Label htmlFor={`${id}-repeat`}>Repeat</Label>
+						<Select
+							value={repeatValue}
+							disabled={readOnly}
+							onValueChange={(v) => {
+								if (v === repeatValue) return;
+								if (v === "none") return onSave({ repeatEvery: null, repeatUnit: null });
+								const [every, unit] = v.split("-") as [string, RepeatUnit];
+								onSave({ repeatEvery: Number(every), repeatUnit: unit });
+							}}
+						>
+							<SelectTrigger id={`${id}-repeat`}>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="none">Doesn't repeat</SelectItem>
+								{repeatChoices.map((r) => (
+									<SelectItem key={`${r.every}-${r.unit}`} value={`${r.every}-${r.unit}`}>
+										{repeatLabel(r.every, r.unit)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+
+					{card.repeatUnit && (
+						<div className="flex items-center gap-2 self-end pb-2">
+							<Checkbox
+								id={`${id}-from-done`}
+								checked={card.repeatFromDone}
+								disabled={readOnly}
+								onCheckedChange={(checked) => onSave({ repeatFromDone: checked === true })}
+							/>
+							<Label htmlFor={`${id}-from-done`} className="font-normal">
+								Count from the day it's done
+							</Label>
+						</div>
+					)}
 				</div>
 
 				{!description.draft && !writingNotes && !descriptionLoading ? (
