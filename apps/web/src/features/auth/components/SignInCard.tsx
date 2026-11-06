@@ -27,13 +27,13 @@ function LogoMark() {
 	);
 }
 
-function GitHubButton() {
+function GitHubButton({ returnTo }: { returnTo?: string }) {
 	const [pending, setPending] = useState(false);
 	return (
 		<form
 			action={async () => {
 				setPending(true);
-				await signInWithGitHub();
+				await signInWithGitHub(returnTo);
 			}}
 		>
 			<Button className="w-full gap-1.5" variant="outline" type="submit" disabled={pending}>
@@ -50,13 +50,13 @@ function GitHubButton() {
 	);
 }
 
-function GoogleButton() {
+function GoogleButton({ returnTo }: { returnTo?: string }) {
 	const [pending, setPending] = useState(false);
 	return (
 		<form
 			action={async () => {
 				setPending(true);
-				await signInWithGoogle();
+				await signInWithGoogle(returnTo);
 			}}
 		>
 			<Button className="w-full gap-1.5" variant="outline" type="submit" disabled={pending}>
@@ -88,7 +88,7 @@ function GoogleButton() {
 	);
 }
 
-function MagicLinkForm() {
+function MagicLinkForm({ returnTo }: { returnTo?: string }) {
 	const [state, action, pending] = useActionState<AuthState, FormData>(signInWithMagicLink, null);
 
 	if (state && "success" in state) {
@@ -102,6 +102,7 @@ function MagicLinkForm() {
 
 	return (
 		<form action={action} className="space-y-3">
+			{returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
 			<div className="space-y-1.5">
 				<Label htmlFor="magic-email">Email</Label>
 				<Input id="magic-email" name="email" type="email" placeholder="you@example.com" required />
@@ -115,13 +116,14 @@ function MagicLinkForm() {
 	);
 }
 
-function PasswordForm() {
+function PasswordForm({ returnTo }: { returnTo?: string }) {
 	const [mode, setMode] = useState<"signin" | "signup">("signin");
 	const [state, action, pending] = useActionState<AuthState, FormData>(handleCredentials, null);
 
 	return (
 		<form action={action} className="space-y-3">
 			<input type="hidden" name="mode" value={mode} />
+			{returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
 			{mode === "signup" && (
 				<div className="space-y-1.5">
 					<Label htmlFor="cred-name">Name</Label>
@@ -187,14 +189,15 @@ function PasswordForm() {
 	);
 }
 
-export function SignInCard() {
+/** `returnTo`: an OAuth consent page to come back to (MCP); otherwise Today. */
+export function SignInCard({ returnTo }: { returnTo?: string } = {}) {
 	return (
 		<Card className="ring-border/60 w-full max-w-md ring-1">
 			<CardContent className="space-y-5 px-8 pt-8 pb-8">
 				<LogoMark />
 				<div className="grid grid-cols-2 gap-3">
-					<GitHubButton />
-					<GoogleButton />
+					<GitHubButton returnTo={returnTo} />
+					<GoogleButton returnTo={returnTo} />
 				</div>
 				<div className="flex items-center gap-3">
 					<Separator className="flex-1" />
@@ -211,10 +214,10 @@ export function SignInCard() {
 						</TabsTrigger>
 					</TabsList>
 					<TabsContent value="magic" className="pt-3">
-						<MagicLinkForm />
+						<MagicLinkForm returnTo={returnTo} />
 					</TabsContent>
 					<TabsContent value="password" className="pt-3">
-						<PasswordForm />
+						<PasswordForm returnTo={returnTo} />
 					</TabsContent>
 				</Tabs>
 			</CardContent>
