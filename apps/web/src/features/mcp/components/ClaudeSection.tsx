@@ -76,9 +76,9 @@ export function ClaudeSection({
 			<div className="space-y-2">
 				<CopyRow label="MCP URL" value={url} />
 				<p className="text-xs text-muted-foreground">
-					claude.ai: Settings → Connectors → Add custom connector → this URL. Claude Code:{" "}
-					<code className="font-mono">claude mcp add --transport http seikatsu {url}</code>, then{" "}
-					<code className="font-mono">/mcp</code> to sign in.
+					claude.ai: Customize → Connectors → Add connector → Add custom connector, this URL. Claude
+					Code: <code className="font-mono">claude mcp add --transport http seikatsu {url}</code>,
+					then <code className="font-mono">/mcp</code> to sign in.
 				</p>
 			</div>
 
