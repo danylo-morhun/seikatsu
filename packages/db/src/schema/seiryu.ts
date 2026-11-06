@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+	type AnyPgColumn,
 	boolean,
 	date,
 	index,
@@ -22,6 +23,8 @@ export const seiryuCardPriorityEnum = pgEnum("seiryu_card_priority", [
 	"high",
 	"urgent",
 ]);
+
+export const seiryuRepeatUnitEnum = pgEnum("seiryu_repeat_unit", ["day", "week", "month", "year"]);
 
 export const seiryuProjects = pgTable(
 	"seiryu_projects",
@@ -77,6 +80,15 @@ export const seiryuCards = pgTable(
 		remindMinutes: integer("remind_minutes"),
 		/** That moment as an instant, saved in the user's zone; snoozing moves it. Null = none. */
 		remindAt: timestamp("remind_at", { withTimezone: true }),
+		/** Repeats every N units: finishing it makes the next card. Null = once. */
+		repeatEvery: integer("repeat_every"),
+		repeatUnit: seiryuRepeatUnitEnum("repeat_unit"),
+		/** Counted from the day it's done instead of from its due date. */
+		repeatFromDone: boolean("repeat_from_done").notNull().default(false),
+		/** The card its finishing made; reopening this one takes that one back. */
+		nextCardId: uuid("next_card_id").references((): AnyPgColumn => seiryuCards.id, {
+			onDelete: "set null",
+		}),
 		/** The user's day it reached a finish column; null while open. Feeds the week's recap. */
 		doneOn: date("done_on"),
 		position: varchar("position", { length: 255 }).notNull(),
