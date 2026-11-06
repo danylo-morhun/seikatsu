@@ -288,6 +288,13 @@
 			"when": 1793965573962,
 			"tag": "0040_mcp",
 			"breakpoints": true
+		},
+		{
+			"idx": 41,
+			"version": "7",
+			"when": 1793984593155,
+			"tag": "0041_hoshii_shorter_cooling",
+			"breakpoints": true
 		}
 	]
 }
