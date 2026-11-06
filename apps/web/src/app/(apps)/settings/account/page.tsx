@@ -1,4 +1,5 @@
 import { authAccounts, authUsers, db, eq } from "@seikatsu/db";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { AppearancePicker } from "@/components/AppearancePicker";
@@ -8,18 +9,24 @@ import { ChangePasswordForm } from "@/features/auth/components/ChangePasswordFor
 import { DangerZone } from "@/features/auth/components/DangerZone";
 import { LinkedProviders } from "@/features/auth/components/LinkedProviders";
 import { ProfileForm } from "@/features/auth/components/ProfileForm";
+import { ClaudeSection } from "@/features/mcp/components/ClaudeSection";
+import { getClaudeAccess } from "@/features/mcp/lib/grants-data";
+import { originOf, resourceOf } from "@/features/mcp/lib/oauth";
+import { getCurrentWorkspace } from "@/lib/session";
 
 export default async function AccountSettingsPage() {
 	const session = await auth();
 	if (!session?.user?.id) redirect("/");
 
-	const [dbUser, accounts] = await Promise.all([
+	const [dbUser, accounts, workspace] = await Promise.all([
 		db.query.authUsers.findFirst({ where: eq(authUsers.id, session.user.id) }),
 		db.query.authAccounts.findMany({
 			where: eq(authAccounts.userId, session.user.id),
 			columns: { provider: true },
 		}),
+		getCurrentWorkspace(),
 	]);
+	const claude = workspace ? await getClaudeAccess(workspace.id) : { grants: [], writes: [] };
 
 	if (!dbUser) redirect("/");
 
@@ -64,6 +71,17 @@ export default async function AccountSettingsPage() {
 
 			<SettingsSection title="Sign-in methods" description="Keep at least one; the last can't go.">
 				<LinkedProviders providers={providers} hasPassword={hasPassword} />
+			</SettingsSection>
+
+			<SettingsSection
+				title="Claude"
+				description="Let Claude (claude.ai, Claude Code) read seikatsu and, if you allow it, make changes."
+			>
+				<ClaudeSection
+					url={resourceOf(originOf(await headers()))}
+					grants={claude.grants}
+					writes={claude.writes}
+				/>
 			</SettingsSection>
 
 			<SettingsSection title="Sessions and data">
