@@ -5,9 +5,11 @@ import { getWorkspaceArchivedCards } from "@/features/seiryu/actions/cards";
 import { getWorkspaceLabels } from "@/features/seiryu/actions/labels";
 import { getOpenCardCounts, getProjects } from "@/features/seiryu/actions/projects";
 import { SettingsArchive } from "@/features/seiryu/components/SettingsArchive";
+import { SettingsCalendar } from "@/features/seiryu/components/SettingsCalendar";
 import { SettingsLabels } from "@/features/seiryu/components/SettingsLabels";
 import { NewProjectButton, SettingsProjects } from "@/features/seiryu/components/SettingsProjects";
 import { toArchivedRows } from "@/features/seiryu/lib/archive";
+import { getCalendarFeed } from "@/features/seiryu/lib/calendar-feed";
 import { getCurrentWorkspace } from "@/lib/session";
 import { getUserTimeZone, getUserToday } from "@/lib/timezone";
 
@@ -15,6 +17,7 @@ const SECTIONS = [
 	{ id: "projects", label: "Projects" },
 	{ id: "labels", label: "Labels" },
 	{ id: "archive", label: "Archive" },
+	{ id: "calendar", label: "Calendar" },
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["id"];
 
@@ -55,6 +58,24 @@ export default async function SeiryuSettingsPage({
 		body = (
 			<SettingsSection description="Each project has its own. Rename, recolour or remove them here.">
 				<SettingsLabels labels={labels} />
+			</SettingsSection>
+		);
+	} else if (section === "calendar") {
+		const feed = await getCalendarFeed(workspace.id);
+		body = (
+			<SettingsSection description="Your due cards in the phone's calendar, through a private link.">
+				<SettingsCalendar
+					madeOn={
+						feed
+							? feed.createdAt.toLocaleDateString("en-GB", {
+									day: "numeric",
+									month: "short",
+									year: "numeric",
+									timeZone: await getUserTimeZone(),
+								})
+							: null
+					}
+				/>
 			</SettingsSection>
 		);
 	} else {
