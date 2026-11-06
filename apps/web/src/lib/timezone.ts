@@ -4,6 +4,7 @@
 // of fetching from the client after hydration.
 
 import { cookies, headers } from "next/headers";
+import { currentActor } from "@/lib/actor";
 
 export const TZ_COOKIE = "tz";
 
@@ -18,6 +19,8 @@ function isValidZone(zone: string | undefined): zone is string {
 }
 
 export async function getUserTimeZone(): Promise<string> {
+	const actor = currentActor();
+	if (actor) return actor.timeZone;
 	const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
 	const fromCookie = cookieStore.get(TZ_COOKIE)?.value;
 	if (isValidZone(fromCookie)) return fromCookie;
