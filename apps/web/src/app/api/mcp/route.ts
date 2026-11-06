@@ -41,7 +41,6 @@ export async function POST(req: NextRequest) {
 
 	const handler = createMcpHandler(() => buildServer(caller), {
 		legacy: "stateless",
-		responseMode: "json",
 		// Rejected requests (a version the client tries first, bad JSON) are routine: log only.
 		// Tool failures reach Sentry from lib/server.ts.
 		onerror: (error) => console.warn("[mcp]", error.message),
