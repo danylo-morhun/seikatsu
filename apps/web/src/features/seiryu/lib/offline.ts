@@ -20,8 +20,20 @@ import type { CardFieldUpdates } from "@/features/seiryu/lib/types";
 
 const quote = (title: string) => `“${title.length > 40 ? `${title.slice(0, 40)}…` : title}”`;
 
-export function addCard(id: string, columnId: string, projectId: string, title: string) {
-	const args = { id, columnId, projectId, title };
+export function addCard(
+	id: string,
+	columnId: string,
+	projectId: string,
+	title: string,
+	due?: { dueDate: string; dueTime: string | null } | null,
+) {
+	const args = {
+		id,
+		columnId,
+		projectId,
+		title,
+		...(due && { dueDate: due.dueDate, ...(due.dueTime && { dueTime: due.dueTime }) }),
+	};
 	return runOrQueue("seiryu.createCard", args, `New card ${quote(title)}`, async () => {
 		const result = await createCard(args);
 		return "error" in result ? result : { success: true };

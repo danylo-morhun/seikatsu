@@ -70,7 +70,8 @@ import {
 import { finishCard } from "@/features/seiryu/lib/finish";
 import { addCard, placeCard, saveCard, shelveCard } from "@/features/seiryu/lib/offline";
 import { overlayCards } from "@/features/seiryu/lib/overlay";
-import { type Due, nextDue } from "@/features/seiryu/lib/reminder";
+import { type ParsedDue, parseDue } from "@/features/seiryu/lib/parse-due";
+import { type Due, newCardDue, nextDue } from "@/features/seiryu/lib/reminder";
 import { useServerState } from "@/features/seiryu/lib/server-state";
 import {
 	type CardData,
@@ -271,8 +272,12 @@ export function KanbanBoard({
 		setSheetOpen(true);
 	}, []);
 
+	// A day and time typed into the title go on the card ("Call the garage tomorrow 15:00").
+	// `due` comes from the new-card dialog, which shows what it read; undefined: read it here.
 	const handleAddCard = useCallback(
-		(columnId: string, title: string) => {
+		(columnId: string, text: string, due?: ParsedDue | null) => {
+			const parsed = due === undefined ? parseDue(text, today) : due;
+			const title = parsed?.title ?? text;
 			const last = cardsRef.current
 				.filter((c) => c.columnId === columnId)
 				.sort(byPosition)
@@ -290,9 +295,9 @@ export function KanbanBoard({
 				description: null,
 				hasDescription: false,
 				priority: null,
-				dueDate: null,
-				dueTime: null,
-				remindMinutes: null,
+				...(parsed
+					? newCardDue(parsed.dueDate, parsed.dueTime)
+					: { dueDate: null, dueTime: null, remindMinutes: null }),
 				repeatEvery: null,
 				repeatUnit: null,
 				repeatFromDone: false,
@@ -302,7 +307,7 @@ export function KanbanBoard({
 			};
 			setCards((prev) => [...prev, temp]);
 
-			trackCards(addCard(id, columnId, projectId, title)).then((result) => {
+			trackCards(addCard(id, columnId, projectId, title, parsed)).then((result) => {
 				if ("error" in result) {
 					toast.error(result.error);
 					setCards((prev) => prev.filter((c) => c.id !== tempId));
@@ -311,7 +316,7 @@ export function KanbanBoard({
 				setCards((prev) => prev.map((c) => (c.id === tempId ? { ...c, id } : c)));
 			});
 		},
-		[projectId, setCards, trackCards],
+		[projectId, setCards, trackCards, today],
 	);
 
 	const handleUpdateColumn = useCallback(
@@ -963,6 +968,7 @@ export function KanbanBoard({
 				onOpenChange={(open) => setCapture((c) => ({ ...c, open }))}
 				columns={sortedColumns}
 				onAdd={handleAddCard}
+				today={today}
 			/>
 		</div>
 	);

@@ -25,7 +25,7 @@ import {
 	requireWorkspace,
 } from "@/features/seiryu/actions/guard";
 import { getLabels } from "@/features/seiryu/actions/labels";
-import { nextDue, reminderAt, shortTime } from "@/features/seiryu/lib/reminder";
+import { newCardDue, nextDue, reminderAt, shortTime } from "@/features/seiryu/lib/reminder";
 import { nextDueDate } from "@/features/seiryu/lib/repeat";
 import {
 	archiveCardSchema,
@@ -180,7 +180,7 @@ export async function createCard(
 	const parsed = createCardSchema.safeParse(input);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
-	const { id, columnId, projectId, title } = parsed.data;
+	const { id, columnId, projectId, title, dueDate, dueTime } = parsed.data;
 
 	const column = await getOwnedColumn(columnId, workspace.id);
 	if (column?.projectId !== projectId) return { error: "Invalid column" };
@@ -191,9 +191,17 @@ export async function createCard(
 		if (existing) return { success: true, data: { id, position: existing.position } };
 	}
 
+	const due = dueDate ? newCardDue(dueDate, dueTime) : null;
 	const [card] = await db
 		.insert(seiryuCards)
-		.values({ id, columnId, projectId, title, position: await endOfColumn(columnId) })
+		.values({
+			id,
+			columnId,
+			projectId,
+			title,
+			position: await endOfColumn(columnId),
+			...(due && { ...due, remindAt: reminderAt(due, await getUserTimeZone()) }),
+		})
 		.returning({ id: seiryuCards.id, position: seiryuCards.position });
 
 	if (!card) return { error: "Failed to create card" };
