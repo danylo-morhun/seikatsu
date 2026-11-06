@@ -57,7 +57,9 @@ export function SegmentSwitch({
 			/>
 			{options.map((o) => {
 				const active = o.value === value;
-				const count = o.value ? counts[o.value] : null;
+				const count = o.value
+					? counts[o.value]
+					: Object.values(counts).reduce((sum, n) => sum + n, 0);
 				return (
 					<button
 						key={o.label}
