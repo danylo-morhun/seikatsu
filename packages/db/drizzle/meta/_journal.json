@@ -302,6 +302,13 @@
 			"when": 1794003499244,
 			"tag": "0042_seiryu_due_time",
 			"breakpoints": true
+		},
+		{
+			"idx": 43,
+			"version": "7",
+			"when": 1794003966199,
+			"tag": "0043_seiryu_repeat",
+			"breakpoints": true
 		}
 	]
 }
