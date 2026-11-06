@@ -92,6 +92,8 @@ export const seiryuCards = pgTable(
 		/** The user's day it reached a finish column; null while open. Feeds the week's recap. */
 		doneOn: date("done_on"),
 		position: varchar("position", { length: 255 }).notNull(),
+		/** When it last changed column: a card sitting in progress for long is shown as stuck. */
+		movedAt: timestamp("moved_at", { withTimezone: true }).notNull().defaultNow(),
 		archivedAt: timestamp("archived_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
