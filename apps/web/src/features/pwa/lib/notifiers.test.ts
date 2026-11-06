@@ -29,6 +29,7 @@ vi.mock("@seikatsu/db", async () => ({
 const { notifyToday } = await import("@/features/home/lib/notify");
 const { notifyAisha } = await import("@/features/aisha/lib/notify");
 const { notifyKurojiBudget, notifyKurojiRecurring } = await import("@/features/kuroji/lib/notify");
+const { notifySeiryu } = await import("@/features/seiryu/lib/notify");
 
 // Monday 2026-10-26, 09:10 local — past the default 09:00 morning time.
 const DAY = "2026-10-26";
@@ -92,6 +93,84 @@ describe("notifyToday", () => {
 			}),
 		);
 		expect(await notifyToday({ ...ctx, clock: MORNING })).toBe(0);
+	});
+});
+
+describe("notifySeiryu", () => {
+	it("pushes a card's reminder once, with its buttons, and not for a done card", async () => {
+		const ctx = await workspace();
+		const [project] = await testDb
+			.insert(schema.seiryuProjects)
+			.values({ workspaceId: ctx.workspaceId, name: "Home", position: "a0" })
+			.returning();
+		const [todo, done] = await testDb
+			.insert(schema.seiryuColumns)
+			.values([
+				{ projectId: project.id, name: "To do", position: "a0" },
+				{ projectId: project.id, name: "Done", position: "a1", isDone: true },
+			])
+			.returning();
+		const now = Date.now();
+		const ago = (min: number) => new Date(now - min * 60_000);
+		await testDb.insert(schema.seiryuCards).values([
+			{
+				projectId: project.id,
+				columnId: todo.id,
+				title: "Call the garage",
+				position: "a0",
+				dueDate: MORNING.day,
+				dueTime: "15:00",
+				remindMinutes: 0,
+				remindAt: ago(5),
+			},
+			// Long past: a cron down for hours doesn't send stale reminders.
+			{
+				projectId: project.id,
+				columnId: todo.id,
+				title: "Old",
+				position: "a1",
+				dueDate: MORNING.day,
+				remindAt: ago(180),
+			},
+			{
+				projectId: project.id,
+				columnId: done.id,
+				title: "Done one",
+				position: "a2",
+				dueDate: MORNING.day,
+				remindAt: ago(5),
+			},
+			{
+				projectId: project.id,
+				columnId: todo.id,
+				title: "Later",
+				position: "a3",
+				dueDate: MORNING.day,
+				remindAt: new Date(now + 600_000),
+			},
+		]);
+
+		expect(await notifySeiryu({ ...ctx, clock: MORNING })).toBe(1);
+		const payload = lastPayload() as unknown as Record<string, unknown>;
+		expect(payload).toEqual(
+			expect.objectContaining({
+				title: "Call the garage",
+				body: "Today 15:00 · Home",
+				actions: [
+					{ action: "done", title: "Done" },
+					{ action: "snooze", title: "In 1 hour" },
+				],
+			}),
+		);
+		expect(payload.actUrl).toMatch(/^\/api\/seiryu\/cards\/.+\/remind$/);
+		expect(await notifySeiryu({ ...ctx, clock: MORNING })).toBe(0);
+		expect(
+			await notifySeiryu({
+				...ctx,
+				prefs: { ...ctx.prefs, seiryuReminders: false },
+				clock: MORNING,
+			}),
+		).toBe(0);
 	});
 });
 

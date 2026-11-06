@@ -37,6 +37,13 @@ const ROWS: Row[] = [
 			"Today's list in one push: cards due, calls, follow-ups, wants to decide, payments to add, the car.",
 	},
 	{
+		key: "seiryuReminders",
+		app: "清 Seiryu",
+		label: "Card reminders",
+		detail:
+			"When a card's own reminder is due, with Done and “In 1 hour” right in the notification.",
+	},
+	{
 		key: "aishaEnabled",
 		app: "愛 Aisha",
 		label: "Maintenance and papers",
@@ -73,6 +80,7 @@ const DEFAULTS: PrefsInput = {
 	kurojiBudget: true,
 	kurojiWeekly: true,
 	weekRecap: false,
+	seiryuReminders: true,
 };
 
 const hhmm = (t: string) => t.slice(0, 5);

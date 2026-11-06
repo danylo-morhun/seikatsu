@@ -262,7 +262,8 @@ self.addEventListener("push", (event) => {
 				icon: "/icons/icon-192.png",
 				badge: "/icons/badge-96.png",
 				tag: data.tag,
-				data: { url: data.url || "/" },
+				actions: Array.isArray(data.actions) ? data.actions : undefined,
+				data: { url: data.url || "/", actUrl: data.actUrl },
 			}),
 			self.navigator.setAppBadge?.().catch(() => undefined),
 		]),
@@ -271,19 +272,35 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
 	event.notification.close();
-	const target = new URL(event.notification.data?.url || "/", self.location.origin).href;
-	event.waitUntil(
-		(async () => {
-			await self.navigator.clearAppBadge?.().catch(() => undefined);
-			const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-			// Reuse the open app: focus it and move it to the notification's page.
-			const open = windows.find((w) => new URL(w.url).origin === self.location.origin);
-			if (open) {
-				await open.focus();
-				if (open.url !== target && "navigate" in open) await open.navigate(target);
-				return;
-			}
-			await self.clients.openWindow(target);
-		})(),
-	);
+	const { actUrl } = event.notification.data ?? {};
+	// A button (Done, In 1 hour): answered here with the session cookie; the app opens only
+	// if that fails, so nothing is lost.
+	if (event.action && actUrl) {
+		event.waitUntil(
+			fetch(actUrl, {
+				method: "POST",
+				credentials: "same-origin",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ action: event.action }),
+			})
+				.then((r) => (r.ok ? undefined : openTarget(event.notification.data?.url)))
+				.catch(() => openTarget(event.notification.data?.url)),
+		);
+		return;
+	}
+	event.waitUntil(openTarget(event.notification.data?.url));
 });
+
+async function openTarget(url) {
+	const target = new URL(url || "/", self.location.origin).href;
+	await self.navigator.clearAppBadge?.().catch(() => undefined);
+	const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+	// Reuse the open app: focus it and move it to the notification's page.
+	const open = windows.find((w) => new URL(w.url).origin === self.location.origin);
+	if (open) {
+		await open.focus();
+		if (open.url !== target && "navigate" in open) await open.navigate(target);
+		return;
+	}
+	await self.clients.openWindow(target);
+}
