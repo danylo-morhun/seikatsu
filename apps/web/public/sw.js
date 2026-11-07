@@ -29,8 +29,9 @@ const STATIC_LIMIT = 800;
 self.addEventListener("install", (event) => {
 	event.waitUntil(
 		Promise.all([caches.open(SHELL).then((cache) => cache.addAll(SHELL_URLS)), precacheBuild()])
-			// The first install has no page to disrupt; later ones wait for the update toast.
-			.then(() => (self.registration.active ? undefined : self.skipWaiting())),
+			// Take over at once: open pages keep working (older builds' chunks stay in STATIC) and
+			// get the update toast. Waiting for a "Reload" message stalled on iOS, toast after toast.
+			.then(() => self.skipWaiting()),
 	);
 });
 
@@ -54,7 +55,7 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("message", (event) => {
 	const data = event.data || {};
-	if (data.type === "skipWaiting") self.skipWaiting();
+	if (data.type === "skipWaiting") self.skipWaiting(); // pages from before auto-takeover
 	if (data.type === "warm" && Array.isArray(data.urls)) event.waitUntil(warm(data.urls));
 	if (data.type === "clear") event.waitUntil(caches.delete(PAGES));
 	// The page asks once it's running; true = refresh, the server has newer than what it shows.
