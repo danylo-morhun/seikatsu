@@ -1,7 +1,7 @@
 // Messages to the service worker (public/sw.js). Every call is a no-op where service workers
 // aren't available (old browsers, private modes, dev without a registration).
 
-type SwMessage = { type: "skipWaiting" } | { type: "warm"; urls: string[] } | { type: "clear" };
+type SwMessage = { type: "warm"; urls: string[] } | { type: "clear" };
 
 /** The build the page runs, so each deploy registers a new worker script URL. */
 export const SW_URL = `/sw.js?v=${process.env.NEXT_PUBLIC_BUILD_ID ?? "dev"}`;
