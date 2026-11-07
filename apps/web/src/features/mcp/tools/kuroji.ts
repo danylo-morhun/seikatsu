@@ -1,10 +1,19 @@
+import { accounts, and, db, eq, kurojiFunds } from "@seikatsu/db";
 import { z } from "zod";
+import {
+	archiveAccount,
+	createAccount,
+	deleteAccount,
+	unarchiveAccount,
+	updateAccount,
+} from "@/features/kuroji/actions/accounts";
 import { readBalances } from "@/features/kuroji/actions/balances";
 import {
 	getRecentTransactions,
 	getRecurringTransactions,
 	getTags,
 } from "@/features/kuroji/actions/data";
+import { createFund, deleteFund, updateFund } from "@/features/kuroji/actions/plan";
 import { getPlan } from "@/features/kuroji/actions/plan-data";
 import { createTransaction } from "@/features/kuroji/actions/transactions";
 import { getMonthlyTrends } from "@/features/kuroji/actions/trends";
@@ -13,6 +22,20 @@ import { tool } from "./types";
 
 const month = z.string().regex(/^\d{4}-\d{2}$/, "YYYY-MM");
 const n = (s: string) => Math.round(Number(s) * 100) / 100;
+const accountType = z.enum(["ASSET", "LIABILITY", "INCOME", "EXPENSE"]);
+const currency = z.string().regex(/^[A-Z]{3}$/);
+
+/** The row an edit starts from: the tools take only the fields that change. */
+async function ownAccount(workspaceId: string, id: string) {
+	return db.query.accounts.findFirst({
+		where: and(eq(accounts.id, id), eq(accounts.workspaceId, workspaceId)),
+	});
+}
+async function ownFund(workspaceId: string, id: string) {
+	return db.query.kurojiFunds.findFirst({
+		where: and(eq(kurojiFunds.id, id), eq(kurojiFunds.workspaceId, workspaceId)),
+	});
+}
 
 export const kurojiTools = [
 	tool({
@@ -154,5 +177,122 @@ export const kurojiTools = [
 		idempotent: true,
 		run: ({ requestId, date, ...input }, { ws, today }) =>
 			createTransaction({ workspaceId: ws.id, id: requestId, date: date ?? today, ...input }),
+	}),
+	tool({
+		name: "kuroji_create_account",
+		title: "Create a Kuroji account",
+		description:
+			"Add an account: ASSET (wallet, card, savings), LIABILITY (debt), INCOME or EXPENSE (categories). `currency` defaults to the base currency; `parentId` nests it under another account of the user.",
+		input: {
+			name: z.string().trim().min(1).max(80),
+			type: accountType,
+			currency: currency.optional(),
+			parentId: z.uuid().optional(),
+		},
+		write: true,
+		run: async ({ name, type, currency, parentId }, { ws }) => {
+			try {
+				const a = await createAccount(ws.id, name, type, parentId, undefined, currency);
+				return { id: a.id, name: a.name, type: a.type, currency: a.currency };
+			} catch (e) {
+				return { error: e instanceof Error ? e.message : "Couldn't create the account" };
+			}
+		},
+	}),
+	tool({
+		name: "kuroji_update_account",
+		title: "Edit a Kuroji account",
+		description:
+			"Change an account's name, type, parent (null = top level), monthly budget (null = none), or archive/restore it (`archived`). Only the fields passed change. Currency can't change here: past entries are in it.",
+		input: {
+			accountId: z.uuid(),
+			name: z.string().trim().min(1).max(80).optional(),
+			type: accountType.optional(),
+			parentId: z.uuid().nullable().optional(),
+			budget: z.number().min(0).max(1e12).nullable().optional(),
+			archived: z.boolean().optional(),
+		},
+		write: true,
+		idempotent: true,
+		run: async ({ accountId, archived, ...changes }, { ws }) => {
+			const a = await ownAccount(ws.id, accountId);
+			if (!a) return { error: "Account not found" };
+			const edits = Object.values(changes).some((v) => v !== undefined);
+			if (edits) {
+				const result = await updateAccount(accountId, {
+					name: changes.name ?? a.name,
+					type: changes.type ?? a.type,
+					parentId: changes.parentId === undefined ? a.parentId : changes.parentId,
+					budget:
+						changes.budget === undefined
+							? a.budget == null
+								? null
+								: Number(a.budget)
+							: changes.budget,
+				});
+				if ("error" in result) return result;
+			}
+			if (archived !== undefined) {
+				const result = await (archived ? archiveAccount : unarchiveAccount)(accountId);
+				if ("error" in result) return result;
+			}
+			return { success: true };
+		},
+	}),
+	tool({
+		name: "kuroji_delete_account",
+		title: "Delete a Kuroji account",
+		description:
+			"Delete an account with no transactions, sub-accounts or recurring payments. One with history is refused: archive it with kuroji_update_account instead.",
+		input: { accountId: z.uuid() },
+		write: true,
+		run: ({ accountId }) => deleteAccount(accountId),
+	}),
+	tool({
+		name: "kuroji_create_fund",
+		title: "Create a Kuroji fund",
+		description:
+			"A savings goal on the Plan tab: `target` (base currency) by `dueDate`, kept in an ASSET account. The fund counts that account's balance as its own (funds on one account fill earliest deadline first), so give it an account that holds only savings. Ids: kuroji_plan lists funds.",
+		input: {
+			name: z.string().trim().min(1).max(80),
+			target: z.number().positive().max(1e12),
+			dueDate: day,
+			accountId: z.uuid(),
+		},
+		write: true,
+		run: (input, { ws }) => createFund(ws.id, input),
+	}),
+	tool({
+		name: "kuroji_update_fund",
+		title: "Edit a Kuroji fund",
+		description:
+			"Change a fund's name, target, due date or account (fund ids from kuroji_plan). Only the fields passed change.",
+		input: {
+			fundId: z.uuid(),
+			name: z.string().trim().min(1).max(80).optional(),
+			target: z.number().positive().max(1e12).optional(),
+			dueDate: day.optional(),
+			accountId: z.uuid().optional(),
+		},
+		write: true,
+		idempotent: true,
+		run: async ({ fundId, ...changes }, { ws }) => {
+			const f = await ownFund(ws.id, fundId);
+			if (!f) return { error: "Fund not found" };
+			return updateFund(fundId, {
+				name: changes.name ?? f.name,
+				target: changes.target ?? Number(f.target),
+				dueDate: changes.dueDate ?? f.dueDate,
+				accountId: changes.accountId ?? f.accountId,
+			});
+		},
+	}),
+	tool({
+		name: "kuroji_delete_fund",
+		title: "Delete a Kuroji fund",
+		description: "Remove a fund (id from kuroji_plan). The money stays in its account.",
+		input: { fundId: z.uuid() },
+		write: true,
+		run: ({ fundId }) => deleteFund(fundId),
 	}),
 ];
