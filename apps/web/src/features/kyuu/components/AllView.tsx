@@ -8,8 +8,8 @@ import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { startNavigationProgress } from "@/components/NavigationProgress";
 import { PageTab, PageTabs } from "@/components/PageTabs";
 import type { KyuuView } from "../lib/kyuu-schemas";
-import type { SortField } from "../lib/search-params";
-import { GHOST_DAYS } from "../lib/stages";
+import { type SortField, VIEW_STATUSES } from "../lib/search-params";
+import { GHOST_DAYS, STATUSES } from "../lib/stages";
 import type { ApplicationRow } from "../lib/types";
 import { ApplicationArea, useApplicationArea } from "./ApplicationArea";
 import { ApplicationRowItem, TABLE_GRID } from "./ApplicationRowItem";
@@ -103,7 +103,7 @@ export function AllView({
 				{VIEWS.map((v) => (
 					<PageTab
 						key={v.value}
-						href={href({ view: v.value === "all" ? null : v.value, page: null })}
+						href={href({ view: v.value === "all" ? null : v.value, status: null, page: null })}
 						current={view === v.value}
 					>
 						{v.label}
@@ -116,7 +116,7 @@ export function AllView({
 
 			<div className="mt-5 flex flex-wrap items-center justify-between gap-3">
 				<div className="min-w-0 flex-1">
-					<KyuuFilters sources={sources} />
+					<KyuuFilters sources={sources} statuses={VIEW_STATUSES[view] ?? STATUSES} />
 				</div>
 				<p className="text-sm text-muted-foreground">
 					<span className="font-figures">{total}</span>{" "}

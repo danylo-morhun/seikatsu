@@ -4,11 +4,21 @@ import {
 	type KyuuView,
 	kyuuApplyMethodValues,
 } from "./kyuu-schemas";
+import { CLOSED, IN_PROGRESS, STATUSES, type Status } from "./stages";
+
+/** The statuses each view holds; All and Archived hold every one. */
+export const VIEW_STATUSES: Partial<Record<KyuuView, readonly Status[]>> = {
+	queue: ["sourced", "drafted"],
+	waiting: ["applied"],
+	active: IN_PROGRESS,
+	closed: CLOSED,
+};
 
 export interface RawKyuuSearchParams {
 	view?: string;
 	source?: string;
 	method?: string;
+	status?: string;
 	from?: string;
 	to?: string;
 	q?: string;
@@ -25,6 +35,7 @@ export interface KyuuFilters {
 	view: KyuuView;
 	source?: string;
 	method?: KyuuApplyMethod;
+	status?: Status;
 	from?: string;
 	to?: string;
 	q?: string;
@@ -37,10 +48,14 @@ export function parseKyuuFilters(raw: RawKyuuSearchParams): KyuuFilters {
 	const method = (kyuuApplyMethodValues as readonly string[]).includes(raw.method ?? "")
 		? (raw.method as KyuuApplyMethod)
 		: undefined;
+	const status = (STATUSES as readonly string[]).includes(raw.status ?? "")
+		? (raw.status as Status)
+		: undefined;
 	return {
 		view,
 		source: raw.source || undefined,
 		method,
+		status,
 		from: raw.from && ISO_DATE.test(raw.from) ? raw.from : undefined,
 		to: raw.to && ISO_DATE.test(raw.to) ? raw.to : undefined,
 		q: raw.q?.trim() || undefined,
@@ -58,7 +73,7 @@ export function parseKyuuSort(raw: RawKyuuSearchParams) {
 
 /** Narrowing filters beyond the view: the "Clear" chip and the empty state read it. */
 export function hasActiveKyuuFilters(f: KyuuFilters): boolean {
-	return Boolean(f.source || f.method || f.from || f.to || f.q);
+	return Boolean(f.source || f.method || f.status || f.from || f.to || f.q);
 }
 
 // One page of the table. The page is resent after every inline edit, and on phones a few
