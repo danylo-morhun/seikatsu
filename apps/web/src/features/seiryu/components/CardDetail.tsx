@@ -3,7 +3,6 @@
 import {
 	Checkbox,
 	cn,
-	Input,
 	Label,
 	Select,
 	SelectContent,
@@ -16,6 +15,7 @@ import { QuietAdd } from "@/components/QuietAdd";
 import { ChecklistSection } from "@/features/seiryu/components/ChecklistSection";
 import { DueDateChip } from "@/features/seiryu/components/DueDateChip";
 import { LabelPicker } from "@/features/seiryu/components/LabelPicker";
+import { PickerInput } from "@/features/seiryu/components/PickerInput";
 import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
 import { PRIORITIES, PRIORITY_CONFIG, type Priority } from "@/features/seiryu/lib/constants";
 import { DAY_START, type Due, nextDue, REMIND_OPTIONS, TIME } from "@/features/seiryu/lib/reminder";
@@ -162,38 +162,25 @@ export function CardDetail({
 							)}
 						</div>
 						<div className="flex gap-2">
-							<Input
+							<PickerInput
 								id={`${id}-due`}
 								type="date"
 								aria-label="Due date"
 								readOnly={readOnly}
 								className="min-w-0 flex-[3]"
-								// Uncontrolled while typing: a half-typed date reads as "" and must not clear it.
-								key={card.dueDate ?? "none"}
-								defaultValue={card.dueDate ?? ""}
-								onChange={(e) => {
-									const value = e.target.value;
-									if (DATE.test(value) && value !== card.dueDate) saveDue({ dueDate: value });
-								}}
-								onBlur={(e) => {
-									if (!e.target.value && card.dueDate) saveDue({ dueDate: null });
-								}}
+								value={card.dueDate}
+								valid={DATE}
+								onCommit={(dueDate) => saveDue({ dueDate })}
 							/>
-							<Input
+							<PickerInput
 								type="time"
 								aria-label="Due time"
 								readOnly={readOnly}
 								disabled={!card.dueDate}
 								className="min-w-0 flex-[2]"
-								key={`${card.dueDate ?? "none"}-${card.dueTime ?? "any"}`}
-								defaultValue={card.dueTime ?? ""}
-								onChange={(e) => {
-									const value = e.target.value;
-									if (TIME.test(value) && value !== card.dueTime) saveDue({ dueTime: value });
-								}}
-								onBlur={(e) => {
-									if (!e.target.value && card.dueTime) saveDue({ dueTime: null });
-								}}
+								value={card.dueTime}
+								valid={TIME}
+								onCommit={(dueTime) => saveDue({ dueTime })}
 							/>
 						</div>
 					</div>
