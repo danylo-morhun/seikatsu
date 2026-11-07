@@ -191,22 +191,6 @@ function ListSkeleton({ rows, bare = false }: { rows: number; bare?: boolean }) 
 	return bare ? <ul>{lines}</ul> : <ul className="inset-group lg:flex-1">{lines}</ul>;
 }
 
-export function FigureText({ value, label }: { value: string | null; label: string }) {
-	return (
-		<>
-			<span
-				className={cn(
-					"truncate font-figures text-sm font-semibold",
-					value == null && "text-muted-foreground/50",
-				)}
-			>
-				{value ?? "—"}
-			</span>
-			<span className="truncate text-[11px] text-muted-foreground">{label}</span>
-		</>
-	);
-}
-
 // ── What's waiting ────────────────────────────────────────────────────────────
 
 async function Waiting({ ws, today }: { ws: Workspace; today: string }) {
@@ -318,12 +302,7 @@ async function CarLine({ today }: { today: string }) {
 }
 
 /** The strip's one figure per app: short enough for a quarter of a phone. */
-export async function Figure({ href, ws, today }: { href: AppHref; ws: Workspace; today: string }) {
-	const [value, label] = await figureOf(href, ws, today);
-	return <FigureText value={value} label={label} />;
-}
-
-async function figureOf(
+export async function figureOf(
 	href: AppHref,
 	ws: Workspace,
 	today: string,
