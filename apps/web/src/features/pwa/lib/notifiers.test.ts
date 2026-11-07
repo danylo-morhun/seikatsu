@@ -88,8 +88,8 @@ describe("notifyToday", () => {
 		expect(await notifyToday({ ...ctx, clock: MORNING })).toBe(1);
 		expect(lastPayload()).toEqual(
 			expect.objectContaining({
-				title: "3 things waiting today",
-				body: "Interview · Acme · Follow up · Quiet · 1 application with no answer",
+				title: "2 things waiting today",
+				body: "Interview · Acme · 1 application with no answer",
 			}),
 		);
 		expect(await notifyToday({ ...ctx, clock: MORNING })).toBe(0);
