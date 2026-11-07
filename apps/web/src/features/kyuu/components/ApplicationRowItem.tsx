@@ -24,13 +24,10 @@ import { StatusMark } from "./StatusMark";
 export const TABLE_GRID =
 	"grid grid-cols-[minmax(0,1fr)_auto_2.5rem] items-center gap-x-4 sm:grid-cols-[5rem_minmax(0,1fr)_auto_2.5rem] md:grid-cols-[5rem_minmax(0,1.1fr)_minmax(0,1fr)_3.5rem_7rem_11rem_2.5rem]";
 
-/** What follows the status: the booked call, or how long it has waited (and a nudge due). */
+/** What follows the status: the booked call, or how long it has waited. */
 export function statusDetail(row: ApplicationRow, today: string): string | undefined {
 	if (row.next?.date) return formatWhen(row.next.date, row.next.time, today);
-	if (row.waiting)
-		return row.waiting.due === "follow_up"
-			? `${formatAge(row.waiting.days)} · follow up`
-			: formatAge(row.waiting.days);
+	if (row.waiting) return formatAge(row.waiting.days);
 	return undefined;
 }
 

@@ -1,5 +1,5 @@
 // What the job search waits on today, read without a session (Today, Week and the morning
-// push share it): applications to send, follow-ups due, calls booked, quiet ones to close
+// push share it): applications to send, calls booked, quiet ones to close
 // as ghosted, and mail Gemini wasn't sure about. Same rules as the table (lib/stages).
 
 import {
@@ -25,7 +25,6 @@ export type JobCall = JobRef & {
 export type JobsAgenda = {
 	/** Sourced or drafted, waiting to be sent by hand. */
 	toSend: number;
-	followUps: JobRef[];
 	/** Screenings and interviews today and tomorrow, soonest first. */
 	calls: JobCall[];
 	/** Quiet long enough to close as ghosted. */
@@ -55,7 +54,6 @@ export async function readJobsAgenda(workspaceId: string, today: string): Promis
 	]);
 	const agenda: JobsAgenda = {
 		toSend: 0,
-		followUps: [],
 		calls: [],
 		ghostIds: [],
 		mailReview: mail?.n ?? 0,
@@ -107,7 +105,6 @@ export async function readJobsAgenda(workspaceId: string, today: string): Promis
 			},
 			today,
 		)?.due;
-		if (due === "follow_up") agenda.followUps.push({ id: app.id, company: app.company });
 		if (due === "ghost") agenda.ghostIds.push(app.id);
 	}
 	agenda.calls.sort(

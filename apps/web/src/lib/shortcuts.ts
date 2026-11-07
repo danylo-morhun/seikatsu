@@ -150,7 +150,6 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 				{ keys: ["X"], label: "Mark sent (to send)" },
 				{ keys: ["S"], label: "Book a screening (on its page)" },
 				{ keys: ["I"], label: "Book an interview (on its page)" },
-				{ keys: ["F"], label: "Followed up (waiting)" },
 				{ keys: ["G"], label: "No answer, close as ghosted (waiting)" },
 				{ keys: ["R"], label: "Rejected" },
 				{ keys: ["A"], label: "Archive or restore" },

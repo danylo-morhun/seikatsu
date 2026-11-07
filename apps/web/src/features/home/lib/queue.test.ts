@@ -5,7 +5,7 @@ const TODAY = "2026-11-03";
 
 const empty: QueueData = { money: null, wants: null, cards: null, jobs: null, car: null };
 
-const noJobs = { toSend: 0, followUps: [], calls: [], ghostIds: [], mailReview: 0 };
+const noJobs = { toSend: 0, calls: [], ghostIds: [], mailReview: 0 };
 const noMoney = { captures: 0, uncategorized: 0, funds: [] };
 
 const card = (id: string, dueDate: string, doneColumnId: string | null = "col-done") => ({
@@ -100,7 +100,7 @@ describe("buildQueue", () => {
 		expect(soon).toMatchObject({ tone: "due", note: "Hyundai i30 · in 600 km" });
 	});
 
-	it("brings Kyuu's calls, follow-ups and mail to check", () => {
+	it("brings Kyuu's calls and mail to check", () => {
 		const queue = buildQueue(
 			{
 				...empty,
@@ -110,7 +110,6 @@ describe("buildQueue", () => {
 						{ id: "c1", company: "Acme", kind: "interview", date: TODAY, time: "14:30" },
 						{ id: "c2", company: "Initech", kind: "screening", date: "2026-11-04", time: null },
 					],
-					followUps: [{ id: "f1", company: "Globex" }],
 					mailReview: 2,
 				},
 			},
@@ -119,11 +118,9 @@ describe("buildQueue", () => {
 		expect(queue.map((q) => q.title)).toEqual([
 			"Interview · Acme",
 			"2 answers from mail to check",
-			"Follow up · Globex",
 			"Screening · Initech",
 		]);
 		expect(queue[0].note).toBe("Today at 14:30");
-		expect(queue[2].act).toEqual({ kind: "followUp", id: "f1", company: "Globex" });
 	});
 
 	it("asks for a fund's instalment and the bank's loose payments", () => {

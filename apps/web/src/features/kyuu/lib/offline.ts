@@ -5,7 +5,6 @@ import type { OfflineOps, Op } from "@/features/pwa/lib/ops";
 import { runOrQueue } from "@/features/pwa/lib/run";
 import {
 	type EventInput,
-	followUp,
 	ghostApplications,
 	logEvent,
 	setArchived,
@@ -27,14 +26,6 @@ export function changeStatus(app: AppRef, status: Status) {
 			const result = await setStatus(app.id, status, on);
 			return "error" in result ? result : { success: true };
 		},
-	);
-}
-
-/** Its id and day are made here, so a late sync logs it once, on the day it was sent. */
-export function logFollowUp(app: AppRef) {
-	const args = { applicationId: app.id, id: crypto.randomUUID(), date: localToday() };
-	return runOrQueue("kyuu.followUp", args, `${app.company} · followed up`, () =>
-		followUp(app.id, { id: args.id, date: args.date }),
 	);
 }
 

@@ -17,7 +17,7 @@ export const shellTools = [
 		name: "today",
 		title: "Today",
 		description:
-			"What waits on the user today across every app, as the Today page lists it: overdue first, then due, then info (cards, car, money, wants to decide, job follow-ups, goals). Also today's habits and whether each is ticked. Start here for 'what do I have to do'.",
+			"What waits on the user today across every app, as the Today page lists it: overdue first, then due, then info (cards, car, money, wants to decide, job applications to close, goals). Also today's habits and whether each is ticked. Start here for 'what do I have to do'.",
 		input: {},
 		run: async (_args, { ws, today }) => {
 			const fmt = (n: number, c = ws.baseCurrency) => money(n, c);

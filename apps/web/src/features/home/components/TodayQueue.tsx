@@ -18,7 +18,7 @@ import { keepWant, releaseWant } from "@/features/hoshii/lib/decide";
 import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTransactionModal";
 import type { FundDue } from "@/features/kuroji/lib/agenda";
 import type { AddTransactionFormValues } from "@/features/kuroji/lib/transaction-schema";
-import { ghostAll, ghostedText, logFollowUp } from "@/features/kyuu/lib/offline";
+import { ghostAll, ghostedText } from "@/features/kyuu/lib/offline";
 import { QUEUED_TOAST } from "@/features/pwa/lib/run";
 import { finishCard } from "@/features/seiryu/lib/finish";
 import { APPS_CONFIG } from "@/lib/app-themes";
@@ -239,24 +239,6 @@ function QueueRow({
 				</div>
 			)}
 			{act.kind === "ghost" && <GhostAll ids={act.ids} onDone={(run) => settle(item.key, run)} />}
-			{act.kind === "followUp" && (
-				<Button
-					variant="outline"
-					size="sm"
-					className="shrink-0"
-					aria-label={`Followed up: ${act.company}`}
-					onClick={() =>
-						settle(item.key, async () => {
-							const result = await logFollowUp({ id: act.id, company: act.company });
-							if ("queued" in result) toast(QUEUED_TOAST);
-							else if ("success" in result) toast("Follow-up logged: the clock restarts");
-							return result;
-						})
-					}
-				>
-					Followed up
-				</Button>
-			)}
 			{act.kind === "fund" && workspaceId && (
 				<FundTransfer
 					fund={act.fund}

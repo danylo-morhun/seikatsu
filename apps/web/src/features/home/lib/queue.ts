@@ -18,7 +18,6 @@ export type QueueAct =
 	| { kind: "done"; cardId: string; columnId: string; from: { columnId: string; position: string } }
 	| { kind: "decide"; itemId: string; base: number | null; currency: string }
 	| { kind: "ghost"; ids: string[] }
-	| { kind: "followUp"; id: string; company: string }
 	| { kind: "fund"; fund: FundDue }
 	| { kind: "open" };
 
@@ -156,27 +155,6 @@ function jobItems(jobs: JobsAgenda, today: string): QueueItem[] {
 			tone: "due",
 			act: { kind: "open" },
 		});
-	if (jobs.followUps.length > APART)
-		items.push({
-			key: "kyuu:follow",
-			app: "/kyuu",
-			title: `${plural(jobs.followUps.length, "follow-up")} due`,
-			note: "A week with no answer: time to write again",
-			href: "/kyuu?view=waiting",
-			tone: "due",
-			act: { kind: "open" },
-		});
-	else
-		for (const app of jobs.followUps)
-			items.push({
-				key: `kyuu:follow:${app.id}`,
-				app: "/kyuu",
-				title: `Follow up · ${app.company}`,
-				note: "A week with no answer",
-				href: `/kyuu/${app.id}`,
-				tone: "due",
-				act: { kind: "followUp", id: app.id, company: app.company },
-			});
 	if (jobs.ghostIds.length > 0)
 		items.push({
 			key: "kyuu:ghost",

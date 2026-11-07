@@ -55,7 +55,7 @@ export function ConsentCard({
 							<Label htmlFor="consent-write" className="block cursor-pointer font-normal">
 								<span className="block font-medium">Make changes</span>
 								<span className="text-muted-foreground block text-xs">
-									Add transactions, cards, wants; tick habits; log reading, mileage, follow-ups.
+									Add transactions, cards, wants; tick habits; log reading, mileage, job events.
 									Never deletes.
 								</span>
 							</Label>
