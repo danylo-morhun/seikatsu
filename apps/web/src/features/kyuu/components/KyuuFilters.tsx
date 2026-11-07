@@ -8,10 +8,23 @@ import { useEffect, useRef, useState } from "react";
 import { startNavigationProgress } from "@/components/NavigationProgress";
 import { pageKey } from "@/lib/capture-shortcut";
 import { CARRY_PARAMS } from "../lib/carry-params";
+import { STATUS_CONFIG, type Status } from "../lib/stages";
 import { KyuuDateRangeFilter } from "./KyuuDateRangeFilter";
 
-/** Search, source, how it was sent, when: shared by All and Stats through the URL. */
-export function KyuuFilters({ sources }: { sources: string[] }) {
+/** The table's own filters, cleared with the shared ones but not carried to Stats. */
+const OWN_PARAMS = ["status"] as const;
+
+/**
+ * Search, source, how it was sent, when: shared by All and Stats through the URL.
+ * `statuses` (All only) adds a status pick among the view's statuses.
+ */
+export function KyuuFilters({
+	sources,
+	statuses,
+}: {
+	sources: string[];
+	statuses?: readonly Status[];
+}) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
@@ -59,11 +72,12 @@ export function KyuuFilters({ sources }: { sources: string[] }) {
 
 	const source = searchParams.get("source") ?? "all";
 	const method = searchParams.get("method") ?? "all";
-	const filtered = CARRY_PARAMS.some((k) => searchParams.get(k));
+	const status = searchParams.get("status") ?? "all";
+	const filtered = [...CARRY_PARAMS, ...OWN_PARAMS].some((k) => searchParams.get(k));
 
 	function clearAll() {
 		const params = new URLSearchParams(searchParams.toString());
-		for (const k of [...CARRY_PARAMS, "page"]) params.delete(k);
+		for (const k of [...CARRY_PARAMS, ...OWN_PARAMS, "page"]) params.delete(k);
 		setQuery("");
 		pushed.current = "";
 		const qs = params.toString();
@@ -92,6 +106,22 @@ export function KyuuFilters({ sources }: { sources: string[] }) {
 					}}
 				/>
 			</div>
+
+			{statuses && statuses.length > 1 && (
+				<Select value={status} onValueChange={(v) => setParam("status", v === "all" ? null : v)}>
+					<SelectTrigger aria-label="Status" className="w-36">
+						<SelectValue>{STATUS_CONFIG[status as Status]?.label ?? "Any status"}</SelectValue>
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">Any status</SelectItem>
+						{statuses.map((s) => (
+							<SelectItem key={s} value={s}>
+								{STATUS_CONFIG[s].label}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			)}
 
 			{sources.length > 0 && (
 				<Select value={source} onValueChange={(v) => setParam("source", v === "all" ? null : v)}>
