@@ -5,7 +5,7 @@ import {
 	getStats,
 	getViewCounts,
 } from "@/features/kyuu/actions/applications";
-import { followUp, logEvent, setArchived, setStatus } from "@/features/kyuu/actions/progress";
+import { logEvent, setArchived, setStatus } from "@/features/kyuu/actions/progress";
 import { KYUU_VIEWS } from "@/features/kyuu/lib/kyuu-schemas";
 import { EVENT_KINDS, STATUSES } from "@/features/kyuu/lib/stages";
 import { day } from "./shell";
@@ -94,16 +94,6 @@ export const kyuuTools = [
 		idempotent: true,
 		run: ({ applicationId, requestId, ...event }) =>
 			logEvent(applicationId, { id: requestId, ...event }),
-	}),
-	tool({
-		name: "kyuu_follow_up",
-		title: "Followed up",
-		description:
-			"Record that the user followed up on an application today: restarts its waiting clock.",
-		input: { applicationId: id, requestId: id.optional() },
-		write: true,
-		idempotent: true,
-		run: ({ applicationId, requestId }) => followUp(applicationId, { id: requestId }),
 	}),
 	tool({
 		name: "kyuu_archive",

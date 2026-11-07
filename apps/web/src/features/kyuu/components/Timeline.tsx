@@ -17,15 +17,7 @@ import { STATUS_LOOK } from "./StatusMark";
 const FAILED = { error: "Couldn't save. Check your connection." } as const;
 
 /** What can be logged, in the order it tends to happen. */
-const KINDS: EventKind[] = [
-	"screening",
-	"interview",
-	"follow_up",
-	"offer",
-	"rejected",
-	"withdrawn",
-	"ghosted",
-];
+const KINDS: EventKind[] = ["screening", "interview", "offer", "rejected", "withdrawn", "ghosted"];
 /** Booked ahead, with a time. */
 const BOOKABLE: readonly EventKind[] = ["screening", "interview"];
 

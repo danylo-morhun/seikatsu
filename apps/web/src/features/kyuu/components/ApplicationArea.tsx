@@ -7,7 +7,6 @@ import {
 	Cancel01Icon,
 	Delete01Icon,
 	LinkSquare02Icon,
-	Mail01Icon,
 	SentIcon,
 	SidebarRightIcon,
 	UserMultipleIcon,
@@ -47,7 +46,6 @@ import {
 	changeStatus,
 	ghostAll,
 	ghostedText,
-	logFollowUp,
 	queuedPatches,
 } from "../lib/offline";
 import { STATUS_CONFIG, STATUSES, type Status } from "../lib/stages";
@@ -67,7 +65,6 @@ interface AreaValue {
 
 export interface RowActions {
 	setStatus: (id: string, status: Status) => void;
-	followUp: (id: string) => void;
 	ghost: (ids: string[]) => void;
 	archive: (id: string, archived: boolean) => void;
 }
@@ -143,12 +140,6 @@ export function ApplicationArea({
 			run({ id, changes: { status, waiting: null } }, () =>
 				changeStatus(byId.get(id) ?? { id, company: "Application" }, status),
 			),
-		followUp: (id) =>
-			run({ id, changes: { waiting: null } }, async () => {
-				const result = await logFollowUp(byId.get(id) ?? { id, company: "Application" });
-				if ("success" in result) toast("Follow-up logged: the clock restarts");
-				return result;
-			}),
 		ghost: (ids) =>
 			run(
 				ids.map((id) => ({ id, changes: { status: "ghosted" as const, waiting: null } })),
@@ -201,7 +192,6 @@ export function ApplicationArea({
 		else if (key === "i") go(`/kyuu/${id}?log=interview`);
 		else if (key === "r") actions.setStatus(id, "rejected");
 		else if (key === "g" && row.status === "applied") actions.ghost([id]);
-		else if (key === "f" && row.status === "applied") actions.followUp(id);
 		else if (key === "a") actions.archive(id, !row.archived);
 		else if (key === ".") openContextMenu(el);
 		else if (key === "delete") requestDeleteApplication({ id, company: row.company });
@@ -296,18 +286,11 @@ function RowMenu({
 				<ContextMenuShortcut>I</ContextMenuShortcut>
 			</ContextMenuItem>
 			{row.status === "applied" && (
-				<>
-					<ContextMenuItem onSelect={() => actions.followUp(id)}>
-						<HugeiconsIcon icon={Mail01Icon} />
-						Followed up
-						<ContextMenuShortcut>F</ContextMenuShortcut>
-					</ContextMenuItem>
-					<ContextMenuItem onSelect={() => actions.ghost([id])}>
-						<HugeiconsIcon icon={ViewOffSlashIcon} />
-						No answer, close
-						<ContextMenuShortcut>G</ContextMenuShortcut>
-					</ContextMenuItem>
-				</>
+				<ContextMenuItem onSelect={() => actions.ghost([id])}>
+					<HugeiconsIcon icon={ViewOffSlashIcon} />
+					No answer, close
+					<ContextMenuShortcut>G</ContextMenuShortcut>
+				</ContextMenuItem>
 			)}
 			<ContextMenuItem onSelect={() => actions.setStatus(id, "rejected")}>
 				<HugeiconsIcon icon={Cancel01Icon} />

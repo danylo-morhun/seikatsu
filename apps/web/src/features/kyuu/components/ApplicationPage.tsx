@@ -32,7 +32,7 @@ import { COUNTRY_CODES, countryName, parseCountry } from "../lib/country";
 import { requestDeleteApplication } from "../lib/events";
 import { formatAge } from "../lib/format";
 import type { ApplicationPatch } from "../lib/kyuu-schemas";
-import { archiveApplication, logFollowUp, changeStatus as sendStatus } from "../lib/offline";
+import { archiveApplication, changeStatus as sendStatus } from "../lib/offline";
 import { type EventKind, STATUSES, type Status } from "../lib/stages";
 import type { ApplicationDetail } from "../lib/types";
 import { FIELD_TEXTAREA } from "./ApplicationDialog";
@@ -188,15 +188,6 @@ export function ApplicationPage({
 								</Button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end" className="w-48">
-								{status === "applied" && (
-									<DropdownMenuItem
-										onClick={() =>
-											run(() => logFollowUp(app), "Follow-up logged: the clock restarts")
-										}
-									>
-										Followed up
-									</DropdownMenuItem>
-								)}
 								<DropdownMenuItem onClick={() => setComposer("interview")}>
 									Book an interview
 								</DropdownMenuItem>
@@ -244,11 +235,9 @@ export function ApplicationPage({
 					<p className="mt-3 text-sm text-muted-foreground">
 						{waiting.due === "ghost"
 							? `No answer for ${formatAge(waiting.days)}. Time to let it go?`
-							: waiting.due === "follow_up"
-								? `Sent ${formatAge(waiting.days)} ago with no answer: worth a nudge.`
-								: waiting.days === 0
-									? "Sent today."
-									: `Sent ${formatAge(waiting.days)} ago.`}
+							: waiting.days === 0
+								? "Sent today."
+								: `Sent ${formatAge(waiting.days)} ago.`}
 					</p>
 				)}
 			</header>

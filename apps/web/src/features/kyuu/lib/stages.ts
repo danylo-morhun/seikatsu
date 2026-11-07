@@ -55,9 +55,7 @@ export const PRE_APPLICATION: readonly Status[] = ["sourced", "drafted"];
 export const IN_PROGRESS: readonly Status[] = ["hr_screening", "technical_interview", "offer"];
 export const CLOSED: readonly Status[] = ["rejected", "withdrawn", "ghosted"];
 
-/** Follow up on a sent application after this many days without an answer… */
-export const FOLLOW_UP_DAYS = 7;
-/** …and call it ghosted after this many. */
+/** Call a sent application ghosted after this many days without an answer. */
 export const GHOST_DAYS = 14;
 
 /** The status an event moves an application to, if any. */
@@ -136,13 +134,13 @@ export interface WaitingInput {
 export type Waiting = {
 	/** Days since it was sent. */
 	days: number;
-	/** What's due: a nudge, or closing it as ghosted. */
-	due: "follow_up" | "ghost" | null;
+	/** What's due: closing it as ghosted. */
+	due: "ghost" | null;
 };
 
 /**
  * For a sent application with no answer: how long it's been, and what's due. Else null.
- * The clock runs from the last touch: a follow-up gives it another GHOST_DAYS.
+ * The clock runs from the last touch: a logged follow-up gives it another GHOST_DAYS.
  */
 export function waiting(app: WaitingInput, today: string): Waiting | null {
 	if (app.status !== "applied" || app.answered) return null;
@@ -150,6 +148,5 @@ export function waiting(app: WaitingInput, today: string): Waiting | null {
 	const followedUp = app.followedUpOn != null && app.followedUpOn >= app.dateApplied;
 	const quiet = followedUp ? Math.max(0, daysBetween(app.followedUpOn as string, today)) : days;
 	if (quiet >= GHOST_DAYS) return { days, due: "ghost" };
-	if (!followedUp && quiet >= FOLLOW_UP_DAYS) return { days, due: "follow_up" };
 	return { days, due: null };
 }

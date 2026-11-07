@@ -45,15 +45,15 @@ describe("waiting", () => {
 		});
 	});
 
-	it("asks for a follow-up after a week", () => {
-		expect(waiting({ ...base, dateApplied: "2026-10-09" }, "2026-10-16")?.due).toBe("follow_up");
+	it("asks nothing in the second week", () => {
+		expect(waiting({ ...base, dateApplied: "2026-10-09" }, "2026-10-16")?.due).toBeNull();
 	});
 
 	it("calls it ghosted after two weeks", () => {
 		expect(waiting({ ...base, dateApplied: "2026-10-02" }, "2026-10-16")?.due).toBe("ghost");
 	});
 
-	it("restarts the clock after a follow-up", () => {
+	it("restarts the clock after a logged follow-up", () => {
 		const app = { ...base, dateApplied: "2026-10-01", followedUpOn: "2026-10-08" };
 		expect(waiting(app, "2026-10-16")).toEqual({ days: 15, due: null });
 		expect(waiting(app, "2026-10-22")?.due).toBe("ghost");
