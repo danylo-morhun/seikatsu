@@ -223,6 +223,7 @@ test("a due time turns a reminder on; T and D set the day", async ({ page }) => 
 	await card.click();
 	const sheet = page.getByRole("dialog");
 	await sheet.getByLabel("Due time").fill("15:30");
+	await sheet.getByLabel("Due time").blur();
 	await expect
 		.poll(async () => {
 			const row = await cardRow();
