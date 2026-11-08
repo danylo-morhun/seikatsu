@@ -1,15 +1,15 @@
 name: Deploy
 
-# Production deploy after CI passes on main (or by hand from the Actions tab).
+# Production deploy in batches: once a night, whatever is on main since the live
+# deployment, if CI passed on it. Every deploy empties Vercel's ISR cache, so
+# fewer deploys = fewer ISR writes. Urgent fix: run it by hand from the Actions tab.
 # Migrations run only when packages/db/drizzle changed since the live deployment,
 # and only after approval in the `production-migrations` environment.
 # Builds run on Vercel with the project's own env; the job only triggers them.
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
+  schedule:
+    - cron: "0 2 * * *" # 03:00 Warsaw in winter, 04:00 in summer
   workflow_dispatch: {}
 
 concurrency:
@@ -18,6 +18,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
 
 env:
   VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
@@ -28,29 +29,51 @@ jobs:
   plan:
     name: Plan
     # Gated until Vercel git auto-deploy for main is switched off (vars.DEPLOY_ENABLED)
-    if: >-
-      vars.DEPLOY_ENABLED == 'true' && (github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'))
+    if: vars.DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.target.outputs.sha }}
+      deploy: ${{ steps.target.outputs.deploy }}
       migrations: ${{ steps.diff.outputs.migrations }}
     steps:
-      - id: target
-        run: echo "sha=${{ github.event.workflow_run.head_sha || github.sha }}" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7
         with:
-          ref: ${{ steps.target.outputs.sha }}
           fetch-depth: 0
-      - name: Diff migrations against the live deployment
-        id: diff
+      # Night run: skip when main has nothing new or CI hasn't passed on it yet
+      # (the next night picks it up). By hand: always deploy, but only a green commit.
+      - name: Decide what to deploy
+        id: target
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
+          sha=$(git rev-parse HEAD)
           live=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
             "https://api.vercel.com/v13/deployments/${SITE_URL#https://}?teamId=$VERCEL_ORG_ID" \
             | jq -r '.meta.githubCommitSha // .meta.gitCommitSha // empty')
-          echo "Live deployment: ${live:-unknown}"
+          echo "Live deployment: ${live:-unknown}, main: $sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "live=$live" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_EVENT_NAME" = schedule ] && [ "$live" = "$sha" ]; then
+            echo "Nothing new since the live deployment"
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          ci=$(gh run list -R "$GITHUB_REPOSITORY" -w CI -c "$sha" -e push -L 1 --json conclusion -q '.[0].conclusion // empty')
+          if [ "$ci" != success ]; then
+            echo "::warning::CI on $sha is '${ci:-not run}', not deploying"
+            [ "$GITHUB_EVENT_NAME" = schedule ] || exit 1
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git log --oneline "${live:-HEAD~1}..HEAD" 2>/dev/null || true
+          echo "deploy=true" >> "$GITHUB_OUTPUT"
+      - name: Diff migrations against the live deployment
+        id: diff
+        if: steps.target.outputs.deploy == 'true'
+        env:
+          live: ${{ steps.target.outputs.live }}
+        run: |
           if [ -z "$live" ] || ! git cat-file -e "$live^{commit}" 2>/dev/null; then
             echo "Live commit unknown here — treating migrations as pending"
             echo "migrations=true" >> "$GITHUB_OUTPUT"
@@ -78,7 +101,7 @@ jobs:
   deploy:
     name: Deploy to Vercel
     needs: [plan, migrate]
-    if: always() && needs.plan.result == 'success' && (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
+    if: always() && needs.plan.outputs.deploy == 'true' && (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
     runs-on: ubuntu-latest
     environment:
       name: Production
