@@ -1,49 +1,79 @@
 # seikatsu
 
-Personal life-OS: seven small apps behind one auth shell, one Postgres, one deploy.
-Kuroji · Seiryu · Tsundoku · Keizoku · Kyū · Aisha · Hoshii.
+personal web app for finances, tasks, books, habits, job search, car care and a wishlist.
+it works on phone and desktop, installs as a PWA and keeps working offline.
+an MCP server exposes the same data to AI assistants.
 
-[seikatsu.danylomorhun.com](https://seikatsu.danylomorhun.com)
+live at [seikatsu.danylomorhun.com](https://seikatsu.danylomorhun.com).
 
-## Layout
+## apps
 
-```
-apps/web          Next.js 16 (App Router, RSC), one feature slice per app
-  src/features/<app>/{actions,components,lib}
-  src/app/api/cron  daily jobs: recurring, bank sync, notifications
-  public/sw.js      service worker: offline shell + push
-packages/db       Drizzle schema + SQL migrations (Neon Postgres)
-packages/ui       shadcn/Radix primitives, Tailwind 4 tokens
-```
+seven small apps share one login, one database and one deploy.
 
-## Design notes
+| app      | what it does                                                    |
+| :------- | :-------------------------------------------------------------- |
+| kuroji   | double-entry bookkeeping with multiple currencies and bank sync |
+| seiryu   | kanban board with projects, checklists and labels               |
+| tsundoku | book library, reading sessions, shelves and quotes              |
+| keizoku  | daily habits and streaks                                        |
+| kyuu     | job applications and their stages                               |
+| aisha    | car mileage, maintenance schedule and service history           |
+| hoshii   | wishlist with a waiting period before buying                    |
 
-- **Server-first.** Pages are server components that read the DB directly; mutations are
-  server actions that revalidate. No client cache, no global store; URL params hold UI state.
-- **Ownership on every call.** Each action checks session → workspace → every foreign ID it receives.
-- **Double-entry ledger.** A transaction is ≥ 2 entries summing to zero in base currency, written atomically;
-  rounding goes to the last entry. Historical FX rates are cached per day.
-- **Idempotent imports.** PSD2 bank sync and statement parsing share one pipeline keyed by external ID.
-- **Offline writes.** Mutations go through an outbox with a replay registry; queued ops are replay-safe.
-- **Ordering.** Fractional-index keys: a drag updates one row.
-- **Time zones.** The browser zone rides in a cookie, so "today" is computed on the server.
+## stack
 
-## Pipeline
+Next.js 16 with App Router and server components, Drizzle, Neon Postgres, Auth.js,
+Tailwind 4, shadcn/ui. hosted on Vercel.
+
+## structure
 
 ```
-PR   → Biome + tsc → Vitest (PGlite, real migrations) + next build → Playwright on the build
-main → migrations (only if changed, manual approval) → Vercel prod (fra1) → smoke → auto-rollback
+apps/web       Next.js app, one folder per app in src/features
+packages/db    Drizzle schema and SQL migrations
+packages/ui    shared UI components and Tailwind tokens
 ```
 
-## Run locally
+## how it works
 
-Node 24, pnpm 10.
+pages are server components that read the database directly, and changes go through
+server actions. there is no client cache or global store. UI state lives in the URL.
+every action checks that the session owns the workspace and every ID it receives.
+
+each kuroji transaction has at least two entries that sum to zero in the base currency
+and is written in one database transaction. exchange rates are cached per day.
+bank sync (PSD2) and statement imports use the same pipeline and skip records
+that were already imported.
+
+changes made offline are queued and sent again when the connection is back.
+each queued change is safe to send twice.
+
+drag and drop updates one row, using fractional index keys. the browser time zone
+is stored in a cookie, so the server knows what "today" is.
+
+## CI
+
+| when         | what runs                                                                     |
+| :----------- | :---------------------------------------------------------------------------- |
+| pull request | Biome, type check, Vitest on PGlite with real migrations, build, Playwright   |
+| every night  | deploy of new commits on main: migrations, Vercel build, smoke test, rollback |
+| every night  | encrypted database backup, restored into a temporary Postgres as a check      |
+
+migrations run only when they changed and need manual approval.
+an urgent fix can be deployed by hand from the Actions tab.
+
+## run locally
+
+requires Node 24 and pnpm 10.
 
 ```bash
 pnpm install
 cp .env.example apps/web/.env.local
 DATABASE_URL=... pnpm --filter @seikatsu/db db:migrate
-pnpm dev   # :3010
+pnpm dev
 ```
+
+the app runs on port 3010. `.env.example` lists every variable and where to get it.
+
+## license
 
 MIT
