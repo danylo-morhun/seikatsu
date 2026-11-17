@@ -176,7 +176,6 @@ function NameField({
 	};
 	return (
 		<input
-			// biome-ignore lint/a11y/noAutofocus: opened by the user's own click, to type at once
 			autoFocus
 			aria-label={label}
 			placeholder={placeholder}
