@@ -268,7 +268,9 @@ export const KanbanColumn = memo(function KanbanColumn({
 			</header>
 
 			<SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
-				<div className="-mx-1 flex min-h-24 flex-1 flex-col gap-2 overflow-y-auto px-1 pt-3 pb-2 [scrollbar-width:thin]">
+				{/* relative: the cards' sr-only text is absolute; without it, it escapes this clip and
+				    stretches the board's scroller, which then scrolls past the lanes. */}
+				<div className="relative -mx-1 flex min-h-24 flex-1 flex-col gap-2 overflow-y-auto px-1 pt-3 pb-2 [scrollbar-width:thin]">
 					{sortedCards.map((card) => (
 						<KanbanCard
 							key={card.clientKey ?? card.id}
