@@ -1,0 +1,2 @@
+ALTER TABLE "seiryu_cards" ADD COLUMN "blocked_by_id" uuid;--> statement-breakpoint
+ALTER TABLE "seiryu_cards" ADD CONSTRAINT "seiryu_cards_blocked_by_id_seiryu_cards_id_fk" FOREIGN KEY ("blocked_by_id") REFERENCES "public"."seiryu_cards"("id") ON DELETE set null ON UPDATE no action;

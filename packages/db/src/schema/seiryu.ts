@@ -114,6 +114,10 @@ export const seiryuCards = pgTable(
 		nextCardId: uuid("next_card_id").references((): AnyPgColumn => seiryuCards.id, {
 			onDelete: "set null",
 		}),
+		/** Waits on this card: shown as blocked until that one is done. Null = free to start. */
+		blockedById: uuid("blocked_by_id").references((): AnyPgColumn => seiryuCards.id, {
+			onDelete: "set null",
+		}),
 		/** The user's day it reached a finish column; null while open. Feeds the week's recap. */
 		doneOn: date("done_on"),
 		position: varchar("position", { length: 255 }).notNull(),
