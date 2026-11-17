@@ -83,6 +83,10 @@ export const createCardSchema = z.object({
 		.string()
 		.regex(/^([01]\d|2[0-3]):[0-5]\d$/)
 		.optional(),
+	/** Read from the title too ("BW: …", "#label", "!4"); these are what the device read. */
+	groupId: z.string().uuid().optional(),
+	labelIds: z.array(z.string().uuid()).max(20).optional(),
+	priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
 });
 
 export const updateCardSchema = z.object({
@@ -103,6 +107,8 @@ export const updateCardSchema = z.object({
 	repeatEvery: z.number().int().min(1).max(365).nullable().optional(),
 	repeatUnit: z.enum(["day", "week", "month", "year"]).nullable().optional(),
 	repeatFromDone: z.boolean().optional(),
+	/** A group of the card's own project; null = none. */
+	groupId: z.string().uuid().nullable().optional(),
 });
 
 export const snoozeCardSchema = z.object({
@@ -183,6 +189,23 @@ export const setCardLabelsSchema = z.object({
 	cardId: z.string().uuid(),
 	labelIds: z.array(z.string().uuid()),
 });
+
+// ─── Groups ──────────────────────────────────────────────────────────────────
+
+export const createGroupSchema = z.object({
+	/** Made on the device, so a replayed create lands once. */
+	id: z.string().uuid().optional(),
+	projectId: z.string().uuid(),
+	name: z.string().trim().min(1, "Name is required").max(60),
+});
+
+export const updateGroupSchema = z.object({
+	groupId: z.string().uuid(),
+	name: z.string().trim().min(1, "Name is required").max(60).optional(),
+	position: z.string().min(1).optional(),
+});
+
+export const deleteGroupSchema = z.object({ groupId: z.string().uuid() });
 
 export const restoreCardSchema = z.object({ cardId: z.string().uuid() });
 export const deleteCardSchema = z.object({ cardId: z.string().uuid() });

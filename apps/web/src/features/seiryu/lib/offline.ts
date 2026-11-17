@@ -16,6 +16,7 @@ import {
 	toggleChecklistItem,
 	updateChecklistItem,
 } from "@/features/seiryu/actions/checklist";
+import type { Priority } from "@/features/seiryu/lib/constants";
 import type { CardFieldUpdates } from "@/features/seiryu/lib/types";
 
 const quote = (title: string) => `“${title.length > 40 ? `${title.slice(0, 40)}…` : title}”`;
@@ -26,6 +27,7 @@ export function addCard(
 	projectId: string,
 	title: string,
 	due?: { dueDate: string; dueTime: string | null } | null,
+	sort?: { groupId: string | null; labelIds: string[]; priority: Priority | null },
 ) {
 	const args = {
 		id,
@@ -33,6 +35,9 @@ export function addCard(
 		projectId,
 		title,
 		...(due && { dueDate: due.dueDate, ...(due.dueTime && { dueTime: due.dueTime }) }),
+		...(sort?.groupId && { groupId: sort.groupId }),
+		...(sort?.labelIds.length && { labelIds: sort.labelIds }),
+		...(sort?.priority && { priority: sort.priority }),
 	};
 	return runOrQueue("seiryu.createCard", args, `New card ${quote(title)}`, async () => {
 		const result = await createCard(args);

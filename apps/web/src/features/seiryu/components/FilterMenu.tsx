@@ -20,6 +20,7 @@ import {
 	type DueFilter,
 	type Filters,
 	filterCount,
+	NO_FILTERS,
 } from "@/features/seiryu/lib/filters";
 import type { LabelData } from "@/features/seiryu/lib/types";
 
@@ -33,7 +34,8 @@ interface Props {
 
 /** One quiet "Filter" button; choices live in its menu, the applied ones show as chips. */
 export function FilterMenu({ filters, labels, onChange, open, onOpenChange }: Props) {
-	const count = filterCount(filters);
+	// The group is picked in the strip above the board, not in this menu.
+	const count = filterCount({ ...filters, group: "" });
 
 	function toggle<K extends "priorities" | "labelIds">(key: K, value: string) {
 		const current = filters[key];
@@ -163,7 +165,7 @@ export function FilterChips({ filters, labels, onChange }: Omit<Props, "open" | 
 				<li>
 					<button
 						type="button"
-						onClick={() => onChange({ priorities: [], labelIds: [], due: "" })}
+						onClick={() => onChange({ ...NO_FILTERS, group: filters.group })}
 						className="h-7 rounded-md px-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
 					>
 						Clear all

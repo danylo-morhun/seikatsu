@@ -47,11 +47,13 @@ import { NOTE_LINK } from "@/components/SettingsSection";
 import { usePendingOps } from "@/features/pwa/lib/use-outbox";
 import { deleteCard, restoreCard } from "@/features/seiryu/actions/cards";
 import { deleteColumn, reorderColumns, updateColumn } from "@/features/seiryu/actions/columns";
+import { createGroup, deleteGroup, updateGroup } from "@/features/seiryu/actions/groups";
 import { setCardLabels } from "@/features/seiryu/actions/labels";
 import { AddColumnButton } from "@/features/seiryu/components/AddColumnButton";
 import { type CardActions, CardMenuItems } from "@/features/seiryu/components/CardMenu";
 import { CardSheet } from "@/features/seiryu/components/CardSheet";
 import { FilterChips, FilterMenu } from "@/features/seiryu/components/FilterMenu";
+import { type GroupProgress, GroupStrip } from "@/features/seiryu/components/GroupStrip";
 import { freshCards, KanbanCardOverlay } from "@/features/seiryu/components/KanbanCard";
 import { KanbanColumn, KanbanColumnOverlay } from "@/features/seiryu/components/KanbanColumn";
 import { NewCardDialog } from "@/features/seiryu/components/NewCardDialog";
@@ -64,6 +66,7 @@ import {
 	applyFilters,
 	type Filters,
 	filterCount,
+	NO_FILTERS,
 	readFilters,
 	writeFilters,
 } from "@/features/seiryu/lib/filters";
@@ -71,6 +74,7 @@ import { finishCard } from "@/features/seiryu/lib/finish";
 import { addCard, placeCard, saveCard, shelveCard } from "@/features/seiryu/lib/offline";
 import { overlayCards } from "@/features/seiryu/lib/overlay";
 import { type ParsedDue, parseDue } from "@/features/seiryu/lib/parse-due";
+import { parseTitle } from "@/features/seiryu/lib/parse-title";
 import { type Due, newCardDue, nextDue } from "@/features/seiryu/lib/reminder";
 import { useServerState } from "@/features/seiryu/lib/server-state";
 import {
@@ -78,6 +82,7 @@ import {
 	type CardFieldUpdates,
 	type ColumnData,
 	type ColumnUpdates,
+	type GroupData,
 	isTempId,
 	type LabelData,
 	withCardUpdates,
@@ -90,6 +95,7 @@ interface Props {
 	columns: ColumnData[];
 	cards: CardData[];
 	projectLabels: LabelData[];
+	groups: GroupData[];
 	/** The user's calendar day (tz cookie), so "overdue" matches on server and client. */
 	today: string;
 	archived: ArchivedCardRow[];
@@ -117,6 +123,7 @@ export function KanbanBoard({
 	columns: serverColumns,
 	cards: serverCards,
 	projectLabels: serverLabels,
+	groups: serverGroups,
 	today,
 	archived,
 	archivedTotal,
@@ -144,6 +151,17 @@ export function KanbanBoard({
 		reset: resetCards,
 	} = useServerState(boardCards);
 	const { state: projectLabels, setState: setProjectLabels } = useServerState(serverLabels);
+	const {
+		state: groups,
+		setState: setGroups,
+		track: trackGroups,
+		reset: resetGroups,
+	} = useServerState(serverGroups);
+	const sortedGroups = useMemo(() => [...groups].sort(byPosition), [groups]);
+	const groupNames = useMemo(() => new Map(groups.map((g) => [g.id, g.name])), [groups]);
+	// Latest groups and labels for the add handler, which the memoized columns hold on to.
+	const sortingRef = useRef({ groups, labels: projectLabels });
+	sortingRef.current = { groups, labels: projectLabels };
 
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const [activeType, setActiveType] = useState<"column" | "card" | null>(null);
@@ -183,6 +201,8 @@ export function KanbanBoard({
 		if (!isFiltering) setLocalFilters(urlFilters);
 	}, [urlFilters, isFiltering]);
 	const isFiltered = filterCount(filters) > 0;
+	const filtersRef = useRef(filters);
+	filtersRef.current = filters;
 
 	function setFilters(next: Filters) {
 		setLocalFilters(next);
@@ -275,9 +295,13 @@ export function KanbanBoard({
 	// A day and time typed into the title go on the card ("Call the garage tomorrow 15:00").
 	// `due` comes from the new-card dialog, which shows what it read; undefined: read it here.
 	const handleAddCard = useCallback(
-		(columnId: string, text: string, due?: ParsedDue | null) => {
+		(columnId: string, text: string, due?: ParsedDue | null, groupId?: string | null) => {
 			const parsed = due === undefined ? parseDue(text, today) : due;
-			const title = parsed?.title ?? text;
+			// "BW: …", "#label", "!4" sort the card; the board's group takes the rest.
+			const sort = parseTitle(parsed?.title ?? text, sortingRef.current);
+			const shown = filtersRef.current.group;
+			sort.groupId ??= groupId === undefined ? (shown && shown !== "none" ? shown : null) : groupId;
+			const title = sort.title;
 			const last = cardsRef.current
 				.filter((c) => c.columnId === columnId)
 				.sort(byPosition)
@@ -291,10 +315,11 @@ export function KanbanBoard({
 				clientKey: tempId,
 				columnId,
 				projectId,
+				groupId: sort.groupId,
 				title,
 				description: null,
 				hasDescription: false,
-				priority: null,
+				priority: sort.priority,
 				...(parsed
 					? newCardDue(parsed.dueDate, parsed.dueTime)
 					: { dueDate: null, dueTime: null, remindMinutes: null }),
@@ -304,11 +329,11 @@ export function KanbanBoard({
 				movedAt: new Date().toISOString(),
 				position: generateKeyBetween(last?.position ?? null, null),
 				checklistItems: [],
-				labels: [],
+				labels: sortingRef.current.labels.filter((l) => sort.labelIds.includes(l.id)),
 			};
 			setCards((prev) => [...prev, temp]);
 
-			trackCards(addCard(id, columnId, projectId, title, parsed)).then((result) => {
+			trackCards(addCard(id, columnId, projectId, title, parsed, sort)).then((result) => {
 				if ("error" in result) {
 					toast.error(result.error);
 					setCards((prev) => prev.filter((c) => c.id !== tempId));
@@ -493,6 +518,58 @@ export function KanbanBoard({
 			() => toast.error("Couldn't copy the link"),
 		);
 	}
+
+	// Groups change at once and save behind; a failure puts the server's back.
+	function handleGroupCreate(name: string) {
+		if (groups.some((g) => g.name.toLowerCase() === name.toLowerCase())) return;
+		const id = crypto.randomUUID();
+		const position = generateKeyBetween(sortedGroups.at(-1)?.position ?? null, null);
+		setGroups((prev) => [...prev, { id, name, position }]);
+		trackGroups(createGroup({ id, projectId, name })).then((result) => {
+			if ("error" in result) {
+				toast.error(result.error);
+				resetGroups();
+			}
+		});
+	}
+
+	function handleGroupRename(groupId: string, name: string) {
+		setGroups((prev) => prev.map((g) => (g.id === groupId ? { ...g, name } : g)));
+		trackGroups(updateGroup({ groupId, name })).then((result) => {
+			if ("error" in result) {
+				toast.error(result.error);
+				resetGroups();
+			}
+		});
+	}
+
+	function handleGroupDelete(groupId: string) {
+		const group = groups.find((g) => g.id === groupId);
+		setGroups((prev) => prev.filter((g) => g.id !== groupId));
+		setCards((prev) => prev.map((c) => (c.groupId === groupId ? { ...c, groupId: null } : c)));
+		if (filters.group === groupId) setFilters({ ...filters, group: "" });
+		trackCards(trackGroups(deleteGroup({ groupId }))).then((result) => {
+			if ("error" in result) {
+				toast.error(result.error);
+				resetGroups();
+				resetCards();
+			} else toast("Group deleted", { description: `${group?.name}: its cards stay on the board` });
+		});
+	}
+
+	// How far along each group is: its cards in a finish column, of all its live cards.
+	const groupProgress = useMemo(() => {
+		const done = new Set(columns.filter((c) => c.isDone).map((c) => c.id));
+		const map = new Map<string, GroupProgress>();
+		for (const card of cards) {
+			if (!card.groupId) continue;
+			const p = map.get(card.groupId) ?? { done: 0, total: 0 };
+			p.total += 1;
+			if (done.has(card.columnId)) p.done += 1;
+			map.set(card.groupId, p);
+		}
+		return map;
+	}, [cards, columns]);
 
 	const cardActions: CardActions = {
 		open: handleCardOpen,
@@ -821,6 +898,17 @@ export function KanbanBoard({
 					</Button>
 				</div>
 				<FilterChips filters={filters} labels={projectLabels} onChange={setFilters} />
+				<div className="basis-full">
+					<GroupStrip
+						groups={sortedGroups}
+						progress={groupProgress}
+						active={filters.group}
+						onPick={(group) => setFilters({ ...filters, group })}
+						onCreate={handleGroupCreate}
+						onRename={handleGroupRename}
+						onDelete={handleGroupDelete}
+					/>
+				</div>
 			</div>
 
 			{nothingMatches && (
@@ -828,7 +916,7 @@ export function KanbanBoard({
 					No cards match these filters.{" "}
 					<button
 						type="button"
-						onClick={() => setFilters({ priorities: [], labelIds: [], due: "" })}
+						onClick={() => setFilters(NO_FILTERS)}
 						className="text-foreground underline-offset-4 hover:underline"
 					>
 						Clear filters
@@ -893,6 +981,7 @@ export function KanbanBoard({
 											index={i}
 											columns={sortedColumns}
 											today={today}
+											groupNames={groupNames}
 											cards={cardsByColumn.get(col.id) ?? NO_CARDS}
 											total={totalsByColumn.get(col.id) ?? 0}
 											onCardOpen={handleCardOpen}
@@ -918,7 +1007,13 @@ export function KanbanBoard({
 								cardCount={cardsByColumn.get(activeColumn.id)?.length ?? 0}
 							/>
 						)}
-						{activeCard && <KanbanCardOverlay card={activeCard} today={today} />}
+						{activeCard && (
+							<KanbanCardOverlay
+								card={activeCard}
+								today={today}
+								group={activeCard.groupId ? groupNames.get(activeCard.groupId) : undefined}
+							/>
+						)}
 					</DragOverlay>
 				</DndContext>
 			)}
@@ -929,6 +1024,7 @@ export function KanbanBoard({
 				onOpenChange={setSheetOpen}
 				columns={sortedColumns}
 				projectLabels={projectLabels}
+				groups={sortedGroups}
 				onSave={handleCardSave}
 				onMove={handleCardMove}
 				onChange={handleCardChange}
@@ -978,6 +1074,9 @@ export function KanbanBoard({
 				onOpenChange={(open) => setCapture((c) => ({ ...c, open }))}
 				columns={sortedColumns}
 				onAdd={handleAddCard}
+				groups={sortedGroups}
+				labels={projectLabels}
+				defaultGroupId={filters.group && filters.group !== "none" ? filters.group : null}
 				today={today}
 			/>
 		</div>

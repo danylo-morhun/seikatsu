@@ -30,6 +30,7 @@ import type {
 	ActionResult,
 	CardData,
 	CardFieldUpdates,
+	GroupData,
 	LabelData,
 } from "@/features/seiryu/lib/types";
 
@@ -38,6 +39,7 @@ interface Props {
 	projectName: string;
 	columns: { id: string; name: string }[];
 	projectLabels: LabelData[];
+	groups: GroupData[];
 	today: string;
 }
 
@@ -47,6 +49,7 @@ export function CardPage({
 	projectName,
 	columns,
 	projectLabels: initialLabels,
+	groups,
 	today,
 }: Props) {
 	const router = useRouter();
@@ -174,6 +177,7 @@ export function CardPage({
 					card={card}
 					columns={columns}
 					projectLabels={projectLabels}
+					groups={groups}
 					readOnly={archived}
 					today={today}
 					onSave={handleSave}

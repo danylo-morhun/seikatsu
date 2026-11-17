@@ -32,6 +32,8 @@ const TILE =
 interface Props {
 	card: CardData;
 	today: string;
+	/** The name of the group it's in. */
+	group?: string;
 	/** In a lane between the first and the finish line, where a card can get stuck. */
 	inProgress?: boolean;
 	onOpen?: (cardId: string) => void;
@@ -41,6 +43,7 @@ interface Props {
 export const KanbanCard = memo(function KanbanCard({
 	card,
 	today,
+	group,
 	inProgress = false,
 	onOpen,
 }: Props) {
@@ -80,16 +83,24 @@ export const KanbanCard = memo(function KanbanCard({
 				isTemp && "cursor-default opacity-70",
 			)}
 		>
-			<CardBody card={card} today={today} id={id} inProgress={inProgress} />
+			<CardBody card={card} today={today} id={id} group={group} inProgress={inProgress} />
 		</div>
 	);
 }, sameCardProps);
 
 /** The card as it travels under the pointer: lifted off the lane by a soft shadow. */
-export function KanbanCardOverlay({ card, today }: { card: CardData; today: string }) {
+export function KanbanCardOverlay({
+	card,
+	today,
+	group,
+}: {
+	card: CardData;
+	today: string;
+	group?: string;
+}) {
 	return (
 		<div className={cn(TILE, "animate-lift cursor-grabbing shadow-lg")}>
-			<CardBody card={card} today={today} />
+			<CardBody card={card} today={today} group={group} />
 		</div>
 	);
 }
@@ -99,11 +110,13 @@ const CardBody = memo(
 		card,
 		today,
 		id,
+		group,
 		inProgress = false,
 	}: {
 		card: CardData;
 		today: string;
 		id?: string;
+		group?: string;
 		inProgress?: boolean;
 	}) {
 		const stuck = inProgress ? stuckDays(card.movedAt) : null;
@@ -116,6 +129,7 @@ const CardBody = memo(
 			<div className="flex flex-col gap-2">
 				<span id={id && `${id}-meta`} className="sr-only">
 					{[
+						group && `In ${group}.`,
 						card.labels.length > 0 && `Labels: ${card.labels.map((l) => l.name).join(", ")}.`,
 						card.priority && `${PRIORITY_CONFIG[card.priority].label} priority.`,
 						card.dueDate &&
@@ -130,6 +144,14 @@ const CardBody = memo(
 						.filter(Boolean)
 						.join(" ")}
 				</span>
+				{group && (
+					<span
+						aria-hidden
+						className="truncate text-[11px] leading-none font-medium tracking-wide text-muted-foreground uppercase"
+					>
+						{group}
+					</span>
+				)}
 				{card.labels.length > 0 && (
 					<ul aria-hidden className="flex flex-wrap gap-x-2.5 gap-y-1">
 						{card.labels.slice(0, MAX_LABELS).map((label) => (
@@ -212,11 +234,13 @@ const CardBody = memo(
 			</div>
 		);
 	},
-	(a, b) => a.inProgress === b.inProgress && sameCard(a, b),
+	(a, b) => a.inProgress === b.inProgress && a.group === b.group && sameCard(a, b),
 );
 
 function sameCardProps(a: Props, b: Props) {
-	return a.onOpen === b.onOpen && a.inProgress === b.inProgress && sameCard(a, b);
+	return (
+		a.onOpen === b.onOpen && a.inProgress === b.inProgress && a.group === b.group && sameCard(a, b)
+	);
 }
 
 // Field-wise: a server re-render sends new objects for unchanged cards.
@@ -229,6 +253,7 @@ function sameCard(
 		ta === tb &&
 		a.id === b.id &&
 		a.columnId === b.columnId &&
+		a.groupId === b.groupId &&
 		a.title === b.title &&
 		a.hasDescription === b.hasDescription &&
 		a.priority === b.priority &&

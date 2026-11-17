@@ -20,7 +20,7 @@ import { PriorityBadge } from "@/features/seiryu/components/PriorityBadge";
 import { PRIORITIES, PRIORITY_CONFIG, type Priority } from "@/features/seiryu/lib/constants";
 import { DAY_START, type Due, nextDue, REMIND_OPTIONS, TIME } from "@/features/seiryu/lib/reminder";
 import { REPEAT_PRESETS, type RepeatUnit, repeatLabel } from "@/features/seiryu/lib/repeat";
-import type { CardData, CardFieldUpdates, LabelData } from "@/features/seiryu/lib/types";
+import type { CardData, CardFieldUpdates, GroupData, LabelData } from "@/features/seiryu/lib/types";
 import { useDraft } from "@/hooks/useDraft";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -32,6 +32,7 @@ interface Props {
 	card: CardData;
 	columns: { id: string; name: string }[];
 	projectLabels: LabelData[];
+	groups: GroupData[];
 	/** Saves only the fields that changed; the caller applies them at once and persists. */
 	onSave: (updates: CardFieldUpdates) => void;
 	onMove: (columnId: string) => void;
@@ -56,6 +57,7 @@ export function CardDetail({
 	card,
 	columns,
 	projectLabels,
+	groups,
 	onSave,
 	onMove,
 	onChange,
@@ -127,6 +129,32 @@ export function CardDetail({
 							</SelectContent>
 						</Select>
 					</div>
+
+					{(groups.length > 0 || card.groupId) && (
+						<div className="space-y-2">
+							<Label htmlFor={`${id}-group`}>Group</Label>
+							<Select
+								value={card.groupId ?? "none"}
+								disabled={readOnly}
+								onValueChange={(v) => {
+									const groupId = v === "none" ? null : v;
+									if (groupId !== card.groupId) onSave({ groupId });
+								}}
+							>
+								<SelectTrigger id={`${id}-group`}>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="none">No group</SelectItem>
+									{groups.map((g) => (
+										<SelectItem key={g.id} value={g.id}>
+											{g.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+					)}
 
 					<div className="space-y-2">
 						<Label htmlFor={`${id}-priority`}>Priority</Label>

@@ -62,6 +62,8 @@ interface Props {
 	/** Every column of the board, in order: where a deleted column's cards can go. */
 	columns: ColumnData[];
 	today: string;
+	/** Group names by id, for the tiles' group line. */
+	groupNames: Map<string, string>;
 	onCardOpen: (cardId: string) => void;
 	onAddCard: (columnId: string, title: string) => void;
 	onUpdate: (columnId: string, updates: ColumnUpdates) => void;
@@ -78,6 +80,7 @@ export const KanbanColumn = memo(function KanbanColumn({
 	index,
 	columns,
 	today,
+	groupNames,
 	onCardOpen,
 	onAddCard,
 	onUpdate,
@@ -274,6 +277,7 @@ export const KanbanColumn = memo(function KanbanColumn({
 							key={card.clientKey ?? card.id}
 							card={card}
 							today={today}
+							group={card.groupId ? groupNames.get(card.groupId) : undefined}
 							inProgress={index > 0 && !column.isDone}
 							onOpen={onCardOpen}
 						/>

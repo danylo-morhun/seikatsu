@@ -19,10 +19,12 @@ import {
 	SelectValue,
 } from "@seikatsu/ui";
 import { useEffect, useId, useState } from "react";
+import { PRIORITY_CONFIG } from "@/features/seiryu/lib/constants";
 import { addDays } from "@/features/seiryu/lib/filters";
 import { type ParsedDue, parseDue } from "@/features/seiryu/lib/parse-due";
+import { parseTitle, sortedSomething } from "@/features/seiryu/lib/parse-title";
 import { dueLabel } from "@/features/seiryu/lib/reminder";
-import type { ColumnData } from "@/features/seiryu/lib/types";
+import type { ColumnData, GroupData, LabelData } from "@/features/seiryu/lib/types";
 import { useKeptDraft } from "@/hooks/useKeptDraft";
 
 interface Props {
@@ -31,7 +33,11 @@ interface Props {
 	/** Sorted by position; the first is the default. */
 	columns: ColumnData[];
 	/** `due`: what was read from the title, or null to keep the title as typed. */
-	onAdd: (columnId: string, title: string, due: ParsedDue | null) => void;
+	onAdd: (columnId: string, title: string, due: ParsedDue | null, groupId: string | null) => void;
+	groups: GroupData[];
+	labels: LabelData[];
+	/** The group the board is showing: new cards go there unless the title names another. */
+	defaultGroupId: string | null;
 	/** The user's calendar day, to read "tomorrow" in the title against. */
 	today: string;
 	/** Opened from the keyboard: appears and leaves without motion (a shortcut is for speed). */
@@ -44,6 +50,9 @@ export function NewCardDialog({
 	onOpenChange,
 	columns,
 	onAdd,
+	groups,
+	labels,
+	defaultGroupId,
 	today,
 	instant = false,
 }: Props) {
@@ -53,6 +62,9 @@ export function NewCardDialog({
 	const [literal, setLiteral] = useState(false);
 	const due = literal ? null : parseDue(title.trim(), today);
 	const [columnId, setColumnId] = useState(columns[0]?.id ?? "");
+	const [groupId, setGroupId] = useState<string>(defaultGroupId ?? "none");
+	const sorted = parseTitle(due?.title ?? title, { groups, labels });
+	const sortedGroup = groups.find((g) => g.id === sorted.groupId);
 
 	// A deleted column can't stay selected.
 	useEffect(() => {
@@ -67,13 +79,14 @@ export function NewCardDialog({
 			setTitle("");
 			setLiteral(false);
 		}
+		if (open) setGroupId(defaultGroupId ?? "none");
 	}, [open]);
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		const trimmed = title.trim();
 		if (!trimmed || !columnId) return;
-		onAdd(columnId, trimmed, due);
+		onAdd(columnId, trimmed, due, groupId === "none" ? null : groupId);
 		onOpenChange(false);
 	}
 
@@ -114,7 +127,11 @@ export function NewCardDialog({
 							maxLength={500}
 							autoComplete="off"
 							placeholder="What needs doing?"
-							aria-describedby={due ? `${id}-due` : undefined}
+							aria-describedby={
+								[due && `${id}-due`, sortedSomething(sorted) && `${id}-sort`]
+									.filter(Boolean)
+									.join(" ") || undefined
+							}
 							onChange={(e) => setTitle(e.target.value)}
 						/>
 						{due && (
@@ -139,6 +156,19 @@ export function NewCardDialog({
 								</button>
 							</p>
 						)}
+						{sortedSomething(sorted) && (
+							<p id={`${id}-sort`} className="animate-swap truncate text-xs text-muted-foreground">
+								{[
+									sortedGroup && `In ${sortedGroup.name}`,
+									...sorted.labelIds.map(
+										(l) => `#${labels.find((label) => label.id === l)?.name ?? ""}`,
+									),
+									sorted.priority && PRIORITY_CONFIG[sorted.priority].label,
+								]
+									.filter(Boolean)
+									.join(" · ")}
+							</p>
+						)}
 					</div>
 
 					<div className="space-y-2">
@@ -156,6 +186,25 @@ export function NewCardDialog({
 							</SelectContent>
 						</Select>
 					</div>
+
+					{groups.length > 0 && !sortedGroup && (
+						<div className="space-y-2">
+							<Label htmlFor={`${id}-group`}>Group</Label>
+							<Select value={groupId} onValueChange={setGroupId}>
+								<SelectTrigger id={`${id}-group`}>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="none">No group</SelectItem>
+									{groups.map((g) => (
+										<SelectItem key={g.id} value={g.id}>
+											{g.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+					)}
 
 					{/* Phones: actions sit at the bottom of the full-screen sheet, in thumb reach. */}
 					<div className="mt-auto flex justify-end gap-2 pt-2 max-sm:sticky max-sm:bottom-0 max-sm:-mx-6 max-sm:-mb-6 max-sm:border-t max-sm:bg-background max-sm:px-6 max-sm:py-4">

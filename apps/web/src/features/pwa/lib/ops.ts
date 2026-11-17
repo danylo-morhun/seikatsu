@@ -10,6 +10,7 @@ import type { HabitPatch } from "@/features/keizoku/lib/keizoku-schemas";
 import type { TransactionInput } from "@/features/kuroji/actions/transactions";
 import type { EventInput } from "@/features/kyuu/actions/progress";
 import type { Status } from "@/features/kyuu/lib/stages";
+import type { Priority } from "@/features/seiryu/lib/constants";
 import type { CardFieldUpdates } from "@/features/seiryu/lib/types";
 import type { BookStatus } from "@/features/tsundoku/lib/constants";
 
@@ -35,6 +36,9 @@ export interface OfflineOps {
 		title: string;
 		dueDate?: string;
 		dueTime?: string;
+		groupId?: string;
+		labelIds?: string[];
+		priority?: Priority;
 	};
 	"seiryu.updateCard": { cardId: string } & CardFieldUpdates;
 	"seiryu.moveCard": { cardId: string; newColumnId: string; newPosition?: string };
