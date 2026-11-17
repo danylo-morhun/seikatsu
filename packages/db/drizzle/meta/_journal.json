@@ -330,6 +330,13 @@
 			"when": 1794945707555,
 			"tag": "0046_seiryu_groups",
 			"breakpoints": true
+		},
+		{
+			"idx": 47,
+			"version": "7",
+			"when": 1794946399758,
+			"tag": "0047_seiryu_start_on",
+			"breakpoints": true
 		}
 	]
 }
