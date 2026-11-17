@@ -60,6 +60,27 @@ export const seiryuColumns = pgTable(
 	(t) => [index("seiryu_columns_project_id_idx").on(t.projectId)],
 );
 
+/**
+ * A heading inside a project (Black Week, Christmas): cards that belong together, shown as
+ * one strip with their progress. A card is in one group or none; deleting one keeps its cards.
+ */
+export const seiryuGroups = pgTable(
+	"seiryu_groups",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		projectId: uuid("project_id")
+			.notNull()
+			.references(() => seiryuProjects.id, { onDelete: "cascade" }),
+		name: text("name").notNull(),
+		position: varchar("position", { length: 255 }).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+	},
+	(t) => [
+		index("seiryu_groups_project_id_idx").on(t.projectId),
+		uniqueIndex("seiryu_groups_project_name_idx").on(t.projectId, t.name),
+	],
+);
+
 export const seiryuCards = pgTable(
 	"seiryu_cards",
 	{
@@ -70,6 +91,8 @@ export const seiryuCards = pgTable(
 		projectId: uuid("project_id")
 			.notNull()
 			.references(() => seiryuProjects.id, { onDelete: "cascade" }),
+		/** The group it's in, of the same project; null = none. */
+		groupId: uuid("group_id").references(() => seiryuGroups.id, { onDelete: "set null" }),
 		title: text("title").notNull(),
 		description: text("description"),
 		priority: seiryuCardPriorityEnum("priority"),
@@ -101,6 +124,7 @@ export const seiryuCards = pgTable(
 		index("seiryu_cards_project_id_idx").on(t.projectId),
 		index("seiryu_cards_column_id_idx").on(t.columnId),
 		index("seiryu_cards_remind_at_idx").on(t.remindAt),
+		index("seiryu_cards_group_id_idx").on(t.groupId),
 	],
 );
 
@@ -162,6 +186,15 @@ export const seiryuProjectsRelations = relations(seiryuProjects, ({ one, many })
 	columns: many(seiryuColumns),
 	cards: many(seiryuCards),
 	labels: many(seiryuLabels),
+	groups: many(seiryuGroups),
+}));
+
+export const seiryuGroupsRelations = relations(seiryuGroups, ({ one, many }) => ({
+	project: one(seiryuProjects, {
+		fields: [seiryuGroups.projectId],
+		references: [seiryuProjects.id],
+	}),
+	cards: many(seiryuCards),
 }));
 
 export const seiryuColumnsRelations = relations(seiryuColumns, ({ one, many }) => ({
@@ -180,6 +213,10 @@ export const seiryuCardsRelations = relations(seiryuCards, ({ one, many }) => ({
 	project: one(seiryuProjects, {
 		fields: [seiryuCards.projectId],
 		references: [seiryuProjects.id],
+	}),
+	group: one(seiryuGroups, {
+		fields: [seiryuCards.groupId],
+		references: [seiryuGroups.id],
 	}),
 	checklistItems: many(seiryuChecklistItems),
 	cardLabels: many(seiryuCardLabels),
