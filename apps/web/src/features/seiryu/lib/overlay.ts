@@ -67,6 +67,7 @@ export function overlayCards(cards: CardData[], ops: Op[], projectId: string): C
 					projectId,
 					groupId: a.groupId ?? null,
 					startOn: null,
+					blockedById: null,
 					title: a.title,
 					description: null,
 					hasDescription: false,

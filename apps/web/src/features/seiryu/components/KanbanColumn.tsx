@@ -64,6 +64,8 @@ interface Props {
 	today: string;
 	/** Group names by id, for the tiles' group line. */
 	groupNames: Map<string, string>;
+	/** Cards still waiting on an open card: card id → that card's title. */
+	waiting: Map<string, string>;
 	onCardOpen: (cardId: string) => void;
 	onAddCard: (columnId: string, title: string) => void;
 	onUpdate: (columnId: string, updates: ColumnUpdates) => void;
@@ -81,6 +83,7 @@ export const KanbanColumn = memo(function KanbanColumn({
 	columns,
 	today,
 	groupNames,
+	waiting,
 	onCardOpen,
 	onAddCard,
 	onUpdate,
@@ -280,6 +283,7 @@ export const KanbanColumn = memo(function KanbanColumn({
 							card={card}
 							today={today}
 							group={card.groupId ? groupNames.get(card.groupId) : undefined}
+							waitingOn={waiting.get(card.id)}
 							inProgress={index > 0 && !column.isDone}
 							onOpen={onCardOpen}
 						/>

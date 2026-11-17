@@ -5,6 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import {
 	CheckListIcon,
 	HourglassIcon,
+	Link04Icon,
 	Moon02Icon,
 	Note01Icon,
 	RepeatIcon,
@@ -40,6 +41,8 @@ interface Props {
 	today: string;
 	/** The name of the group it's in. */
 	group?: string;
+	/** The open card it waits on. */
+	waitingOn?: string;
 	/** In a lane between the first and the finish line, where a card can get stuck. */
 	inProgress?: boolean;
 	onOpen?: (cardId: string) => void;
@@ -50,6 +53,7 @@ export const KanbanCard = memo(function KanbanCard({
 	card,
 	today,
 	group,
+	waitingOn,
 	inProgress = false,
 	onOpen,
 }: Props) {
@@ -89,7 +93,14 @@ export const KanbanCard = memo(function KanbanCard({
 				isTemp && "cursor-default opacity-70",
 			)}
 		>
-			<CardBody card={card} today={today} id={id} group={group} inProgress={inProgress} />
+			<CardBody
+				card={card}
+				today={today}
+				id={id}
+				group={group}
+				waitingOn={waitingOn}
+				inProgress={inProgress}
+			/>
 		</div>
 	);
 }, sameCardProps);
@@ -117,12 +128,14 @@ const CardBody = memo(
 		today,
 		id,
 		group,
+		waitingOn,
 		inProgress = false,
 	}: {
 		card: CardData;
 		today: string;
 		id?: string;
 		group?: string;
+		waitingOn?: string;
 		inProgress?: boolean;
 	}) {
 		const stuck = inProgress ? stuckDays(card.movedAt) : null;
@@ -139,10 +152,11 @@ const CardBody = memo(
 			card.hasDescription;
 
 		return (
-			<div className={cn("flex flex-col gap-2", later && "opacity-60")}>
+			<div className={cn("flex flex-col gap-2", (later || waitingOn) && "opacity-60")}>
 				<span id={id && `${id}-meta`} className="sr-only">
 					{[
 						group && `In ${group}.`,
+						waitingOn && `Waiting on ${waitingOn}.`,
 						card.labels.length > 0 && `Labels: ${card.labels.map((l) => l.name).join(", ")}.`,
 						card.priority && `${PRIORITY_CONFIG[card.priority].label} priority.`,
 						card.dueDate &&
@@ -191,6 +205,12 @@ const CardBody = memo(
 				<p id={id && `${id}-title`} className="text-sm leading-snug [overflow-wrap:anywhere]">
 					{card.title}
 				</p>
+				{waitingOn && (
+					<p aria-hidden className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+						<HugeiconsIcon icon={Link04Icon} className="h-3.5 w-3.5 shrink-0" />
+						<span className="truncate">Waiting on {waitingOn}</span>
+					</p>
+				)}
 
 				{hasMeta && (
 					<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -254,12 +274,20 @@ const CardBody = memo(
 			</div>
 		);
 	},
-	(a, b) => a.inProgress === b.inProgress && a.group === b.group && sameCard(a, b),
+	(a, b) =>
+		a.inProgress === b.inProgress &&
+		a.group === b.group &&
+		a.waitingOn === b.waitingOn &&
+		sameCard(a, b),
 );
 
 function sameCardProps(a: Props, b: Props) {
 	return (
-		a.onOpen === b.onOpen && a.inProgress === b.inProgress && a.group === b.group && sameCard(a, b)
+		a.onOpen === b.onOpen &&
+		a.inProgress === b.inProgress &&
+		a.group === b.group &&
+		a.waitingOn === b.waitingOn &&
+		sameCard(a, b)
 	);
 }
 

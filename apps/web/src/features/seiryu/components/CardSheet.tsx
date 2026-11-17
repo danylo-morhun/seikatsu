@@ -34,6 +34,8 @@ interface Props {
 	columns: { id: string; name: string }[];
 	projectLabels: LabelData[];
 	groups: GroupData[];
+	/** The board's cards: what this one can wait on. */
+	candidates: { id: string; title: string }[];
 	onSave: (cardId: string, updates: CardFieldUpdates) => void;
 	onMove: (cardId: string, columnId: string) => void;
 	onChange: (cardId: string, updates: Partial<CardData>) => void;
@@ -50,6 +52,7 @@ export function CardSheet({
 	columns,
 	projectLabels,
 	groups,
+	candidates,
 	onSave,
 	onMove,
 	onChange,
@@ -164,6 +167,7 @@ export function CardSheet({
 									columns={columns}
 									projectLabels={projectLabels}
 									groups={groups}
+									candidates={candidates}
 									onSave={(updates) => {
 										if ("description" in updates) {
 											setDescriptions((d) => ({ ...d, [shown.id]: updates.description ?? null }));

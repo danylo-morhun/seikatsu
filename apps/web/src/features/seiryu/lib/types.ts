@@ -16,6 +16,8 @@ export type LabelData = {
 	color: string;
 };
 
+export type BlockerData = { id: string; title: string; done: boolean };
+
 export type GroupData = {
 	id: string;
 	name: string;
@@ -49,6 +51,10 @@ export type CardData = {
 	dueDate: string | null;
 	/** Hidden until this day (YYYY-MM-DD): "later". Null = on the board now. */
 	startOn: string | null;
+	/** The card it waits on; null = free to start. */
+	blockedById: string | null;
+	/** That card as the server last saw it (it may be in another project). */
+	blockedBy?: BlockerData | null;
 	/** "HH:MM" on the due day, or null for any time. */
 	dueTime: string | null;
 	/** Minutes before the due moment; null = no reminder. */
@@ -80,6 +86,7 @@ export type CardFieldUpdates = Partial<
 		| "repeatFromDone"
 		| "groupId"
 		| "startOn"
+		| "blockedById"
 	>
 >;
 

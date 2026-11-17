@@ -325,6 +325,7 @@ export function KanbanBoard({
 				projectId,
 				groupId: sort.groupId,
 				startOn: null,
+				blockedById: null,
 				title,
 				description: null,
 				hasDescription: false,
@@ -565,6 +566,27 @@ export function KanbanBoard({
 			} else toast("Group deleted", { description: `${group?.name}: its cards stay on the board` });
 		});
 	}
+
+	const openCards = useMemo(() => {
+		const done = new Set(columns.filter((c) => c.isDone).map((c) => c.id));
+		return cards.filter((c) => !done.has(c.columnId) && !isTempId(c.id));
+	}, [cards, columns]);
+
+	// Cards still waiting: on a card of this board that isn't finished, or one elsewhere (the
+	// server's word for it).
+	const waiting = useMemo(() => {
+		const done = new Set(columns.filter((c) => c.isDone).map((c) => c.id));
+		const byId = new Map(cards.map((c) => [c.id, c]));
+		const map = new Map<string, string>();
+		for (const card of cards) {
+			if (!card.blockedById) continue;
+			const local = byId.get(card.blockedById);
+			if (local) {
+				if (!done.has(local.columnId)) map.set(card.id, local.title);
+			} else if (card.blockedBy && !card.blockedBy.done) map.set(card.id, card.blockedBy.title);
+		}
+		return map;
+	}, [cards, columns]);
 
 	// How far along each group is: its cards in a finish column, of all its live cards.
 	const groupProgress = useMemo(() => {
@@ -1028,6 +1050,7 @@ export function KanbanBoard({
 											columns={sortedColumns}
 											today={today}
 											groupNames={groupNames}
+											waiting={waiting}
 											cards={cardsByColumn.get(col.id) ?? NO_CARDS}
 											total={totalsByColumn.get(col.id) ?? 0}
 											onCardOpen={handleCardOpen}
@@ -1071,6 +1094,7 @@ export function KanbanBoard({
 				columns={sortedColumns}
 				projectLabels={projectLabels}
 				groups={sortedGroups}
+				candidates={openCards}
 				onSave={handleCardSave}
 				onMove={handleCardMove}
 				onChange={handleCardChange}

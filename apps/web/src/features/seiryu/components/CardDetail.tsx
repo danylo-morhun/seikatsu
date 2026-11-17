@@ -33,6 +33,8 @@ interface Props {
 	columns: { id: string; name: string }[];
 	projectLabels: LabelData[];
 	groups: GroupData[];
+	/** Cards this one can wait on (its project's). */
+	candidates: { id: string; title: string }[];
 	/** Saves only the fields that changed; the caller applies them at once and persists. */
 	onSave: (updates: CardFieldUpdates) => void;
 	onMove: (columnId: string) => void;
@@ -58,6 +60,7 @@ export function CardDetail({
 	columns,
 	projectLabels,
 	groups,
+	candidates,
 	onSave,
 	onMove,
 	onChange,
@@ -261,6 +264,38 @@ export function CardDetail({
 										{repeatLabel(r.every, r.unit)}
 									</SelectItem>
 								))}
+							</SelectContent>
+						</Select>
+					</div>
+
+					<div className="space-y-2">
+						<Label htmlFor={`${id}-waits`}>Waits on</Label>
+						<Select
+							value={card.blockedById ?? "none"}
+							disabled={readOnly}
+							onValueChange={(v) => {
+								const blockedById = v === "none" ? null : v;
+								if (blockedById !== card.blockedById) onSave({ blockedById });
+							}}
+						>
+							<SelectTrigger id={`${id}-waits`}>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent className="max-w-80">
+								<SelectItem value="none">Nothing — free to start</SelectItem>
+								{/* One in another project (set through Claude) stays pickable. */}
+								{card.blockedBy && !candidates.some((c) => c.id === card.blockedBy?.id) && (
+									<SelectItem value={card.blockedBy.id}>
+										<span className="truncate">{card.blockedBy.title}</span>
+									</SelectItem>
+								)}
+								{candidates
+									.filter((c) => c.id !== card.id)
+									.map((c) => (
+										<SelectItem key={c.id} value={c.id}>
+											<span className="truncate">{c.title}</span>
+										</SelectItem>
+									))}
 							</SelectContent>
 						</Select>
 					</div>

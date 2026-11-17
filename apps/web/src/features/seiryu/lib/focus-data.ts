@@ -45,6 +45,7 @@ export async function getFocus() {
 				dueDate: seiryuCards.dueDate,
 				dueTime: seiryuCards.dueTime,
 				startOn: seiryuCards.startOn,
+				blockedById: seiryuCards.blockedById,
 				repeatUnit: seiryuCards.repeatUnit,
 				movedAt: seiryuCards.movedAt,
 			})
@@ -87,8 +88,11 @@ export async function getFocus() {
 		checklist.set(i.cardId, t);
 	}
 
-	const rows: FocusCard[] = cards.map(({ repeatUnit, movedAt, dueTime, ...c }) => ({
+	// A card waits while the card it names is still open (in this list).
+	const openTitles = new Map(cards.map((c) => [c.id, c.title]));
+	const rows: FocusCard[] = cards.map(({ repeatUnit, movedAt, dueTime, blockedById, ...c }) => ({
 		...c,
+		waitingOn: blockedById ? (openTitles.get(blockedById) ?? null) : null,
 		dueTime: shortTime(dueTime),
 		repeats: repeatUnit !== null,
 		movedAt: movedAt.toISOString(),

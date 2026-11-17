@@ -40,6 +40,8 @@ interface Props {
 	columns: { id: string; name: string }[];
 	projectLabels: LabelData[];
 	groups: GroupData[];
+	/** The project's other cards: what this one can wait on. */
+	candidates: { id: string; title: string }[];
 	today: string;
 }
 
@@ -50,6 +52,7 @@ export function CardPage({
 	columns,
 	projectLabels: initialLabels,
 	groups,
+	candidates,
 	today,
 }: Props) {
 	const router = useRouter();
@@ -178,6 +181,7 @@ export function CardPage({
 					columns={columns}
 					projectLabels={projectLabels}
 					groups={groups}
+					candidates={candidates}
 					readOnly={archived}
 					today={today}
 					onSave={handleSave}

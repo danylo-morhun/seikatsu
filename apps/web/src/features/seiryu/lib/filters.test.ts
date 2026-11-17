@@ -8,6 +8,7 @@ const card = (over: Partial<CardData>): CardData => ({
 	projectId: "p",
 	groupId: null,
 	startOn: null,
+	blockedById: null,
 	title: "t",
 	description: null,
 	hasDescription: false,
