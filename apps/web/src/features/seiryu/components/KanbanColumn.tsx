@@ -66,6 +66,8 @@ interface Props {
 	groupNames: Map<string, string>;
 	/** Cards still waiting on an open card: card id → that card's title. */
 	waiting: Map<string, string>;
+	selected: Set<string>;
+	onCardSelect: (cardId: string) => void;
 	onCardOpen: (cardId: string) => void;
 	onAddCard: (columnId: string, title: string) => void;
 	onUpdate: (columnId: string, updates: ColumnUpdates) => void;
@@ -84,6 +86,8 @@ export const KanbanColumn = memo(function KanbanColumn({
 	today,
 	groupNames,
 	waiting,
+	selected,
+	onCardSelect,
 	onCardOpen,
 	onAddCard,
 	onUpdate,
@@ -284,6 +288,8 @@ export const KanbanColumn = memo(function KanbanColumn({
 							today={today}
 							group={card.groupId ? groupNames.get(card.groupId) : undefined}
 							waitingOn={waiting.get(card.id)}
+							selected={selected.has(card.id)}
+							onSelect={onCardSelect}
 							inProgress={index > 0 && !column.isDone}
 							onOpen={onCardOpen}
 						/>
@@ -378,6 +384,10 @@ function sameColumnProps(a: Props, b: Props) {
 		a.index === b.index &&
 		a.columns === b.columns &&
 		a.today === b.today &&
+		a.groupNames === b.groupNames &&
+		a.waiting === b.waiting &&
+		a.selected === b.selected &&
+		a.onCardSelect === b.onCardSelect &&
 		a.onCardOpen === b.onCardOpen &&
 		a.onAddCard === b.onAddCard &&
 		a.onUpdate === b.onUpdate &&
