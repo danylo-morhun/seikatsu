@@ -9,7 +9,7 @@ import {
 	updateCard,
 } from "@/features/seiryu/actions/cards";
 import { createChecklistItem, toggleChecklistItem } from "@/features/seiryu/actions/checklist";
-import { createGroup, deleteGroup, updateGroup } from "@/features/seiryu/actions/groups";
+import { copyGroup, createGroup, deleteGroup, updateGroup } from "@/features/seiryu/actions/groups";
 import { createLabel, setCardLabels } from "@/features/seiryu/actions/labels";
 import { getOpenCardCounts, getProjects } from "@/features/seiryu/actions/projects";
 import { getFocus } from "@/features/seiryu/lib/focus-data";
@@ -286,6 +286,15 @@ export const seiryuTools = [
 		write: true,
 		idempotent: true,
 		run: (input) => deleteGroup(input),
+	}),
+	tool({
+		name: "seiryu_copy_group",
+		title: "Copy a Seiryu group",
+		description:
+			"Use a group as a template (last year's Black Week for this one): every card it had — archived too — again, open, in the project's first column, in a new group named `name`, checklists unticked. `firstDue` moves the dates so the earliest lands there; the rest keep their distance.",
+		input: { groupId: id, name: z.string().min(1).max(60), firstDue: day.optional() },
+		write: true,
+		run: (input) => copyGroup(input),
 	}),
 	tool({
 		name: "seiryu_create_label",
