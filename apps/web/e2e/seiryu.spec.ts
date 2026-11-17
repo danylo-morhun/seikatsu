@@ -1,4 +1,5 @@
 import {
+	and,
 	db,
 	eq,
 	seiryuCardLabels,
@@ -348,4 +349,58 @@ test("a card a week or more in an in-progress column shows how long", async ({ p
 	await page.reload();
 	await expect(card).toBeVisible();
 	await expect(card).not.toContainText("10d");
+});
+
+test("a group sorts the board; a title names the group and priority", async ({ page }) => {
+	await page.goto(`/seiryu/${projectId}`);
+	await page.getByRole("button", { name: "Group", exact: true }).click();
+	await page.getByLabel("New group").fill("Launch");
+	await page.keyboard.press("Enter");
+	await expect(page.getByRole("button", { name: /^Launch 0\/0/ })).toBeVisible();
+
+	await page.keyboard.press("n");
+	const dialog = page.getByRole("dialog");
+	await dialog.getByLabel("Title").fill("Launch: unpause orders !4");
+	await expect(dialog.getByText("In Launch · Urgent")).toBeVisible();
+	await dialog.getByRole("button", { name: "Add card" }).click();
+
+	await expect
+		.poll(async () => {
+			const [card] = await db
+				.select({ priority: seiryuCards.priority, groupId: seiryuCards.groupId })
+				.from(seiryuCards)
+				.where(eq(seiryuCards.title, "unpause orders"));
+			return card ? [card.priority, card.groupId !== null] : null;
+		})
+		.toEqual(["urgent", true]);
+
+	// The chip filters the board to its cards.
+	await page.getByRole("button", { name: /^Launch 0\/1/ }).click();
+	await expect(page).toHaveURL(/group=/);
+	await expect(page.getByRole("button", { name: "Write tests" })).toBeHidden();
+	await expect(page.getByRole("button", { name: /unpause orders/ })).toBeVisible();
+});
+
+test("Focus lists what's due across projects and finishes it in place", async ({ page }) => {
+	const today = new Date().toISOString().slice(0, 10);
+	await db
+		.update(seiryuColumns)
+		.set({ isDone: true })
+		.where(and(eq(seiryuColumns.projectId, projectId), eq(seiryuColumns.name, "Done")));
+	await db.update(seiryuCards).set({ dueDate: today }).where(eq(seiryuCards.projectId, projectId));
+
+	await page.goto("/seiryu");
+	const todaySection = page.getByRole("region", { name: /Today/ });
+	await expect(todaySection.getByText("Write tests")).toBeVisible();
+	await todaySection.getByRole("button", { name: "Done: Write tests" }).click();
+	await expect(todaySection).toBeHidden();
+	await expect
+		.poll(async () => {
+			const [card] = await db
+				.select({ doneOn: seiryuCards.doneOn })
+				.from(seiryuCards)
+				.where(eq(seiryuCards.projectId, projectId));
+			return card?.doneOn;
+		})
+		.not.toBeNull();
 });
