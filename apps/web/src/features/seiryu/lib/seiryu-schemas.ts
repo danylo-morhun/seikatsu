@@ -111,6 +111,8 @@ export const updateCardSchema = z.object({
 	groupId: z.string().uuid().nullable().optional(),
 	/** Hidden until this day; null = now. */
 	startOn: z.iso.date().nullable().optional(),
+	/** Another card of the workspace it waits on; null = none. */
+	blockedById: z.string().uuid().nullable().optional(),
 });
 
 export const snoozeCardSchema = z.object({

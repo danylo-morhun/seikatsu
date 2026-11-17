@@ -28,7 +28,7 @@ vi.mock("@seikatsu/db", async () => ({
 	},
 }));
 
-const { createCard, moveCard } = await import("./cards");
+const { createCard, moveCard, updateCard } = await import("./cards");
 const { archiveFinishedCards } = await import("../lib/auto-archive");
 const C = schema.seiryuCards;
 
@@ -175,6 +175,19 @@ describe("sorting and clearing", () => {
 			.from(schema.seiryuCardLabels)
 			.where(ops.eq(schema.seiryuCardLabels.cardId, made.data.id));
 		expect(labels).toHaveLength(1);
+	});
+
+	it("a card waits on another, never on itself or in a loop", async () => {
+		const { card, todo } = await seed({ repeatEvery: null, repeatUnit: null });
+		const [other] = await testDb
+			.insert(C)
+			.values({ projectId: card.projectId, columnId: todo.id, title: "Xylem sync", position: "a1" })
+			.returning();
+		const otherId = other?.id ?? "";
+		expect(await updateCard({ cardId: card.id, blockedById: card.id })).toHaveProperty("error");
+		expect(await updateCard({ cardId: card.id, blockedById: otherId })).toEqual({ success: true });
+		expect(await updateCard({ cardId: otherId, blockedById: card.id })).toHaveProperty("error");
+		expect(await updateCard({ cardId: card.id, blockedById: null })).toEqual({ success: true });
 	});
 
 	it("a card done over a week ago goes to the archive; a newer one stays", async () => {

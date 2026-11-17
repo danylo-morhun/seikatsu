@@ -1,8 +1,5 @@
 import { notFound } from "next/navigation";
-import { getCard } from "@/features/seiryu/actions/cards";
-import { getColumns } from "@/features/seiryu/actions/columns";
-import { getGroups } from "@/features/seiryu/actions/groups";
-import { getLabels } from "@/features/seiryu/actions/labels";
+import { getBoard, getCard } from "@/features/seiryu/actions/cards";
 import { getProjects } from "@/features/seiryu/actions/projects";
 import { CardPage } from "@/features/seiryu/components/CardPage";
 import { getUserToday } from "@/lib/timezone";
@@ -16,23 +13,25 @@ export default async function CardDetailPage({
 	const card = await getCard(cardId);
 	if (!card || card.projectId !== projectId) notFound();
 
-	const [projects, columns, labels, groups, today] = await Promise.all([
+	const [projects, board, today] = await Promise.all([
 		getProjects(),
-		getColumns(projectId),
-		getLabels(projectId),
-		getGroups(projectId),
+		getBoard(projectId),
 		getUserToday(),
 	]);
 	const project = projects.find((p) => p.id === projectId);
-	if (!project) notFound();
+	if (!project || !board) notFound();
+	const done = new Set(board.columns.filter((c) => c.isDone).map((c) => c.id));
 
 	return (
 		<CardPage
 			card={card}
 			projectName={project.name}
-			columns={columns.map(({ id, name }) => ({ id, name }))}
-			projectLabels={labels}
-			groups={groups}
+			columns={board.columns.map(({ id, name }) => ({ id, name }))}
+			projectLabels={board.labels}
+			groups={board.groups}
+			candidates={board.cards
+				.filter((c) => !done.has(c.columnId))
+				.map(({ id, title }) => ({ id, title }))}
 			today={today}
 		/>
 	);

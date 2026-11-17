@@ -249,6 +249,9 @@ function FocusRow({
 							{card.groupName && ` · ${card.groupName}`}
 						</span>
 					</span>
+					{card.waitingOn && (
+						<span className="truncate max-sm:hidden">waiting on {card.waitingOn}</span>
+					)}
 					{card.dueDate && (
 						<DueDateChip
 							dueDate={card.dueDate}

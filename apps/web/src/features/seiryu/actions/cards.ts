@@ -7,6 +7,7 @@ import {
 	db,
 	desc,
 	eq,
+	inArray,
 	isNotNull,
 	isNull,
 	seiryuCardLabels,
@@ -40,6 +41,7 @@ import {
 	snoozeCardSchema,
 	updateCardSchema,
 } from "@/features/seiryu/lib/seiryu-schemas";
+import type { BlockerData } from "@/features/seiryu/lib/types";
 import { generateKeyBetween } from "@/lib/position";
 import { revalidateShell } from "@/lib/revalidate";
 import { getUserTimeZone, getUserToday } from "@/lib/timezone";
@@ -91,7 +93,12 @@ export async function getCard(cardId: string) {
 		where: eq(seiryuCards.id, cardId),
 		with: cardWith,
 	});
-	return row ? toCardData(row) : null;
+	if (!row) return null;
+	const blockers = await getBlockers([row]);
+	return {
+		...toCardData(row),
+		blockedBy: row.blockedById ? (blockers.get(row.blockedById) ?? null) : null,
+	};
 }
 
 /** The newest archived cards the board's archive sheet lists; the rest are in settings. */
@@ -125,14 +132,39 @@ export async function getBoard(projectId: string) {
 			.from(seiryuCards)
 			.where(and(eq(seiryuCards.projectId, projectId), isNotNull(seiryuCards.archivedAt))),
 	]);
+	const blockers = await getBlockers(rows);
 	return {
 		columns,
-		cards: rows.map(toCardData),
+		cards: rows.map((row) => ({
+			...toCardData(row),
+			blockedBy: row.blockedById ? (blockers.get(row.blockedById) ?? null) : null,
+		})),
 		labels,
 		groups,
 		archived,
 		archivedTotal: archivedTotal?.total ?? 0,
 	};
+}
+
+/** The cards these wait on — any project — with whether each is done (finished or archived). */
+async function getBlockers(rows: { blockedById: string | null }[]) {
+	const ids = [...new Set(rows.flatMap((r) => (r.blockedById ? [r.blockedById] : [])))];
+	if (ids.length === 0) return new Map<string, BlockerData>();
+	const found = await db
+		.select({
+			id: seiryuCards.id,
+			title: seiryuCards.title,
+			doneOn: seiryuCards.doneOn,
+			archivedAt: seiryuCards.archivedAt,
+		})
+		.from(seiryuCards)
+		.where(inArray(seiryuCards.id, ids));
+	return new Map(
+		found.map((c) => [
+			c.id,
+			{ id: c.id, title: c.title, done: c.doneOn !== null || c.archivedAt !== null },
+		]),
+	);
 }
 
 /** One card's description, which the board leaves out until the card is opened. */
@@ -251,6 +283,18 @@ export async function updateCard(input: unknown): Promise<{ error: string } | { 
 	if (!card) return { error: "Card not found" };
 	if (updates.groupId && !(await isGroupOf(updates.groupId, card.projectId)))
 		return { error: "Invalid group" };
+	if (updates.blockedById) {
+		if (updates.blockedById === cardId) return { error: "A card can't wait on itself" };
+		const [blocker] = await db
+			.select({ blockedById: seiryuCards.blockedById })
+			.from(seiryuCards)
+			.innerJoin(seiryuProjects, eq(seiryuProjects.id, seiryuCards.projectId))
+			.where(
+				and(eq(seiryuCards.id, updates.blockedById), eq(seiryuProjects.workspaceId, workspace.id)),
+			);
+		if (!blocker) return { error: "Card to wait on not found" };
+		if (blocker.blockedById === cardId) return { error: "That card already waits on this one" };
+	}
 
 	const { dueDate, dueTime, remindMinutes, ...rest } = updates;
 	// A rule is both parts or neither.

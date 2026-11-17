@@ -20,6 +20,8 @@ export type FocusCard = {
 	dueTime: string | null;
 	/** Hidden until this day: left out unless it's due by today. */
 	startOn: string | null;
+	/** The open card it waits on: left out unless it's due by today. */
+	waitingOn: string | null;
 	repeats: boolean;
 	/** ISO instant it last changed lane. */
 	movedAt: string;
@@ -61,7 +63,8 @@ export function buildFocus(cards: FocusCard[], today: string): FocusSection[] {
 	};
 	for (const card of cards) {
 		const due = card.dueDate;
-		if (card.startOn && card.startOn > today && !(due && due <= today)) continue;
+		const parked = (card.startOn && card.startOn > today) || card.waitingOn;
+		if (parked && !(due && due <= today)) continue;
 		if (due && due < today) sections.overdue.push(card);
 		else if (due === today) sections.today.push(card);
 		else if (card.started) sections.doing.push(card);
