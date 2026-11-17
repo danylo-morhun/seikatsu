@@ -15,11 +15,13 @@ import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
 import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
+import { archiveFinishedCards } from "@/features/seiryu/lib/auto-archive";
 import { pruneOldRows } from "@/lib/retention";
 import { dayIn } from "@/lib/timezone";
 
-// Daily Vercel Cron (see vercel.json): materializes recurring transactions due today and
-// stores today's exchange rates, so page renders never have to. Guarded by CRON_SECRET.
+// Daily Vercel Cron (see vercel.json): materializes recurring transactions due today, stores
+// today's exchange rates (so page renders never have to) and clears week-old finished Seiryu
+// cards into the archive. Guarded by CRON_SECRET.
 export async function GET(req: NextRequest) {
 	const secret = process.env.CRON_SECRET;
 	if (!secret) {
@@ -57,9 +59,21 @@ export async function GET(req: NextRequest) {
 	}
 
 	const rates = await warmRates(today);
+	// Finished Seiryu cards older than a week leave the board for the archive.
+	const archivedCards = await archiveFinishedCards(today).catch((e: unknown) => {
+		Sentry.captureException(e, { tags: { cron: "seiryu-archive" } });
+		return -1;
+	});
 	// Same daily slot: old outbox receipts, send-once keys and stale MCP rows go.
 	const pruned = await pruneOldRows();
-	return NextResponse.json({ workspaces: due.length, generated, failures, rates, pruned });
+	return NextResponse.json({
+		workspaces: due.length,
+		generated,
+		failures,
+		rates,
+		pruned,
+		archivedCards,
+	});
 }
 
 /** Stores today's rate for each foreign currency in use (open accounts, wants). */
