@@ -208,6 +208,18 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 	],
 	"/seiryu": [
 		{
+			title: "Focus (every project)",
+			items: [
+				{ keys: ["N"], label: "Capture: one line into any app" },
+				{ keys: ["↑", "↓"], label: "Move between cards" },
+				{ keys: ["Enter", "E"], label: "Open the card" },
+				{ keys: ["X"], label: "Done (Undo in the toast)" },
+				{ keys: ["T"], label: "Due today" },
+				{ keys: ["D"], label: "Due a day later" },
+				{ keys: [","], label: "Settings" },
+			],
+		},
+		{
 			title: "Board",
 			items: [
 				{ keys: ["N"], label: "New card" },

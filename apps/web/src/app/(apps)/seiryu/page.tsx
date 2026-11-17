@@ -1,12 +1,11 @@
-import { redirect } from "next/navigation";
 import { getProjects } from "@/features/seiryu/actions/projects";
+import { FocusView } from "@/features/seiryu/components/FocusView";
 import { SeiryuWelcome } from "@/features/seiryu/components/SeiryuWelcome";
+import { getFocus } from "@/features/seiryu/lib/focus-data";
 
 export default async function SeiryuPage() {
-	const projects = await getProjects();
-	const first = projects[0];
+	const [projects, focus] = await Promise.all([getProjects(), getFocus()]);
+	if (projects.length === 0) return <SeiryuWelcome />;
 
-	if (first) redirect(`/seiryu/${first.id}`);
-
-	return <SeiryuWelcome />;
+	return <FocusView sections={focus.sections} today={focus.today} projectCount={projects.length} />;
 }
