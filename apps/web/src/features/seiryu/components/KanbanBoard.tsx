@@ -53,6 +53,7 @@ import { setCardLabels } from "@/features/seiryu/actions/labels";
 import { AddColumnButton } from "@/features/seiryu/components/AddColumnButton";
 import { type CardActions, CardMenuItems } from "@/features/seiryu/components/CardMenu";
 import { CardSheet } from "@/features/seiryu/components/CardSheet";
+import { CopyGroupDialog } from "@/features/seiryu/components/CopyGroupDialog";
 import { FilterChips, FilterMenu } from "@/features/seiryu/components/FilterMenu";
 import { type GroupProgress, GroupStrip } from "@/features/seiryu/components/GroupStrip";
 import { freshCards, KanbanCardOverlay } from "@/features/seiryu/components/KanbanCard";
@@ -176,6 +177,7 @@ export function KanbanBoard({
 	// The card a right-click (or ".") opened the menu for, and the one awaiting delete.
 	const [menuCardId, setMenuCardId] = useState<string | null>(null);
 	const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
+	const [copyingGroupId, setCopyingGroupId] = useState<string | null>(null);
 	// Shift- or ⌘-clicked cards: the selection bar acts on them all.
 	const [selected, setSelected] = useState<Set<string>>(() => new Set());
 	const handleCardSelect = useCallback((cardId: string) => {
@@ -1106,6 +1108,7 @@ export function KanbanBoard({
 						onCreate={handleGroupCreate}
 						onRename={handleGroupRename}
 						onDelete={handleGroupDelete}
+						onCopy={setCopyingGroupId}
 					/>
 				</div>
 			</div>
@@ -1229,6 +1232,18 @@ export function KanbanBoard({
 					actions={selectionActions}
 				/>
 			)}
+
+			<CopyGroupDialog
+				group={groups.find((g) => g.id === copyingGroupId) ?? null}
+				firstDue={
+					cards
+						.filter((c) => c.groupId === copyingGroupId && c.dueDate)
+						.map((c) => c.dueDate as string)
+						.sort()[0] ?? null
+				}
+				onOpenChange={(open) => !open && setCopyingGroupId(null)}
+				onCopied={(groupId) => setFilters({ ...filters, group: groupId })}
+			/>
 
 			<CardSheet
 				card={selectedCard}

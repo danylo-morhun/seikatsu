@@ -1,6 +1,11 @@
 "use client";
 
-import { Delete01Icon, MoreHorizontalIcon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
+import {
+	Copy01Icon,
+	Delete01Icon,
+	MoreHorizontalIcon,
+	PencilEdit01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	cn,
@@ -25,6 +30,7 @@ interface Props {
 	onCreate: (name: string) => void;
 	onRename: (groupId: string, name: string) => void;
 	onDelete: (groupId: string) => void;
+	onCopy: (groupId: string) => void;
 }
 
 const CHIP =
@@ -42,6 +48,7 @@ export function GroupStrip({
 	onCreate,
 	onRename,
 	onDelete,
+	onCopy,
 }: Props) {
 	const [adding, setAdding] = useState(false);
 	const [renaming, setRenaming] = useState<string | null>(null);
@@ -102,6 +109,10 @@ export function GroupStrip({
 									<DropdownMenuItem onSelect={() => setRenaming(group.id)}>
 										<HugeiconsIcon icon={PencilEdit01Icon} />
 										Rename
+									</DropdownMenuItem>
+									<DropdownMenuItem onSelect={() => onCopy(group.id)}>
+										<HugeiconsIcon icon={Copy01Icon} />
+										Copy as a new group…
 									</DropdownMenuItem>
 									<DropdownMenuSeparator />
 									<DropdownMenuItem
