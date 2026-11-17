@@ -1,0 +1,1 @@
+ALTER TABLE "seiryu_cards" ADD COLUMN "start_on" date;

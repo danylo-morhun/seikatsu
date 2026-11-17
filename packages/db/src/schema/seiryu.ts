@@ -97,6 +97,8 @@ export const seiryuCards = pgTable(
 		description: text("description"),
 		priority: seiryuCardPriorityEnum("priority"),
 		dueDate: date("due_date"),
+		/** Hidden until this day ("later"): off the board, Focus and Today till then. */
+		startOn: date("start_on"),
 		/** Local time on the due day; null = any time that day. Cleared with the date. */
 		dueTime: time("due_time"),
 		/** Minutes before the due moment (time, else 09:00) to push a reminder; null = none. */
