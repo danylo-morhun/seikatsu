@@ -62,6 +62,11 @@ export function nextMonday(ymd: string) {
 	return addDays(ymd, (8 - weekday) % 7 || 7);
 }
 
+/** Whole days from `from` to `to` (both YYYY-MM-DD). */
+export function daysBetween(from: string, to: string) {
+	return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
+}
+
 /** YYYY-MM-DD strings compare in calendar order, so dates never need parsing here. */
 export function addDays(ymd: string, days: number) {
 	const [y, m, d] = ymd.split("-").map(Number) as [number, number, number];

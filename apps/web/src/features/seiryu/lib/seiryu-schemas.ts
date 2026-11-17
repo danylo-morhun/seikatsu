@@ -211,5 +211,12 @@ export const updateGroupSchema = z.object({
 
 export const deleteGroupSchema = z.object({ groupId: z.string().uuid() });
 
+export const copyGroupSchema = z.object({
+	groupId: z.string().uuid(),
+	name: z.string().trim().min(1, "Name is required").max(60),
+	/** The copy's earliest due day; the other dates keep their distance from it. */
+	firstDue: z.iso.date().optional(),
+});
+
 export const restoreCardSchema = z.object({ cardId: z.string().uuid() });
 export const deleteCardSchema = z.object({ cardId: z.string().uuid() });
