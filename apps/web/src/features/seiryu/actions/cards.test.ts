@@ -28,7 +28,8 @@ vi.mock("@seikatsu/db", async () => ({
 	},
 }));
 
-const { moveCard } = await import("./cards");
+const { createCard, moveCard } = await import("./cards");
+const { archiveFinishedCards } = await import("../lib/auto-archive");
 const C = schema.seiryuCards;
 
 async function seed(card: Partial<typeof C.$inferInsert> = {}) {
@@ -138,5 +139,62 @@ describe("repeating cards", () => {
 		const { card, done } = await seed({ repeatEvery: null, repeatUnit: null });
 		await moveCard({ cardId: card.id, newColumnId: done.id });
 		expect(await open()).toHaveLength(0);
+	});
+});
+
+describe("sorting and clearing", () => {
+	beforeAll(async () => {
+		testDb ??= await createTestDb();
+	}, 30_000);
+
+	afterEach(async () => {
+		await testDb.delete(schema.workspaces);
+		today = "2026-11-06";
+	});
+
+	it("a new card's title names its group, labels and priority", async () => {
+		const { todo } = await seed();
+		const [group] = await testDb
+			.insert(schema.seiryuGroups)
+			.values({ projectId: todo.projectId, name: "Black Week", position: "a0" })
+			.returning();
+		const made = await createCard({
+			projectId: todo.projectId,
+			columnId: todo.id,
+			title: "Black Week: final price list #money !4",
+		});
+		if ("error" in made) throw new Error(made.error);
+		const [row] = await testDb.select().from(C).where(ops.eq(C.id, made.data.id));
+		expect(row).toMatchObject({
+			title: "final price list",
+			groupId: group?.id,
+			priority: "urgent",
+		});
+		const labels = await testDb
+			.select()
+			.from(schema.seiryuCardLabels)
+			.where(ops.eq(schema.seiryuCardLabels.cardId, made.data.id));
+		expect(labels).toHaveLength(1);
+	});
+
+	it("a card done over a week ago goes to the archive; a newer one stays", async () => {
+		const { card, done } = await seed({ repeatEvery: null, repeatUnit: null });
+		const [recent] = await testDb
+			.insert(C)
+			.values({
+				projectId: card.projectId,
+				columnId: done.id,
+				title: "Fresh",
+				position: "a1",
+				doneOn: "2026-11-01",
+			})
+			.returning();
+		await moveCard({ cardId: card.id, newColumnId: done.id });
+		await testDb.update(C).set({ doneOn: "2026-10-29" }).where(ops.eq(C.id, card.id));
+
+		expect(await archiveFinishedCards("2026-11-06")).toBe(1);
+		const rows = await testDb.select().from(C);
+		expect(rows.find((r) => r.id === card.id)?.archivedAt).not.toBeNull();
+		expect(rows.find((r) => r.id === recent?.id)?.archivedAt).toBeNull();
 	});
 });
