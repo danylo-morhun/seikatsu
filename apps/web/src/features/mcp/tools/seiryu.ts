@@ -42,6 +42,7 @@ const cardLine = (c: Board["cards"][number], board: Board) => ({
 	due: c.dueDate,
 	dueTime: c.dueTime ?? undefined,
 	hiddenUntil: c.startOn ?? undefined,
+	waitsOn: c.blockedBy ? `${c.blockedBy.title}${c.blockedBy.done ? " (done)" : ""}` : undefined,
 	remindMinutesBefore: c.remindMinutes ?? undefined,
 	repeat:
 		c.repeatEvery && c.repeatUnit
@@ -218,7 +219,7 @@ export const seiryuTools = [
 		name: "seiryu_update_card",
 		title: "Update a Seiryu card",
 		description:
-			'Change only the given fields. `groupId` moves it into a group of its project (null = none). `startOn` hides it (board, Focus, Today) until that day — "later"; null brings it back. `dueDate`/`dueTime`/`remindMinutes`/`priority`/`description` = null clears it; clearing the date clears its time and reminder. Setting a first time turns a reminder on at that time unless `remindMinutes` is given. `repeatEvery` + `repeatUnit` make it repeat: finishing it creates the next card, due one step later (from its due date, or from the day it\'s done with `repeatFromDone`); null stops it.',
+			'Change only the given fields. `groupId` moves it into a group of its project (null = none). `startOn` hides it (board, Focus, Today) until that day — "later"; null brings it back. `blockedById` = another card (any project) it waits on: shown as waiting and left out of Focus until that one is done; null frees it. `dueDate`/`dueTime`/`remindMinutes`/`priority`/`description` = null clears it; clearing the date clears its time and reminder. Setting a first time turns a reminder on at that time unless `remindMinutes` is given. `repeatEvery` + `repeatUnit` make it repeat: finishing it creates the next card, due one step later (from its due date, or from the day it\'s done with `repeatFromDone`); null stops it.',
 		input: {
 			cardId: id,
 			title: z.string().min(1).max(500).optional(),
@@ -232,6 +233,7 @@ export const seiryuTools = [
 			repeatFromDone: z.boolean().optional(),
 			groupId: id.nullable().optional(),
 			startOn: day.nullable().optional(),
+			blockedById: id.nullable().optional(),
 		},
 		write: true,
 		idempotent: true,
