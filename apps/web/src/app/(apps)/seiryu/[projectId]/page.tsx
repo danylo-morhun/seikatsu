@@ -40,6 +40,7 @@ export default async function SeiryuProjectPage({
 					columns={board.columns}
 					cards={board.cards}
 					projectLabels={board.labels}
+					groups={board.groups}
 					archived={toArchivedRows(board.archived, timeZone)}
 					archivedTotal={board.archivedTotal}
 				/>

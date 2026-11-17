@@ -9,7 +9,15 @@ export const DUE_FILTERS: { value: DueFilter; label: string }[] = [
 	{ value: "none", label: "No due date" },
 ];
 
-export type Filters = { priorities: string[]; labelIds: string[]; due: DueFilter | "" };
+/** `group`: a group's id, "none" for cards in no group, "" for any. */
+export type Filters = {
+	priorities: string[];
+	labelIds: string[];
+	due: DueFilter | "";
+	group: string;
+};
+
+export const NO_FILTERS: Filters = { priorities: [], labelIds: [], due: "", group: "" };
 
 const list = (value: string | null) => (value ?? "").split(",").filter(Boolean);
 
@@ -19,6 +27,7 @@ export function readFilters(params: URLSearchParams): Filters {
 		priorities: list(params.get("priority")),
 		labelIds: list(params.get("label")),
 		due: DUE_FILTERS.some((d) => d.value === due) ? (due as DueFilter) : "",
+		group: params.get("group") ?? "",
 	};
 }
 
@@ -29,11 +38,12 @@ export function writeFilters(params: URLSearchParams, filters: Filters) {
 	set("priority", filters.priorities.join(","));
 	set("label", filters.labelIds.join(","));
 	set("due", filters.due);
+	set("group", filters.group);
 	return next;
 }
 
 export const filterCount = (f: Filters) =>
-	f.priorities.length + f.labelIds.length + (f.due ? 1 : 0);
+	f.priorities.length + f.labelIds.length + (f.due ? 1 : 0) + (f.group ? 1 : 0);
 
 /** YYYY-MM-DD strings compare in calendar order, so dates never need parsing here. */
 export function addDays(ymd: string, days: number) {
@@ -48,6 +58,7 @@ export function applyFilters(cards: CardData[], f: Filters, today: string): Card
 	return cards.filter((card) => {
 		if (f.priorities.length > 0 && !f.priorities.includes(card.priority ?? "")) return false;
 		if (f.labelIds.length > 0 && !card.labels.some((l) => f.labelIds.includes(l.id))) return false;
+		if (f.group && (card.groupId ?? "none") !== f.group) return false;
 		if (!f.due) return true;
 		if (f.due === "none") return card.dueDate === null;
 		if (!card.dueDate) return false;

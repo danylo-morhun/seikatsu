@@ -6,6 +6,7 @@ const card = (over: Partial<CardData>): CardData => ({
 	id: "c",
 	columnId: "col",
 	projectId: "p",
+	groupId: null,
 	title: "t",
 	description: null,
 	hasDescription: false,
@@ -23,7 +24,7 @@ const card = (over: Partial<CardData>): CardData => ({
 	...over,
 });
 
-const none = { priorities: [], labelIds: [], due: "" as const };
+const none = { priorities: [], labelIds: [], due: "" as const, group: "" };
 
 describe("seiryu filters", () => {
 	const today = "2026-10-11";
@@ -59,14 +60,28 @@ describe("seiryu filters", () => {
 		expect(out.map((c) => c.id)).toEqual(["a"]);
 	});
 
+	it("keeps one group, or the cards in none", () => {
+		const cards = [card({ id: "a", groupId: "g" }), card({ id: "b" })];
+		const ids = (group: string) =>
+			applyFilters(cards, { ...none, group }, "2026-11-06").map((c) => c.id);
+		expect(ids("g")).toEqual(["a"]);
+		expect(ids("none")).toEqual(["b"]);
+	});
+
 	it("round-trips through the URL and drops unknown due values", () => {
 		const params = writeFilters(new URLSearchParams("x=1"), {
 			priorities: ["low"],
 			labelIds: ["a", "b"],
 			due: "week",
+			group: "",
 		});
 		expect(params.get("x")).toBe("1");
-		expect(readFilters(params)).toEqual({ priorities: ["low"], labelIds: ["a", "b"], due: "week" });
+		expect(readFilters(params)).toEqual({
+			priorities: ["low"],
+			labelIds: ["a", "b"],
+			due: "week",
+			group: "",
+		});
 		expect(readFilters(new URLSearchParams("due=soon")).due).toBe("");
 	});
 });

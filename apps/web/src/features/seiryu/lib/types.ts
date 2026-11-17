@@ -16,6 +16,12 @@ export type LabelData = {
 	color: string;
 };
 
+export type GroupData = {
+	id: string;
+	name: string;
+	position: string;
+};
+
 export type ColumnData = {
 	id: string;
 	projectId: string;
@@ -32,6 +38,8 @@ export type CardData = {
 	id: string;
 	columnId: string;
 	projectId: string;
+	/** The project group it's in; null = none. */
+	groupId: string | null;
 	title: string;
 	/** Undefined on the board, which leaves the text on the server until the card opens. */
 	description?: string | null;
@@ -68,6 +76,7 @@ export type CardFieldUpdates = Partial<
 		| "repeatEvery"
 		| "repeatUnit"
 		| "repeatFromDone"
+		| "groupId"
 	>
 >;
 

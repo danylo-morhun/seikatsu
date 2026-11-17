@@ -13,10 +13,12 @@ import {
 	seiryuCards,
 	seiryuChecklistItems,
 	seiryuColumns,
+	seiryuGroups,
 	seiryuProjects,
 } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 import { getColumns } from "@/features/seiryu/actions/columns";
+import { getGroups } from "@/features/seiryu/actions/groups";
 import {
 	getOwnedCard,
 	getOwnedColumn,
@@ -25,6 +27,7 @@ import {
 	requireWorkspace,
 } from "@/features/seiryu/actions/guard";
 import { getLabels } from "@/features/seiryu/actions/labels";
+import { parseTitle } from "@/features/seiryu/lib/parse-title";
 import { newCardDue, nextDue, reminderAt, shortTime } from "@/features/seiryu/lib/reminder";
 import { nextDueDate } from "@/features/seiryu/lib/repeat";
 import {
@@ -103,7 +106,7 @@ export async function getBoard(projectId: string) {
 	const workspace = await requireWorkspace();
 	if (!isUuid(projectId) || !(await isOwnedProject(projectId, workspace.id))) return null;
 
-	const [columns, rows, labels, archived, [archivedTotal]] = await Promise.all([
+	const [columns, rows, labels, groups, archived, [archivedTotal]] = await Promise.all([
 		getColumns(projectId),
 		db.query.seiryuCards.findMany({
 			columns: { description: false, remindAt: false, nextCardId: false },
@@ -115,6 +118,7 @@ export async function getBoard(projectId: string) {
 			with: cardWith,
 		}),
 		getLabels(projectId),
+		getGroups(projectId),
 		getWorkspaceArchivedCards(projectId, BOARD_ARCHIVED_LIMIT),
 		db
 			.select({ total: count() })
@@ -125,6 +129,7 @@ export async function getBoard(projectId: string) {
 		columns,
 		cards: rows.map(toCardData),
 		labels,
+		groups,
 		archived,
 		archivedTotal: archivedTotal?.total ?? 0,
 	};
@@ -181,7 +186,7 @@ export async function createCard(
 	const parsed = createCardSchema.safeParse(input);
 	if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
-	const { id, columnId, projectId, title, dueDate, dueTime } = parsed.data;
+	const { id, columnId, projectId, dueDate, dueTime } = parsed.data;
 
 	const column = await getOwnedColumn(columnId, workspace.id);
 	if (column?.projectId !== projectId) return { error: "Invalid column" };
@@ -192,18 +197,39 @@ export async function createCard(
 		if (existing) return { success: true, data: { id, position: existing.position } };
 	}
 
+	// Sorting typed into the title ("BW: …", "#label", "!4") works from anywhere — Capture,
+	// Claude — not only from the board, which sends what it read already.
+	const [groups, labels] = await Promise.all([getGroups(projectId), getLabels(projectId)]);
+	const read = parseTitle(parsed.data.title, { groups, labels });
+	const groupId = parsed.data.groupId ?? read.groupId;
+	const labelIds = [...new Set([...(parsed.data.labelIds ?? []), ...read.labelIds])];
+	if (groupId && !groups.some((g) => g.id === groupId)) return { error: "Invalid group" };
+	if (labelIds.some((l) => !labels.some((label) => label.id === l)))
+		return { error: "Invalid label" };
+
 	const due = dueDate ? newCardDue(dueDate, dueTime) : null;
-	const [card] = await db
-		.insert(seiryuCards)
-		.values({
-			id,
-			columnId,
-			projectId,
-			title,
-			position: await endOfColumn(columnId),
-			...(due && { ...due, remindAt: reminderAt(due, await getUserTimeZone()) }),
-		})
-		.returning({ id: seiryuCards.id, position: seiryuCards.position });
+	const position = await endOfColumn(columnId);
+	const timeZone = due ? await getUserTimeZone() : null;
+	const card = await db.transaction(async (tx) => {
+		const [row] = await tx
+			.insert(seiryuCards)
+			.values({
+				id,
+				columnId,
+				projectId,
+				groupId,
+				title: read.title,
+				priority: parsed.data.priority ?? read.priority,
+				position,
+				...(due && timeZone && { ...due, remindAt: reminderAt(due, timeZone) }),
+			})
+			.returning({ id: seiryuCards.id, position: seiryuCards.position });
+		if (row && labelIds.length > 0)
+			await tx
+				.insert(seiryuCardLabels)
+				.values(labelIds.map((labelId) => ({ cardId: row.id, labelId })));
+		return row;
+	});
 
 	if (!card) return { error: "Failed to create card" };
 
@@ -223,6 +249,8 @@ export async function updateCard(input: unknown): Promise<{ error: string } | { 
 
 	const card = await getOwnedCard(cardId, workspace.id);
 	if (!card) return { error: "Card not found" };
+	if (updates.groupId && !(await isGroupOf(updates.groupId, card.projectId)))
+		return { error: "Invalid group" };
 
 	const { dueDate, dueTime, remindMinutes, ...rest } = updates;
 	// A rule is both parts or neither.
@@ -254,6 +282,16 @@ export async function updateCard(input: unknown): Promise<{ error: string } | { 
 	revalidatePath(`/seiryu/${card.projectId}`);
 	revalidateShell();
 	return { success: true };
+}
+
+/** The group is one of the project's own. */
+async function isGroupOf(groupId: string, projectId: string) {
+	const [group] = await db
+		.select({ id: seiryuGroups.id })
+		.from(seiryuGroups)
+		.where(and(eq(seiryuGroups.id, groupId), eq(seiryuGroups.projectId, projectId)))
+		.limit(1);
+	return group != null;
 }
 
 /** "Remind me later": the reminder goes off again in `minutes`, the due date stays. */
@@ -389,6 +427,7 @@ async function repeatCard(cardId: string, fromColumnId: string, doneOn: string) 
 				.values({
 					projectId: card.projectId,
 					columnId,
+					groupId: card.groupId,
 					title: card.title,
 					description: card.description,
 					priority: card.priority,

@@ -65,10 +65,11 @@ export function overlayCards(cards: CardData[], ops: Op[], projectId: string): C
 					id: a.id,
 					columnId: a.columnId,
 					projectId,
+					groupId: a.groupId ?? null,
 					title: a.title,
 					description: null,
 					hasDescription: false,
-					priority: null,
+					priority: a.priority ?? null,
 					...(a.dueDate
 						? newCardDue(a.dueDate, a.dueTime)
 						: { dueDate: null, dueTime: null, remindMinutes: null }),

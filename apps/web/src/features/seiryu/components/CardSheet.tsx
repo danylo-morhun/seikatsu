@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { getCardDescription } from "@/features/seiryu/actions/cards";
 import { CardDetail } from "@/features/seiryu/components/CardDetail";
-import type { CardData, CardFieldUpdates, LabelData } from "@/features/seiryu/lib/types";
+import type { CardData, CardFieldUpdates, GroupData, LabelData } from "@/features/seiryu/lib/types";
 
 interface Props {
 	card: CardData | null;
@@ -33,6 +33,7 @@ interface Props {
 	onOpenChange: (open: boolean) => void;
 	columns: { id: string; name: string }[];
 	projectLabels: LabelData[];
+	groups: GroupData[];
 	onSave: (cardId: string, updates: CardFieldUpdates) => void;
 	onMove: (cardId: string, columnId: string) => void;
 	onChange: (cardId: string, updates: Partial<CardData>) => void;
@@ -48,6 +49,7 @@ export function CardSheet({
 	onOpenChange,
 	columns,
 	projectLabels,
+	groups,
 	onSave,
 	onMove,
 	onChange,
@@ -161,6 +163,7 @@ export function CardSheet({
 									today={today}
 									columns={columns}
 									projectLabels={projectLabels}
+									groups={groups}
 									onSave={(updates) => {
 										if ("description" in updates) {
 											setDescriptions((d) => ({ ...d, [shown.id]: updates.description ?? null }));

@@ -10,6 +10,7 @@ import {
 	seiryuCards,
 	seiryuChecklistItems,
 	seiryuColumns,
+	seiryuGroups,
 	seiryuLabels,
 	seiryuProjects,
 } from "@seikatsu/db";
@@ -85,4 +86,15 @@ export async function getOwnedLabel(labelId: string, workspaceId: string) {
 		.where(and(eq(seiryuLabels.id, labelId), eq(seiryuProjects.workspaceId, workspaceId)))
 		.limit(1);
 	return label ?? null;
+}
+
+/** The group's project if it belongs to the workspace — one query. */
+export async function getOwnedGroup(groupId: string, workspaceId: string) {
+	const [group] = await db
+		.select({ projectId: seiryuGroups.projectId })
+		.from(seiryuGroups)
+		.innerJoin(seiryuProjects, eq(seiryuProjects.id, seiryuGroups.projectId))
+		.where(and(eq(seiryuGroups.id, groupId), eq(seiryuProjects.workspaceId, workspaceId)))
+		.limit(1);
+	return group ?? null;
 }
