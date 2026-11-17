@@ -44,6 +44,7 @@ export async function getFocus() {
 				priority: seiryuCards.priority,
 				dueDate: seiryuCards.dueDate,
 				dueTime: seiryuCards.dueTime,
+				startOn: seiryuCards.startOn,
 				repeatUnit: seiryuCards.repeatUnit,
 				movedAt: seiryuCards.movedAt,
 			})

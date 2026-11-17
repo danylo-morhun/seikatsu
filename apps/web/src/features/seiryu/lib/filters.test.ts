@@ -7,6 +7,7 @@ const card = (over: Partial<CardData>): CardData => ({
 	columnId: "col",
 	projectId: "p",
 	groupId: null,
+	startOn: null,
 	title: "t",
 	description: null,
 	hasDescription: false,
@@ -60,6 +61,15 @@ describe("seiryu filters", () => {
 		expect(out.map((c) => c.id)).toEqual(["a"]);
 	});
 
+	it("hides cards until their start day unless asked", () => {
+		const cards = [card({ id: "now" }), card({ id: "later", startOn: "2026-11-09" })];
+		const ids = (later: boolean) =>
+			applyFilters(cards, { ...none, later }, "2026-11-06").map((c) => c.id);
+		expect(ids(false)).toEqual(["now"]);
+		expect(ids(true)).toEqual(["now", "later"]);
+		expect(applyFilters(cards, none, "2026-11-09")).toHaveLength(2);
+	});
+
 	it("keeps one group, or the cards in none", () => {
 		const cards = [card({ id: "a", groupId: "g" }), card({ id: "b" })];
 		const ids = (group: string) =>
@@ -81,6 +91,7 @@ describe("seiryu filters", () => {
 			labelIds: ["a", "b"],
 			due: "week",
 			group: "",
+			later: false,
 		});
 		expect(readFilters(new URLSearchParams("due=soon")).due).toBe("");
 	});

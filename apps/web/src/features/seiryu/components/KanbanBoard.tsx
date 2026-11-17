@@ -25,7 +25,7 @@ import {
 	SortableContext,
 	sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { Archive01Icon } from "@hugeicons/core-free-icons";
+import { Archive01Icon, Moon02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
@@ -44,6 +44,7 @@ import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { ContextArea, openContextMenu } from "@/components/ContextArea";
 import { startNavigationProgress } from "@/components/NavigationProgress";
 import { NOTE_LINK } from "@/components/SettingsSection";
+import { formatShortDate } from "@/features/kuroji/lib/dates";
 import { usePendingOps } from "@/features/pwa/lib/use-outbox";
 import { deleteCard, restoreCard } from "@/features/seiryu/actions/cards";
 import { deleteColumn, reorderColumns, updateColumn } from "@/features/seiryu/actions/columns";
@@ -66,7 +67,9 @@ import {
 	applyFilters,
 	type Filters,
 	filterCount,
+	isLater,
 	NO_FILTERS,
+	nextMonday,
 	readFilters,
 	writeFilters,
 } from "@/features/seiryu/lib/filters";
@@ -211,13 +214,18 @@ export function KanbanBoard({
 	}
 
 	const filteredCards = useMemo(() => applyFilters(cards, filters, today), [cards, filters, today]);
+	const laterCount = useMemo(() => cards.filter((c) => isLater(c, today)).length, [cards, today]);
 
 	const cardsByColumn = useMemo(() => groupByColumn(filteredCards), [filteredCards]);
 	const totalsByColumn = useMemo(() => {
 		const totals = new Map<string, number>();
-		for (const card of cards) totals.set(card.columnId, (totals.get(card.columnId) ?? 0) + 1);
+		for (const card of cards) {
+			// Cards hidden till later aren't on the board, so they don't count as filtered out.
+			if (!filters.later && isLater(card, today)) continue;
+			totals.set(card.columnId, (totals.get(card.columnId) ?? 0) + 1);
+		}
 		return totals;
-	}, [cards]);
+	}, [cards, filters.later, today]);
 
 	const sortedColumns = useMemo(() => [...columns].sort(byPosition), [columns]);
 	const columnIds = useMemo(() => sortedColumns.map((c) => c.id), [sortedColumns]);
@@ -316,6 +324,7 @@ export function KanbanBoard({
 				columnId,
 				projectId,
 				groupId: sort.groupId,
+				startOn: null,
 				title,
 				description: null,
 				hasDescription: false,
@@ -571,6 +580,19 @@ export function KanbanBoard({
 		return map;
 	}, [cards, columns]);
 
+	// "Later": off the board until that day, with Undo; null brings it back.
+	function handleCardLater(cardId: string, startOn: string | null) {
+		const card = cardsRef.current.find((c) => c.id === cardId);
+		if (!card) return;
+		const before = card.startOn;
+		handleCardSave(cardId, { startOn });
+		if (!startOn) return;
+		toast("Hidden till later", {
+			description: `${card.title} · back ${formatShortDate(startOn, today)}`,
+			action: { label: "Undo", onClick: () => handleCardSave(cardId, { startOn: before }) },
+		});
+	}
+
 	const cardActions: CardActions = {
 		open: handleCardOpen,
 		copyLink: handleCopyLink,
@@ -578,6 +600,8 @@ export function KanbanBoard({
 		setPriority: (cardId, priority) => handleCardSave(cardId, { priority }),
 		setDueDate: (cardId, dueDate) => handleCardDue(cardId, { dueDate }),
 		setLabels: handleCardLabels,
+		setGroup: (cardId, groupId) => handleCardSave(cardId, { groupId }),
+		setStartOn: handleCardLater,
 		finish: doneColumn ? handleCardFinish : undefined,
 		archive: handleCardArchive,
 		delete: setDeletingCardId,
@@ -604,7 +628,13 @@ export function KanbanBoard({
 			handleCardArchive(card.id);
 			after?.focus();
 		} else if (key === "x") handleCardFinish(card.id);
-		else if (key === "t") handleCardDue(card.id, { dueDate: today });
+		else if (key === "l") {
+			const after = focused
+				? (neighbourTile(tile, "ArrowDown") ?? neighbourTile(tile, "ArrowUp"))
+				: null;
+			handleCardLater(card.id, isLater(card, today) ? null : nextMonday(today));
+			after?.focus();
+		} else if (key === "t") handleCardDue(card.id, { dueDate: today });
 		else if (key === "d") {
 			// A day later than it was due, or than today when it's late or has no date.
 			const from = card.dueDate && card.dueDate > today ? card.dueDate : today;
@@ -896,6 +926,21 @@ export function KanbanBoard({
 							<span className="font-figures text-xs tabular-nums">{archivedTotal}</span>
 						)}
 					</Button>
+					{(laterCount > 0 || filters.later) && (
+						<Button
+							variant="ghost"
+							aria-pressed={!!filters.later}
+							className={cn(
+								"gap-1.5 md:h-8 md:px-3",
+								filters.later ? "text-primary" : "text-muted-foreground",
+							)}
+							onClick={() => setFilters({ ...filters, later: !filters.later })}
+						>
+							<HugeiconsIcon icon={Moon02Icon} className="h-4 w-4" />
+							Later
+							<span className="font-figures text-xs tabular-nums">{laterCount}</span>
+						</Button>
+					)}
 				</div>
 				<FilterChips filters={filters} labels={projectLabels} onChange={setFilters} />
 				<div className="basis-full">
@@ -960,6 +1005,7 @@ export function KanbanBoard({
 											card={menuCard}
 											columns={sortedColumns}
 											projectLabels={projectLabels}
+											groups={sortedGroups}
 											today={today}
 											actions={cardActions}
 										/>

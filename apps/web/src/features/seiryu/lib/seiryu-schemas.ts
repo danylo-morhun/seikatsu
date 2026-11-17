@@ -109,6 +109,8 @@ export const updateCardSchema = z.object({
 	repeatFromDone: z.boolean().optional(),
 	/** A group of the card's own project; null = none. */
 	groupId: z.string().uuid().nullable().optional(),
+	/** Hidden until this day; null = now. */
+	startOn: z.iso.date().nullable().optional(),
 });
 
 export const snoozeCardSchema = z.object({

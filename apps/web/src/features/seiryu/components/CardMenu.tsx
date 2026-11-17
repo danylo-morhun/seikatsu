@@ -6,7 +6,9 @@ import {
 	Calendar03Icon,
 	Delete01Icon,
 	Flag02Icon,
+	FolderOpenIcon,
 	Link01Icon,
+	Moon02Icon,
 	SidebarRightIcon,
 	Tag01Icon,
 	Tick02Icon,
@@ -25,8 +27,8 @@ import {
 } from "@seikatsu/ui";
 import Link from "next/link";
 import { PRIORITIES, PRIORITY_CONFIG, type Priority } from "@/features/seiryu/lib/constants";
-import { addDays } from "@/features/seiryu/lib/filters";
-import type { CardData, ColumnData, LabelData } from "@/features/seiryu/lib/types";
+import { addDays, isLater, nextMonday } from "@/features/seiryu/lib/filters";
+import type { CardData, ColumnData, GroupData, LabelData } from "@/features/seiryu/lib/types";
 
 export interface CardActions {
 	open: (cardId: string) => void;
@@ -35,6 +37,9 @@ export interface CardActions {
 	setPriority: (cardId: string, priority: Priority | null) => void;
 	setDueDate: (cardId: string, dueDate: string | null) => void;
 	setLabels: (cardId: string, labels: LabelData[]) => void;
+	setGroup: (cardId: string, groupId: string | null) => void;
+	/** Hide until that day; null brings it back now. */
+	setStartOn: (cardId: string, startOn: string | null) => void;
 	/** To the project's first finish column; absent when the project has none. */
 	finish?: (cardId: string) => void;
 	archive: (cardId: string) => void;
@@ -46,6 +51,7 @@ interface Props {
 	/** Sorted by position. */
 	columns: ColumnData[];
 	projectLabels: LabelData[];
+	groups: GroupData[];
 	today: string;
 	actions: CardActions;
 }
@@ -53,7 +59,7 @@ interface Props {
 const NONE = "none";
 
 /** A card's right-click menu: everything the sheet does, a click away, keys named beside. */
-export function CardMenuItems({ card, columns, projectLabels, today, actions }: Props) {
+export function CardMenuItems({ card, columns, projectLabels, groups, today, actions }: Props) {
 	const id = card.id;
 	const dueOptions = [
 		{ label: "Today", date: today, key: "T" },
@@ -167,6 +173,52 @@ export function CardMenuItems({ card, columns, projectLabels, today, actions }: 
 					)}
 				</ContextMenuSubContent>
 			</ContextMenuSub>
+
+			<ContextMenuSub>
+				<ContextMenuSubTrigger>
+					<HugeiconsIcon icon={Moon02Icon} />
+					Later
+				</ContextMenuSubTrigger>
+				<ContextMenuSubContent className="w-48">
+					<ContextMenuItem onSelect={() => actions.setStartOn(id, nextMonday(today))}>
+						Next week
+						<ContextMenuShortcut>L</ContextMenuShortcut>
+					</ContextMenuItem>
+					<ContextMenuItem onSelect={() => actions.setStartOn(id, addDays(today, 30))}>
+						In a month
+					</ContextMenuItem>
+					{isLater(card, today) && (
+						<>
+							<ContextMenuSeparator />
+							<ContextMenuItem onSelect={() => actions.setStartOn(id, null)}>
+								Back on the board now
+							</ContextMenuItem>
+						</>
+					)}
+				</ContextMenuSubContent>
+			</ContextMenuSub>
+
+			{groups.length > 0 && (
+				<ContextMenuSub>
+					<ContextMenuSubTrigger>
+						<HugeiconsIcon icon={FolderOpenIcon} />
+						Group
+					</ContextMenuSubTrigger>
+					<ContextMenuSubContent className="max-h-80 w-48 overflow-y-auto [scrollbar-width:thin]">
+						<ContextMenuRadioGroup
+							value={card.groupId ?? NONE}
+							onValueChange={(value) => actions.setGroup(id, value === NONE ? null : value)}
+						>
+							{groups.map((group) => (
+								<ContextMenuRadioItem key={group.id} value={group.id}>
+									<span className="truncate">{group.name}</span>
+								</ContextMenuRadioItem>
+							))}
+							<ContextMenuRadioItem value={NONE}>No group</ContextMenuRadioItem>
+						</ContextMenuRadioGroup>
+					</ContextMenuSubContent>
+				</ContextMenuSub>
+			)}
 
 			<ContextMenuSub>
 				<ContextMenuSubTrigger>

@@ -9,15 +9,23 @@ export const DUE_FILTERS: { value: DueFilter; label: string }[] = [
 	{ value: "none", label: "No due date" },
 ];
 
-/** `group`: a group's id, "none" for cards in no group, "" for any. */
+/**
+ * `group`: a group's id, "none" for cards in no group, "" for any. `later`: also show the
+ * cards hidden until a later day (they're off the board otherwise).
+ */
 export type Filters = {
 	priorities: string[];
 	labelIds: string[];
 	due: DueFilter | "";
 	group: string;
+	later?: boolean;
 };
 
 export const NO_FILTERS: Filters = { priorities: [], labelIds: [], due: "", group: "" };
+
+/** Hidden until a day after `today`. */
+export const isLater = (card: { startOn: string | null }, today: string) =>
+	card.startOn !== null && card.startOn > today;
 
 const list = (value: string | null) => (value ?? "").split(",").filter(Boolean);
 
@@ -28,6 +36,7 @@ export function readFilters(params: URLSearchParams): Filters {
 		labelIds: list(params.get("label")),
 		due: DUE_FILTERS.some((d) => d.value === due) ? (due as DueFilter) : "",
 		group: params.get("group") ?? "",
+		later: params.get("later") === "1",
 	};
 }
 
@@ -39,11 +48,19 @@ export function writeFilters(params: URLSearchParams, filters: Filters) {
 	set("label", filters.labelIds.join(","));
 	set("due", filters.due);
 	set("group", filters.group);
+	set("later", filters.later ? "1" : "");
 	return next;
 }
 
 export const filterCount = (f: Filters) =>
 	f.priorities.length + f.labelIds.length + (f.due ? 1 : 0) + (f.group ? 1 : 0);
+
+/** The Monday after `ymd` (a week on when it's a Monday): where "later" sends a card. */
+export function nextMonday(ymd: string) {
+	const [y, m, d] = ymd.split("-").map(Number) as [number, number, number];
+	const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+	return addDays(ymd, (8 - weekday) % 7 || 7);
+}
 
 /** YYYY-MM-DD strings compare in calendar order, so dates never need parsing here. */
 export function addDays(ymd: string, days: number) {
@@ -53,6 +70,7 @@ export function addDays(ymd: string, days: number) {
 }
 
 export function applyFilters(cards: CardData[], f: Filters, today: string): CardData[] {
+	if (!f.later) cards = cards.filter((card) => !isLater(card, today));
 	if (filterCount(f) === 0) return cards;
 	const weekEnd = addDays(today, 7);
 	return cards.filter((card) => {

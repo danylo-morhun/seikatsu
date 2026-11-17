@@ -265,6 +265,18 @@ export function CardDetail({
 						</Select>
 					</div>
 
+					<div className="space-y-2">
+						<Label htmlFor={`${id}-later`}>Hidden until</Label>
+						<PickerInput
+							id={`${id}-later`}
+							type="date"
+							readOnly={readOnly}
+							value={card.startOn}
+							valid={DATE}
+							onCommit={(startOn) => startOn !== card.startOn && onSave({ startOn })}
+						/>
+					</div>
+
 					{card.repeatUnit && (
 						<div className="flex items-center gap-2 self-end pb-2">
 							<Checkbox

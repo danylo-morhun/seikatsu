@@ -47,6 +47,8 @@ export type CardData = {
 	hasDescription: boolean;
 	priority: Priority | null;
 	dueDate: string | null;
+	/** Hidden until this day (YYYY-MM-DD): "later". Null = on the board now. */
+	startOn: string | null;
 	/** "HH:MM" on the due day, or null for any time. */
 	dueTime: string | null;
 	/** Minutes before the due moment; null = no reminder. */
@@ -77,6 +79,7 @@ export type CardFieldUpdates = Partial<
 		| "repeatUnit"
 		| "repeatFromDone"
 		| "groupId"
+		| "startOn"
 	>
 >;
 
