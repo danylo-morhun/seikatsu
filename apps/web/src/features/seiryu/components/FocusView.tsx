@@ -65,6 +65,31 @@ export function FocusView({ sections: serverSections, today, projectCount }: Pro
 		});
 	}
 
+	// Overdue, all at once: to tomorrow, with one Undo that puts each date back.
+	function moveAllToTomorrow(late: FocusCard[]) {
+		const tomorrow = addDays(today, 1);
+		const before = cardsRef.current;
+		const ids = new Set(late.map((c) => c.id));
+		setCards((prev) => prev.map((c) => (ids.has(c.id) ? { ...c, dueDate: tomorrow } : c)));
+		Promise.all(late.map((c) => saveCard(c.id, c.title, { dueDate: tomorrow }))).then((results) => {
+			const failed = results.find((r) => "error" in r);
+			if (failed && "error" in failed) {
+				toast.error(failed.error);
+				setCards(before);
+				return;
+			}
+			toast(`${late.length === 1 ? "1 card" : `${late.length} cards`} moved to tomorrow`, {
+				action: {
+					label: "Undo",
+					onClick: () => {
+						setCards(before);
+						for (const c of late) void saveCard(c.id, c.title, { dueDate: c.dueDate });
+					},
+				},
+			});
+		});
+	}
+
 	function open(card: FocusCard) {
 		startNavigationProgress();
 		router.push(`/seiryu/${card.projectId}/${card.id}`);
@@ -136,8 +161,19 @@ export function FocusView({ sections: serverSections, today, projectCount }: Pro
 									section.key === "overdue" ? "text-negative" : "text-muted-foreground",
 								)}
 							>
-								{section.title}
-								<span className="font-figures text-xs tabular-nums">{section.cards.length}</span>
+								<span>
+									{section.title}{" "}
+									<span className="font-figures text-xs tabular-nums">{section.cards.length}</span>
+								</span>
+								{section.key === "overdue" && (
+									<button
+										type="button"
+										onClick={() => moveAllToTomorrow(section.cards)}
+										className="rounded-button px-1.5 text-xs font-normal text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+									>
+										All to tomorrow
+									</button>
+								)}
 							</h2>
 							<ol className="inset-group">
 								{section.cards.map((card) => (

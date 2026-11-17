@@ -2,7 +2,13 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CheckListIcon, HourglassIcon, Note01Icon, RepeatIcon } from "@hugeicons/core-free-icons";
+import {
+	CheckListIcon,
+	HourglassIcon,
+	Moon02Icon,
+	Note01Icon,
+	RepeatIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import { memo, useId, useState } from "react";
@@ -122,11 +128,18 @@ const CardBody = memo(
 		const stuck = inProgress ? stuckDays(card.movedAt) : null;
 		const total = card.checklistItems.length;
 		const done = card.checklistItems.filter((i) => i.isCompleted).length;
+		const later = card.startOn && card.startOn > today ? card.startOn : null;
 		const hasMeta =
-			card.priority || card.dueDate || card.repeatUnit || stuck || total > 0 || card.hasDescription;
+			card.priority ||
+			card.dueDate ||
+			later ||
+			card.repeatUnit ||
+			stuck ||
+			total > 0 ||
+			card.hasDescription;
 
 		return (
-			<div className="flex flex-col gap-2">
+			<div className={cn("flex flex-col gap-2", later && "opacity-60")}>
 				<span id={id && `${id}-meta`} className="sr-only">
 					{[
 						group && `In ${group}.`,
@@ -137,6 +150,7 @@ const CardBody = memo(
 						card.repeatUnit &&
 							card.repeatEvery &&
 							`Repeats ${repeatLabel(card.repeatEvery, card.repeatUnit).toLowerCase()}.`,
+						later && `Hidden until ${formatShortDate(later, today)}.`,
 						stuck && `In this column for ${stuck} days.`,
 						total > 0 && `${done} of ${total} checklist items done.`,
 						card.hasDescription && "Has a description.",
@@ -183,6 +197,12 @@ const CardBody = memo(
 						{card.priority && <PriorityBadge priority={card.priority} />}
 						{card.dueDate && (
 							<DueDateChip dueDate={card.dueDate} dueTime={card.dueTime} today={today} />
+						)}
+						{later && (
+							<span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+								<HugeiconsIcon icon={Moon02Icon} className="h-3.5 w-3.5" />
+								from {formatShortDate(later, today)}
+							</span>
 						)}
 						{stuck && (
 							<span
@@ -259,6 +279,7 @@ function sameCard(
 		a.priority === b.priority &&
 		a.dueDate === b.dueDate &&
 		a.dueTime === b.dueTime &&
+		a.startOn === b.startOn &&
 		a.repeatUnit === b.repeatUnit &&
 		a.movedAt === b.movedAt &&
 		a.position === b.position &&

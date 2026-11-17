@@ -15,6 +15,7 @@ const card = (id: string, over: Partial<FocusCard> = {}): FocusCard => ({
 	priority: null,
 	dueDate: null,
 	dueTime: null,
+	startOn: null,
 	repeats: false,
 	movedAt: "2026-11-10T00:00:00.000Z",
 	checklist: null,
@@ -33,12 +34,14 @@ describe("buildFocus", () => {
 				card("soon", { dueDate: "2026-11-20" }),
 				card("later", { dueDate: "2026-12-20" }),
 				card("someday"),
+				card("hidden", { started: true, startOn: "2026-11-23" }),
+				card("hiddenButDue", { dueDate: TODAY, startOn: "2026-11-23" }),
 			],
 			TODAY,
 		);
 		expect(sections.map((s) => [s.key, s.cards.map((c) => c.id)])).toEqual([
 			["overdue", ["late", "startedLate"]],
-			["today", ["now"]],
+			["today", ["now", "hiddenButDue"]],
 			["doing", ["started"]],
 			["soon", ["soon"]],
 		]);
