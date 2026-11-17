@@ -225,6 +225,10 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 				{ keys: ["N"], label: "New card" },
 				{ keys: ["F"], label: "Filter" },
 				{ keys: ["A"], label: "Archived cards (with no card in focus)" },
+				{
+					keys: ["⇧", "Click"],
+					label: "Select several cards (⌘-click too); X, A, L act on all, Esc clears",
+				},
 				{ keys: [","], label: "Settings" },
 			],
 		},

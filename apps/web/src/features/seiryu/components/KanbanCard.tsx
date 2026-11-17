@@ -46,6 +46,9 @@ interface Props {
 	/** In a lane between the first and the finish line, where a card can get stuck. */
 	inProgress?: boolean;
 	onOpen?: (cardId: string) => void;
+	/** Shift- or ⌘-click: adds it to (or takes it out of) the selection. */
+	onSelect?: (cardId: string) => void;
+	selected?: boolean;
 }
 
 // Every sortable re-renders on each drag move (dnd-kit context); the body skips that work.
@@ -56,6 +59,8 @@ export const KanbanCard = memo(function KanbanCard({
 	waitingOn,
 	inProgress = false,
 	onOpen,
+	onSelect,
+	selected = false,
 }: Props) {
 	const isTemp = isTempId(card.id);
 	const id = useId();
@@ -79,7 +84,12 @@ export const KanbanCard = memo(function KanbanCard({
 			aria-labelledby={`${id}-title`}
 			aria-describedby={`${id}-meta ${attributes["aria-describedby"] ?? ""}`.trim()}
 			aria-disabled={isTemp || undefined}
-			onClick={() => !isTemp && onOpen?.(card.id)}
+			data-selected={selected || undefined}
+			onClick={(e) => {
+				if (isTemp) return;
+				if (onSelect && (e.shiftKey || e.metaKey || e.ctrlKey)) onSelect(card.id);
+				else onOpen?.(card.id);
+			}}
 			onKeyDown={(e) => {
 				listeners?.onKeyDown?.(e);
 				if (!isTemp && e.key === "Enter") onOpen?.(card.id);
@@ -91,6 +101,7 @@ export const KanbanCard = memo(function KanbanCard({
 				// The lifted card travels in the overlay; its place stays as an empty slot.
 				isDragging && "bg-transparent ring-1 ring-rule ring-inset [&>*]:opacity-0",
 				isTemp && "cursor-default opacity-70",
+				selected && "ring-2 ring-primary hover:ring-primary",
 			)}
 		>
 			<CardBody
@@ -284,6 +295,8 @@ const CardBody = memo(
 function sameCardProps(a: Props, b: Props) {
 	return (
 		a.onOpen === b.onOpen &&
+		a.onSelect === b.onSelect &&
+		a.selected === b.selected &&
 		a.inProgress === b.inProgress &&
 		a.group === b.group &&
 		a.waitingOn === b.waitingOn &&

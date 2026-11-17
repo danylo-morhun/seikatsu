@@ -58,6 +58,7 @@ import { type GroupProgress, GroupStrip } from "@/features/seiryu/components/Gro
 import { freshCards, KanbanCardOverlay } from "@/features/seiryu/components/KanbanCard";
 import { KanbanColumn, KanbanColumnOverlay } from "@/features/seiryu/components/KanbanColumn";
 import { NewCardDialog } from "@/features/seiryu/components/NewCardDialog";
+import { SelectionBar } from "@/features/seiryu/components/SelectionBar";
 import { SettingsArchive } from "@/features/seiryu/components/SettingsArchive";
 import type { ArchivedCardRow } from "@/features/seiryu/lib/archive";
 import { PRIORITIES } from "@/features/seiryu/lib/constants";
@@ -175,6 +176,16 @@ export function KanbanBoard({
 	// The card a right-click (or ".") opened the menu for, and the one awaiting delete.
 	const [menuCardId, setMenuCardId] = useState<string | null>(null);
 	const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
+	// Shift- or ⌘-clicked cards: the selection bar acts on them all.
+	const [selected, setSelected] = useState<Set<string>>(() => new Set());
+	const handleCardSelect = useCallback((cardId: string) => {
+		setSelected((prev) => {
+			const next = new Set(prev);
+			if (next.has(cardId)) next.delete(cardId);
+			else next.add(cardId);
+			return next;
+		});
+	}, []);
 	const [capture, setCapture] = useState<{ open: boolean; instant: boolean }>({
 		open: false,
 		instant: false,
@@ -242,6 +253,10 @@ export function KanbanBoard({
 		function onKeyDown(e: KeyboardEvent) {
 			const k = pageKey(e);
 			if (!k) return;
+			if (selectionKeyRef.current(k)) {
+				e.preventDefault();
+				return;
+			}
 			if (k === "n") setCapture({ open: true, instant: true });
 			else if (k === "f") setFilterOpen(true);
 			// A archives the card in focus or under the pointer; with none, opens the archive.
@@ -614,6 +629,123 @@ export function KanbanBoard({
 			action: { label: "Undo", onClick: () => handleCardSave(cardId, { startOn: before }) },
 		});
 	}
+
+	// ── The selection, all at once: one change each, one toast, one Undo where it matters.
+	const selectedCards = useMemo(
+		() => cards.filter((c) => selected.has(c.id) && !isTempId(c.id)),
+		[cards, selected],
+	);
+	// Cards that left the board (archived, deleted) leave the selection too.
+	useEffect(() => {
+		if (selectedCards.length !== selected.size)
+			setSelected(new Set(selectedCards.map((c) => c.id)));
+	}, [selectedCards, selected.size]);
+	const clearSelection = () => setSelected(new Set());
+
+	function bulkSave(updates: (card: CardData) => CardFieldUpdates, note: string) {
+		const picked = selectedCards;
+		for (const card of picked) handleCardSave(card.id, updates(card));
+		toast(`${picked.length === 1 ? "1 card" : `${picked.length} cards`} ${note}`);
+	}
+
+	function bulkMove(columnId: string) {
+		for (const card of selectedCards) handleCardMove(card.id, columnId);
+		clearSelection();
+	}
+
+	function bulkFinish() {
+		if (!doneColumn) return;
+		const picked = selectedCards.filter((c) => c.columnId !== doneColumn.id);
+		const spots = new Map(
+			picked.map((c) => [c.id, { columnId: c.columnId, position: c.position }]),
+		);
+		for (const card of picked) handleCardMove(card.id, doneColumn.id);
+		clearSelection();
+		toast(`${picked.length === 1 ? "1 card" : `${picked.length} cards`} done`, {
+			action: {
+				label: "Undo",
+				onClick: () => {
+					for (const card of picked) {
+						const spot = spots.get(card.id);
+						if (!spot) continue;
+						setCards((prev) => prev.map((c) => (c.id === card.id ? { ...c, ...spot } : c)));
+						void trackCards(placeCard(card.id, card.title, spot));
+					}
+				},
+			},
+		});
+	}
+
+	function bulkArchive() {
+		const picked = selectedCards;
+		const ids = new Set(picked.map((c) => c.id));
+		setCards((prev) => prev.filter((c) => !ids.has(c.id)));
+		clearSelection();
+		Promise.all(picked.map((c) => trackCards(shelveCard(c.id, c.title)))).then((results) => {
+			const failed = results.find((r) => "error" in r);
+			if (failed && "error" in failed) {
+				toast.error(failed.error);
+				resetCards();
+				return;
+			}
+			toast(`${picked.length === 1 ? "1 card" : `${picked.length} cards`} archived`, {
+				action: {
+					label: "Undo",
+					onClick: () =>
+						void Promise.all(picked.map((c) => trackCards(restoreCard({ cardId: c.id })))).then(
+							() => setCards((prev) => [...prev, ...picked]),
+						),
+				},
+			});
+		});
+	}
+
+	const selectionActions = {
+		finish: doneColumn ? bulkFinish : undefined,
+		move: bulkMove,
+		setGroup: (groupId: string | null) =>
+			bulkSave(() => ({ groupId }), groupId ? `in ${groupNames.get(groupId)}` : "out of groups"),
+		setDue: (when: "today" | "tomorrow" | "week" | null) => {
+			const dueDate =
+				when === "today"
+					? today
+					: when === "tomorrow"
+						? addDays(today, 1)
+						: when === "week"
+							? addDays(today, 7)
+							: null;
+			bulkSave(
+				(card) => nextDue(card, { dueDate }),
+				dueDate ? `due ${formatShortDate(dueDate, today)}` : "without a date",
+			);
+		},
+		later: () => {
+			bulkSave(() => ({ startOn: nextMonday(today) }), "hidden till next week");
+			clearSelection();
+		},
+		archive: bulkArchive,
+		clear: clearSelection,
+	};
+
+	// X, A and L act on the selection while there is one; Escape drops it.
+	const selectionKeyRef = useRef<(key: string) => boolean>(() => false);
+	selectionKeyRef.current = (key) => {
+		if (selected.size === 0) return false;
+		if (key === "x" && doneColumn) bulkFinish();
+		else if (key === "a") bulkArchive();
+		else if (key === "l") selectionActions.later();
+		else return false;
+		return true;
+	};
+	useEffect(() => {
+		if (selected.size === 0) return;
+		function onKeyDown(e: KeyboardEvent) {
+			if (e.key !== "Escape" || document.querySelector("[role=dialog],[role=menu]")) return;
+			setSelected(new Set());
+		}
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [selected.size]);
 
 	const cardActions: CardActions = {
 		open: handleCardOpen,
@@ -1051,6 +1183,8 @@ export function KanbanBoard({
 											today={today}
 											groupNames={groupNames}
 											waiting={waiting}
+											selected={selected}
+											onCardSelect={handleCardSelect}
 											cards={cardsByColumn.get(col.id) ?? NO_CARDS}
 											total={totalsByColumn.get(col.id) ?? 0}
 											onCardOpen={handleCardOpen}
@@ -1085,6 +1219,15 @@ export function KanbanBoard({
 						)}
 					</DragOverlay>
 				</DndContext>
+			)}
+
+			{selectedCards.length > 0 && (
+				<SelectionBar
+					count={selectedCards.length}
+					columns={sortedColumns}
+					groups={sortedGroups}
+					actions={selectionActions}
+				/>
 			)}
 
 			<CardSheet
