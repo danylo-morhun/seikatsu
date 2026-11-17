@@ -126,7 +126,7 @@ export function NewCardDialog({
 							value={title}
 							maxLength={500}
 							autoComplete="off"
-							placeholder="What needs doing?"
+							placeholder="What needs doing? Group: … #label !4"
 							aria-describedby={
 								[due && `${id}-due`, sortedSomething(sorted) && `${id}-sort`]
 									.filter(Boolean)
