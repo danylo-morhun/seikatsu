@@ -30,6 +30,7 @@ vi.mock("@seikatsu/db", async () => ({
 
 const { createCard, moveCard, updateCard } = await import("./cards");
 const { archiveFinishedCards } = await import("../lib/auto-archive");
+const { copyGroup } = await import("./groups");
 const C = schema.seiryuCards;
 
 async function seed(card: Partial<typeof C.$inferInsert> = {}) {
@@ -188,6 +189,45 @@ describe("sorting and clearing", () => {
 		expect(await updateCard({ cardId: card.id, blockedById: otherId })).toEqual({ success: true });
 		expect(await updateCard({ cardId: otherId, blockedById: card.id })).toHaveProperty("error");
 		expect(await updateCard({ cardId: card.id, blockedById: null })).toEqual({ success: true });
+	});
+
+	it("copies a group as a template, dates moved, checklists fresh", async () => {
+		const { card, done } = await seed({ repeatEvery: null, repeatUnit: null });
+		const [group] = await testDb
+			.insert(schema.seiryuGroups)
+			.values({ projectId: card.projectId, name: "BW 2026", position: "a0" })
+			.returning();
+		await testDb
+			.update(C)
+			.set({ groupId: group?.id, columnId: done.id, doneOn: "2026-11-06", archivedAt: new Date() })
+			.where(ops.eq(C.id, card.id));
+		await testDb.insert(C).values({
+			projectId: card.projectId,
+			columnId: done.id,
+			groupId: group?.id,
+			title: "Start check",
+			position: "a1",
+			dueDate: "2026-11-09",
+		});
+
+		const copied = await copyGroup({ groupId: group?.id, name: "BW 2027", firstDue: "2027-11-22" });
+		if ("error" in copied) throw new Error(copied.error);
+		expect(copied.data.cards).toBe(2);
+		const rows = await testDb.select().from(C).where(ops.eq(C.groupId, copied.data.id));
+		expect(rows.map((r) => [r.title, r.dueDate, r.doneOn, r.archivedAt]).sort()).toEqual([
+			["Accounting", "2027-11-22", null, null],
+			["Start check", "2027-11-25", null, null],
+		]);
+		const items = await testDb
+			.select()
+			.from(schema.seiryuChecklistItems)
+			.where(
+				ops.inArray(
+					schema.seiryuChecklistItems.cardId,
+					rows.map((r) => r.id),
+				),
+			);
+		expect(items.map((i) => i.isCompleted)).toEqual([false]);
 	});
 
 	it("a card done over a week ago goes to the archive; a newer one stays", async () => {
