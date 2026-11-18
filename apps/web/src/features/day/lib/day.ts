@@ -142,3 +142,24 @@ export function timeline(
 		});
 	return timed.sort((a, b) => a.time.localeCompare(b.time));
 }
+
+/** The evening push's line: "2 picks left · 1 habit open · 4 payments to add". */
+export function closeLine({
+	picks,
+	habitsLeft,
+	payments,
+}: {
+	picks: { done: number; of: number } | null;
+	habitsLeft: number;
+	payments: number;
+}): string {
+	const n = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
+	const parts = [
+		picks && picks.of > picks.done && `${n(picks.of - picks.done, "pick")} left`,
+		habitsLeft > 0 && `${n(habitsLeft, "habit")} open`,
+		payments > 0 && `${n(payments, "payment")} to add`,
+	].filter(Boolean);
+	return parts.length > 0
+		? `${parts.join(" · ")}. Three minutes.`
+		: "Log the day and look at tomorrow.";
+}
