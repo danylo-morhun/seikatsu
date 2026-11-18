@@ -73,6 +73,8 @@ import {
 import { setProgress, updateRating, updateStatus } from "@/features/tsundoku/actions/books";
 import { logSession } from "@/features/tsundoku/actions/sessions";
 import { bookStatusSchema } from "@/features/tsundoku/lib/tsundoku-schemas";
+import { saveWeek, tickFocus } from "@/features/week/actions/plan";
+import { weekSaveSchema, weekTickSchema } from "@/features/week/lib/plan-schemas";
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
@@ -91,6 +93,8 @@ export const REGISTRY: { [N in OpName]: Entry<N> } = {
 	"day.tick": { schema: tickSchema, run: tickPick },
 	"day.drop": { schema: dropSchema, run: dropPick },
 	"day.close": { schema: closeSchema, run: closeDay },
+	"week.save": { schema: weekSaveSchema, run: saveWeek },
+	"week.tick": { schema: weekTickSchema, run: tickFocus },
 	"keizoku.checkDay": {
 		schema: z.object({ habitId: z.uuid(), date: day }),
 		run: ({ habitId, date }) => checkDay(habitId, date),

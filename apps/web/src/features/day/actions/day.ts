@@ -6,6 +6,7 @@
 import { and, dayPlans, daySnoozes, db, eq } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 import type { z } from "zod";
+import { loadDay } from "@/features/day/lib/data";
 import {
 	closeSchema,
 	dropSchema,
@@ -14,6 +15,7 @@ import {
 	tickSchema,
 	unsnoozeSchema,
 } from "@/features/day/lib/schemas";
+import { money } from "@/features/home/lib/format";
 import { revalidateShell } from "@/lib/revalidate";
 import { requireWorkspace } from "@/lib/session";
 
@@ -113,12 +115,17 @@ export async function closeDay(input: z.input<typeof closeSchema>): Promise<Resu
 	const parsed = closeSchema.safeParse(input);
 	if (!parsed.success) return { error: "Can't close that day" };
 	const now = new Date();
+	// How the picks ended, kept for the week's look back.
+	const day = await loadDay(ws, parsed.data.day, money);
+	const result = day.plan?.plannedAt
+		? { done: day.picks.filter((p) => p.done).length, of: day.picks.length }
+		: null;
 	await db
 		.insert(dayPlans)
-		.values({ workspaceId: ws.id, day: parsed.data.day, closedAt: now })
+		.values({ workspaceId: ws.id, day: parsed.data.day, closedAt: now, result })
 		.onConflictDoUpdate({
 			target: [dayPlans.workspaceId, dayPlans.day],
-			set: { closedAt: now, updatedAt: now },
+			set: { closedAt: now, result, updatedAt: now },
 		});
 	refresh();
 	return { success: true };
