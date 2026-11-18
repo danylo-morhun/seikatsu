@@ -6,6 +6,22 @@ import { updateDocument } from "@/features/aisha/actions/documents";
 import { addReading } from "@/features/aisha/actions/readings";
 import { logService } from "@/features/aisha/actions/services";
 import { documentFormSchema, serviceFormSchema } from "@/features/aisha/lib/aisha-schemas";
+import {
+	closeDay,
+	dropPick,
+	savePlan,
+	snoozeRow,
+	tickPick,
+	unsnoozeRow,
+} from "@/features/day/actions/day";
+import {
+	closeSchema,
+	dropSchema,
+	planSchema,
+	snoozeSchema,
+	tickSchema,
+	unsnoozeSchema,
+} from "@/features/day/lib/schemas";
 import { buyItem, createItem, moveItem, reorderPlan } from "@/features/hoshii/actions/items";
 import {
 	buySchema,
@@ -69,6 +85,12 @@ type Entry<N extends OpName> = {
 };
 
 export const REGISTRY: { [N in OpName]: Entry<N> } = {
+	"day.snooze": { schema: snoozeSchema, run: snoozeRow },
+	"day.unsnooze": { schema: unsnoozeSchema, run: unsnoozeRow },
+	"day.savePlan": { schema: planSchema, run: savePlan },
+	"day.tick": { schema: tickSchema, run: tickPick },
+	"day.drop": { schema: dropSchema, run: dropPick },
+	"day.close": { schema: closeSchema, run: closeDay },
 	"keizoku.checkDay": {
 		schema: z.object({ habitId: z.uuid(), date: day }),
 		run: ({ habitId, date }) => checkDay(habitId, date),
