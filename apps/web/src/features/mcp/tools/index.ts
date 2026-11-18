@@ -1,5 +1,5 @@
 import { aishaTools } from "./aisha";
-import { dayTools } from "./day";
+import { dayTools, weekTools } from "./day";
 import { hoshiiTools } from "./hoshii";
 import { keizokuTools } from "./keizoku";
 import { kurojiTools } from "./kuroji";
@@ -13,6 +13,7 @@ import type { ToolDef } from "./types";
 export const ALL_TOOLS: ToolDef[] = [
 	...shellTools,
 	...dayTools,
+	...weekTools,
 	...kurojiTools,
 	...seiryuTools,
 	...tsundokuTools,
