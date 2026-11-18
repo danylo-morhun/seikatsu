@@ -79,6 +79,8 @@ export type HabitToday = {
 	done: boolean;
 	/** Today holds a note or photo: clearing it asks first, as in Keizoku. */
 	kept: boolean;
+	/** Keizoku's time of day: where it sits on Today's timeline. */
+	timeOfDay: "morning" | "anytime" | "evening";
 };
 
 async function getHabits(): Promise<{ today: string; habits: HabitToday[] }> {
@@ -91,6 +93,7 @@ async function getHabits(): Promise<{ today: string; habits: HabitToday[] }> {
 			emoji: habit.emoji,
 			done,
 			kept,
+			timeOfDay: habit.timeOfDay,
 		})),
 	};
 }

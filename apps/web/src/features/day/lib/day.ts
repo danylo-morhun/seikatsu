@@ -163,3 +163,39 @@ export function closeLine({
 		? `${parts.join(" · ")}. Three minutes.`
 		: "Log the day and look at tomorrow.";
 }
+
+export type SlotKey = "morning" | "day" | "evening";
+
+/** The part of the day a moment falls in: morning until noon, the evening from its time. */
+export function slotOf(minutes: number, eveningTime: string = DEFAULT_EVENING): SlotKey {
+	if (minutes < 12 * 60) return "morning";
+	return minutes < timeToMinutes(eveningTime) ? "day" : "evening";
+}
+
+export type DaySlot<H> = {
+	key: SlotKey;
+	label: string;
+	/** Today's times in it, in order (the evening's close heads the evening). */
+	entries: TimelineEntry[];
+	/** Habits done in this part of the day (Keizoku's time of day; "anytime" is the day). */
+	habits: H[];
+};
+
+const SLOT_LABEL: Record<SlotKey, string> = { morning: "Morning", day: "Day", evening: "Evening" };
+
+/** The day in three parts, each with its times and habits; empty parts are left out. */
+export function daySlots<H extends { timeOfDay: "morning" | "anytime" | "evening" }>(
+	entries: TimelineEntry[],
+	habits: H[],
+	eveningTime: string = DEFAULT_EVENING,
+): DaySlot<H>[] {
+	const keys: SlotKey[] = ["morning", "day", "evening"];
+	return keys
+		.map((key) => ({
+			key,
+			label: SLOT_LABEL[key],
+			entries: entries.filter((e) => slotOf(timeToMinutes(e.time), eveningTime) === key),
+			habits: habits.filter((h) => (h.timeOfDay === "anytime" ? "day" : h.timeOfDay) === key),
+		}))
+		.filter((s) => s.entries.length > 0 || s.habits.length > 0);
+}
