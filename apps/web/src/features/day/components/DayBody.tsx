@@ -1,31 +1,55 @@
-// Today's top: where the day is. Before it's planned, an invitation to the morning; while it
-// runs, the picks and today's times; from the evening on, the close; then a quiet line.
+// Today below the capture line, shaped by where the day is: before it's planned, an invitation
+// to the morning and the full list; once planned, the picks and the day's parts (times and
+// habits) with the rest folded away; from the evening on, the close; then a quiet line.
 
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { DayKey } from "@/features/day/components/DayKey";
+import { DaySlots } from "@/features/day/components/DaySlots";
 import { MyDay } from "@/features/day/components/MyDay";
 import { getUserMinutes, loadDay, readEvening } from "@/features/day/lib/data";
-import { dayPhase, timeline } from "@/features/day/lib/day";
+import { dayPhase, daySlots, slotOf, timeline } from "@/features/day/lib/day";
+import { TodayQueue } from "@/features/home/components/TodayQueue";
 import { plural } from "@/features/home/lib/format";
 import type { Money } from "@/features/home/lib/queue";
+import { loadHabits } from "@/features/home/lib/today";
 import type { Workspace } from "@/lib/session";
 
-export async function DayTop({ ws, today, fmt }: { ws: Workspace; today: string; fmt: Money }) {
-	const [day, evening, now] = await Promise.all([
+export async function DayBody({
+	ws,
+	today,
+	fmt,
+	showHabits,
+}: {
+	ws: Workspace;
+	today: string;
+	fmt: Money;
+	/** Keizoku isn't set aside: its habits sit on the day's parts. */
+	showHabits: boolean;
+}) {
+	const [day, evening, now, habits] = await Promise.all([
 		loadDay(ws, today, fmt),
 		readEvening(ws.id),
 		getUserMinutes(),
+		showHabits ? loadHabits() : null,
 	]);
 	const phase = dayPhase(day.plan, now, evening.time);
+	const planned = Boolean(day.plan?.plannedAt);
 	const waiting = day.queue.filter((q) => q.tone !== "info").length;
 	const left = day.picks.filter((p) => !p.done).length;
-	const times = timeline(day.queue, { time: evening.time, closed: phase === "closed" });
+	// What's picked is up top; the list holds the rest.
+	const picked = new Set(planned ? day.picks.map((p) => p.key) : []);
+	const rest = day.queue.filter((q) => !picked.has(q.key));
+	const slots = daySlots(
+		timeline(day.queue, { time: evening.time, closed: phase === "closed" }),
+		habits?.habits ?? [],
+		evening.time,
+	);
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 md:space-y-8">
 			{phase === "plan" && (
 				<Invite
 					href="/morning"
@@ -44,7 +68,7 @@ export async function DayTop({ ws, today, fmt }: { ws: Workspace; today: string;
 					eyebrow="Evening"
 					title="Close the day"
 					note={[
-						day.plan?.plannedAt && `${day.picks.length - left}/${day.picks.length} of my day done`,
+						planned && `${day.picks.length - left}/${day.picks.length} of my day done`,
 						"log habits and pages, sort what's left",
 					]
 						.filter(Boolean)
@@ -60,9 +84,29 @@ export async function DayTop({ ws, today, fmt }: { ws: Workspace; today: string;
 					</Link>
 				</p>
 			)}
-			{day.plan?.plannedAt && phase !== "closed" && (
-				<MyDay day={today} picks={day.picks} timeline={times} now={now} />
-			)}
+
+			<div className="grid gap-6 md:gap-8 lg:grid-cols-2">
+				{phase !== "closed" && (
+					<div className="min-w-0 space-y-6 md:space-y-8">
+						{planned && <MyDay day={today} picks={day.picks} />}
+						<DaySlots slots={slots} current={slotOf(now, evening.time)} now={now} today={today} />
+					</div>
+				)}
+				<section
+					aria-label="To do"
+					className={cn("min-w-0", !planned && phase !== "closed" && "max-lg:order-first")}
+				>
+					{!planned && phase !== "closed" && (
+						<h2 className="mb-2 px-1 text-sm font-medium text-muted-foreground">To do</h2>
+					)}
+					<TodayQueue
+						items={rest}
+						workspaceId={ws.id}
+						today={today}
+						folded={planned || phase === "closed"}
+					/>
+				</section>
+			</div>
 			{(phase === "plan" || phase === "close") && (
 				<DayKey href={phase === "plan" ? "/morning" : "/evening"} />
 			)}
