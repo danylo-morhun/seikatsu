@@ -56,6 +56,8 @@ const sectionsOf: Record<string, readonly { value: string; label: string }[]> = 
 
 export const PLACES: Place[] = [
 	{ href: "/", name: "Today" },
+	{ href: "/morning", name: "Morning" },
+	{ href: "/evening", name: "Evening" },
 	{ href: "/week", name: "Week" },
 	{ href: "/goals", name: "Goals" },
 	{ href: "/apps", name: "Apps" },
