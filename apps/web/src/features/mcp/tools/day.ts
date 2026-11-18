@@ -5,6 +5,9 @@ import { cardIdOf, dayPhase, MAX_PICKS, pickOf } from "@/features/day/lib/day";
 import { money } from "@/features/home/lib/format";
 import { localClock, safeTimeZone } from "@/features/pwa/lib/schedule";
 import { updateCard } from "@/features/seiryu/actions/cards";
+import { saveWeek } from "@/features/week/actions/plan";
+import { loadWeekRhythm, readFocusOptions } from "@/features/week/lib/plan-data";
+import { MAX_FOCUS } from "@/features/week/lib/rhythm";
 import { getUserTimeZone } from "@/lib/timezone";
 import { tool } from "./types";
 
@@ -99,5 +102,77 @@ export const dayTools = [
 		write: true,
 		idempotent: true,
 		run: (_args, { today }) => closeDay({ day: today }),
+	}),
+];
+
+export const weekTools = [
+	tool({
+		name: "week_focus",
+		title: "The week's focus",
+		description:
+			"The week's plan: which week is due for planning (next week from Sunday evening on), whether it's planned, this week's focus (up to three, each with done), and what the focus could be: last week's leftovers, goals' next steps, cards in progress or due soon. Use before week_set_focus.",
+		input: {},
+		run: async (_args, { ws, today }) => {
+			const fmt = (n: number, c = ws.baseCurrency) => money(n, c);
+			const rhythm = await loadWeekRhythm(ws, today, fmt);
+			const options = await readFocusOptions(ws, today, fmt, rhythm.target);
+			return {
+				target: rhythm.target,
+				phase: rhythm.phase,
+				focus: rhythm.focus.map(({ key, title, done }) => ({ key, title, done })),
+				goalsNeedingAHand: options.needs,
+				candidates: options.candidates.map(({ key, title, from, goal }) => ({
+					key,
+					title,
+					from,
+					goal,
+				})),
+			};
+		},
+	}),
+	tool({
+		name: "week_set_focus",
+		title: "Set the week's focus",
+		description: `Plans the week due for planning with up to ${MAX_FOCUS} things: candidate keys from week_focus, any open Seiryu card as \`seiryu:<card id>\`, or the user's own words as { title }. Replaces that week's focus and marks the week before looked back on. Ask the user which ones.`,
+		input: {
+			items: z
+				.array(z.union([z.object({ key }), z.object({ title: z.string().trim().min(1).max(200) })]))
+				.max(MAX_FOCUS),
+		},
+		write: true,
+		run: async ({ items }, { ws, today }) => {
+			const fmt = (n: number, c = ws.baseCurrency) => money(n, c);
+			const rhythm = await loadWeekRhythm(ws, today, fmt);
+			const options = await readFocusOptions(ws, today, fmt, rhythm.target);
+			const known = new Map(options.candidates.map((c) => [c.key, c]));
+			const cardKeys = items.flatMap((i) =>
+				"key" in i && !known.has(i.key) ? (cardIdOf(i.key) ?? []) : [],
+			);
+			const cards = new Map((await readOpenCards(ws.id, cardKeys)).map((c) => [c.id, c]));
+			const focus = [];
+			for (const i of items) {
+				if ("title" in i) {
+					focus.push({
+						key: `own:${crypto.randomUUID()}`,
+						title: i.title,
+						href: "/week",
+						app: "/week",
+					});
+					continue;
+				}
+				const hit = known.get(i.key);
+				const card = cards.get(cardIdOf(i.key) ?? "");
+				if (hit) focus.push({ key: hit.key, title: hit.title, href: hit.href, app: hit.app });
+				else if (card)
+					focus.push({
+						key: i.key,
+						title: card.title,
+						href: `/seiryu/${card.projectId}/${card.id}`,
+						app: "/seiryu",
+					});
+				else return { error: `Nothing to focus on under ${i.key}` };
+			}
+			return saveWeek({ weekStart: rhythm.target, focus });
+		},
 	}),
 ];
