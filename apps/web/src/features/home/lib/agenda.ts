@@ -4,6 +4,7 @@
 // never an error.
 
 import { cache } from "react";
+import { readSnoozes } from "@/features/day/lib/snoozes";
 import { getGoals } from "@/features/goals/lib/data";
 import { describeLink, type GoalPace, goalProgress } from "@/features/goals/lib/progress";
 import type { QueueData } from "@/features/home/lib/queue";
@@ -40,15 +41,16 @@ async function readGoalPace(ws: Workspace, today: string): Promise<GoalPace[]> {
 }
 
 export async function readAgenda(ws: Workspace, today: string): Promise<QueueData> {
-	const [money, wants, cards, jobs, car, goals] = await Promise.all([
+	const [money, wants, cards, jobs, car, goals, snoozed] = await Promise.all([
 		safely(() => readMoneyAgenda(ws, today)),
 		safely(() => getWants(ws, today)),
 		safely(() => getCardsDue(ws, today)),
 		safely(() => readJobsAgenda(ws.id, today)),
 		safely(() => readCar(ws.id, today)),
 		safely(() => readGoalPace(ws, today)),
+		safely(() => readSnoozes(ws.id, today)),
 	]);
-	return { money, wants, cards, jobs, car, goals };
+	return { money, wants, cards, jobs, car, goals, snoozed };
 }
 
 /** Request-cached for the pages: Today and Week read it once between them. */
