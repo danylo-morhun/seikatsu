@@ -29,6 +29,10 @@ export type QueueItem = {
 	href: string;
 	tone: QueueTone;
 	act: QueueAct;
+	/** A Seiryu card's id: "Later" moves its own due date instead of snoozing the row. */
+	cardId?: string;
+	/** "HH:MM" when it happens at a time today (a card's due time, a call): the day's timeline. */
+	time?: string;
 };
 
 /** Each app's own rule for what waits, folded: past this many, one row stands for them all. */
@@ -43,6 +47,8 @@ export type QueueData = {
 	car: CarToday | null;
 	/** Absent where goals aren't read (older callers, tests). */
 	goals?: GoalPace[] | null;
+	/** Rows put off with "Later": each stays off the list until its day. */
+	snoozed?: { key: string; until: string }[] | null;
 };
 
 const TONE_ORDER: Record<QueueTone, number> = { overdue: 0, due: 1, info: 2 };
@@ -77,6 +83,8 @@ function cardItems(cards: CardToday[], today: string): QueueItem[] {
 			note: `${card.projectName} · ${late > 0 ? `${plural(late, "day")} overdue` : card.dueTime ? `due ${card.dueTime}` : "due today"}`,
 			href: `/seiryu/${card.projectId}/${card.id}`,
 			tone: late > 0 ? "overdue" : "due",
+			cardId: card.id,
+			...(late <= 0 && card.dueTime && { time: card.dueTime }),
 			act: card.doneColumnId
 				? {
 						kind: "done",
@@ -133,6 +141,7 @@ function jobItems(jobs: JobsAgenda, today: string): QueueItem[] {
 		note: [call.date === today ? "Today" : "Tomorrow", call.time].filter(Boolean).join(" at "),
 		href: `/kyuu/${call.id}`,
 		tone: call.date === today ? "due" : "info",
+		...(call.date === today && call.time && { time: call.time.slice(0, 5) }),
 		act: { kind: "open" },
 	}));
 	if (jobs.mailReview > 0)
@@ -176,7 +185,7 @@ function moneyItems(money: MoneyAgenda, fmt: Money): QueueItem[] {
 			app: "/kuroji",
 			title: `${plural(money.captures, "payment")} to add`,
 			note: "Apple Pay payments waiting in Kuroji",
-			href: "/kuroji",
+			href: "/kuroji?capture=all",
 			tone: "due",
 			act: { kind: "open" },
 		});
@@ -244,7 +253,8 @@ function goalItems(goals: GoalPace[], today: string): QueueItem[] {
 /** Money as the app writes it ("500 zł"); the composer passes Kuroji's formatter. */
 export type Money = (amount: number, currency: string) => string;
 
-/** The day's list: overdue first, then due today, then the rest; each group in app order. */
+/** The day's list: overdue first, then due today, then the rest; each group in app order.
+ * Rows snoozed past today are left out. */
 export function buildQueue(
 	data: QueueData,
 	today: string,
@@ -258,7 +268,9 @@ export function buildQueue(
 		...(data.jobs ? jobItems(data.jobs, today) : []),
 		...(data.goals ? goalItems(data.goals, today) : []),
 	];
+	const later = new Set((data.snoozed ?? []).filter((s) => s.until > today).map((s) => s.key));
 	return items
+		.filter((item) => !later.has(item.key))
 		.map((item, i) => ({ item, i }))
 		.sort((a, b) => TONE_ORDER[a.item.tone] - TONE_ORDER[b.item.tone] || a.i - b.i)
 		.map(({ item }) => item);
