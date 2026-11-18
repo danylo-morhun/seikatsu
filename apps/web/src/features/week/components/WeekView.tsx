@@ -3,14 +3,25 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { Invite } from "@/features/day/components/Invite";
+import { loadDay } from "@/features/day/lib/data";
 import { Seal } from "@/features/home/components/Line";
 import { loadAgenda } from "@/features/home/lib/agenda";
 import { money } from "@/features/home/lib/format";
 import { buildQueue } from "@/features/home/lib/queue";
 import { addDays } from "@/features/keizoku/lib/streak";
 import { MoveCard } from "@/features/week/components/MoveCard";
+import { WeekFocus } from "@/features/week/components/WeekFocus";
 import { WeekKeys } from "@/features/week/components/WeekKeys";
+import { WeekPlanKey } from "@/features/week/components/WeekPlanKey";
 import { getWeekData } from "@/features/week/lib/data";
+import {
+	focusStates,
+	loadWeekRhythm,
+	readDayPlans,
+	readWeekPlan,
+} from "@/features/week/lib/plan-data";
+import { mondayOf } from "@/features/week/lib/rhythm";
 import {
 	buildWeek,
 	type WeekEntry,
@@ -88,6 +99,36 @@ export async function WeekView({ ws, today, day }: { ws: Workspace; today: strin
 		];
 	});
 	const { days, totals } = buildWeek(data, today, week, fmt, carried, later);
+
+	// The week's rhythm: plan it when it's due, then its focus; each day's own plan as a badge.
+	const viewed = week[0] ?? today;
+	const [rhythm, dayPlans] = await Promise.all([
+		viewed >= mondayOf(today) ? loadWeekRhythm(ws, today, fmt) : null,
+		readDayPlans(ws.id, week[0] ?? today, week[6] ?? today),
+	]);
+	const viewedPlan =
+		rhythm && viewed === mondayOf(today)
+			? { plan: rhythm.current, focus: rhythm.focus }
+			: viewed > today
+				? await readWeekPlan(ws.id, viewed).then(async (plan) => ({
+						plan,
+						focus: plan?.plannedAt
+							? await focusStates(ws, today, fmt, plan.focus, plan.ticked)
+							: [],
+					}))
+				: null;
+	const invite =
+		rhythm?.phase === "plan" && (viewed === mondayOf(today) || viewed === rhythm.target);
+	const live = current ? await loadDay(ws, today, fmt) : null;
+	const badge = new Map(
+		dayPlans.map((d) => {
+			const result =
+				d.day === today && live?.plan?.plannedAt
+					? { done: live.picks.filter((p) => p.done).length, of: live.picks.length }
+					: d.result;
+			return [d.day, { result, closed: Boolean(d.closedAt) }];
+		}),
+	);
 	// Days a due card can move to: the rest of this week, from today.
 	const ahead = week.filter((d) => d >= today);
 
@@ -125,6 +166,30 @@ export async function WeekView({ ws, today, day }: { ws: Workspace; today: strin
 				</nav>
 			</header>
 
+			{invite && rhythm && (
+				<div className="animate-rise [--i:1]">
+					<Invite
+						href="/week/plan"
+						eyebrow={rhythm.target === mondayOf(today) ? "This week" : "Next week"}
+						title={
+							rhythm.target === mondayOf(today) ? "Plan the week" : "Look back, plan next week"
+						}
+						note="How the days went, then up to three things in focus."
+					/>
+					<WeekPlanKey />
+				</div>
+			)}
+			{viewedPlan?.plan?.plannedAt && viewedPlan.focus.length > 0 && (
+				<div className="animate-rise [--i:1]">
+					<WeekFocus
+						weekStart={viewed}
+						focus={viewedPlan.focus}
+						title={viewed === mondayOf(today) ? "This week's focus" : "Focus"}
+						canChange={viewed === rhythm?.target}
+					/>
+				</div>
+			)}
+
 			{data.habits && data.habits.length > 0 && <HabitWeek habits={data.habits} today={today} />}
 
 			<ol aria-label="Days" className="space-y-5 md:space-y-6">
@@ -145,6 +210,7 @@ export async function WeekView({ ws, today, day }: { ws: Workspace; today: strin
 							>
 								{DAY_NAME.format(utc(d.date))} {utc(d.date).getUTCDate()}
 								{d.isToday && <span className="ml-2 font-normal text-primary">Today</span>}
+								<DayBadge day={badge.get(d.date)} />
 							</h2>
 							{entries.length > 0 ? (
 								<ul className="inset-group">
@@ -178,6 +244,22 @@ export async function WeekView({ ws, today, day }: { ws: Workspace; today: strin
 				})}
 			</ol>
 		</div>
+	);
+}
+
+/** A day's own plan: picks done of picks, and a tick once the evening closed it. */
+function DayBadge({
+	day,
+}: {
+	day?: { result: { done: number; of: number } | null; closed: boolean };
+}) {
+	if (!day || (!day.result?.of && !day.closed)) return null;
+	return (
+		<span className="mt-0.5 block text-xs font-normal text-muted-foreground md:mt-1">
+			{day.result?.of ? `My day ${day.result.done}/${day.result.of}` : null}
+			{day.result?.of && day.closed ? " · " : null}
+			{day.closed ? "closed" : null}
+		</span>
 	);
 }
 
