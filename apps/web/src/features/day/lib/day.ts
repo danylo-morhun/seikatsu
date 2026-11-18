@@ -69,16 +69,20 @@ export type Candidate = DayPick & {
 	note: string;
 	/** Picked yesterday and not done: offered first. */
 	carried: boolean;
+	/** In the week's focus and not done yet: offered right after. */
+	week?: boolean;
 };
 
 /** A card from Seiryu's Focus that isn't on the list (started, no date today). */
 export type FocusPick = { id: string; title: string; projectId: string; projectName: string };
 
-/** What the morning can pick from: yesterday's leftovers, the list, then cards under way. */
+/** What the morning can pick from: yesterday's leftovers, the week's focus, the list, then
+ * cards under way. */
 export function pickCandidates(
 	queue: QueueItem[],
 	focus: FocusPick[],
 	carried: DayPick[],
+	weekFocus: DayPick[] = [],
 ): Candidate[] {
 	const seen = new Set<string>();
 	const out: Candidate[] = [];
@@ -89,6 +93,8 @@ export function pickCandidates(
 	};
 	const notes = new Map(queue.map((q) => [q.key, q.note]));
 	for (const pick of carried) add({ ...pick, note: notes.get(pick.key) ?? "", carried: true });
+	for (const pick of weekFocus)
+		add({ ...pick, note: notes.get(pick.key) ?? "", carried: false, week: true });
 	for (const item of queue) add({ ...pickOf(item), note: item.note, carried: false });
 	for (const card of focus)
 		add({

@@ -4,8 +4,10 @@ import { AppFrame } from "@/components/AppFrame";
 import { MorningFlow } from "@/features/day/components/MorningFlow";
 import { loadDay } from "@/features/day/lib/data";
 import type { FocusPick } from "@/features/day/lib/day";
+import { readGoalProjects } from "@/features/goals/lib/steps";
 import { formatMoney } from "@/features/hoshii/lib/format";
 import { getFocus } from "@/features/seiryu/lib/focus-data";
+import { loadWeekRhythm } from "@/features/week/lib/plan-data";
 import { getCurrentWorkspace } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
 
@@ -24,10 +26,15 @@ export default async function MorningPage({
 		searchParams,
 	]);
 	if (!workspace) redirect("/");
-	const [day, focus] = await Promise.all([
+	const [day, focus, rhythm, goalProjects] = await Promise.all([
 		loadDay(workspace, today, asMoney),
 		getFocus().catch(() => null),
+		loadWeekRhythm(workspace, today, asMoney).catch(() => null),
+		readGoalProjects(workspace.id).catch(() => new Map<string, string>()),
 	]);
+	const weekFocus = (rhythm?.focus ?? [])
+		.filter((f) => !f.done)
+		.map(({ key, title, href, app }) => ({ key, title, href, app }));
 	// Cards already under way, for the pick: Focus's "In progress".
 	const doing: FocusPick[] =
 		focus?.sections
@@ -45,6 +52,8 @@ export default async function MorningPage({
 				items={day.queue}
 				focus={doing}
 				carried={day.carried}
+				weekFocus={weekFocus}
+				goals={Object.fromEntries(goalProjects)}
 				picked={day.plan?.plannedAt ? day.plan.picks.map((p) => p.key) : null}
 				startOnPick={step === "pick"}
 			/>
