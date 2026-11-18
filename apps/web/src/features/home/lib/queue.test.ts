@@ -172,4 +172,43 @@ describe("buildQueue", () => {
 			["Tatry", "info", "Its day is close · 90%"],
 		]);
 	});
+
+	it("leaves out rows snoozed past today, and brings them back on their day", () => {
+		const data: QueueData = {
+			...empty,
+			money: { ...noMoney, captures: 4 },
+			jobs: { ...noJobs, ghostIds: ["a"] },
+			snoozed: [
+				{ key: "kuroji:captures", until: "2026-11-05" },
+				{ key: "kyuu:ghost", until: TODAY },
+			],
+		};
+		expect(buildQueue(data, TODAY).map((q) => q.key)).toEqual(["kyuu:ghost"]);
+		expect(buildQueue(data, "2026-11-05").map((q) => q.key)).toEqual([
+			"kuroji:captures",
+			"kyuu:ghost",
+		]);
+	});
+
+	it("marks cards with their id and today's times for the timeline", () => {
+		const queue = buildQueue(
+			{
+				...empty,
+				cards: [
+					{ ...card("c1", TODAY), dueTime: "09:00" },
+					{ ...card("c2", "2026-11-01"), dueTime: "08:00" },
+				],
+				jobs: {
+					...noJobs,
+					calls: [{ id: "j", kind: "interview", company: "Reply", date: TODAY, time: "12:00" }],
+				},
+			},
+			TODAY,
+		);
+		expect(queue.map((q) => [q.key, q.cardId, q.time])).toEqual([
+			["seiryu:c2", "c2", undefined],
+			["seiryu:c1", "c1", "09:00"],
+			[`kyuu:call:j:${TODAY}`, undefined, "12:00"],
+		]);
+	});
 });
