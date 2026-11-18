@@ -236,7 +236,7 @@ async function Queue({ ws, today }: { ws: Workspace; today: string }) {
 	);
 }
 
-async function Habits() {
+export async function Habits() {
 	const data = await loadHabits();
 	const habits = data?.habits ?? [];
 	if (habits.length === 0)
@@ -246,7 +246,7 @@ async function Habits() {
 	return <HabitsToday habits={sorted} today={data?.today ?? ""} />;
 }
 
-async function ReadingLine() {
+export async function ReadingLine() {
 	const book = (await loadReading())?.[0];
 	if (!book) return <Line href="/tsundoku" title="No book on the go" note="Tsundoku" />;
 	return (
@@ -291,7 +291,7 @@ async function MoneyLine({ ws, today }: { ws: Workspace; today: string }) {
 	);
 }
 
-async function CarLine({ today }: { today: string }) {
+export async function CarLine({ today }: { today: string }) {
 	const car = await loadCar(today);
 	if (!car) return <Line href="/aisha" title="No car yet" note="Aisha" />;
 	const next = car.next;
