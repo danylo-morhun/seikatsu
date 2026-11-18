@@ -3,6 +3,7 @@
 // per-app morning briefs; Aisha's "tell once" alerts and the evening habits stay their own.
 
 import { db, eq, workspaces } from "@seikatsu/db";
+import { readPlan } from "@/features/day/lib/data";
 import { readAgenda } from "@/features/home/lib/agenda";
 import { money } from "@/features/home/lib/format";
 import { buildQueue, type QueueItem } from "@/features/home/lib/queue";
@@ -32,9 +33,11 @@ export const notifyToday: Notifier = async ({ workspaceId, prefs, clock }) => {
 	const items = buildQueue(await readAgenda(ws, clock.day), clock.day, money);
 	const brief = morningBrief(items);
 	if (!brief) return 0;
+	// Not planned yet: the push opens the morning's plan.
+	const planned = (await readPlan(workspaceId, clock.day))?.plannedAt;
 	const sent = await sendOnce(workspaceId, `today:${clock.day}`, {
 		...brief,
-		url: "/",
+		url: planned ? "/" : "/morning",
 		tag: "today-morning",
 	});
 	return sent ? 1 : 0;
