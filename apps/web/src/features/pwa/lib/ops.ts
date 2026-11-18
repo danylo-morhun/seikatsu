@@ -4,6 +4,7 @@
 // Rule for adding one: replaying it twice must land the same state (set-style updates,
 // creates with a client-made id), because a lost response gets it sent again.
 
+import type { DayPick } from "@seikatsu/db";
 import type { DocumentFormValues, ServiceFormValues } from "@/features/aisha/lib/aisha-schemas";
 import type { BuyValues, ItemFormValues, MoveTarget } from "@/features/hoshii/lib/hoshii-schemas";
 import type { HabitPatch } from "@/features/keizoku/lib/keizoku-schemas";
@@ -15,6 +16,12 @@ import type { CardFieldUpdates } from "@/features/seiryu/lib/types";
 import type { BookStatus } from "@/features/tsundoku/lib/constants";
 
 export interface OfflineOps {
+	"day.snooze": { key: string; until: string };
+	"day.unsnooze": { key: string };
+	"day.savePlan": { day: string; picks: DayPick[] };
+	"day.tick": { day: string; key: string; done: boolean };
+	"day.drop": { day: string; key: string };
+	"day.close": { day: string };
 	"keizoku.checkDay": { habitId: string; date: string };
 	"keizoku.uncheckDay": { habitId: string; date: string };
 	"keizoku.saveDayNote": { habitId: string; date: string; note: string; removePhoto: boolean };
