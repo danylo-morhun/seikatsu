@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { QueueItem } from "@/features/home/lib/queue";
-import { closeLine, dayPhase, laterDays, pickCandidates, pickStates, timeline } from "./day";
+import {
+	closeLine,
+	dayPhase,
+	daySlots,
+	laterDays,
+	pickCandidates,
+	pickStates,
+	slotOf,
+	timeline,
+} from "./day";
 
 const item = (key: string, extra: Partial<QueueItem> = {}): QueueItem => ({
 	key,
@@ -111,5 +120,35 @@ describe("closeLine", () => {
 		expect(closeLine({ picks: { done: 3, of: 3 }, habitsLeft: 0, payments: 0 })).toBe(
 			"Log the day and look at tomorrow.",
 		);
+	});
+});
+
+describe("daySlots", () => {
+	it("puts times and habits in their part of the day", () => {
+		const entries = timeline(
+			[item("a", { time: "09:00" }), item("b", { time: "13:00" }), item("c", { time: "20:00" })],
+			{ time: "19:00", closed: false },
+		);
+		const habits = [
+			{ id: "gym", timeOfDay: "anytime" as const },
+			{ id: "read", timeOfDay: "evening" as const },
+		];
+		const slots = daySlots(entries, habits, "19:00");
+		expect(
+			slots.map((s) => [s.key, s.entries.map((e) => e.key), s.habits.map((h) => h.id)]),
+		).toEqual([
+			["morning", ["a"], []],
+			["day", ["b"], ["gym"]],
+			["evening", ["day:close", "c"], ["read"]],
+		]);
+		expect(daySlots([], [], "19:00")).toEqual([]);
+	});
+
+	it("reads the part of the day from the clock", () => {
+		expect([slotOf(600), slotOf(720), slotOf(1140, "19:00")]).toEqual([
+			"morning",
+			"day",
+			"evening",
+		]);
 	});
 });
