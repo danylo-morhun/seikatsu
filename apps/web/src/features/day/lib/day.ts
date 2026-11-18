@@ -57,7 +57,10 @@ export function pickStates(
 	return picks.map((pick) => {
 		const live = byKey.get(pick.key) ?? null;
 		const card = cardIdOf(pick.key);
-		const gone = card ? !openCards.has(card) : !live && !snoozed.includes(pick.key);
+		// The user's own words are done only when ticked.
+		const gone = card
+			? !openCards.has(card)
+			: !pick.key.startsWith("own:") && !live && !snoozed.includes(pick.key);
 		return { ...pick, done: ticked.includes(pick.key) || gone, live };
 	});
 }
