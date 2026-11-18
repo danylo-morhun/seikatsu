@@ -351,6 +351,13 @@
 			"when": 1794994911404,
 			"tag": "0049_day_flow",
 			"breakpoints": true
+		},
+		{
+			"idx": 50,
+			"version": "7",
+			"when": 1795035370409,
+			"tag": "0050_week_plans",
+			"breakpoints": true
 		}
 	]
 }
