@@ -38,6 +38,9 @@ export const notificationPrefs = pgTable("notification_prefs", {
 	weekRecap: boolean("week_recap").notNull().default(false),
 	/** Seiryu: a card's own reminder, at the time set on it. */
 	seiryuReminders: boolean("seiryu_reminders").notNull().default(true),
+	/** Evening: close the day (log it, sort what's left), at `eveningTime`. Today turns to it then. */
+	eveningClose: boolean("evening_close").notNull().default(true),
+	eveningTime: time("evening_time").notNull().default("19:00"),
 	updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
