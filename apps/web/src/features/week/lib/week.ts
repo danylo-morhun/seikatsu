@@ -293,6 +293,8 @@ export function buildWeek(
 	money: Money,
 	/** What's overdue from earlier days (Today's own list): it heads today's plan. */
 	carried: WeekEntry[] = [],
+	/** Rows put off with "Later", on the day they come back. */
+	later: (WeekEntry & { date: string })[] = [],
 ): { days: WeekDay[]; totals: WeekTotals } {
 	const days = week.map((date) => {
 		const past = date < today;
@@ -305,7 +307,11 @@ export function buildWeek(
 			isToday,
 			past,
 			done: date <= today ? doneOn(data, date, money) : [],
-			plan: isToday ? [...carried.filter((e) => !keys.has(e.key)), ...planned] : planned,
+			plan: [
+				...(isToday ? carried.filter((e) => !keys.has(e.key)) : []),
+				...planned,
+				...(past ? [] : later.filter((e) => e.date === date).map(({ date: _, ...e }) => e)),
+			],
 		};
 	});
 	const upTo = <T extends { date: string }>(rows: T[]) => rows.filter((r) => r.date <= today);

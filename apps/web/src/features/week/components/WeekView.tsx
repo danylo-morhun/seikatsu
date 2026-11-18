@@ -46,26 +46,48 @@ export async function WeekView({ ws, today, day }: { ws: Workspace; today: strin
 	const current = week.includes(today);
 	const [data, agenda] = await Promise.all([
 		getWeekData(ws, today, week),
-		current ? loadAgenda(ws, today) : null,
+		// This week's late rows, and rows put off to a day of this week or a later one.
+		(week[6] ?? "") >= today ? loadAgenda(ws, today) : null,
 	]);
 	const fmt = (amount: number, currency = ws.baseCurrency) => money(amount, currency);
 	// What's late from before today, as Today lists it: it doesn't drop off the week.
-	const carried: WeekEntry[] = agenda
-		? buildQueue(agenda, today, fmt)
-				.flatMap((q) => (q.tone === "overdue" && q.app !== "/goals" ? [{ ...q, app: q.app }] : []))
-				.map((q) => {
-					const cardId = q.app === "/seiryu" ? q.key.slice("seiryu:".length) : null;
-					return {
-						key: cardId ? `seiryu:due:${cardId}` : `late:${q.key}`,
-						app: q.app,
-						title: q.title,
-						note: q.note,
-						href: q.href,
-						card: cardId ? { id: cardId, title: q.title } : undefined,
-					};
-				})
-		: [];
-	const { days, totals } = buildWeek(data, today, week, fmt, carried);
+	const carried: WeekEntry[] =
+		agenda && current
+			? buildQueue(agenda, today, fmt)
+					.flatMap((q) =>
+						q.tone === "overdue" && q.app !== "/goals" ? [{ ...q, app: q.app }] : [],
+					)
+					.map((q) => {
+						const cardId = q.app === "/seiryu" ? q.key.slice("seiryu:".length) : null;
+						return {
+							key: cardId ? `seiryu:due:${cardId}` : `late:${q.key}`,
+							app: q.app,
+							title: q.title,
+							note: q.note,
+							href: q.href,
+							card: cardId ? { id: cardId, title: q.title } : undefined,
+						};
+					})
+			: [];
+	// Put off with "Later": back on its day, named as the list names it now.
+	const rows = agenda
+		? new Map(buildQueue({ ...agenda, snoozed: null }, today, fmt).map((q) => [q.key, q]))
+		: null;
+	const later = (agenda?.snoozed ?? []).flatMap((s) => {
+		const q = rows?.get(s.key);
+		if (!q || q.app === "/goals" || !week.includes(s.until)) return [];
+		return [
+			{
+				date: s.until,
+				key: `later:${q.key}`,
+				app: q.app,
+				title: q.title,
+				note: `Put off · ${q.note}`,
+				href: q.href,
+			},
+		];
+	});
+	const { days, totals } = buildWeek(data, today, week, fmt, carried, later);
 	// Days a due card can move to: the rest of this week, from today.
 	const ahead = week.filter((d) => d >= today);
 
