@@ -13,6 +13,8 @@ import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { Kbd } from "@/components/Kbd";
 import { loadDialog } from "@/features/capture/components/CaptureButton";
 import { openCapture } from "@/features/capture/lib/key";
+import { LaterMenu } from "@/features/day/components/LaterMenu";
+import { clearDue, putOff } from "@/features/day/lib/offline";
 import type { QueueItem } from "@/features/home/lib/queue";
 import { keepWant, releaseWant } from "@/features/hoshii/lib/decide";
 import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTransactionModal";
@@ -20,9 +22,7 @@ import type { FundDue } from "@/features/kuroji/lib/agenda";
 import type { AddTransactionFormValues } from "@/features/kuroji/lib/transaction-schema";
 import { ghostAll, ghostedText } from "@/features/kyuu/lib/offline";
 import { QUEUED_TOAST } from "@/features/pwa/lib/run";
-import { addDays } from "@/features/seiryu/lib/filters";
 import { finishCard } from "@/features/seiryu/lib/finish";
-import { saveCard } from "@/features/seiryu/lib/offline";
 import { APPS_CONFIG } from "@/lib/app-themes";
 
 /** One line about anything: opens capture with it, already reading. */
@@ -189,25 +189,20 @@ function QueueRow({
 					{item.note}
 				</span>
 			</Link>
-			{act.kind === "done" && (
-				<Button
-					variant="ghost"
-					size="sm"
-					className="shrink-0 text-muted-foreground max-sm:hidden"
-					aria-label={`Tomorrow: ${item.title}`}
-					onClick={() =>
-						settle(item.key, async () => {
-							const result = await saveCard(act.cardId, item.title, {
-								dueDate: addDays(today, 1),
-							});
-							if (!("error" in result)) toast("Moved to tomorrow", { description: item.title });
-							return result;
-						})
-					}
-				>
-					Tomorrow
-				</Button>
-			)}
+			<LaterMenu
+				compact
+				title={item.title}
+				today={today}
+				onPick={(until) => handle(item.key, (back) => putOff(item, until, back))}
+				onNoDate={
+					item.cardId
+						? () => {
+								const cardId = item.cardId as string;
+								settle(item.key, () => clearDue({ cardId, title: item.title }));
+							}
+						: undefined
+				}
+			/>
 			{act.kind === "done" && (
 				<Button
 					variant="outline"
