@@ -38,6 +38,7 @@ import {
 	removeLink,
 	updateGoal,
 } from "@/features/goals/actions/goals";
+import { GoalStep, type GoalStepData } from "@/features/goals/components/GoalStep";
 import type { LinkOptions } from "@/features/goals/lib/data";
 import { LINK_APPS, LINK_KINDS, type LinkKind, type LinkView } from "@/features/goals/lib/progress";
 import { Seal } from "@/features/home/components/Line";
@@ -53,6 +54,10 @@ export type GoalCardData = {
 	when: string | null;
 	progress: number | null;
 	links: { id: string; kind: LinkKind; view: LinkView }[];
+	/** Why it asks for attention, if it does. */
+	why: string | null;
+	/** Its next step, or where to add one; null when it has no project. */
+	step: GoalStepData | null;
 };
 
 const failed = "Couldn't save. Check your connection.";
@@ -145,7 +150,9 @@ export function GoalCard({
 				</DropdownMenu>
 			</div>
 			{percent != null && <Bar ratio={goal.progress ?? 0} />}
+			{goal.why && <p className="text-xs font-medium text-negative">{goal.why}</p>}
 			{goal.note && <p className="text-sm text-muted-foreground">{goal.note}</p>}
+			{goal.step && <GoalStep goalName={goal.name} step={goal.step} />}
 
 			{goal.links.length > 0 && (
 				<ul aria-label={`${goal.name}: linked`} className="inset-group">
