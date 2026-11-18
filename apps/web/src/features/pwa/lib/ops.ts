@@ -22,6 +22,8 @@ export interface OfflineOps {
 	"day.tick": { day: string; key: string; done: boolean };
 	"day.drop": { day: string; key: string };
 	"day.close": { day: string };
+	"week.save": { weekStart: string; focus: DayPick[] };
+	"week.tick": { weekStart: string; key: string; done: boolean };
 	"keizoku.checkDay": { habitId: string; date: string };
 	"keizoku.uncheckDay": { habitId: string; date: string };
 	"keizoku.saveDayNote": { habitId: string; date: string; note: string; removePhoto: boolean };
