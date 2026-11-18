@@ -28,7 +28,8 @@ function formValues(c: PendingCapture): AddTransactionFormValues {
 
 /**
  * Apple Pay payments the iPhone Shortcut sent, waiting to be added. A push opens
- * `/kuroji?capture=<id>`, which opens that payment's dialog straight away.
+ * `/kuroji?capture=<id>`, which opens that payment's dialog straight away; `?capture=all`
+ * (Today, the evening) and "Add all" go through them one after another, each in its own form.
  */
 export function CaptureInbox({
 	workspaceId,
@@ -52,6 +53,15 @@ export function CaptureInbox({
 		setOpen(true);
 	}
 	const [hidden, setHidden] = useState<Set<string>>(new Set());
+	// Going through them all: each saved one opens the next.
+	const [stream, setStream] = useState(false);
+	const saved = useRef(false);
+	function addAll(list: PendingCapture[]) {
+		const first = list[0];
+		if (!first) return;
+		setStream(true);
+		add(first);
+	}
 
 	const linked = searchParams.get("capture");
 	const handled = useRef<string | null>(null);
@@ -59,7 +69,10 @@ export function CaptureInbox({
 		if (!linked || handled.current === linked) return;
 		handled.current = linked;
 		const hit = captures.find((c) => c.id === linked);
-		if (hit) add(hit);
+		if (linked === "all") {
+			if (captures.length > 0) addAll(captures);
+			else toast("Every payment is already in Kuroji.");
+		} else if (hit) add(hit);
 		else toast("This payment is already in Kuroji.");
 		const rest = new URLSearchParams(searchParams.toString());
 		rest.delete("capture");
@@ -93,13 +106,41 @@ export function CaptureInbox({
 
 	const shown = captures.filter((c) => !hidden.has(c.id));
 
+	function onOpenChange(next: boolean) {
+		setOpen(next);
+		if (next) return;
+		const wasSaved = saved.current;
+		saved.current = false;
+		if (!stream || !wasSaved) {
+			setStream(false);
+			return;
+		}
+		const after = shown.find((c) => c.id !== active?.id);
+		if (after) setTimeout(() => add(after), 200);
+		else {
+			setStream(false);
+			toast("All payments added.");
+		}
+	}
+
 	return (
 		<>
 			{shown.length > 0 && (
 				<section aria-labelledby="capture-inbox-title" className="animate-rise px-4 pt-6 sm:px-8">
-					<h2 id="capture-inbox-title" className="mb-2 text-xs text-muted-foreground">
-						Apple Pay · {shown.length} to add
-					</h2>
+					<div className="mb-2 flex items-baseline justify-between gap-3">
+						<h2 id="capture-inbox-title" className="text-xs text-muted-foreground">
+							Apple Pay · {shown.length} to add
+						</h2>
+						{shown.length > 1 && (
+							<button
+								type="button"
+								onClick={() => addAll(shown)}
+								className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+							>
+								Add all, one by one
+							</button>
+						)}
+					</div>
 					<ul className="inset-group">
 						{shown.map((c) => (
 							<li key={c.id} className="flex items-center gap-2">
@@ -137,7 +178,11 @@ export function CaptureInbox({
 					baseCurrency={baseCurrency}
 					prefill={prefill}
 					open={open}
-					onOpenChange={setOpen}
+					onOpenChange={onOpenChange}
+					onSaved={() => {
+						saved.current = true;
+						if (active) setHidden((h) => new Set(h).add(active.id));
+					}}
 				/>
 			)}
 		</>
