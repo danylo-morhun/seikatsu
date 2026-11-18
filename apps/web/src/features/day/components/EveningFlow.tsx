@@ -4,10 +4,9 @@ import { Button, cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { PageTitle } from "@/components/PageTitle";
 import { Spinner } from "@/components/Spinner";
 import { LaterMenu } from "@/features/day/components/LaterMenu";
-import { Steps } from "@/features/day/components/Steps";
+import { Steps, StepTitle } from "@/features/day/components/Steps";
 import { laterDays } from "@/features/day/lib/day";
 import { clearDue, close, drop, putOff, shortDay } from "@/features/day/lib/offline";
 import { QUEUED_TOAST } from "@/features/pwa/lib/run";
@@ -140,7 +139,7 @@ export function EveningFlow({
 
 			{step === 0 && (
 				<>
-					<PageTitle
+					<StepTitle
 						title="How did today go?"
 						subtitle="Log what piled up. Skip anything that didn't happen."
 					/>
@@ -156,7 +155,7 @@ export function EveningFlow({
 
 			{step === 1 && (
 				<>
-					<PageTitle
+					<StepTitle
 						title="What's left"
 						subtitle={
 							left.length > 0
@@ -200,7 +199,7 @@ export function EveningFlow({
 
 			{step === 2 && (
 				<>
-					<PageTitle
+					<StepTitle
 						title={closed ? "Day closed" : "Tomorrow"}
 						subtitle={closed ? "Quiet until the morning." : shortDay(next)}
 					/>
@@ -317,7 +316,7 @@ function LeftItem({
 				</p>
 			</div>
 			{!choice && (
-				<div className="flex shrink-0 items-center gap-1">
+				<div className="flex w-full shrink-0 items-center gap-1 pl-10 sm:w-auto sm:pl-0">
 					<Button variant="outline" size="sm" onClick={onTomorrow}>
 						Tomorrow
 					</Button>

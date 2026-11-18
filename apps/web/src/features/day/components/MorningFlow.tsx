@@ -8,10 +8,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { startNavigationProgress } from "@/components/NavigationProgress";
-import { PageTitle } from "@/components/PageTitle";
 import { Spinner } from "@/components/Spinner";
 import { LaterMenu } from "@/features/day/components/LaterMenu";
-import { Steps } from "@/features/day/components/Steps";
+import { Steps, StepTitle } from "@/features/day/components/Steps";
 import {
 	type Candidate,
 	type DayPick,
@@ -126,7 +125,7 @@ export function MorningFlow({
 			<Steps step={step === "sort" ? 0 : 1} of={2} />
 			{step === "sort" ? (
 				<>
-					<PageTitle
+					<StepTitle
 						title="Good morning"
 						subtitle={
 							left.length > 0
@@ -172,7 +171,7 @@ export function MorningFlow({
 				</>
 			) : (
 				<>
-					<PageTitle
+					<StepTitle
 						title={`Today's ${MAX_PICKS}`}
 						subtitle="If only these get done, the day counts."
 					/>
