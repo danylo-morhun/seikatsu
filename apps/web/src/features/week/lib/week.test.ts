@@ -159,4 +159,28 @@ describe("buildWeek", () => {
 			},
 		]);
 	});
+
+	it("puts a row put off with Later back on its day, not on days gone by", () => {
+		const row = {
+			key: "later:kyuu:ghost",
+			app: "/kyuu" as const,
+			title: "3 quiet",
+			note: "Put off",
+			href: "/kyuu",
+		};
+		const { days } = buildWeek(
+			empty,
+			TODAY,
+			WEEK,
+			money,
+			[],
+			[
+				{ ...row, date: "2026-11-06" },
+				{ ...row, key: "later:old", date: "2026-11-02" },
+			],
+		);
+		expect(days.flatMap((d) => d.plan.map((e) => [d.date, e.key]))).toEqual([
+			["2026-11-06", "later:kyuu:ghost"],
+		]);
+	});
 });
