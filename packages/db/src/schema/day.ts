@@ -27,9 +27,33 @@ export const dayPlans = pgTable(
 		ticked: text("ticked").array().notNull().default([]),
 		plannedAt: timestamp("planned_at", { withTimezone: true }),
 		closedAt: timestamp("closed_at", { withTimezone: true }),
+		/** How the picks ended, kept when the evening closes the day (Week counts it). */
+		result: jsonb("result").$type<{ done: number; of: number }>(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 	},
 	(t) => [primaryKey({ columns: [t.workspaceId, t.day] })],
+);
+
+/**
+ * The week's plan: up to three things in focus, picked on Sunday evening (or Monday) after a
+ * look back. One row per week, keyed by its Monday. The morning offers the focus first.
+ */
+export const weekPlans = pgTable(
+	"week_plans",
+	{
+		workspaceId: uuid("workspace_id")
+			.notNull()
+			.references(() => workspaces.id, { onDelete: "cascade" }),
+		weekStart: date("week_start").notNull(),
+		/** Cards (`seiryu:<id>`), list rows, or the user's own words (`own:<id>`). */
+		focus: jsonb("focus").$type<DayPick[]>().notNull().default([]),
+		ticked: text("ticked").array().notNull().default([]),
+		plannedAt: timestamp("planned_at", { withTimezone: true }),
+		/** Looked back on: set when the next week is planned. */
+		closedAt: timestamp("closed_at", { withTimezone: true }),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+	},
+	(t) => [primaryKey({ columns: [t.workspaceId, t.weekStart] })],
 );
 
 /**
@@ -53,3 +77,4 @@ export const daySnoozes = pgTable(
 
 export type DayPlan = typeof dayPlans.$inferSelect;
 export type DaySnooze = typeof daySnoozes.$inferSelect;
+export type WeekPlan = typeof weekPlans.$inferSelect;
