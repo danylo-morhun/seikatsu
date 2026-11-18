@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { QueueItem } from "@/features/home/lib/queue";
-import { dayPhase, laterDays, pickCandidates, pickStates, timeline } from "./day";
+import { closeLine, dayPhase, laterDays, pickCandidates, pickStates, timeline } from "./day";
 
 const item = (key: string, extra: Partial<QueueItem> = {}): QueueItem => ({
 	key,
@@ -100,5 +100,16 @@ describe("timeline", () => {
 			["20:00", "b"],
 		]);
 		expect(timeline([], { time: "19:00", closed: true })).toEqual([]);
+	});
+});
+
+describe("closeLine", () => {
+	it("says what the evening has to sort", () => {
+		expect(closeLine({ picks: { done: 1, of: 3 }, habitsLeft: 1, payments: 4 })).toBe(
+			"2 picks left · 1 habit open · 4 payments to add. Three minutes.",
+		);
+		expect(closeLine({ picks: { done: 3, of: 3 }, habitsLeft: 0, payments: 0 })).toBe(
+			"Log the day and look at tomorrow.",
+		);
 	});
 });
