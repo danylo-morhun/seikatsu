@@ -1,9 +1,6 @@
-import { cn } from "@seikatsu/ui";
-import Link from "next/link";
-import { type CSSProperties, Suspense } from "react";
-import { DayTop } from "@/features/day/components/DayTop";
-import { loadDay } from "@/features/day/lib/data";
-import { type AppHref, Line, LineAction, LineSkeleton } from "@/features/home/components/Line";
+import { Suspense } from "react";
+import { DayBody } from "@/features/day/components/DayBody";
+import { type AppHref, Line, LineSkeleton } from "@/features/home/components/Line";
 import { StartHere } from "@/features/home/components/StartHere";
 import {
 	Greeting,
@@ -12,7 +9,7 @@ import {
 	LogMileage,
 	LogPages,
 } from "@/features/home/components/TodayIslands";
-import { CaptureBar, TodayQueue } from "@/features/home/components/TodayQueue";
+import { CaptureBar } from "@/features/home/components/TodayQueue";
 import { km, longDate, money, plural } from "@/features/home/lib/format";
 import {
 	loadCar,
@@ -25,7 +22,6 @@ import {
 	type Started,
 } from "@/features/home/lib/today";
 import { formatMoney } from "@/features/hoshii/lib/format";
-import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTransactionModal";
 import { ProgressMeter } from "@/features/tsundoku/components/ProgressMeter";
 import { APPS_CONFIG } from "@/lib/app-themes";
 import type { Workspace } from "@/lib/session";
@@ -40,9 +36,9 @@ interface Props {
 }
 
 /**
- * The home is the day to work through: one line to capture anything, what waits today with its
- * action right in the row, habits, what's running now, then one figure per app. The layout is
- * known from the start; each part streams in on its own.
+ * The home is the day to work through: one line to capture anything, then the day as its phase
+ * has it (features/day DayBody): the morning's invitation and the list, the picks and the day's
+ * parts with habits, the evening's close. Logging the rest (pages, km) belongs to the evening.
  */
 export function TodayView({ ws, today, started, firstName }: Props) {
 	const hidden = APP_HREFS.filter((href) => ws.hiddenApps.includes(href));
@@ -51,7 +47,6 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 	const fresh = listed.filter((href) => started[href] === false);
 	const isNew = APP_HREFS.every((href) => started[href] === false);
 	const shows = (href: AppHref) => listed.includes(href) && !fresh.includes(href);
-	const side = shows("/keizoku") || shows("/tsundoku") || shows("/kuroji") || shows("/aisha");
 
 	return (
 		<div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-5 pb-28 sm:px-8 md:space-y-8 md:py-8">
@@ -78,12 +73,8 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 				<>
 					<header className="animate-rise">
 						<h1 className="text-xl font-semibold tracking-tight md:text-3xl">{longDate(today)}</h1>
-						<p className="mt-1 text-sm text-muted-foreground">
+						<p className="mt-1 min-h-5 text-sm text-muted-foreground">
 							<Greeting firstName={firstName} />
-							{/* Holds the line's height until the summaries are in. */}
-							<Suspense fallback={<span className="invisible">Nothing waiting on you today.</span>}>
-								<Waiting ws={ws} today={today} />
-							</Suspense>
 						</p>
 					</header>
 
@@ -92,61 +83,9 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 					</div>
 
 					<div className="animate-rise [--i:2]">
-						<Suspense fallback={null}>
-							<DayTop ws={ws} today={today} fmt={asMoney} />
+						<Suspense fallback={<ListSkeleton rows={3} />}>
+							<DayBody ws={ws} today={today} fmt={asMoney} showHabits={shows("/keizoku")} />
 						</Suspense>
-					</div>
-
-					{/* One grid for the day and the strip below: seven columns on a desktop, so the
-					    columns' edges fall on the strip's seams, and both columns end on one line. */}
-					<div className="grid gap-6 md:gap-8 lg:grid-cols-7 lg:gap-x-3">
-						<Section
-							title="To do"
-							index={2}
-							className={cn("lg:flex lg:flex-col", side ? "lg:col-span-4" : "lg:col-span-7")}
-						>
-							<Suspense fallback={<ListSkeleton rows={3} />}>
-								<Queue ws={ws} today={today} />
-							</Suspense>
-						</Section>
-
-						<div
-							className={cn(
-								"space-y-6 md:space-y-8 lg:col-span-3 lg:flex lg:flex-col",
-								!side && "hidden",
-							)}
-						>
-							{shows("/keizoku") && (
-								<Section title="Habits" href="/keizoku" index={3}>
-									<div className="group-card">
-										<Suspense fallback={<ListSkeleton rows={2} bare />}>
-											<Habits />
-										</Suspense>
-									</div>
-								</Section>
-							)}
-							{(shows("/tsundoku") || shows("/kuroji") || shows("/aisha")) && (
-								<Section title="Now" index={4} className="lg:flex lg:flex-1 lg:flex-col">
-									<ul className="inset-group lg:flex-1">
-										{shows("/tsundoku") && (
-											<Suspense fallback={<LineSkeleton />}>
-												<ReadingLine />
-											</Suspense>
-										)}
-										{shows("/kuroji") && (
-											<Suspense fallback={<LineSkeleton />}>
-												<MoneyLine ws={ws} today={today} />
-											</Suspense>
-										)}
-										{shows("/aisha") && (
-											<Suspense fallback={<LineSkeleton />}>
-												<CarLine today={today} />
-											</Suspense>
-										)}
-									</ul>
-								</Section>
-							)}
-						</div>
 					</div>
 				</>
 			)}
@@ -157,39 +96,6 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 	);
 }
 
-function Section({
-	title,
-	href,
-	index,
-	className,
-	children,
-}: {
-	title: string;
-	href?: AppHref;
-	index: number;
-	className?: string;
-	children: React.ReactNode;
-}) {
-	return (
-		<section
-			aria-label={title}
-			className={cn("min-w-0 animate-rise", className)}
-			style={{ "--i": index } as CSSProperties}
-		>
-			<h2 className="mb-2 px-1 text-sm font-medium text-muted-foreground">
-				{href ? (
-					<Link href={href} prefetch className="transition-colors hover:text-foreground">
-						{title}
-					</Link>
-				) : (
-					title
-				)}
-			</h2>
-			{children}
-		</section>
-	);
-}
-
 const ROWS = ["a", "b", "c"];
 
 function ListSkeleton({ rows, bare = false }: { rows: number; bare?: boolean }) {
@@ -197,44 +103,9 @@ function ListSkeleton({ rows, bare = false }: { rows: number; bare?: boolean }) 
 	return bare ? <ul>{lines}</ul> : <ul className="inset-group lg:flex-1">{lines}</ul>;
 }
 
-// ── What's waiting ────────────────────────────────────────────────────────────
-
-async function Waiting({ ws, today }: { ws: Workspace; today: string }) {
-	const [habits, cards, car, jobs, wants] = await Promise.all([
-		loadHabits(),
-		loadCards(ws, today),
-		loadCar(today),
-		loadJobs(),
-		loadWants(ws, today),
-	]);
-	const left = (habits?.habits ?? []).filter((h) => !h.done).length;
-	const overdue = (cards ?? []).filter((c) => c.dueDate < today).length;
-	const attention = [
-		left > 0 && `${plural(left, "habit")} left`,
-		overdue > 0 && `${plural(overdue, "card")} overdue`,
-		car?.next?.status === "overdue" && "car service overdue",
-		(jobs?.toSend ?? 0) > 0 && `${jobs?.toSend} to send`,
-		(wants?.decide ?? 0) > 0 && `${plural(wants?.decide ?? 0, "want")} to decide`,
-	].filter(Boolean);
-	return attention.length > 0 ? `${attention.join(", ")}.` : "Nothing waiting on you today.";
-}
-
 // ── The parts ─────────────────────────────────────────────────────────────────
 
 const asMoney = (amount: number, currency: string) => formatMoney(amount, currency, true);
-
-async function Queue({ ws, today }: { ws: Workspace; today: string }) {
-	const day = await loadDay(ws, today, asMoney);
-	// What's picked for the day is up top, in My day.
-	const picked = new Set(day.plan?.plannedAt ? day.plan.picks.map((p) => p.key) : []);
-	return (
-		<TodayQueue
-			items={day.queue.filter((q) => !picked.has(q.key))}
-			workspaceId={ws.id}
-			today={today}
-		/>
-	);
-}
 
 export async function Habits() {
 	const data = await loadHabits();
@@ -270,24 +141,6 @@ export async function ReadingLine() {
 				/>
 			</div>
 		</Line>
-	);
-}
-
-async function MoneyLine({ ws, today }: { ws: Workspace; today: string }) {
-	const m = await loadMoney(ws, today);
-	return (
-		<Line
-			href="/kuroji"
-			title={m ? `${money(m.spentToday, m.currency)} spent today` : "Money"}
-			note={m ? `${money(m.spentThisMonth, m.currency)} this month` : "Couldn't load"}
-			action={
-				<LazyAddTransactionModal
-					workspaceId={ws.id}
-					baseCurrency={ws.baseCurrency}
-					trigger={<LineAction label="Add transaction">Add</LineAction>}
-				/>
-			}
-		/>
 	);
 }
 

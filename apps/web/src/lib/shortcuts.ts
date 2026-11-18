@@ -23,8 +23,6 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 			title: "Today",
 			items: [
 				{ keys: ["N"], label: "Capture: one line into any app" },
-				{ keys: ["P"], label: "Log pages of the book you're reading" },
-				{ keys: ["M"], label: "Update the car's mileage" },
 				{ keys: ["O"], label: "Open the morning's plan, or the evening's close, when it's due" },
 				{
 					keys: ["1", "2", "3", "4", "5", "6", "7"],

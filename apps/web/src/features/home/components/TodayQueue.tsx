@@ -69,15 +69,19 @@ export function TodayQueue({
 	items,
 	workspaceId,
 	today,
+	folded = false,
 }: {
 	items: QueueItem[];
 	/** For acts that open Kuroji's form (a fund's instalment). */
 	workspaceId?: string;
 	today: string;
+	/** Behind one "Everything else · N" line until opened (a planned day keeps its picks up top). */
+	folded?: boolean;
 }) {
 	// Rows handled here go at once; a failure brings them back.
 	const [gone, setGone] = useState<Set<string>>(new Set());
 	const [all, setAll] = useState(false);
+	const [open, setOpen] = useState(!folded);
 	const left = items.filter((i) => !gone.has(i.key));
 	const shown = all ? left : left.slice(0, FIRST);
 
@@ -111,11 +115,25 @@ export function TodayQueue({
 			});
 	}
 
+	if (left.length === 0 && folded) return null;
 	if (left.length === 0)
 		return (
 			<p className="rounded-group bg-[var(--group-bg)] px-[var(--group-px)] py-4 text-sm text-muted-foreground lg:flex-1">
 				Nothing waiting on you. Anything new goes in the line above.
 			</p>
+		);
+
+	if (!open)
+		return (
+			<button
+				type="button"
+				onClick={() => setOpen(true)}
+				aria-expanded={false}
+				className="flex min-h-12 w-full items-center justify-between rounded-group bg-[var(--group-bg)] px-[var(--group-px)] text-sm transition-colors hover:bg-surface-2"
+			>
+				<span>Everything else</span>
+				<span className="font-figures text-muted-foreground tabular-nums">{left.length} ›</span>
+			</button>
 		);
 
 	// Fills its column on a desktop, so it ends where the column beside it does.

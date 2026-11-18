@@ -35,7 +35,7 @@ export function Greeting({ firstName }: { firstName: string | null }) {
 	return hour != null && firstName ? `${greeting(hour)}, ${firstName}. ` : null;
 }
 
-/** 1–7 open the apps in sidebar order (set-aside ones skipped). P and M belong to their tiles;
+/** 1–7 open the apps in sidebar order (set-aside ones skipped). P and M belong to the evening;
  * N captures, as on every app's own page it makes that app's new thing. */
 export function HomeKeys({ listed }: { listed: AppHref[] }) {
 	const router = useRouter();
