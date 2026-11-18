@@ -56,7 +56,12 @@ const isApp = (pathname: string) =>
 /** The shell's places, in the order of the phone's bar. Apps is lit inside any app. */
 export const SHELL = [
 	{ href: "/", label: "Today", icon: Home01Icon, match: (p: string) => p === "/" },
-	{ href: "/week", label: "Week", icon: Calendar03Icon, match: (p: string) => p === "/week" },
+	{
+		href: "/week",
+		label: "Week",
+		icon: Calendar03Icon,
+		match: (p: string) => p === "/week" || p.startsWith("/week/"),
+	},
 	{ href: "/goals", label: "Goals", icon: Target02Icon, match: (p: string) => p === "/goals" },
 	{ href: "/apps", label: "Apps", icon: DashboardSquare01Icon, match: isApp },
 ] as const;

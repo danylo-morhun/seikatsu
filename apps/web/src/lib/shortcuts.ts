@@ -66,6 +66,14 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 			items: [
 				{ keys: ["[", "]"], label: "Previous / next week" },
 				{ keys: ["T"], label: "This week" },
+				{ keys: ["O"], label: "Plan the week, when it's due" },
+			],
+		},
+		{
+			title: "Planning the week",
+			items: [
+				{ keys: ["]", "["], label: "Next / previous step" },
+				{ keys: ["1", "2", "3", "4", "5", "6", "7", "8", "9"], label: "Pick or unpick that one" },
 			],
 		},
 	],

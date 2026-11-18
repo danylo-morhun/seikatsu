@@ -76,6 +76,8 @@ export const PLACES: Place[] = [
 					.map((t) => ({ href: t.value, name: `${app.name} · ${t.label}`, app: href }))),
 		{ href: `/settings${href}`, name: `${app.name} · Settings`, app: href },
 	]),
+	// After the apps: "plan" still means Kuroji's first.
+	{ href: "/week/plan", name: "Week · Plan" },
 ];
 
 /**
