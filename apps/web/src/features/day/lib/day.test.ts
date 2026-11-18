@@ -152,3 +152,14 @@ describe("daySlots", () => {
 		]);
 	});
 });
+
+describe("pickCandidates with the week's focus", () => {
+	it("offers the focus right after yesterday's leftovers", () => {
+		const out = pickCandidates([item("a"), item("w")], [], [pick("y")], [pick("w")]);
+		expect(out.map((c) => [c.key, c.carried, c.week ?? false])).toEqual([
+			["y", true, false],
+			["w", false, true],
+			["a", false, false],
+		]);
+	});
+});

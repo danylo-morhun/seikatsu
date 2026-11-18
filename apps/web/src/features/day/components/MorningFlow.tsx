@@ -21,6 +21,7 @@ import {
 import { clearDue, planDay, putOff } from "@/features/day/lib/offline";
 import type { QueueItem } from "@/features/home/lib/queue";
 import { QUEUED_TOAST } from "@/features/pwa/lib/run";
+import { projectOfHref } from "@/features/week/lib/rhythm";
 import { APPS_CONFIG } from "@/lib/app-themes";
 import { pageKey } from "@/lib/capture-shortcut";
 
@@ -39,6 +40,8 @@ export function MorningFlow({
 	items,
 	focus,
 	carried,
+	weekFocus,
+	goals,
 	picked,
 	startOnPick,
 }: {
@@ -46,6 +49,10 @@ export function MorningFlow({
 	items: QueueItem[];
 	focus: FocusPick[];
 	carried: DayPick[];
+	/** The week's focus not done yet: offered after yesterday's leftovers. */
+	weekFocus: DayPick[];
+	/** Goals' projects, by project id → goal name: a candidate from one shows its goal. */
+	goals: Record<string, string>;
 	/** Today's picks when the day is already planned (picking again). */
 	picked: string[] | null;
 	startOnPick: boolean;
@@ -55,7 +62,10 @@ export function MorningFlow({
 	const [gone, setGone] = useState<Set<string>>(new Set());
 	const left = useMemo(() => items.filter((i) => !gone.has(i.key)), [items, gone]);
 
-	const candidates = useMemo(() => pickCandidates(left, focus, carried), [left, focus, carried]);
+	const candidates = useMemo(
+		() => pickCandidates(left, focus, carried, weekFocus),
+		[left, focus, carried, weekFocus],
+	);
 	// Picked before, else yesterday's leftovers, up to the day's room.
 	const [chosen, setChosen] = useState<string[]>(() =>
 		(picked ?? carried.map((c) => c.key)).slice(0, MAX_PICKS),
@@ -189,6 +199,7 @@ export function MorningFlow({
 									index={i}
 									place={chosen.indexOf(c.key)}
 									full={chosen.length >= MAX_PICKS}
+									goal={goals[projectOfHref(c.href) ?? ""] ?? null}
 									onToggle={() => toggle(c.key)}
 								/>
 							))}
@@ -291,12 +302,14 @@ function PickRow({
 	index,
 	place,
 	full,
+	goal,
 	onToggle,
 }: {
 	candidate: Candidate;
 	index: number;
 	place: number;
 	full: boolean;
+	goal: string | null;
 	onToggle: () => void;
 }) {
 	const on = place >= 0;
@@ -326,7 +339,8 @@ function PickRow({
 						<span aria-hidden className={cn(app.theme, "text-primary")}>
 							{app.kanji}
 						</span>
-						{c.carried ? "From yesterday" : c.note}
+						{goal && <span className="text-primary">志 {goal} ·</span>}
+						{c.carried ? "From yesterday" : c.week ? "Week focus" : c.note}
 					</span>
 				</span>
 				{on && <HugeiconsIcon icon={Tick02Icon} aria-hidden className="size-4 text-primary" />}
