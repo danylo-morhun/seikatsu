@@ -10,16 +10,19 @@ import {
 	eq,
 	inArray,
 	isNull,
+	notificationPrefs,
 	seiryuCards,
 	seiryuColumns,
 	seiryuProjects,
 } from "@seikatsu/db";
 import { cache } from "react";
-import { cardIdOf, type DayPick, pickStates } from "@/features/day/lib/day";
+import { cardIdOf, type DayPick, DEFAULT_EVENING, pickStates } from "@/features/day/lib/day";
 import { loadAgenda } from "@/features/home/lib/agenda";
 import { buildQueue, type Money, type QueueItem } from "@/features/home/lib/queue";
+import { localClock } from "@/features/pwa/lib/schedule";
 import { addDays } from "@/features/seiryu/lib/filters";
 import type { Workspace } from "@/lib/session";
+import { getUserTimeZone } from "@/lib/timezone";
 
 export async function readPlan(workspaceId: string, day: string): Promise<DayPlan | null> {
 	const plan = await db.query.dayPlans.findFirst({
@@ -146,3 +149,20 @@ async function readDay(ws: Workspace, today: string, fmt: Money): Promise<Day> {
 
 /** Request-cached: Today, the morning and the evening read it once each. */
 export const loadDay = cache(readDay);
+
+/** When the evening starts for this workspace, and whether its push is on. */
+export async function readEvening(workspaceId: string): Promise<{ time: string; push: boolean }> {
+	const prefs = await db.query.notificationPrefs.findFirst({
+		where: eq(notificationPrefs.workspaceId, workspaceId),
+		columns: { eveningTime: true, eveningClose: true },
+	});
+	return {
+		time: prefs?.eveningTime.slice(0, 5) ?? DEFAULT_EVENING,
+		push: prefs?.eveningClose ?? true,
+	};
+}
+
+/** Minutes since the user's local midnight, now. */
+export async function getUserMinutes(): Promise<number> {
+	return localClock(await getUserTimeZone()).minutes;
+}

@@ -1,6 +1,8 @@
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { type CSSProperties, Suspense } from "react";
+import { DayTop } from "@/features/day/components/DayTop";
+import { loadDay } from "@/features/day/lib/data";
 import { type AppHref, Line, LineAction, LineSkeleton } from "@/features/home/components/Line";
 import { StartHere } from "@/features/home/components/StartHere";
 import {
@@ -11,9 +13,7 @@ import {
 	LogPages,
 } from "@/features/home/components/TodayIslands";
 import { CaptureBar, TodayQueue } from "@/features/home/components/TodayQueue";
-import { loadAgenda } from "@/features/home/lib/agenda";
 import { km, longDate, money, plural } from "@/features/home/lib/format";
-import { buildQueue } from "@/features/home/lib/queue";
 import {
 	loadCar,
 	loadCards,
@@ -89,6 +89,12 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 
 					<div className="animate-rise [--i:1]">
 						<CaptureBar />
+					</div>
+
+					<div className="animate-rise [--i:2]">
+						<Suspense fallback={null}>
+							<DayTop ws={ws} today={today} fmt={asMoney} />
+						</Suspense>
 					</div>
 
 					{/* One grid for the day and the strip below: seven columns on a desktop, so the
@@ -218,9 +224,15 @@ async function Waiting({ ws, today }: { ws: Workspace; today: string }) {
 const asMoney = (amount: number, currency: string) => formatMoney(amount, currency, true);
 
 async function Queue({ ws, today }: { ws: Workspace; today: string }) {
-	const agenda = await loadAgenda(ws, today);
+	const day = await loadDay(ws, today, asMoney);
+	// What's picked for the day is up top, in My day.
+	const picked = new Set(day.plan?.plannedAt ? day.plan.picks.map((p) => p.key) : []);
 	return (
-		<TodayQueue items={buildQueue(agenda, today, asMoney)} workspaceId={ws.id} today={today} />
+		<TodayQueue
+			items={day.queue.filter((q) => !picked.has(q.key))}
+			workspaceId={ws.id}
+			today={today}
+		/>
 	);
 }
 
