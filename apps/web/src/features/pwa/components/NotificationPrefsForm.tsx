@@ -9,7 +9,7 @@ import { type PrefsInput, saveNotificationPrefs } from "@/features/pwa/actions/p
 type BoolKey = {
 	[K in keyof PrefsInput]: PrefsInput[K] extends boolean ? K : never;
 }[keyof PrefsInput];
-type TimeKey = "keizokuTime" | "morningTime";
+type TimeKey = "keizokuTime" | "morningTime" | "eveningTime";
 
 interface Row {
 	key: BoolKey;
@@ -23,6 +23,14 @@ interface Row {
 // One row per notifier the cron actually runs (app/api/cron/notify/route.ts).
 const ROWS: Row[] = [
 	{
+		key: "eveningClose",
+		app: "生 Today",
+		label: "Evening: close the day",
+		detail:
+			"What's left of the day's picks, habits still open, payments to add. Today turns to the close from this time.",
+		time: "eveningTime",
+	},
+	{
 		key: "keizokuEnabled",
 		app: "継 Keizoku",
 		label: "Evening reminder",
@@ -34,7 +42,7 @@ const ROWS: Row[] = [
 		app: "生 Today",
 		label: "Morning: what's waiting",
 		detail:
-			"Today's list in one push: cards due, calls, follow-ups, wants to decide, payments to add, the car.",
+			"Today's list in one push: cards due, calls, follow-ups, wants to decide, payments to add, the car. Opens the morning's plan until the day is planned.",
 	},
 	{
 		key: "seiryuReminders",
@@ -81,6 +89,8 @@ const DEFAULTS: PrefsInput = {
 	kurojiWeekly: true,
 	weekRecap: false,
 	seiryuReminders: true,
+	eveningClose: true,
+	eveningTime: "19:00",
 };
 
 const hhmm = (t: string) => t.slice(0, 5);
@@ -94,6 +104,7 @@ function fromPrefs(prefs: NotificationPrefs | null): PrefsInput {
 		weekRecap: rest.weekRecap || rest.kurojiWeekly,
 		keizokuTime: hhmm(rest.keizokuTime),
 		morningTime: hhmm(rest.morningTime),
+		eveningTime: hhmm(rest.eveningTime),
 	};
 }
 

@@ -38,6 +38,8 @@ const prefsSchema = z.object({
 	kurojiWeekly: z.boolean(),
 	weekRecap: z.boolean(),
 	seiryuReminders: z.boolean(),
+	eveningClose: z.boolean(),
+	eveningTime: time,
 });
 
 export type PrefsInput = z.infer<typeof prefsSchema>;
