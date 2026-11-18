@@ -36,7 +36,8 @@ export async function DayBody({
 		showHabits ? loadHabits() : null,
 	]);
 	const phase = dayPhase(day.plan, now, evening.time);
-	const planned = Boolean(day.plan?.plannedAt);
+	// Planned with picks: they're the day and the list folds away. Planned with none, the list is.
+	const planned = Boolean(day.plan?.plannedAt) && day.picks.length > 0;
 	const waiting = day.queue.filter((q) => q.tone !== "info").length;
 	const left = day.picks.filter((p) => !p.done).length;
 	// What's picked is up top; the list holds the rest.

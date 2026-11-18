@@ -7,7 +7,7 @@ import { ArrowRight01Icon, QuillWrite01Icon, Tick02Icon } from "@hugeicons/core-
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button, cn } from "@seikatsu/ui";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { Kbd } from "@/components/Kbd";
@@ -82,6 +82,10 @@ export function TodayQueue({
 	const [gone, setGone] = useState<Set<string>>(new Set());
 	const [all, setAll] = useState(false);
 	const [open, setOpen] = useState(!folded);
+	// A desktop has the room beside the day: the list opens there.
+	useEffect(() => {
+		if (folded && window.matchMedia("(min-width: 1024px)").matches) setOpen(true);
+	}, [folded]);
 	const left = items.filter((i) => !gone.has(i.key));
 	const shown = all ? left : left.slice(0, FIRST);
 
