@@ -46,13 +46,22 @@ test.beforeEach(async () => {
 		.returning({ id: seiryuColumns.id });
 	if (!todo || !done) throw new Error("columns not created");
 	doneColumnId = done.id;
-	await db.insert(seiryuCards).values({
-		projectId: project.id,
-		columnId: todo.id,
-		title: "E2E pick me",
-		position: "a0",
-		dueDate: day(0),
-	});
+	await db.insert(seiryuCards).values([
+		{
+			projectId: project.id,
+			columnId: todo.id,
+			title: "E2E pick me",
+			position: "a0",
+			dueDate: day(0),
+		},
+		{
+			projectId: project.id,
+			columnId: todo.id,
+			title: "E2E not today",
+			position: "a1",
+			dueDate: day(0),
+		},
+	]);
 	await db.insert(kyuuApplications).values({
 		workspaceId: wsId,
 		company: "E2E Quiet",
@@ -60,6 +69,13 @@ test.beforeEach(async () => {
 		status: "applied",
 		dateApplied: day(-60),
 	});
+});
+
+// A planned or closed day folds Today's list: leave none behind for the other specs.
+test.afterEach(async () => {
+	const wsId = await workspaceId();
+	await db.delete(dayPlans).where(eq(dayPlans.workspaceId, wsId));
+	await db.delete(daySnoozes).where(eq(daySnoozes.workspaceId, wsId));
 });
 
 test("the morning puts a row off, picks the day, and Today works through it", async ({ page }) => {
@@ -92,10 +108,13 @@ test("the morning puts a row off, picks the day, and Today works through it", as
 
 	const myDay = page.getByRole("list", { name: "My day" });
 	await expect(myDay).toContainText("E2E pick me");
-	// Picked: up top, not again in the list below; the snoozed row stays away.
+	// Picked: up top; the rest beside it (folded behind one line on a phone), without the
+	// picked or the snoozed row.
 	const todo = page.getByRole("list", { name: "Waiting today" });
-	await expect(page.getByText("with no answer")).toHaveCount(0);
-	if (await todo.count()) await expect(todo).not.toContainText("E2E pick me");
+	await expect(todo).toBeVisible();
+	await expect(todo).not.toContainText("E2E pick me");
+	await expect(todo).toContainText("E2E not today");
+	await expect(todo).not.toContainText("with no answer");
 
 	// Ticking a picked card finishes it in Seiryu.
 	await myDay.getByRole("button", { name: "Done: E2E pick me" }).click();
