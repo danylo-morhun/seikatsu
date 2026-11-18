@@ -25,10 +25,31 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 				{ keys: ["N"], label: "Capture: one line into any app" },
 				{ keys: ["P"], label: "Log pages of the book you're reading" },
 				{ keys: ["M"], label: "Update the car's mileage" },
+				{ keys: ["O"], label: "Open the morning's plan, or the evening's close, when it's due" },
 				{
 					keys: ["1", "2", "3", "4", "5", "6", "7"],
 					label: "Open the apps, in the order they're listed (hidden ones skipped)",
 				},
+			],
+		},
+	],
+	"/morning": [
+		{
+			title: "Morning",
+			items: [
+				{ keys: ["]"], label: "Next: pick today's three" },
+				{ keys: ["["], label: "Back to what's waiting" },
+				{ keys: ["1", "2", "3", "4", "5", "6", "7", "8", "9"], label: "Pick or unpick that one" },
+			],
+		},
+	],
+	"/evening": [
+		{
+			title: "Evening",
+			items: [
+				{ keys: ["]", "["], label: "Next / previous step" },
+				{ keys: ["P"], label: "Log pages of the book you're reading" },
+				{ keys: ["M"], label: "Update the car's mileage" },
 			],
 		},
 	],
