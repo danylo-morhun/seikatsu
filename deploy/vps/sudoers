@@ -1,0 +1,2 @@
+# /etc/sudoers.d/seikatsu (check with visudo -cf): sk-deploy may restart only its own service
+seikatsu ALL=(root) NOPASSWD: /usr/bin/systemctl restart seikatsu

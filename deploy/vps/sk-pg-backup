@@ -1,0 +1,12 @@
+#!/bin/bash
+# Nightly custom-format dump of the seikatsu DB; keeps 14 days on the box, then an
+# encrypted copy goes off-site (B2, the shop's crypt remote, own folder).
+set -euo pipefail
+dir=/var/backups/seikatsu
+f="$dir/seikatsu-$(date +%F).dump"
+sudo -u postgres pg_dump -Fc --no-owner --no-acl seikatsu > "$f.tmp"
+pg_restore -l "$f.tmp" >/dev/null   # sanity: archive readable
+mv "$f.tmp" "$f"; chmod 600 "$f"
+find "$dir" -name "seikatsu-*.dump" -mtime +14 -delete
+rclone --config /etc/wellbotany/rclone.conf copy "$f" b2crypt:seikatsu --retries 5 -q
+echo "backup ok: $f $(stat -c %s "$f") bytes"
