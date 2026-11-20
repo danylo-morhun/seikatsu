@@ -1,5 +1,4 @@
 import { TooltipProvider } from "@seikatsu/ui";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { Suspense } from "react";
@@ -57,7 +56,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 					<TooltipProvider delayDuration={0}>{children}</TooltipProvider>
 					<AppToaster />
 				</ThemeProvider>
-				<SpeedInsights />
 				<TimezoneSync />
 				<ServiceWorker />
 				<OutboxSync />

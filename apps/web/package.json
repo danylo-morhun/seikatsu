@@ -24,7 +24,6 @@
 		"@seikatsu/ui": "workspace:*",
 		"@sentry/nextjs": "^11.11.0",
 		"@vercel/blob": "^2.8.2",
-		"@vercel/speed-insights": "^2.1.0",
 		"bcryptjs": "^3.0.3",
 		"date-fns": "^4.4.0",
 		"drizzle-orm": "^0.45.4",
