@@ -22,8 +22,8 @@ seven small apps share one login, one database and one deploy.
 
 ## stack
 
-Next.js 16 with App Router and server components, Drizzle, Neon Postgres, Auth.js,
-Tailwind 4, shadcn/ui. hosted on Vercel.
+Next.js 16 with App Router and server components, Drizzle, Postgres, Auth.js,
+Tailwind 4, shadcn/ui. self-hosted on a VPS (systemd, nginx), see `deploy/vps`.
 
 ## structure
 
@@ -55,8 +55,7 @@ is stored in a cookie, so the server knows what "today" is.
 | when         | what runs                                                                     |
 | :----------- | :---------------------------------------------------------------------------- |
 | pull request | Biome, type check, Vitest on PGlite with real migrations, build, Playwright   |
-| every night  | deploy of new commits on main: migrations, Vercel build, smoke test, rollback |
-| every night  | encrypted database backup, restored into a temporary Postgres as a check      |
+| every night  | deploy of new commits on main: migrations, build on the VPS, smoke test, rollback |
 
 migrations run only when they changed and need manual approval.
 an urgent fix can be deployed by hand from the Actions tab.
