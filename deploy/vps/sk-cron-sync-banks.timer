@@ -1,0 +1,10 @@
+[Unit]
+Description=seikatsu bank sync daily
+
+[Timer]
+OnCalendar=*-*-* 06:00 UTC
+Persistent=true
+Unit=sk-cron@sync-banks.service
+
+[Install]
+WantedBy=timers.target

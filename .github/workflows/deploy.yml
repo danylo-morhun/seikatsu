@@ -1,11 +1,11 @@
 name: Deploy
 
 # Production deploy in batches: once a night, whatever is on main since the live
-# deployment, if CI passed on it. Every deploy empties Vercel's ISR cache, so
-# fewer deploys = fewer ISR writes. Urgent fix: run it by hand from the Actions tab.
-# Migrations run only when packages/db/drizzle changed since the live deployment,
+# release, if CI passed on it. Urgent fix: run it by hand from the Actions tab.
+# Migrations run only when packages/db/drizzle changed since the live release,
 # and only after approval in the `production-migrations` environment.
-# Builds run on Vercel with the project's own env; the job only triggers them.
+# Builds run on the VPS (deploy/vps/sk-deploy) over SSH with a key that can
+# only call sk-deploy; going live is a symlink switch + restart.
 
 on:
   schedule:
@@ -21,15 +21,18 @@ permissions:
   actions: read
 
 env:
-  VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
   SITE_URL: https://seikatsu.danylomorhun.com
+  VPS_KNOWN_HOSTS: ${{ vars.VPS_KNOWN_HOSTS }}
+  # Pasted into each step that talks to the VPS (key comes from the step env)
+  SSH_SETUP: |
+    install -m700 -d ~/.ssh
+    printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+    printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
 
 jobs:
   plan:
     name: Plan
-    # Gated until Vercel git auto-deploy for main is switched off (vars.DEPLOY_ENABLED)
-    if: vars.DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.target.outputs.sha }}
@@ -44,18 +47,17 @@ jobs:
       - name: Decide what to deploy
         id: target
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           GH_TOKEN: ${{ github.token }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
+          ${{ env.SSH_SETUP }}
           sha=$(git rev-parse HEAD)
-          live=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
-            "https://api.vercel.com/v13/deployments/${SITE_URL#https://}?teamId=$VERCEL_ORG_ID" \
-            | jq -r '.meta.githubCommitSha // .meta.gitCommitSha // empty')
-          echo "Live deployment: ${live:-unknown}, main: $sha"
+          live=$(ssh "${{ vars.VPS_HOST }}" revision || true)
+          echo "Live release: ${live:-unknown}, main: $sha"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "live=$live" >> "$GITHUB_OUTPUT"
           if [ "$GITHUB_EVENT_NAME" = schedule ] && [ "$live" = "$sha" ]; then
-            echo "Nothing new since the live deployment"
+            echo "Nothing new since the live release"
             echo "deploy=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -68,7 +70,7 @@ jobs:
           fi
           git log --oneline "${live:-HEAD~1}..HEAD" 2>/dev/null || true
           echo "deploy=true" >> "$GITHUB_OUTPUT"
-      - name: Diff migrations against the live deployment
+      - name: Diff migrations against the live release
         id: diff
         if: steps.target.outputs.deploy == 'true'
         env:
@@ -91,15 +93,15 @@ jobs:
     runs-on: ubuntu-latest
     environment: production-migrations
     steps:
-      - uses: actions/checkout@v7
-        with: { ref: "${{ needs.plan.outputs.sha }}" }
-      - uses: ./.github/actions/setup
-      - run: pnpm -F @seikatsu/db db:migrate
+      - name: Build the release and migrate the DB on the VPS
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          ${{ env.SSH_SETUP }}
+          ssh "${{ vars.VPS_HOST }}" migrate "${{ needs.plan.outputs.sha }}"
 
   deploy:
-    name: Deploy to Vercel
+    name: Deploy to VPS
     needs: [plan, migrate]
     if: always() && needs.plan.outputs.deploy == 'true' && (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
     runs-on: ubuntu-latest
@@ -107,47 +109,16 @@ jobs:
       name: Production
       url: ${{ env.SITE_URL }}
     env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
     steps:
-      - uses: actions/checkout@v7
-        with: { ref: "${{ needs.plan.outputs.sha }}" }
-      - name: Remember the live deployment
-        id: previous
+      - name: Build and go live
         run: |
-          url=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
-            "https://api.vercel.com/v13/deployments/${SITE_URL#https://}?teamId=$VERCEL_ORG_ID" \
-            | jq -r '.url // empty')
-          echo "Live before deploy: ${url:-none}"
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-      - name: Build and deploy on Vercel
-        id: deploy
-        run: |
-          set -o pipefail
-          VERCEL_GUIDANCE_DISABLED=1 npx -y vercel@65.9.0 deploy --prod --yes --token "$VERCEL_TOKEN" | tee "$RUNNER_TEMP/deploy.log"
-          # stdout may still carry hints besides the URL — take the last deployment URL
-          url=$(grep -oE 'https://[a-z0-9-]+\.vercel\.app' "$RUNNER_TEMP/deploy.log" | tail -1)
-          [ -n "$url" ] || { echo "No deployment URL in vercel output"; exit 1; }
-          echo "Deployed: $url"
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-      # After a rollback Vercel stops auto-assigning production domains until a
-      # deployment is promoted explicitly (promoting the current one is a 409).
-      - name: Promote to production domains
-        env:
-          DEPLOY_URL: ${{ steps.deploy.outputs.url }}
-        run: |
-          live=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
-            "https://api.vercel.com/v13/deployments/${SITE_URL#https://}?teamId=$VERCEL_ORG_ID" \
-            | jq -r '.url // empty')
-          if [ "https://$live" = "$DEPLOY_URL" ]; then
-            echo "Domains already on the new deployment"
-          else
-            echo "Domains on ${live:-none} — promoting"
-            npx -y vercel@65.9.0 promote "$DEPLOY_URL" --yes --token "$VERCEL_TOKEN"
-          fi
+          ${{ env.SSH_SETUP }}
+          ssh "${{ vars.VPS_HOST }}" deploy "${{ needs.plan.outputs.sha }}"
       - name: Smoke test
         id: smoke
         run: |
-          sleep 10
+          sleep 5
           fail=0
           # /kuroji without a session redirects to the sign-in page (curl -L follows it)
           for url in "$SITE_URL/" "$SITE_URL/privacy" "$SITE_URL/terms" \
@@ -159,5 +130,7 @@ jobs:
           done
           exit $fail
       - name: Roll back on failed smoke test
-        if: failure() && steps.smoke.outcome == 'failure' && steps.previous.outputs.url != ''
-        run: npx -y vercel@65.9.0 rollback "${{ steps.previous.outputs.url }}" --yes --token "$VERCEL_TOKEN"
+        if: failure() && steps.smoke.outcome == 'failure'
+        run: |
+          ${{ env.SSH_SETUP }}
+          ssh "${{ vars.VPS_HOST }}" rollback
