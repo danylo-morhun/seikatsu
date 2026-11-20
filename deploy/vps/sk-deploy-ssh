@@ -1,0 +1,11 @@
+#!/bin/bash
+# Forced command for the GitHub Actions key (~seikatsu/.ssh/authorized_keys:
+# command="/usr/local/bin/sk-deploy-ssh",restrict). The CI key can only run sk-deploy subcommands.
+set -euo pipefail
+read -r cmd arg extra <<<"${SSH_ORIGINAL_COMMAND:-}"
+[ -z "${extra:-}" ] || { echo "too many args" >&2; exit 2; }
+case "$cmd" in
+  prepare|migrate|deploy) exec /usr/local/bin/sk-deploy "$cmd" "$arg" ;;
+  rollback|revision) exec /usr/local/bin/sk-deploy "$cmd" ;;
+  *) echo "not allowed: $cmd" >&2; exit 2 ;;
+esac

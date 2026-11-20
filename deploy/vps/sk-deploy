@@ -1,0 +1,111 @@
+#!/bin/bash
+# Self-hosted deploy on the cyber_Folks VPS (shared with Well Botany). Installed as
+# /usr/local/bin/sk-deploy, run as `seikatsu`. Each commit builds into its own release dir;
+# going live is a symlink switch + service restart, so a failed build never touches prod.
+#
+#   sk-deploy prepare <sha>   fetch, install, build into releases/<sha> (idempotent)
+#   sk-deploy migrate <sha>   install, drizzle migrate (prod DB), then build
+#   sk-deploy deploy <sha>    prepare, refuse if migrations pending, switch, restart
+#   sk-deploy rollback        switch back to the previous release
+#   sk-deploy revision        print the live commit
+set -euo pipefail
+
+BASE=/srv/seikatsu
+REPO=$BASE/repo
+RELEASES=$BASE/releases
+SHARED=$BASE/shared
+ENV_FILE=$SHARED/.env.production.local
+STATIC=$SHARED/static            # union of every release's hashed assets (nginx alias)
+PORT=3100
+KEEP=3
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NEXT_TELEMETRY_DISABLED=1 CI=1
+
+log() { echo "[sk-deploy] $*"; }
+valid_sha() { [[ "$1" =~ ^[0-9a-f]{7,40}$ ]] || { echo "bad sha: $1" >&2; exit 2; }; }
+
+full_sha() {
+  git -C "$REPO" fetch -q origin
+  git -C "$REPO" rev-parse --verify "$1^{commit}"
+}
+
+with_db_env() { set -a; . "$ENV_FILE"; set +a; }
+
+# Checkout + dependencies, no build (idempotent)
+install_release() {
+  local sha; sha=$(full_sha "$1"); local dir=$RELEASES/$sha
+  if [ -f "$dir/.installed" ]; then echo "$dir"; return; fi
+  rm -rf "$dir"; git -C "$REPO" worktree prune
+  git -C "$REPO" worktree add -q --detach "$dir" "$sha"
+  ln -sf "$ENV_FILE" "$dir/apps/web/.env.production.local"
+  cd "$dir"
+  log "install"; pnpm install --frozen-lockfile --prod=false >/dev/null
+  touch "$dir/.installed"
+  echo "$dir"
+}
+
+# Low priority so the shop on the same box keeps its CPU. GITHUB_SHA versions the
+# service worker (next.config.ts NEXT_PUBLIC_BUILD_ID, scripts/sw-assets.mjs).
+prepare() {
+  local sha; sha=$(full_sha "$1"); local dir=$RELEASES/$sha
+  if [ -f "$dir/.prepared" ]; then log "release $sha already built"; echo "$dir"; return; fi
+  dir=$(install_release "$sha" | tail -1); cd "$dir"
+  log "build $sha"
+  GITHUB_SHA=$sha NODE_OPTIONS=--max-old-space-size=3072 nice -n 15 ionice -c3 \
+    pnpm -F @seikatsu/web build > "$dir/build.log" 2>&1 || { tail -40 "$dir/build.log" >&2; exit 1; }
+  touch "$dir/.prepared"
+  echo "$dir"
+}
+
+# Applied journal entries vs. the ones this release ships
+pending_migrations() {
+  local dir=$1
+  local want have
+  want=$(node -e 'console.log(require(process.argv[1]).entries.length)' "$dir/packages/db/drizzle/meta/_journal.json")
+  have=$( with_db_env; psql "$DATABASE_URL" -Atc 'select count(*) from drizzle.__drizzle_migrations' 2>/dev/null || echo 0 )
+  [ "$have" -lt "$want" ]
+}
+
+# Migrations stay additive: the live release keeps running on the new schema until the switch.
+migrate() {
+  local dir; dir=$(install_release "$1" | tail -1)
+  ( cd "$dir"; with_db_env; pnpm -F @seikatsu/db db:migrate )
+  prepare "$1" >/dev/null
+}
+
+switch_to() {
+  local dir=$1
+  local prev=""; [ -L "$BASE/current" ] && prev=$(readlink -f "$BASE/current")
+  mkdir -p "$STATIC"; cp -a --update=none "$dir/apps/web/.next/static/." "$STATIC/"
+  ln -sfn "$dir" "$BASE/current.new" && mv -T "$BASE/current.new" "$BASE/current"
+  if [ -n "$prev" ] && [ "$prev" != "$dir" ]; then ln -sfn "$prev" "$BASE/previous"; fi
+  sudo /usr/bin/systemctl restart seikatsu
+  for _ in $(seq 1 30); do curl -fs -o /dev/null "http://127.0.0.1:$PORT/privacy" && break; sleep 1; done
+  curl -fs -o /dev/null "http://127.0.0.1:$PORT/privacy" || { log "app not answering after restart"; exit 1; }
+  log "live: $(basename "$dir")"
+}
+
+prune() {
+  local live prev=""; live=$(readlink -f "$BASE/current"); [ -L "$BASE/previous" ] && prev=$(readlink -f "$BASE/previous")
+  ls -1dt "$RELEASES"/*/ 2>/dev/null | sed 's#/$##' | tail -n +$((KEEP + 1)) | while read -r d; do
+    [ "$d" = "$live" ] || [ "$d" = "$prev" ] || { git -C "$REPO" worktree remove --force "$d" 2>/dev/null || rm -rf "$d"; }
+  done
+  git -C "$REPO" worktree prune
+  find "$STATIC" -type f -mtime +30 -delete 2>/dev/null || true
+}
+
+cmd=${1:-}; arg=${2:-}
+case "$cmd" in
+  prepare) valid_sha "$arg"; prepare "$arg" >/dev/null ;;
+  migrate) valid_sha "$arg"; migrate "$arg" ;;
+  deploy)
+    valid_sha "$arg"; dir=$(install_release "$arg" | tail -1)
+    if pending_migrations "$dir"; then log "migrations pending — run 'migrate $arg' first"; exit 3; fi
+    dir=$(prepare "$arg" | tail -1)
+    switch_to "$dir"; prune ;;
+  rollback)
+    prev=""; [ -L "$BASE/previous" ] && prev=$(readlink -f "$BASE/previous")
+    [ -n "$prev" ] && [ -d "$prev" ] || { log "no previous release"; exit 1; }
+    switch_to "$prev" ;;
+  revision) basename "$(readlink -f "$BASE/current")" ;;
+  *) echo "usage: sk-deploy prepare|migrate|deploy <sha> | rollback | revision" >&2; exit 2 ;;
+esac

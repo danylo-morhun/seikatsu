@@ -1,0 +1,32 @@
+# seikatsu Next.js app. Shares the box with Well Botany, so it runs as its own user,
+# gets half the shop's CPU weight and hard caps on CPU and memory.
+[Unit]
+Description=seikatsu Next.js app
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=seikatsu
+WorkingDirectory=/srv/seikatsu/current/apps/web
+Environment=NODE_ENV=production
+Environment=NEXT_TELEMETRY_DISABLED=1
+ExecStart=/srv/seikatsu/current/apps/web/node_modules/.bin/next start -H 127.0.0.1 -p 3100
+Restart=always
+RestartSec=3
+SuccessExitStatus=143
+CPUWeight=50
+CPUQuota=150%
+MemoryHigh=1G
+MemoryMax=1536M
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/srv/seikatsu
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target
