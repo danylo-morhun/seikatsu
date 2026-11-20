@@ -1,0 +1,10 @@
+[Unit]
+Description=seikatsu recurring transactions daily
+
+[Timer]
+OnCalendar=*-*-* 00:15 UTC
+Persistent=true
+Unit=sk-cron@recurring.service
+
+[Install]
+WantedBy=timers.target
