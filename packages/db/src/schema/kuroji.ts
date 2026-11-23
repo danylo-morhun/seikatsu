@@ -4,6 +4,7 @@ import {
 	boolean,
 	date,
 	index,
+	jsonb,
 	numeric,
 	pgEnum,
 	pgTable,
@@ -30,6 +31,8 @@ export const workspaces = pgTable(
 		modulesOff: text("hidden_apps").array().notNull().default([]),
 		/** Set once the first-run setup (/welcome: apps, currency) is done; null sends a new user there. */
 		onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
+		/** The home's widgets in order (id, size, hidden); null = the default: see web features/home/lib/dashboard.ts. */
+		dashboard: jsonb("dashboard").$type<{ id: string; size: string; hidden?: boolean }[]>(),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 	},
