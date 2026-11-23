@@ -28,6 +28,8 @@ export const workspaces = pgTable(
 		baseCurrency: text("base_currency").notNull().default("USD"),
 		/** Modules switched off (app routes like "/kyuu", features like "/day"): see web lib/modules.ts. */
 		modulesOff: text("hidden_apps").array().notNull().default([]),
+		/** Set once the first-run setup (/welcome: apps, currency) is done; null sends a new user there. */
+		onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 	},
