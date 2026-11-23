@@ -64,7 +64,7 @@ async function createWorkspace(userId: string): Promise<Workspace> {
 	const inserted = await db.transaction(async (tx) => {
 		const [row] = await tx
 			.insert(workspaces)
-			.values({ userId, name: "Kuroji", baseCurrency: "PLN" })
+			.values({ userId, name: "Personal", baseCurrency: "PLN" })
 			.onConflictDoNothing()
 			.returning();
 		if (!row) return null;

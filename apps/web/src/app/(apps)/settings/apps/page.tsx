@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SettingsPage, SettingsSection } from "@/components/SettingsSection";
 import { ModulesForm } from "@/features/home/components/ModulesForm";
@@ -39,6 +40,15 @@ export default async function AppsSettingsPage({
 			>
 				<ModulesForm off={workspace.modulesOff} group="features" />
 			</SettingsSection>
+			<p className="px-1 text-sm text-muted-foreground">
+				<Link
+					href="/welcome?again"
+					prefetch
+					className="underline-offset-2 hover:text-foreground hover:underline"
+				>
+					Go through the setup again
+				</Link>
+			</p>
 		</SettingsPage>
 	);
 }
