@@ -3,6 +3,7 @@
 // both ways. Pure.
 
 import { APPS_CONFIG } from "@/lib/app-themes";
+import { MODULE_HREFS, type ModuleHref, pathIsOn } from "@/lib/modules";
 
 export const TSUNDOKU_TABS = [
 	{ value: "/tsundoku", label: "Library" },
@@ -62,6 +63,7 @@ export const PLACES: Place[] = [
 	{ href: "/goals", name: "Goals" },
 	{ href: "/apps", name: "Apps" },
 	{ href: "/settings", name: "Settings" },
+	{ href: "/settings/apps", name: "Settings · Apps" },
 	...(
 		Object.entries(APPS_CONFIG) as [
 			keyof typeof APPS_CONFIG,
@@ -85,15 +87,21 @@ export const PLACES: Place[] = [
  * does ("plan" → Kuroji · Plan). Only short lines with no digits are places; anything else is
  * a capture.
  */
-export function matchPlaces(text: string, limit = 5): Place[] {
+export function matchPlaces(
+	text: string,
+	limit = 5,
+	on: readonly ModuleHref[] = MODULE_HREFS,
+): Place[] {
 	const q = text.trim().toLowerCase();
 	if (q.length < 2 || q.length > 30 || /\d/.test(q)) return [];
+	// A place of a module that's off isn't there; its settings tab neither.
+	const open = PLACES.filter((p) => pathIsOn(p.href.replace(/^\/settings(?=\/)/, ""), on));
 	const words = (p: Place) =>
 		p.name
 			.toLowerCase()
 			.split(/[\s·]+/)
 			.filter(Boolean);
-	const starts = PLACES.filter((p) => p.name.toLowerCase().startsWith(q));
-	const inside = PLACES.filter((p) => !starts.includes(p) && words(p).some((w) => w.startsWith(q)));
+	const starts = open.filter((p) => p.name.toLowerCase().startsWith(q));
+	const inside = open.filter((p) => !starts.includes(p) && words(p).some((w) => w.startsWith(q)));
 	return [...starts, ...inside].slice(0, limit);
 }

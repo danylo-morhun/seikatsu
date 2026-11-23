@@ -1,7 +1,10 @@
 // Every app's keyboard shortcuts, as the "?" sheet lists them. The handlers live with their
 // features; keep this in step when one is added.
 
-export type Shortcut = { keys: string[]; label: string };
+import { MODULE_HREFS, type ModuleHref } from "@/lib/modules";
+
+/** `module`: listed only while that module is on (lib/modules.ts). */
+export type Shortcut = { keys: string[]; label: string; module?: ModuleHref };
 export type ShortcutGroup = { title: string; items: Shortcut[] };
 
 /** Opens the shortcuts sheet (the "?" key, or the account menu). */
@@ -23,7 +26,11 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 			title: "Today",
 			items: [
 				{ keys: ["N"], label: "Capture: one line into any app" },
-				{ keys: ["O"], label: "Open the morning's plan, or the evening's close, when it's due" },
+				{
+					keys: ["O"],
+					label: "Open the morning's plan, or the evening's close, when it's due",
+					module: "/day",
+				},
 				{
 					keys: ["1", "2", "3", "4", "5", "6", "7"],
 					label: "Open the apps, in the order they're listed (hidden ones skipped)",
@@ -289,7 +296,13 @@ function appPrefix(pathname: string) {
 /** Whether this page's app has keys of its own (the header then shows the "?" button). */
 export const hasAppShortcuts = (pathname: string) => !!appPrefix(pathname);
 
-export function shortcutsFor(pathname: string): ShortcutGroup[] {
+export function shortcutsFor(
+	pathname: string,
+	on: readonly ModuleHref[] = MODULE_HREFS,
+): ShortcutGroup[] {
 	const app = appPrefix(pathname);
-	return [...(app ? (APP_SHORTCUTS[app] ?? []) : []), GENERAL_SHORTCUTS];
+	return [...(app ? (APP_SHORTCUTS[app] ?? []) : []), GENERAL_SHORTCUTS].map((g) => ({
+		...g,
+		items: g.items.filter((i) => !i.module || on.includes(i.module)),
+	}));
 }
