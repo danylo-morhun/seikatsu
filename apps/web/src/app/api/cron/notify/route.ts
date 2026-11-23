@@ -1,4 +1,4 @@
-import { db, eq, notificationPrefs, pushSubscriptions } from "@seikatsu/db";
+import { db, eq, inArray, notificationPrefs, pushSubscriptions, workspaces } from "@seikatsu/db";
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { notifyAisha } from "@/features/aisha/lib/notify";
@@ -10,16 +10,18 @@ import type { Notifier } from "@/features/pwa/lib/notifiers";
 import { localClock, safeTimeZone } from "@/features/pwa/lib/schedule";
 import { notifySeiryu } from "@/features/seiryu/lib/notify";
 import { notifyWeek } from "@/features/week/lib/notify";
+import { type ModuleHref, modulesOn } from "@/lib/modules";
 
-const NOTIFIERS: Record<string, Notifier> = {
-	today: notifyToday,
-	evening: notifyEvening,
-	keizoku: notifyKeizoku,
-	aisha: notifyAisha,
-	kurojiRecurring: notifyKurojiRecurring,
-	kurojiBudget: notifyKurojiBudget,
-	week: notifyWeek,
-	seiryu: notifySeiryu,
+/** Each notifier, and the module it belongs to (none: always runs). */
+const NOTIFIERS: Record<string, [Notifier, ModuleHref | null]> = {
+	today: [notifyToday, null],
+	evening: [notifyEvening, "/day"],
+	keizoku: [notifyKeizoku, "/keizoku"],
+	aisha: [notifyAisha, "/aisha"],
+	kurojiRecurring: [notifyKurojiRecurring, "/kuroji"],
+	kurojiBudget: [notifyKurojiBudget, "/kuroji"],
+	week: [notifyWeek, "/week"],
+	seiryu: [notifySeiryu, "/seiryu"],
 };
 
 // Every 15 minutes from cron-job.org, with GitHub Actions (.github/workflows/notify.yml) as a
@@ -40,6 +42,21 @@ export async function GET(req: NextRequest) {
 		.from(notificationPrefs)
 		.innerJoin(pushSubscriptions, eq(pushSubscriptions.workspaceId, notificationPrefs.workspaceId));
 
+	const off = new Map(
+		subscribed.length === 0
+			? []
+			: (
+					await db
+						.select({ id: workspaces.id, modulesOff: workspaces.modulesOff })
+						.from(workspaces)
+						.where(
+							inArray(
+								workspaces.id,
+								subscribed.map((s) => s.prefs.workspaceId),
+							),
+						)
+				).map((w) => [w.id, w.modulesOff]),
+	);
 	const now = new Date();
 	const sent: Record<string, number> = {};
 	const failures: { workspaceId: string; notifier: string; error: string }[] = [];
@@ -48,8 +65,10 @@ export async function GET(req: NextRequest) {
 			workspaceId: prefs.workspaceId,
 			prefs,
 			clock: localClock(safeTimeZone(prefs.timeZone), now),
+			on: modulesOn(off.get(prefs.workspaceId) ?? []),
 		};
-		for (const [name, notify] of Object.entries(NOTIFIERS)) {
+		for (const [name, [notify, module]] of Object.entries(NOTIFIERS)) {
+			if (module && !ctx.on.includes(module)) continue; // off: not sent
 			try {
 				sent[name] = (sent[name] ?? 0) + (await notify(ctx));
 			} catch (e) {

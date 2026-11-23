@@ -10,6 +10,7 @@ import { buildQueue, type QueueItem } from "@/features/home/lib/queue";
 import type { Notifier } from "@/features/pwa/lib/notifiers";
 import { sendOnce } from "@/features/pwa/lib/push";
 import { isTimeDue } from "@/features/pwa/lib/schedule";
+import { MODULE_HREFS } from "@/lib/modules";
 
 /** Lines named in the push; the rest are counted. */
 const SHOWN = 3;
@@ -26,15 +27,15 @@ export function morningBrief(items: QueueItem[]): { title: string; body: string 
 	return { title, body: [...named, more > 0 && `+${more} more`].filter(Boolean).join(" · ") };
 }
 
-export const notifyToday: Notifier = async ({ workspaceId, prefs, clock }) => {
+export const notifyToday: Notifier = async ({ workspaceId, prefs, clock, on = MODULE_HREFS }) => {
 	if (!prefs.morningBrief || !isTimeDue(prefs.morningTime, clock)) return 0;
 	const [ws] = await db.select().from(workspaces).where(eq(workspaces.id, workspaceId));
 	if (!ws) return 0;
 	const items = buildQueue(await readAgenda(ws, clock.day), clock.day, money);
 	const brief = morningBrief(items);
 	if (!brief) return 0;
-	// Not planned yet: the push opens the morning's plan.
-	const planned = (await readPlan(workspaceId, clock.day))?.plannedAt;
+	// Not planned yet: the push opens the morning's plan (with Day on).
+	const planned = !on.includes("/day") || (await readPlan(workspaceId, clock.day))?.plannedAt;
 	const sent = await sendOnce(workspaceId, `today:${clock.day}`, {
 		...brief,
 		url: planned ? "/" : "/morning",

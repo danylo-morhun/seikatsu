@@ -11,11 +11,17 @@ import { addDays } from "@/features/seiryu/lib/filters";
 import { getWeekData } from "@/features/week/lib/data";
 import { readWeekPlan } from "@/features/week/lib/plan-data";
 import { buildWeek, weekLine, weekOf } from "@/features/week/lib/week";
+import { MODULE_HREFS } from "@/lib/modules";
 
 const SUNDAY = 7;
 const AT = "18:00";
 
-export const notifyWeek: Notifier = async ({ workspaceId, prefs, clock }) => {
+export const notifyWeek: Notifier = async ({
+	workspaceId,
+	prefs,
+	clock,
+	on: modules = MODULE_HREFS,
+}) => {
 	// The old Monday money summary folded in here: on if either switch is.
 	const on = prefs.weekRecap || prefs.kurojiWeekly;
 	if (!on || clock.weekday !== SUNDAY || !isTimeDue(AT, clock)) return 0;
@@ -26,12 +32,14 @@ export const notifyWeek: Notifier = async ({ workspaceId, prefs, clock }) => {
 		.where(eq(workspaces.id, workspaceId));
 	if (!ws) return 0;
 	const week = weekOf(clock.day);
-	const data = await getWeekData({ id: workspaceId }, clock.day, week);
+	const data = await getWeekData({ id: workspaceId }, clock.day, week, modules);
 	const { totals } = buildWeek(data, clock.day, week, (n, c = ws.baseCurrency) => money(n, c));
 	const line = weekLine(totals, (n) => money(n, ws.baseCurrency));
 	// The week ahead not planned yet: the push opens its plan, which starts with this look back.
-	const ahead = await readWeekPlan(workspaceId, addDays(clock.day, 1));
-	const plan = !ahead?.plannedAt;
+	const ahead = modules.includes("/week/plan")
+		? await readWeekPlan(workspaceId, addDays(clock.day, 1))
+		: null;
+	const plan = modules.includes("/week/plan") && !ahead?.plannedAt;
 	if (!line && !plan) return 0;
 
 	const sent = await sendOnce(workspaceId, `week:recap:${clock.day}`, {

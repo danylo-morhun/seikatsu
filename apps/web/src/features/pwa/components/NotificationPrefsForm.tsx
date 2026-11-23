@@ -4,7 +4,9 @@ import type { NotificationPrefs } from "@seikatsu/db";
 import { Checkbox, Input, Label } from "@seikatsu/ui";
 import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useModules } from "@/components/ModulesProvider";
 import { type PrefsInput, saveNotificationPrefs } from "@/features/pwa/actions/push";
+import type { ModuleHref } from "@/lib/modules";
 
 type BoolKey = {
 	[K in keyof PrefsInput]: PrefsInput[K] extends boolean ? K : never;
@@ -18,12 +20,15 @@ interface Row {
 	detail: string;
 	/** The time this one goes out at, editable beside it. */
 	time?: TimeKey;
+	/** Sent only while this module is on. */
+	module?: ModuleHref;
 }
 
 // One row per notifier the cron actually runs (app/api/cron/notify/route.ts).
 const ROWS: Row[] = [
 	{
 		key: "eveningClose",
+		module: "/day",
 		app: "生 Today",
 		label: "Evening: close the day",
 		detail:
@@ -32,6 +37,7 @@ const ROWS: Row[] = [
 	},
 	{
 		key: "keizokuEnabled",
+		module: "/keizoku",
 		app: "継 Keizoku",
 		label: "Evening reminder",
 		detail: "The habits still open today. Nothing if they're all done.",
@@ -46,6 +52,7 @@ const ROWS: Row[] = [
 	},
 	{
 		key: "seiryuReminders",
+		module: "/seiryu",
 		app: "清 Seiryu",
 		label: "Card reminders",
 		detail:
@@ -53,24 +60,28 @@ const ROWS: Row[] = [
 	},
 	{
 		key: "aishaEnabled",
+		module: "/aisha",
 		app: "愛 Aisha",
 		label: "Maintenance and papers",
 		detail: "Service coming due, documents 30, 7 and 1 days before they expire.",
 	},
 	{
 		key: "kurojiRecurring",
+		module: "/kuroji",
 		app: "黒 Kuroji",
 		label: "Recurring posted",
 		detail: "Which subscriptions and bills went out today.",
 	},
 	{
 		key: "kurojiBudget",
+		module: "/kuroji",
 		app: "黒 Kuroji",
 		label: "Budget alerts",
 		detail: "When a category passes 80% and 100% of its monthly budget. Daytime only.",
 	},
 	{
 		key: "weekRecap",
+		module: "/week",
 		app: "週 Week",
 		label: "Week in one line",
 		detail: "Sunday at 18:00: what the week held across the apps, spending included.",
@@ -111,6 +122,7 @@ function fromPrefs(prefs: NotificationPrefs | null): PrefsInput {
 /** What gets sent and when. Saves as you go; times are in this device's time zone. */
 export function NotificationPrefsForm({ prefs }: { prefs: NotificationPrefs | null }) {
 	const id = useId();
+	const on = useModules();
 	const [values, setValues] = useState(() => fromPrefs(prefs));
 	const saved = useRef(values);
 
@@ -175,7 +187,7 @@ export function NotificationPrefsForm({ prefs }: { prefs: NotificationPrefs | nu
 				</div>
 				{timeInput("morningTime", "Morning time")}
 			</li>
-			{ROWS.map((row) => (
+			{ROWS.filter((row) => !row.module || on.includes(row.module)).map((row) => (
 				<li key={row.key} className="flex items-start gap-3 py-3">
 					<Checkbox
 						id={`${id}-${row.key}`}
