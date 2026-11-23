@@ -358,6 +358,13 @@
 			"when": 1795035370409,
 			"tag": "0050_week_plans",
 			"breakpoints": true
+		},
+		{
+			"idx": 51,
+			"version": "7",
+			"when": 1795430060804,
+			"tag": "0051_onboarding",
+			"breakpoints": true
 		}
 	]
 }
