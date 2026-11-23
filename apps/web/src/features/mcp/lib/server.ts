@@ -8,6 +8,7 @@ import { after } from "next/server";
 import { z } from "zod";
 import { ALL_TOOLS } from "@/features/mcp/tools";
 import { actAs } from "@/lib/actor";
+import { moduleOfTool, modulesOn } from "@/lib/modules";
 import { dayIn } from "@/lib/timezone";
 import { toText } from "./compact";
 import type { Caller } from "./oauth";
@@ -35,8 +36,12 @@ export function buildServer(caller: Caller): McpServer {
 	);
 	const canWrite = caller.scopes.includes("write");
 
+	const on = modulesOn(caller.workspace.modulesOff);
 	for (const def of ALL_TOOLS) {
 		if (def.write && !canWrite) continue;
+		// A module that's off has no tools.
+		const module = moduleOfTool(def.name);
+		if (module && !on.includes(module)) continue;
 		server.registerTool(
 			def.name,
 			{
