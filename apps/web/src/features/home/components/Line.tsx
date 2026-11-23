@@ -28,8 +28,11 @@ export function Line({
 	note,
 	action,
 	children,
+	seal = true,
 }: {
 	href: AppHref;
+	/** Off inside the app's own widget, whose header already names it. */
+	seal?: boolean;
 	title: string;
 	note?: string | null;
 	action?: React.ReactNode;
@@ -37,7 +40,7 @@ export function Line({
 }) {
 	return (
 		<li className="flex min-h-14 items-center gap-3 py-2">
-			<Seal href={href} />
+			{seal && <Seal href={href} />}
 			<div className="min-w-0 flex-1">
 				<Link href={href} prefetch className="group block outline-none">
 					<span className="block truncate text-sm font-medium group-hover:underline group-focus-visible:underline">
