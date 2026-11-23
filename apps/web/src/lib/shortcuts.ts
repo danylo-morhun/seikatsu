@@ -38,6 +38,18 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 			],
 		},
 	],
+	"/welcome": [
+		{
+			title: "Setup",
+			items: [
+				{
+					keys: ["1", "2", "3", "4", "5", "6", "7"],
+					label: "Pick or unpick that app (or feature)",
+				},
+				{ keys: ["]", "["], label: "Next / previous step" },
+			],
+		},
+	],
 	"/morning": [
 		{
 			title: "Morning",
