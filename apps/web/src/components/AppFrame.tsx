@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { AppShell } from "@/components/AppShell";
 import { initializeWorkspace } from "@/features/kuroji/actions/data";
 import { DESIGN_COOKIE, parseDesign } from "@/lib/design";
+import { modulesOn } from "@/lib/modules";
 
 /** The signed-in shell: sidebar, header and the workspace, for every app and the home. */
 export async function AppFrame({ children }: { children: React.ReactNode }) {
@@ -17,7 +18,7 @@ export async function AppFrame({ children }: { children: React.ReactNode }) {
 	return (
 		<AppShell
 			workspaceName={workspace?.name ?? "My Workspace"}
-			hiddenApps={workspace?.hiddenApps ?? []}
+			modules={modulesOn(workspace?.modulesOff ?? [])}
 			workspaceId={workspace?.id}
 			baseCurrency={workspace?.baseCurrency}
 			sidebarDefaultOpen={defaultOpen}

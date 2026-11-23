@@ -3,9 +3,11 @@
 // call share one auth() decode and one workspace query instead of repeating them.
 
 import { accounts, db, eq, workspaces } from "@seikatsu/db";
+import { redirect } from "next/navigation";
 import { cache } from "react";
 import { z } from "zod";
 import { auth } from "@/auth";
+import { type ModuleHref, modulesOn } from "@/lib/modules";
 
 export type Workspace = typeof workspaces.$inferSelect;
 
@@ -26,6 +28,17 @@ export const getCurrentWorkspace = cache(async (): Promise<Workspace | null> => 
 		.limit(1);
 	return existing ?? createWorkspace(userId);
 });
+
+/** The modules the signed-in user has on (lib/modules.ts). */
+export const getModules = cache(
+	async (): Promise<ModuleHref[]> => modulesOn((await getCurrentWorkspace())?.modulesOff ?? []),
+);
+
+/** A page of a module that's off sends the user to where it's switched on. */
+export async function requireModule(href: ModuleHref): Promise<void> {
+	if (!(await getModules()).includes(href))
+		redirect(`/settings/apps?off=${encodeURIComponent(href)}`);
+}
 
 /** The signed-in user's workspace; throws when signed out (actions are never public). */
 export async function requireWorkspace(): Promise<Workspace> {

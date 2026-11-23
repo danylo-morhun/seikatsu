@@ -52,10 +52,9 @@ interface Props {
 	workspaceId?: string;
 	baseCurrency?: string;
 	/** Apps set aside: the switcher leaves them out (unless one is open). */
-	hiddenApps?: string[];
 }
 
-export function AppHeader({ workspaceId, baseCurrency, hiddenApps = [] }: Props) {
+export function AppHeader({ workspaceId, baseCurrency }: Props) {
 	const pathname = usePathname();
 	const shellPage = isShellPage(pathname);
 	const searchParams = useSearchParams();
@@ -162,7 +161,6 @@ export function AppHeader({ workspaceId, baseCurrency, hiddenApps = [] }: Props)
 				{app ? (
 					<AppSwitcher
 						current={app.href as keyof typeof APPS_CONFIG}
-						hiddenApps={hiddenApps}
 						showPurpose={showPurpose}
 						className={cn(tabs.length > 0 && "md:max-lg:hidden")}
 					/>

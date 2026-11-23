@@ -28,8 +28,8 @@ export function AppsView({
 	today: string;
 	started: Started;
 }) {
-	const listed = APP_HREFS.filter((href) => !ws.hiddenApps.includes(href));
-	const hidden = APP_HREFS.filter((href) => ws.hiddenApps.includes(href));
+	const listed = APP_HREFS.filter((href) => !ws.modulesOff.includes(href));
+	const hidden = APP_HREFS.filter((href) => ws.modulesOff.includes(href));
 	const fresh = listed.filter((href) => started[href] === false);
 	const live = listed.filter((href) => !fresh.includes(href));
 

@@ -6,7 +6,7 @@ import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { type CSSProperties, useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
-import { setAppHidden } from "@/features/home/actions/apps";
+import { setModuleOn } from "@/features/home/actions/apps";
 import { APPS_CONFIG } from "@/lib/app-themes";
 
 type AppHref = keyof typeof APPS_CONFIG;
@@ -33,7 +33,7 @@ export function StartHere({ apps, hidden: saved, all, offset }: Props) {
 	function toggle(app: AppHref, hide: boolean) {
 		startTransition(async () => {
 			setHidden({ app, hide });
-			const result = await setAppHidden(app, hide).catch(() => ({
+			const result = await setModuleOn(app, !hide).catch(() => ({
 				error: "Couldn't save. Check your connection.",
 			}));
 			if ("error" in result) toast.error(result.error);

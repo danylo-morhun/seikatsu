@@ -11,6 +11,7 @@ import type { QueueData } from "@/features/home/lib/queue";
 import { getCardsDue, getWants, readCar } from "@/features/home/lib/today";
 import { readMoneyAgenda } from "@/features/kuroji/lib/agenda";
 import { readJobsAgenda } from "@/features/kyuu/lib/agenda";
+import { type ModuleHref, modulesOn } from "@/lib/modules";
 import type { Workspace } from "@/lib/session";
 
 async function safely<T>(load: () => Promise<T>): Promise<T | null> {
@@ -41,13 +42,17 @@ async function readGoalPace(ws: Workspace, today: string): Promise<GoalPace[]> {
 }
 
 export async function readAgenda(ws: Workspace, today: string): Promise<QueueData> {
+	// A module that's off has nothing waiting.
+	const on = modulesOn(ws.modulesOff);
+	const from = <T>(module: ModuleHref, load: () => Promise<T>) =>
+		on.includes(module) ? safely(load) : Promise.resolve(null);
 	const [money, wants, cards, jobs, car, goals, snoozed] = await Promise.all([
-		safely(() => readMoneyAgenda(ws, today)),
-		safely(() => getWants(ws, today)),
-		safely(() => getCardsDue(ws, today)),
-		safely(() => readJobsAgenda(ws.id, today)),
-		safely(() => readCar(ws.id, today)),
-		safely(() => readGoalPace(ws, today)),
+		from("/kuroji", () => readMoneyAgenda(ws, today)),
+		from("/hoshii", () => getWants(ws, today)),
+		from("/seiryu", () => getCardsDue(ws, today)),
+		from("/kyuu", () => readJobsAgenda(ws.id, today)),
+		from("/aisha", () => readCar(ws.id, today)),
+		from("/goals", () => readGoalPace(ws, today)),
 		safely(() => readSnoozes(ws.id, today)),
 	]);
 	return { money, wants, cards, jobs, car, goals, snoozed };

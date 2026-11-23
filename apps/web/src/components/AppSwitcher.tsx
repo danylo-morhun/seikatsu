@@ -18,6 +18,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useModules } from "@/components/ModulesProvider";
 import { startNavigationProgress } from "@/components/NavigationProgress";
 import { shellOrigin } from "@/components/ShellNav";
 import { readAppEntry } from "@/lib/app-entry";
@@ -31,19 +32,18 @@ type AppHref = keyof typeof APPS_CONFIG;
  */
 export function AppSwitcher({
 	current,
-	hiddenApps,
 	showPurpose,
 	className,
 }: {
 	current: AppHref;
-	hiddenApps: string[];
 	showPurpose: boolean;
 	className?: string;
 }) {
 	const app = APPS_CONFIG[current];
 	const [entries, setEntries] = useState<Record<string, string>>({});
+	const on = useModules();
 	const listed = (Object.keys(APPS_CONFIG) as AppHref[]).filter(
-		(href) => href === current || !hiddenApps.includes(href),
+		(href) => href === current || on.includes(href),
 	);
 	return (
 		<DropdownMenu
