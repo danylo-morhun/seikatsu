@@ -17,12 +17,11 @@ test("Kuroji tabs switch content", async ({ page }) => {
 	await expect(page).not.toHaveURL(/tab=/);
 });
 
-test("the sidebar holds the shell; Apps opens every app", async ({ page }) => {
+test("the sidebar lists Home and every app that's on", async ({ page }) => {
 	await page.goto("/");
 	const sidebar = page.locator('[data-sidebar="sidebar"]');
-	for (const name of ["Today", "Week", "Goals", "Apps"])
+	for (const name of ["Home", "Week", "Goals"])
 		await expect(sidebar.getByRole("link", { name, exact: true })).toBeVisible();
-	await expect(sidebar.getByRole("link", { name: "Kuroji" })).toHaveCount(0);
 
 	for (const [name, path] of [
 		["Seiryu", "/seiryu"],
@@ -32,19 +31,15 @@ test("the sidebar holds the shell; Apps opens every app", async ({ page }) => {
 		["Aisha", "/aisha"],
 		["Kuroji", "/kuroji"],
 	]) {
-		await page.goto("/apps");
-		await page
-			.getByRole("main")
-			.getByRole("link", { name: new RegExp(name) })
-			.first()
-			.click();
+		const link = sidebar.getByRole("link", { name, exact: true });
+		await link.click();
 		await expect(page).toHaveURL(new RegExp(path));
-		// Inside an app, Apps stays lit in the sidebar.
-		await expect(sidebar.getByRole("link", { name: "Apps" })).toHaveAttribute(
-			"data-active",
-			"true",
-		);
+		await expect(link).toHaveAttribute("data-active", "true");
 	}
+
+	// The old launcher sends old links home.
+	await page.goto("/apps");
+	await expect(page).toHaveURL(/\/$/);
 });
 
 test("the header's switcher moves between apps", async ({ page }) => {

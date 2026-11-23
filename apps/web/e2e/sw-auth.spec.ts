@@ -26,7 +26,7 @@ test("a sign-in callback reaches the server once under the service worker", asyn
 	await page.goto(url);
 
 	await expect(page).not.toHaveURL(/\/api\/auth\/error/);
-	await expect(page.getByRole("link", { name: "Today" }).first()).toBeVisible();
+	await expect(page.getByRole("link", { name: "Home" }).first()).toBeVisible();
 	// Used once, and by the request whose answer the browser kept.
 	const left = await db
 		.select()

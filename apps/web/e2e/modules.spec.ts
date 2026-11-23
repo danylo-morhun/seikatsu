@@ -22,8 +22,9 @@ test("switching Day off turns Today into the plain list", async ({ page }) => {
 	await day.click();
 	await expect(day).not.toBeChecked();
 
+	// Without Day, the home is the apps' widgets; the cross-app To do waits behind Edit.
 	await page.goto("/");
-	await expect(page.getByRole("heading", { name: "To do" })).toBeVisible();
+	await expect(page.getByRole("region", { name: "Seiryu" })).toBeVisible();
 	await expect(page.getByText("Plan the day")).toHaveCount(0);
 
 	// Its pages send you to where it's switched on.
@@ -38,6 +39,8 @@ test("an app or feature that's off leaves the menus and ⌘K", async ({ page }) 
 	const nav = page.locator("[data-sidebar=sidebar]");
 	await expect(nav.getByRole("link", { name: "Week" })).toBeVisible();
 	await expect(nav.getByRole("link", { name: "Goals" })).toHaveCount(0);
+	await expect(nav.getByRole("link", { name: "Kyuu" })).toHaveCount(0);
+	await expect(nav.getByRole("link", { name: "Kuroji" })).toBeVisible();
 
 	await page.goto("/kyuu");
 	await expect(page).toHaveURL(/\/settings\/apps\?off=%2Fkyuu/);
