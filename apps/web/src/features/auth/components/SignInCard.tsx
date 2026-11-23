@@ -22,7 +22,7 @@ function LogoMark() {
 	return (
 		<div className="mb-6 flex flex-col items-center gap-3 text-center">
 			<Image src="/icons/favicon.svg" alt="seikatsu" width={52} height={52} />
-			<h1 className="text-2xl font-semibold tracking-tight">seikatsu</h1>
+			<h2 className="text-2xl font-semibold tracking-tight">seikatsu</h2>
 		</div>
 	);
 }
