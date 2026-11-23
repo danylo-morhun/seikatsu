@@ -164,5 +164,5 @@ test("the evening sorts what's left and closes the day", async ({ page }) => {
 		.toBe(true);
 
 	await page.goto("/");
-	await expect(page.getByText("Day closed.")).toBeVisible();
+	await expect(page.getByRole("region", { name: "My day" }).getByText("Day closed.")).toBeVisible();
 });
