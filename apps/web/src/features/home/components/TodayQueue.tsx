@@ -70,6 +70,9 @@ export function TodayQueue({
 	workspaceId,
 	today,
 	folded = false,
+	limit = FIRST,
+	inWidget = false,
+	label = "Waiting today",
 }: {
 	items: QueueItem[];
 	/** For acts that open Kuroji's form (a fund's instalment). */
@@ -77,6 +80,12 @@ export function TodayQueue({
 	today: string;
 	/** Behind one "Everything else · N" line until opened (a planned day keeps its picks up top). */
 	folded?: boolean;
+	/** Rows shown before "Show more". */
+	limit?: number;
+	/** Inside an app's widget on the home: no group of its own, no app seal on each row. */
+	inWidget?: boolean;
+	/** The list's name for assistive tech (an app's widget names its app). */
+	label?: string;
 }) {
 	// Rows handled here go at once; a failure brings them back.
 	const [gone, setGone] = useState<Set<string>>(new Set());
@@ -87,7 +96,7 @@ export function TodayQueue({
 		if (folded && window.matchMedia("(min-width: 1024px)").matches) setOpen(true);
 	}, [folded]);
 	const left = items.filter((i) => !gone.has(i.key));
-	const shown = all ? left : left.slice(0, FIRST);
+	const shown = all ? left : left.slice(0, limit);
 
 	const hide = (key: string) => setGone((prev) => new Set(prev).add(key));
 	const show = (key: string) =>
@@ -120,6 +129,8 @@ export function TodayQueue({
 	}
 
 	if (left.length === 0 && folded) return null;
+	if (left.length === 0 && inWidget)
+		return <p className="py-3 text-sm text-muted-foreground">Nothing waiting.</p>;
 	if (left.length === 0)
 		return (
 			<p className="rounded-group bg-[var(--group-bg)] px-[var(--group-px)] py-4 text-sm text-muted-foreground lg:flex-1">
@@ -142,7 +153,7 @@ export function TodayQueue({
 
 	// Fills its column on a desktop, so it ends where the column beside it does.
 	return (
-		<ul aria-label="Waiting today" className="inset-group lg:flex-1">
+		<ul aria-label={label} className={inWidget ? "divide-y divide-rule" : "inset-group lg:flex-1"}>
 			{shown.map((item) => (
 				<QueueRow
 					key={item.key}
@@ -152,16 +163,20 @@ export function TodayQueue({
 					hide={hide}
 					workspaceId={workspaceId}
 					today={today}
+					seal={!inWidget}
 				/>
 			))}
-			{left.length > FIRST && (
+			{left.length > limit && (
 				<li>
 					<button
 						type="button"
 						onClick={() => setAll((v) => !v)}
-						className="flex min-h-11 w-full items-center pl-10 text-sm text-muted-foreground transition-colors hover:text-foreground"
+						className={cn(
+							"flex min-h-11 w-full items-center text-sm text-muted-foreground transition-colors hover:text-foreground",
+							!inWidget && "pl-10",
+						)}
 					>
-						{all ? "Show less" : `Show ${left.length - FIRST} more`}
+						{all ? "Show less" : `Show ${left.length - limit} more`}
 					</button>
 				</li>
 			)}
@@ -176,8 +191,10 @@ function QueueRow({
 	hide,
 	workspaceId,
 	today,
+	seal,
 }: {
 	item: QueueItem;
+	seal: boolean;
 	hide: (key: string) => void;
 	workspaceId?: string;
 	today: string;
@@ -189,15 +206,17 @@ function QueueRow({
 	const { act } = item;
 	return (
 		<li className="flex min-h-14 items-center gap-3 py-2">
-			<span
-				aria-hidden
-				className={cn(
-					app.theme,
-					"flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-[13px] font-semibold text-primary",
-				)}
-			>
-				{app.kanji}
-			</span>
+			{seal && (
+				<span
+					aria-hidden
+					className={cn(
+						app.theme,
+						"flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-[13px] font-semibold text-primary",
+					)}
+				>
+					{app.kanji}
+				</span>
+			)}
 			<Link href={item.href} prefetch className="group min-w-0 flex-1 outline-none">
 				<span className="block truncate text-sm font-medium group-hover:underline group-focus-visible:underline">
 					{item.title}
