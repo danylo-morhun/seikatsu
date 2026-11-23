@@ -9,8 +9,10 @@ import {
 	LogMileage,
 	LogPages,
 } from "@/features/home/components/TodayIslands";
-import { CaptureBar } from "@/features/home/components/TodayQueue";
+import { CaptureBar, TodayQueue } from "@/features/home/components/TodayQueue";
+import { loadAgenda } from "@/features/home/lib/agenda";
 import { km, longDate, money, plural } from "@/features/home/lib/format";
+import { buildQueue } from "@/features/home/lib/queue";
 import {
 	loadCar,
 	loadCards,
@@ -24,6 +26,7 @@ import {
 import { formatMoney } from "@/features/hoshii/lib/format";
 import { ProgressMeter } from "@/features/tsundoku/components/ProgressMeter";
 import { APPS_CONFIG } from "@/lib/app-themes";
+import { modulesOn } from "@/lib/modules";
 import type { Workspace } from "@/lib/session";
 
 const APP_HREFS = Object.keys(APPS_CONFIG) as AppHref[];
@@ -41,8 +44,9 @@ interface Props {
  * parts with habits, the evening's close. Logging the rest (pages, km) belongs to the evening.
  */
 export function TodayView({ ws, today, started, firstName }: Props) {
-	const hidden = APP_HREFS.filter((href) => ws.hiddenApps.includes(href));
-	const listed = APP_HREFS.filter((href) => !ws.hiddenApps.includes(href));
+	const on = modulesOn(ws.modulesOff);
+	const hidden = APP_HREFS.filter((href) => ws.modulesOff.includes(href));
+	const listed = APP_HREFS.filter((href) => !ws.modulesOff.includes(href));
 	// An app with nothing in it yet waits on the start list, not as an empty figure.
 	const fresh = listed.filter((href) => started[href] === false);
 	const isNew = APP_HREFS.every((href) => started[href] === false);
@@ -84,7 +88,11 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 
 					<div className="animate-rise [--i:2]">
 						<Suspense fallback={<ListSkeleton rows={3} />}>
-							<DayBody ws={ws} today={today} fmt={asMoney} showHabits={shows("/keizoku")} />
+							{on.includes("/day") ? (
+								<DayBody ws={ws} today={today} fmt={asMoney} showHabits={shows("/keizoku")} />
+							) : (
+								<PlainDay ws={ws} today={today} showHabits={shows("/keizoku")} />
+							)}
 						</Suspense>
 					</div>
 				</>
@@ -92,6 +100,33 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 
 			{/* First run: the start list is the page. After that it lives on Apps. */}
 			{isNew && <StartHere apps={fresh} hidden={hidden} all offset={1} />}
+		</div>
+	);
+}
+
+/** Without Day's rhythm: the list, and the habits beside it. */
+async function PlainDay({
+	ws,
+	today,
+	showHabits,
+}: {
+	ws: Workspace;
+	today: string;
+	showHabits: boolean;
+}) {
+	const items = buildQueue(await loadAgenda(ws, today), today, asMoney);
+	return (
+		<div className="grid gap-6 md:gap-8 lg:grid-cols-2">
+			<section aria-label="To do" className="min-w-0">
+				<h2 className="mb-2 px-1 text-sm font-medium text-muted-foreground">To do</h2>
+				<TodayQueue items={items} workspaceId={ws.id} today={today} />
+			</section>
+			{showHabits && (
+				<section aria-label="Habits" className="min-w-0">
+					<h2 className="mb-2 px-1 text-sm font-medium text-muted-foreground">Habits</h2>
+					<Habits />
+				</section>
+			)}
 		</div>
 	);
 }

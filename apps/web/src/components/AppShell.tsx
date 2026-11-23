@@ -7,11 +7,13 @@ import { AppHeader } from "@/components/AppHeader";
 import { AppSidebar } from "@/components/AppSidebar";
 import { DesignProvider } from "@/components/DesignProvider";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
+import { ModulesProvider } from "@/components/ModulesProvider";
 import { ShellNav } from "@/components/ShellNav";
 import { LaunchTiming } from "@/features/pwa/components/LaunchTiming";
 import { OfflineWarmup } from "@/features/pwa/components/OfflineWarmup";
 import { APP_THEMES, getThemeForPath } from "@/lib/app-themes";
 import type { Design } from "@/lib/design";
+import type { ModuleHref } from "@/lib/modules";
 
 const ALL_THEMES = Object.values(APP_THEMES);
 
@@ -24,7 +26,7 @@ interface User {
 
 interface Props {
 	workspaceName: string;
-	hiddenApps?: string[];
+	modules: ModuleHref[];
 	workspaceId?: string;
 	baseCurrency?: string;
 	sidebarDefaultOpen?: boolean;
@@ -35,7 +37,7 @@ interface Props {
 
 export function AppShell({
 	workspaceName,
-	hiddenApps = [],
+	modules,
 	workspaceId,
 	baseCurrency,
 	sidebarDefaultOpen = true,
@@ -72,21 +74,19 @@ export function AppShell({
 
 	return (
 		<DesignProvider initial={design}>
-			<SidebarProvider defaultOpen={sidebarDefaultOpen} className={theme}>
-				<AppSidebar workspaceName={workspaceName} user={user} />
-				<SidebarInset className="min-w-0">
-					<AppHeader
-						workspaceId={workspaceId}
-						baseCurrency={baseCurrency}
-						hiddenApps={hiddenApps}
-					/>
-					{children}
-				</SidebarInset>
-				<ShellNav />
-				<KeyboardShortcuts />
-				<OfflineWarmup />
-				<LaunchTiming />
-			</SidebarProvider>
+			<ModulesProvider on={modules}>
+				<SidebarProvider defaultOpen={sidebarDefaultOpen} className={theme}>
+					<AppSidebar workspaceName={workspaceName} user={user} />
+					<SidebarInset className="min-w-0">
+						<AppHeader workspaceId={workspaceId} baseCurrency={baseCurrency} />
+						{children}
+					</SidebarInset>
+					<ShellNav />
+					<KeyboardShortcuts />
+					<OfflineWarmup />
+					<LaunchTiming />
+				</SidebarProvider>
+			</ModulesProvider>
 		</DesignProvider>
 	);
 }

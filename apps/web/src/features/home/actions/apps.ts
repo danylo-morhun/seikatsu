@@ -3,24 +3,25 @@
 import { db, eq, workspaces } from "@seikatsu/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { APPS_CONFIG } from "@/lib/app-themes";
+import { MODULE_HREFS, type ModuleHref } from "@/lib/modules";
 import { requireWorkspace } from "@/lib/session";
 
-const appSchema = z.enum(Object.keys(APPS_CONFIG) as [keyof typeof APPS_CONFIG]);
+const moduleSchema = z.enum(MODULE_HREFS as [ModuleHref, ...ModuleHref[]]);
 
-/** Sets an app aside (off the sidebar and the home) or brings it back. */
-export async function setAppHidden(
-	app: string,
-	hidden: boolean,
+/** Switches a module (an app, or a shell feature like Day) off — gone everywhere — or back on.
+ * Its data stays either way. */
+export async function setModuleOn(
+	module: string,
+	on: boolean,
 ): Promise<{ error: string } | { success: true }> {
 	const ws = await requireWorkspace();
-	const parsed = appSchema.safeParse(app);
-	if (!parsed.success) return { error: "Unknown app" };
+	const parsed = moduleSchema.safeParse(module);
+	if (!parsed.success) return { error: "Unknown module" };
 
-	const rest = ws.hiddenApps.filter((href) => href !== parsed.data);
+	const rest = ws.modulesOff.filter((href) => href !== parsed.data);
 	await db
 		.update(workspaces)
-		.set({ hiddenApps: hidden ? [...rest, parsed.data] : rest, updatedAt: new Date() })
+		.set({ modulesOff: on ? rest : [...rest, parsed.data], updatedAt: new Date() })
 		.where(eq(workspaces.id, ws.id));
 
 	revalidatePath("/", "layout");
