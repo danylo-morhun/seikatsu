@@ -16,13 +16,20 @@ import {
 	transactionEntries,
 	transactions,
 } from "@seikatsu/db";
-import { type CaptureContext, type Named, pickMerchants } from "@/features/capture/lib/plan";
+import {
+	type CaptureContext,
+	KIND_APP,
+	KINDS,
+	type Named,
+	pickMerchants,
+} from "@/features/capture/lib/plan";
 import { loadCar, loadReading } from "@/features/home/lib/today";
 import { getChromeData } from "@/features/hoshii/actions/data";
 import { getHabits } from "@/features/keizoku/actions/habits";
 import { getDueToday } from "@/features/keizoku/actions/logs";
 import { getAccounts } from "@/features/kuroji/actions/data";
 import { getProjects } from "@/features/seiryu/actions/projects";
+import { type ModuleHref, modulesOn } from "@/lib/modules";
 import type { Workspace } from "@/lib/session";
 
 type Account = Awaited<ReturnType<typeof getAccounts>>[number];
@@ -81,15 +88,20 @@ async function merchantUses(workspaceId: string, today: string) {
 }
 
 export async function getCaptureContext(ws: Workspace, today: string): Promise<CaptureContext> {
+	// Only the apps that are on: the others aren't read, and their kinds aren't offered.
+	const on = modulesOn(ws.modulesOff);
+	const kinds = KINDS.filter((k) => on.includes(KIND_APP[k]));
+	const when = <T>(module: ModuleHref, load: () => Promise<T>, none: T) =>
+		on.includes(module) ? load() : Promise.resolve(none);
 	const [all, car, projects, habits, dueToday, books, hoshii, spent] = await Promise.all([
-		getAccounts(ws.id),
-		loadCar(today),
-		getProjects(),
-		getHabits(),
-		getDueToday(),
-		loadReading(),
-		getChromeData(ws),
-		merchantUses(ws.id, today),
+		when("/kuroji", () => getAccounts(ws.id), []),
+		when("/aisha", () => loadCar(today), null),
+		when("/seiryu", () => getProjects(), []),
+		when("/keizoku", () => getHabits(), []),
+		when("/keizoku", () => getDueToday(), []),
+		when("/tsundoku", () => loadReading(), null),
+		when("/hoshii", () => getChromeData(ws).then((d) => d.lists), []),
+		when("/kuroji", () => merchantUses(ws.id, today), []),
 	]);
 	const live = projects.filter((p) => !p.archivedAt);
 	const expenseCategories = named(all, "EXPENSE");
@@ -98,6 +110,7 @@ export async function getCaptureContext(ws: Workspace, today: string): Promise<C
 
 	return {
 		today,
+		kinds,
 		baseCurrency: ws.baseCurrency,
 		wallets: all
 			.filter((a) => (a.type === "ASSET" || a.type === "LIABILITY") && !SYSTEM.has(a.name))
@@ -117,7 +130,7 @@ export async function getCaptureContext(ws: Workspace, today: string): Promise<C
 			const columnId = columns.get(p.id);
 			return columnId ? [{ id: p.id, name: p.name, columnId }] : [];
 		}),
-		lists: hoshii.lists,
+		lists: hoshii,
 		habits: habits.map((h) => {
 			const due = dueToday.find((d) => d.habit.id === h.id);
 			return {

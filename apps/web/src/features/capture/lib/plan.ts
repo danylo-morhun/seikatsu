@@ -4,6 +4,7 @@
 
 import { CURRENCIES } from "@/features/kuroji/lib/constants";
 import { PRIORITIES, type Priority } from "@/features/seiryu/lib/constants";
+import type { ModuleHref } from "@/lib/modules";
 
 export type Named = { id: string; name: string };
 
@@ -24,10 +25,23 @@ export type CaptureContext = {
 	/** `today`: on today's list (Keizoku's schedule), and whether it's already done. */
 	habits: (Named & { emoji: string; today?: { due: boolean; done: boolean } })[];
 	books: { id: string; title: string; currentPage: number; pageCount: number | null }[];
+	/** The kinds whose app is on; all when absent. */
+	kinds?: readonly Kind[];
 };
 
 export const KINDS = ["expense", "income", "mileage", "want", "card", "habit", "pages"] as const;
 export type Kind = (typeof KINDS)[number];
+
+/** The app each kind is saved in. */
+export const KIND_APP: Record<Kind, ModuleHref> = {
+	expense: "/kuroji",
+	income: "/kuroji",
+	mileage: "/aisha",
+	want: "/hoshii",
+	card: "/seiryu",
+	habit: "/keizoku",
+	pages: "/tsundoku",
+};
 
 /** The model's answer, one entry per thing to do; every field but `kind` may be null. */
 export type RawAction = {
@@ -122,6 +136,35 @@ const list = <T extends Named>(items: T[], extra?: (item: T) => string) =>
 /** The language the apps are kept in: titles come out in it, whatever the line was typed in. */
 const LANGUAGE = "English";
 
+/** Each kind's lines in the prompt; income shares expense's. Only the kinds on are listed. */
+function kindsText(ctx: CaptureContext): string {
+	const kinds = ctx.kinds ?? KINDS;
+	const text: Partial<Record<Kind, string>> = {
+		expense: `- expense: money spent. income: money received. Amount, currency (zł → PLN, грн → UAH,
+  € → EUR, $ → USD; none named → null), the best matching category, a short description,
+  and the wallet when the line says where it was paid from. Match wallets loosely, as people
+  say them: a bank's nickname or a case ending ("с привата", "приватом" → a Privat / P24 wallet;
+  "с пекао" → Pekao; "налом", "кэш" → cash), and when a bank has wallets in several
+  currencies, the one in the currency named.`,
+		mileage: `- mileage: the car's odometer. Current reading ${ctx.vehicle ? `${ctx.vehicle.currentKm} km` : "unknown (no car)"}.
+  "drove 300 km" means km = current + 300.`,
+		want: `- want: something to buy ("хочу Kindle", "надо шапку купить"). Title, price if given, the
+  list it fits. now = true only when it's needed right away ("срочно", "закончился").`,
+		card: `- card: a task to do ("позвонить в СТО"). Title, the project it belongs to if one fits, a due
+  date when a day is named ("завтра", "до пятницы"), a due time when an hour is named ("в 15" →
+  15:00), priority only when urgency is said.`,
+		habit: `- habit: a habit done ("был в зале" → the gym habit). Only habits from the list.`,
+		pages: `- pages: reading progress. page = the page reached ("до 52"); pagesRead when only a count
+  is given ("прочитал 20 страниц").`,
+	};
+	const lines = kinds.flatMap((k) => text[k] ?? []);
+	if (kinds.includes("expense") && kinds.includes("mileage"))
+		lines.push(
+			`\nFuel bought with a reading ("бенз 240 zł, 84 500 км") is two actions: an expense and mileage.`,
+		);
+	return lines.join("\n");
+}
+
 export function buildPrompt(text: string, ctx: CaptureContext): string {
 	const books = ctx.books.map((b) => ({
 		id: b.id,
@@ -133,24 +176,7 @@ in Russian, Ukrainian, Polish or English, and may hold several things at once.
 Today is ${ctx.today}. Their main currency is ${ctx.baseCurrency}.
 
 Kinds:
-- expense: money spent. income: money received. Amount, currency (zł → PLN, грн → UAH,
-  € → EUR, $ → USD; none named → null), the best matching category, a short description,
-  and the wallet when the line says where it was paid from. Match wallets loosely, as people
-  say them: a bank's nickname or a case ending ("с привата", "приватом" → a Privat / P24 wallet;
-  "с пекао" → Pekao; "налом", "кэш" → cash), and when a bank has wallets in several
-  currencies, the one in the currency named.
-- mileage: the car's odometer. Current reading ${ctx.vehicle ? `${ctx.vehicle.currentKm} km` : "unknown (no car)"}.
-  "drove 300 km" means km = current + 300.
-- want: something to buy ("хочу Kindle", "надо шапку купить"). Title, price if given, the
-  list it fits. now = true only when it's needed right away ("срочно", "закончился").
-- card: a task to do ("позвонить в СТО"). Title, the project it belongs to if one fits, a due
-  date when a day is named ("завтра", "до пятницы"), a due time when an hour is named ("в 15" →
-  15:00), priority only when urgency is said.
-- habit: a habit done ("был в зале" → the gym habit). Only habits from the list.
-- pages: reading progress. page = the page reached ("до 52"); pagesRead when only a count
-  is given ("прочитал 20 страниц").
-
-Fuel bought with a reading ("бенз 240 zł, 84 500 км") is two actions: an expense and mileage.
+${kindsText(ctx)}
 Dates: "вчера" = the day before today; leave date null for today.
 Use ids only from these lists; when nothing fits, use null. Never invent ids.
 Skip anything that fits no kind.
@@ -434,7 +460,7 @@ export function toPlan(
 	const planned = (Array.isArray(raw) ? raw : [])
 		.filter(
 			(a): a is RawAction =>
-				typeof a === "object" && a !== null && KINDS.includes((a as RawAction).kind),
+				typeof a === "object" && a !== null && (ctx.kinds ?? KINDS).includes((a as RawAction).kind),
 		)
 		.slice(0, 10)
 		.map((a, i) => plan(withNulls(a), ctx, `a${i}`));

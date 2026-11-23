@@ -339,3 +339,25 @@ describe("buildPrompt", () => {
 		expect(actions[0]).toMatchObject({ kind: "pages", date: "2026-11-02" });
 	});
 });
+
+describe("kinds of apps that are off", () => {
+	const noCar: CaptureContext = { ...ctx, kinds: ["expense", "income", "card"] };
+
+	it("drops them from the plan", () => {
+		const answer = {
+			actions: [
+				raw({ kind: "mileage", km: 84_500 }),
+				raw({ kind: "card", title: "Call the garage" }),
+			],
+		};
+		expect(actions(answer, noCar).map((a) => a.kind)).toEqual(["card"]);
+	});
+
+	it("leaves them out of the prompt", () => {
+		const prompt = buildPrompt("бенз 240 zł, 84 500 км", noCar);
+		expect(prompt).toContain("- expense:");
+		expect(prompt).not.toContain("- mileage:");
+		expect(prompt).not.toContain("Fuel bought with a reading");
+		expect(buildPrompt("x", ctx)).toContain("Fuel bought with a reading");
+	});
+});
