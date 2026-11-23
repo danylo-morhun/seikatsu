@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { modulesOn } from "./modules";
 import { matchPlaces } from "./places";
 
 describe("matchPlaces", () => {
@@ -12,5 +13,15 @@ describe("matchPlaces", () => {
 		expect(matchPlaces("lunch 45")).toEqual([]);
 		expect(matchPlaces("k")).toEqual([]);
 		expect(matchPlaces("bought a new phone case at the mall yesterday")).toEqual([]);
+	});
+});
+
+describe("matchPlaces with modules off", () => {
+	it("leaves out the places, and settings, of a module that's off", () => {
+		const on = modulesOn(["/kuroji", "/goals"]);
+		const names = matchPlaces("kur", 5, on).map((p) => p.name);
+		expect(names).toEqual([]);
+		expect(matchPlaces("goals", 5, on)).toEqual([]);
+		expect(matchPlaces("week", 5, on)[0]?.href).toBe("/week");
 	});
 });

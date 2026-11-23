@@ -17,6 +17,7 @@ import {
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Kbd } from "@/components/Kbd";
+import { useModules } from "@/components/ModulesProvider";
 import { pageKey } from "@/lib/capture-shortcut";
 import { hasAppShortcuts, SHORTCUTS_EVENT, shortcutsFor } from "@/lib/shortcuts";
 
@@ -72,7 +73,8 @@ export function KeyboardShortcuts() {
 		};
 	}, []);
 
-	const groups = shortcutsFor(pathname);
+	const on = useModules();
+	const groups = shortcutsFor(pathname, on);
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>

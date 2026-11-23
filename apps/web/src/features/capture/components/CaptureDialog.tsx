@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Kbd } from "@/components/Kbd";
+import { useModules } from "@/components/ModulesProvider";
 import { startNavigationProgress } from "@/components/NavigationProgress";
 import { Spinner } from "@/components/Spinner";
 import { FieldError, FOOTER } from "@/features/aisha/components/DialogParts";
@@ -60,9 +61,10 @@ export function CaptureDialog({
 	const [isSaving, startSave] = useTransition();
 	const busy = isReading || isSaving;
 	const router = useRouter();
+	const on = useModules();
 	// A short line that names a place ("kuroji", "plan", "week") goes there, at once and offline;
 	// anything else is read as a capture.
-	const places = plan || busy ? [] : matchPlaces(text);
+	const places = plan || busy ? [] : matchPlaces(text, 5, on);
 
 	function go(href: string) {
 		onOpenChange(false);
@@ -95,7 +97,7 @@ export function CaptureDialog({
 		readFor.current = line;
 		setText(line.text);
 		// Typed on Today: a place's name goes there, as Enter does here.
-		const place = matchPlaces(line.text)[0];
+		const place = matchPlaces(line.text, 5, on)[0];
 		if (place) go(place.href);
 		else readLine(line.text);
 	}, [open, line]);

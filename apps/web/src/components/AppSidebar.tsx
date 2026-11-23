@@ -33,8 +33,10 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useDesign } from "@/components/DesignProvider";
+import { useModules } from "@/components/ModulesProvider";
 import { signOutAction } from "@/features/auth/actions/auth";
 import { APPS_CONFIG } from "@/lib/app-themes";
+import { pathIsOn } from "@/lib/modules";
 import { SHORTCUTS_EVENT } from "@/lib/shortcuts";
 
 interface User {
@@ -69,6 +71,7 @@ export const SHELL = [
 export function AppSidebar({ workspaceName, user }: Props) {
 	const pathname = usePathname();
 	const { design } = useDesign();
+	const on = useModules();
 
 	return (
 		// Liquid Glass: a floating glass panel; Classic: the lacquer shell around an inset tray.
@@ -106,7 +109,7 @@ export function AppSidebar({ workspaceName, user }: Props) {
 						{/* The shell's four places. The apps open from Apps (or Today's rows, or ⌘K);
 						    inside one, the header's switcher moves between them. */}
 						<SidebarMenu>
-							{SHELL.map(({ href, label, icon, match }) => (
+							{SHELL.filter((s) => pathIsOn(s.href, on)).map(({ href, label, icon, match }) => (
 								<SidebarMenuItem key={href}>
 									<SidebarMenuButton
 										asChild

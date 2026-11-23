@@ -4,8 +4,10 @@ import { QuillWrite01Icon } from "@hugeicons/core-free-icons";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { SHELL } from "@/components/AppSidebar";
+import { useModules } from "@/components/ModulesProvider";
 import { TabBar, TabBarAction } from "@/components/TabBar";
 import { openCapture } from "@/features/capture/lib/key";
+import { pathIsOn } from "@/lib/modules";
 
 /** Today, Week, Goals and Apps: the shell's own pages (everything else is an app or settings). */
 export const isShellPage = (pathname: string) =>
@@ -31,6 +33,7 @@ export function ShellNav() {
 	const searchParams = useSearchParams();
 	const shell = isShellPage(pathname);
 	const query = searchParams.toString();
+	const on = useModules();
 
 	useEffect(() => {
 		if (!shell) return;
@@ -42,11 +45,12 @@ export function ShellNav() {
 	}, [shell, pathname, query]);
 
 	if (!shell) return null;
+	const places = SHELL.filter((s) => pathIsOn(s.href, on));
 	return (
 		<TabBar
 			label="seikatsu"
-			active={SHELL.findIndex((s) => s.match(pathname))}
-			items={SHELL.map(({ href, label, icon }) => ({ href, label, icon }))}
+			active={places.findIndex((s) => s.match(pathname))}
+			items={places.map(({ href, label, icon }) => ({ href, label, icon }))}
 			action={
 				<TabBarAction icon={QuillWrite01Icon} aria-label="Capture" onClick={() => openCapture()} />
 			}
