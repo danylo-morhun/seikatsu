@@ -8,12 +8,13 @@ import { loadAgenda } from "@/features/home/lib/agenda";
 import { loadHabits } from "@/features/home/lib/today";
 import { formatMoney } from "@/features/hoshii/lib/format";
 import { addDays } from "@/features/seiryu/lib/filters";
-import { getCurrentWorkspace } from "@/lib/session";
+import { getCurrentWorkspace, requireModule } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
 
 const asMoney = (amount: number, currency: string) => formatMoney(amount, currency, true);
 
 export default async function EveningPage() {
+	await requireModule("/day");
 	const session = await auth();
 	if (!session) redirect("/");
 	const [workspace, today] = await Promise.all([getCurrentWorkspace(), getUserToday()]);

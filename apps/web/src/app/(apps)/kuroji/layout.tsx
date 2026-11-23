@@ -4,8 +4,10 @@ import { getWorkspace } from "@/features/kuroji/actions/data";
 import { CaptureInbox } from "@/features/kuroji/components/CaptureInbox";
 import { KurojiNavTabs } from "@/features/kuroji/components/KurojiNavTabs";
 import { KurojiShortcuts } from "@/features/kuroji/components/KurojiShortcuts";
+import { requireModule } from "@/lib/session";
 
 export default async function KurojiLayout({ children }: { children: React.ReactNode }) {
+	await requireModule("/kuroji");
 	const session = await auth();
 	const workspace = session?.user?.id ? await getWorkspace(session.user.id) : null;
 	const captures = workspace ? await getPendingCaptures(workspace.id) : [];
