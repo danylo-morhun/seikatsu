@@ -1,18 +1,15 @@
-import { Suspense } from "react";
-import { DayBody } from "@/features/day/components/DayBody";
-import { type AppHref, Line, LineSkeleton } from "@/features/home/components/Line";
-import { StartHere } from "@/features/home/components/StartHere";
+import { Dashboard } from "@/features/home/components/Dashboard";
+import { Line } from "@/features/home/components/Line";
 import {
 	Greeting,
 	HabitsToday,
-	HomeKeys,
 	LogMileage,
 	LogPages,
 } from "@/features/home/components/TodayIslands";
-import { CaptureBar, TodayQueue } from "@/features/home/components/TodayQueue";
-import { loadAgenda } from "@/features/home/lib/agenda";
+import { CaptureBar } from "@/features/home/components/TodayQueue";
+import { Widget } from "@/features/home/components/Widgets";
+import { layoutOf } from "@/features/home/lib/dashboard";
 import { km, longDate, money, plural } from "@/features/home/lib/format";
-import { buildQueue } from "@/features/home/lib/queue";
 import {
 	loadCar,
 	loadCards,
@@ -23,13 +20,9 @@ import {
 	loadWants,
 	type Started,
 } from "@/features/home/lib/today";
-import { formatMoney } from "@/features/hoshii/lib/format";
 import { ProgressMeter } from "@/features/tsundoku/components/ProgressMeter";
-import { APPS_CONFIG } from "@/lib/app-themes";
-import { modulesOn } from "@/lib/modules";
+import { type AppHref, modulesOn } from "@/lib/modules";
 import type { Workspace } from "@/lib/session";
-
-const APP_HREFS = Object.keys(APPS_CONFIG) as AppHref[];
 
 interface Props {
 	ws: Workspace;
@@ -39,108 +32,51 @@ interface Props {
 }
 
 /**
- * The home is the day to work through: one line to capture anything, then the day as its phase
- * has it (features/day DayBody): the morning's invitation and the list, the picks and the day's
- * parts with habits, the evening's close. Logging the rest (pages, km) belongs to the evening.
+ * The home: the date, one line to capture anything, then the user's own dashboard — a widget
+ * per app that's on (its figure, what waits in it, its quick acts) and, if they want it, To do
+ * across all of them. They order, size and hide the widgets (Dashboard's Edit).
  */
 export function TodayView({ ws, today, started, firstName }: Props) {
 	const on = modulesOn(ws.modulesOff);
-	const hidden = APP_HREFS.filter((href) => ws.modulesOff.includes(href));
-	const listed = APP_HREFS.filter((href) => !ws.modulesOff.includes(href));
-	// An app with nothing in it yet waits on the start list, not as an empty figure.
-	const fresh = listed.filter((href) => started[href] === false);
-	const isNew = APP_HREFS.every((href) => started[href] === false);
-	const shows = (href: AppHref) => listed.includes(href) && !fresh.includes(href);
+	const slots = layoutOf(ws.dashboard, on);
+	const widgets = Object.fromEntries(
+		slots
+			.filter((s) => !s.hidden)
+			.map((s) => [
+				s.id,
+				<Widget
+					key={s.id}
+					id={s.id}
+					size={s.size}
+					ws={ws}
+					today={today}
+					on={on}
+					started={started}
+				/>,
+			]),
+	);
 
 	return (
-		<div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-5 pb-28 sm:px-8 md:space-y-8 md:py-8">
-			<HomeKeys listed={listed} />
-			{isNew ? (
-				<header className="max-w-2xl animate-rise">
-					<h1 className="text-xl font-semibold tracking-tight md:text-3xl">
-						{firstName ? `Welcome, ${firstName}.` : "Welcome."}
-					</h1>
-					<p className="mt-2 text-sm text-muted-foreground md:text-base">
-						生活 — everyday life. Seven small apps for money, projects, books, habits, the job
-						search, the car and the things you want, under one sign-in. Start with whichever you
-						need; the rest wait here until you do, and each one shows up on this page once it has
-						something in it.
-					</p>
-				</header>
-			) : null}
-			{isNew && (
-				<div className="max-w-2xl animate-rise [--i:1]">
-					<CaptureBar />
-				</div>
-			)}
-			{!isNew && (
-				<>
-					<header className="animate-rise">
+		<div className="mx-auto w-full max-w-5xl px-4 pt-5 pb-28 sm:px-8 md:py-8">
+			<Dashboard
+				slots={slots}
+				widgets={widgets}
+				header={
+					<header>
 						<h1 className="text-xl font-semibold tracking-tight md:text-3xl">{longDate(today)}</h1>
 						<p className="mt-1 min-h-5 text-sm text-muted-foreground">
 							<Greeting firstName={firstName} />
 						</p>
 					</header>
-
-					<div className="animate-rise [--i:1]">
-						<CaptureBar />
-					</div>
-
-					<div className="animate-rise [--i:2]">
-						<Suspense fallback={<ListSkeleton rows={3} />}>
-							{on.includes("/day") ? (
-								<DayBody ws={ws} today={today} fmt={asMoney} showHabits={shows("/keizoku")} />
-							) : (
-								<PlainDay ws={ws} today={today} showHabits={shows("/keizoku")} />
-							)}
-						</Suspense>
-					</div>
-				</>
-			)}
-
-			{/* First run: the start list is the page. After that it lives on Apps. */}
-			{isNew && <StartHere apps={fresh} hidden={hidden} all offset={1} />}
+				}
+			>
+				<CaptureBar />
+			</Dashboard>
 		</div>
 	);
-}
-
-/** Without Day's rhythm: the list, and the habits beside it. */
-async function PlainDay({
-	ws,
-	today,
-	showHabits,
-}: {
-	ws: Workspace;
-	today: string;
-	showHabits: boolean;
-}) {
-	const items = buildQueue(await loadAgenda(ws, today), today, asMoney);
-	return (
-		<div className="grid gap-6 md:gap-8 lg:grid-cols-2">
-			<section aria-label="To do" className="min-w-0">
-				<h2 className="mb-2 px-1 text-sm font-medium text-muted-foreground">To do</h2>
-				<TodayQueue items={items} workspaceId={ws.id} today={today} />
-			</section>
-			{showHabits && (
-				<section aria-label="Habits" className="min-w-0">
-					<h2 className="mb-2 px-1 text-sm font-medium text-muted-foreground">Habits</h2>
-					<Habits />
-				</section>
-			)}
-		</div>
-	);
-}
-
-const ROWS = ["a", "b", "c"];
-
-function ListSkeleton({ rows, bare = false }: { rows: number; bare?: boolean }) {
-	const lines = ROWS.slice(0, rows).map((key) => <LineSkeleton key={key} />);
-	return bare ? <ul>{lines}</ul> : <ul className="inset-group lg:flex-1">{lines}</ul>;
 }
 
 // ── The parts ─────────────────────────────────────────────────────────────────
-
-const asMoney = (amount: number, currency: string) => formatMoney(amount, currency, true);
 
 export async function Habits() {
 	const data = await loadHabits();
@@ -152,12 +88,13 @@ export async function Habits() {
 	return <HabitsToday habits={sorted} today={data?.today ?? ""} />;
 }
 
-export async function ReadingLine() {
+export async function ReadingLine({ seal = true }: { seal?: boolean }) {
 	const book = (await loadReading())?.[0];
-	if (!book) return <Line href="/tsundoku" title="No book on the go" note="Tsundoku" />;
+	if (!book) return <Line href="/tsundoku" seal={seal} title="No book on the go" note="Tsundoku" />;
 	return (
 		<Line
 			href="/tsundoku"
+			seal={seal}
 			title={book.title}
 			note={[
 				`p. ${book.currentPage}${book.pageCount ? ` of ${book.pageCount}` : ""}`,
@@ -179,13 +116,14 @@ export async function ReadingLine() {
 	);
 }
 
-export async function CarLine({ today }: { today: string }) {
+export async function CarLine({ today, seal = true }: { today: string; seal?: boolean }) {
 	const car = await loadCar(today);
-	if (!car) return <Line href="/aisha" title="No car yet" note="Aisha" />;
+	if (!car) return <Line href="/aisha" seal={seal} title="No car yet" note="Aisha" />;
 	const next = car.next;
 	return (
 		<Line
 			href="/aisha"
+			seal={seal}
 			title={`${car.name} · ${km(car.currentKm)}`}
 			note={
 				!next
@@ -214,7 +152,7 @@ export async function figureOf(
 		}
 		case "/seiryu": {
 			const cards = await loadCards(ws, today);
-			return [cards && String(cards.length), "cards due"];
+			return [cards && String(cards.length), cards?.length === 1 ? "card due" : "cards due"];
 		}
 		case "/tsundoku": {
 			const book = (await loadReading())?.[0];
