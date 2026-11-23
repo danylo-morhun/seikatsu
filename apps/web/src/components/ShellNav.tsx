@@ -7,15 +7,16 @@ import { SHELL } from "@/components/AppSidebar";
 import { useModules } from "@/components/ModulesProvider";
 import { TabBar, TabBarAction } from "@/components/TabBar";
 import { openCapture } from "@/features/capture/lib/key";
-import { pathIsOn } from "@/lib/modules";
+import { APPS_CONFIG } from "@/lib/app-themes";
+import { type AppHref, pathIsOn } from "@/lib/modules";
 
-/** Today, Week, Goals and Apps: the shell's own pages (everything else is an app or settings). */
+/** Home, Week and Goals: the shell's own pages (everything else is an app or settings). */
 export const isShellPage = (pathname: string) =>
-	pathname === "/" || pathname === "/week" || pathname === "/goals" || pathname === "/apps";
+	pathname === "/" || pathname === "/week" || pathname === "/goals";
 
 const ORIGIN_KEY = "seikatsu:origin";
 
-/** Where the user came into an app from, for its back button; Today when unknown. */
+/** Where the user came into an app from, for its back button; Home when unknown. */
 export function shellOrigin(): string {
 	try {
 		return sessionStorage.getItem(ORIGIN_KEY) ?? "/";
@@ -40,17 +41,26 @@ export function ShellNav() {
 		try {
 			sessionStorage.setItem(ORIGIN_KEY, query ? `${pathname}?${query}` : pathname);
 		} catch {
-			// No storage: back goes to Today.
+			// No storage: back goes Home.
 		}
 	}, [shell, pathname, query]);
 
 	if (!shell) return null;
 	const places = SHELL.filter((s) => pathIsOn(s.href, on));
+	// The bar holds four: the shell's places that are on, then the first apps on the dashboard.
+	const apps = on
+		.filter((m): m is AppHref => m in APPS_CONFIG)
+		.slice(0, Math.max(0, 4 - places.length))
+		.map((href) => ({
+			href,
+			label: APPS_CONFIG[href].name,
+			glyph: { kanji: APPS_CONFIG[href].kanji, theme: APPS_CONFIG[href].theme },
+		}));
 	return (
 		<TabBar
 			label="seikatsu"
 			active={places.findIndex((s) => s.match(pathname))}
-			items={places.map(({ href, label, icon }) => ({ href, label, icon }))}
+			items={[...places.map(({ href, label, icon }) => ({ href, label, icon })), ...apps]}
 			action={
 				<TabBarAction icon={QuillWrite01Icon} aria-label="Capture" onClick={() => openCapture()} />
 			}

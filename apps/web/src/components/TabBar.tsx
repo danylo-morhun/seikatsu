@@ -11,7 +11,9 @@ type Icon = typeof Add01Icon;
 
 export interface TabBarItem {
 	label: string;
-	icon: Icon;
+	icon?: Icon;
+	/** An app's kanji in place of the icon, on its own pigment. */
+	glyph?: { kanji: string; theme: string };
 	/** A link tab; without it the tab is a button (e.g. opens a sheet). */
 	href?: string;
 	onClick?: () => void;
@@ -67,7 +69,7 @@ function GlassBar({ label, items, active }: Props) {
 							litClass="text-primary"
 							restClass="text-foreground/80"
 						>
-							<HugeiconsIcon icon={item.icon} className="h-[22px] w-[22px]" />
+							<TabIcon item={item} className="h-[22px] w-[22px]" />
 							<span className="max-w-full truncate px-1 text-[10px] leading-tight font-semibold">
 								{item.label}
 							</span>
@@ -77,6 +79,23 @@ function GlassBar({ label, items, active }: Props) {
 			</div>
 		</nav>
 	);
+}
+
+function TabIcon({ item, className }: { item: TabBarItem; className: string }) {
+	if (item.glyph)
+		return (
+			<span
+				aria-hidden
+				className={cn(
+					item.glyph.theme,
+					className,
+					"flex items-center justify-center rounded-md bg-primary/12 text-[13px] font-semibold text-primary",
+				)}
+			>
+				{item.glyph.kanji}
+			</span>
+		);
+	return item.icon ? <HugeiconsIcon icon={item.icon} className={className} /> : null;
 }
 
 /** The flat pill: tabs either side of the capture, one chip sliding to the lit tab. */
@@ -95,7 +114,7 @@ function ClassicBar({ label, items, active, action }: Props) {
 			restClass="text-muted-foreground active:text-foreground"
 		>
 			<span className="flex h-7 w-12 items-center justify-center">
-				<HugeiconsIcon icon={item.icon} className="h-5 w-5" />
+				<TabIcon item={item} className="h-5 w-5" />
 			</span>
 			<span className="max-w-full truncate px-0.5 text-[11px] leading-none font-medium">
 				{item.label}

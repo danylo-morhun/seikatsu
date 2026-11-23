@@ -3,7 +3,6 @@
 import {
 	ArrowUpDownIcon,
 	Calendar03Icon,
-	DashboardSquare01Icon,
 	Home01Icon,
 	KeyboardIcon,
 	Logout01Icon,
@@ -13,6 +12,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Avatar,
+	cn,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -25,6 +25,7 @@ import {
 	SidebarFooter,
 	SidebarGroup,
 	SidebarGroupContent,
+	SidebarGroupLabel,
 	SidebarHeader,
 	SidebarMenu,
 	SidebarMenuButton,
@@ -36,7 +37,10 @@ import { useDesign } from "@/components/DesignProvider";
 import { useModules } from "@/components/ModulesProvider";
 import { signOutAction } from "@/features/auth/actions/auth";
 import { APPS_CONFIG } from "@/lib/app-themes";
-import { pathIsOn } from "@/lib/modules";
+import { type AppHref, pathIsOn } from "@/lib/modules";
+
+const isAppHref = (m: string): m is AppHref => m in APPS_CONFIG;
+
 import { SHORTCUTS_EVENT } from "@/lib/shortcuts";
 
 interface User {
@@ -51,13 +55,9 @@ interface Props {
 	user?: User | null;
 }
 
-const isApp = (pathname: string) =>
-	pathname === "/apps" ||
-	Object.keys(APPS_CONFIG).some((href) => pathname === href || pathname.startsWith(`${href}/`));
-
-/** The shell's places, in the order of the phone's bar. Apps is lit inside any app. */
+/** The shell's places, in the order of the phone's bar. */
 export const SHELL = [
-	{ href: "/", label: "Today", icon: Home01Icon, match: (p: string) => p === "/" },
+	{ href: "/", label: "Home", icon: Home01Icon, match: (p: string) => p === "/" },
 	{
 		href: "/week",
 		label: "Week",
@@ -65,7 +65,6 @@ export const SHELL = [
 		match: (p: string) => p === "/week" || p.startsWith("/week/"),
 	},
 	{ href: "/goals", label: "Goals", icon: Target02Icon, match: (p: string) => p === "/goals" },
-	{ href: "/apps", label: "Apps", icon: DashboardSquare01Icon, match: isApp },
 ] as const;
 
 export function AppSidebar({ workspaceName, user }: Props) {
@@ -106,8 +105,7 @@ export function AppSidebar({ workspaceName, user }: Props) {
 			<SidebarContent>
 				<SidebarGroup>
 					<SidebarGroupContent>
-						{/* The shell's four places. The apps open from Apps (or Today's rows, or ⌘K);
-						    inside one, the header's switcher moves between them. */}
+						{/* The shell's own places: Home (the dashboard), and Week and Goals when they're on. */}
 						<SidebarMenu>
 							{SHELL.filter((s) => pathIsOn(s.href, on)).map(({ href, label, icon, match }) => (
 								<SidebarMenuItem key={href}>
@@ -124,6 +122,43 @@ export function AppSidebar({ workspaceName, user }: Props) {
 									</SidebarMenuButton>
 								</SidebarMenuItem>
 							))}
+						</SidebarMenu>
+					</SidebarGroupContent>
+				</SidebarGroup>
+				{/* The apps that are on, each straight into its own screen. */}
+				<SidebarGroup>
+					<SidebarGroupLabel>Apps</SidebarGroupLabel>
+					<SidebarGroupContent>
+						<SidebarMenu>
+							{on.filter(isAppHref).map((href) => {
+								const app = APPS_CONFIG[href];
+								const active = pathname === href || pathname.startsWith(`${href}/`);
+								return (
+									<SidebarMenuItem key={href} className={app.theme}>
+										<SidebarMenuButton
+											asChild
+											isActive={active}
+											tooltip={app.name}
+											className="h-10 gap-2.5 data-active:bg-sidebar-accent data-active:font-semibold"
+										>
+											<Link href={href} prefetch>
+												<span
+													aria-hidden
+													className={cn(
+														"flex size-[18px] shrink-0 items-center justify-center rounded-[5px] text-[11px] font-semibold",
+														active
+															? "bg-primary text-primary-foreground"
+															: "bg-primary/10 text-primary",
+													)}
+												>
+													{app.kanji}
+												</span>
+												<span className="truncate text-sm font-medium">{app.name}</span>
+											</Link>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+								);
+							})}
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>

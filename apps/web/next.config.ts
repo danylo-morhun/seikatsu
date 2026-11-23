@@ -37,6 +37,10 @@ const nextConfig: NextConfig = {
 			},
 		];
 	},
+	async redirects() {
+		// The old apps launcher: the apps live on the home's dashboard now.
+		return [{ source: "/apps", destination: "/", permanent: false }];
+	},
 	async rewrites() {
 		return [{ source: "/favicon.ico", destination: "/icons/favicon.svg" }];
 	},

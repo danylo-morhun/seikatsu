@@ -23,9 +23,10 @@ export const GENERAL_SHORTCUTS: ShortcutGroup = {
 export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 	"/": [
 		{
-			title: "Today",
+			title: "Home",
 			items: [
 				{ keys: ["N"], label: "Capture: one line into any app" },
+				{ keys: ["E"], label: "Edit the dashboard: order, size, hide (Esc to finish)" },
 				{
 					keys: ["O"],
 					label: "Open the morning's plan, or the evening's close, when it's due",
@@ -33,7 +34,7 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 				},
 				{
 					keys: ["1", "2", "3", "4", "5", "6", "7"],
-					label: "Open the apps, in the order they're listed (hidden ones skipped)",
+					label: "Open the apps, in the dashboard's order (hidden ones skipped)",
 				},
 			],
 		},
@@ -67,15 +68,6 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 				{ keys: ["]", "["], label: "Next / previous step" },
 				{ keys: ["P"], label: "Log pages of the book you're reading" },
 				{ keys: ["M"], label: "Update the car's mileage" },
-			],
-		},
-	],
-	"/apps": [
-		{
-			title: "Apps",
-			items: [
-				{ keys: ["N"], label: "Capture: one line into any app" },
-				{ keys: ["1", "2", "3", "4", "5", "6", "7"], label: "Open the apps, in the order shown" },
 			],
 		},
 	],
