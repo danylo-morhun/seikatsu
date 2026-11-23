@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { AppFrame } from "@/components/AppFrame";
 import { WeekView } from "@/features/week/components/WeekView";
-import { getCurrentWorkspace } from "@/lib/session";
+import { getCurrentWorkspace, requireModule } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -12,6 +12,7 @@ export default async function WeekPage({
 }: {
 	searchParams: Promise<{ w?: string }>;
 }) {
+	await requireModule("/week");
 	const session = await auth();
 	if (!session) redirect("/");
 	const [workspace, today, { w }] = await Promise.all([

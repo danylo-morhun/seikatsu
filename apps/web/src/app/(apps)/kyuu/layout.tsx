@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 import { getResumeFiles, getSources } from "@/features/kyuu/actions/applications";
 import { KyuuChrome } from "@/features/kyuu/components/KyuuChrome";
-import { getCurrentWorkspace } from "@/lib/session";
+import { getCurrentWorkspace, requireModule } from "@/lib/session";
 
 export default async function KyuuLayout({ children }: { children: React.ReactNode }) {
+	await requireModule("/kyuu");
 	const workspace = await getCurrentWorkspace();
 	if (!workspace) redirect("/");
 	const [sources, resumeFiles] = await Promise.all([getSources(), getResumeFiles()]);
