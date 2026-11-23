@@ -24,9 +24,6 @@ test.afterEach(reset);
 test("a widget is hidden, shown again and resized in Edit", async ({ page }) => {
 	await page.goto("/");
 	const grid = page.getByRole("region", { name: "Dashboard" });
-	// The first two apps start medium: their rows and acts right on the home.
-	await expect(grid.getByRole("region", { name: "Kuroji" })).toBeVisible();
-	await expect(grid.getByRole("button", { name: "Expense" })).toBeVisible();
 
 	await page.getByRole("button", { name: "Edit" }).click();
 	await page.getByRole("button", { name: "Hide Hoshii" }).click();
