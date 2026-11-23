@@ -85,5 +85,5 @@ test("earlier weeks are a link away", async ({ page }) => {
 	await page.getByRole("link", { name: "Previous week" }).click();
 	await expect(page.getByText("A week behind you")).toBeVisible();
 	await page.getByRole("link", { name: "This week" }).click();
-	await expect(page.getByText(/^This week/)).toBeVisible();
+	await expect(page.getByText(/^This week ·/)).toBeVisible();
 });
