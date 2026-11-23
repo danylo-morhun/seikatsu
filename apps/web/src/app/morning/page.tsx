@@ -8,7 +8,8 @@ import { readGoalProjects } from "@/features/goals/lib/steps";
 import { formatMoney } from "@/features/hoshii/lib/format";
 import { getFocus } from "@/features/seiryu/lib/focus-data";
 import { loadWeekRhythm } from "@/features/week/lib/plan-data";
-import { getCurrentWorkspace } from "@/lib/session";
+import { modulesOn } from "@/lib/modules";
+import { getCurrentWorkspace, requireModule } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
 
 const asMoney = (amount: number, currency: string) => formatMoney(amount, currency, true);
@@ -18,6 +19,7 @@ export default async function MorningPage({
 }: {
 	searchParams: Promise<{ step?: string }>;
 }) {
+	await requireModule("/day");
 	const session = await auth();
 	if (!session) redirect("/");
 	const [workspace, today, { step }] = await Promise.all([
@@ -26,11 +28,14 @@ export default async function MorningPage({
 		searchParams,
 	]);
 	if (!workspace) redirect("/");
+	const on = modulesOn(workspace.modulesOff);
 	const [day, focus, rhythm, goalProjects] = await Promise.all([
 		loadDay(workspace, today, asMoney),
-		getFocus().catch(() => null),
-		loadWeekRhythm(workspace, today, asMoney).catch(() => null),
-		readGoalProjects(workspace.id).catch(() => new Map<string, string>()),
+		on.includes("/seiryu") ? getFocus().catch(() => null) : null,
+		on.includes("/week/plan") ? loadWeekRhythm(workspace, today, asMoney).catch(() => null) : null,
+		on.includes("/goals")
+			? readGoalProjects(workspace.id).catch(() => new Map<string, string>())
+			: new Map<string, string>(),
 	]);
 	const weekFocus = (rhythm?.focus ?? [])
 		.filter((f) => !f.done)

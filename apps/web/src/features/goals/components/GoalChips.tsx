@@ -1,6 +1,7 @@
 import { and, asc, db, eq, goalLinks, goals, inArray, isNull } from "@seikatsu/db";
 import Link from "next/link";
 import type { LinkKind } from "@/features/goals/lib/progress";
+import { modulesOn } from "@/lib/modules";
 import { getCurrentWorkspace } from "@/lib/session";
 
 /** The open goals that gather any of these containers (all of the kind, for "jobs"). */
@@ -36,7 +37,7 @@ export async function GoalChips({
 	className?: string;
 }) {
 	const ws = await getCurrentWorkspace();
-	if (!ws) return null;
+	if (!ws || !modulesOn(ws.modulesOff).includes("/goals")) return null;
 	const list = await goalsFor(ws.id, kind, refIds).catch(() => []);
 	if (list.length === 0) return null;
 	return (
