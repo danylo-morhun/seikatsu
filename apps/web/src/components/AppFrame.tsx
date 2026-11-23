@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { AppShell } from "@/components/AppShell";
+import { inDashboardOrder } from "@/features/home/lib/dashboard";
 import { initializeWorkspace } from "@/features/kuroji/actions/data";
 import { DESIGN_COOKIE, parseDesign } from "@/lib/design";
 import { modulesOn } from "@/lib/modules";
@@ -18,7 +19,7 @@ export async function AppFrame({ children }: { children: React.ReactNode }) {
 	return (
 		<AppShell
 			workspaceName={workspace?.name ?? "My Workspace"}
-			modules={modulesOn(workspace?.modulesOff ?? [])}
+			modules={inDashboardOrder(modulesOn(workspace?.modulesOff ?? []), workspace?.dashboard)}
 			workspaceId={workspace?.id}
 			baseCurrency={workspace?.baseCurrency}
 			sidebarDefaultOpen={defaultOpen}

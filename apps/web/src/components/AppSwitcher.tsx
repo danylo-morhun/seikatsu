@@ -1,10 +1,6 @@
 "use client";
 
-import {
-	ArrowDown01Icon,
-	ArrowLeft01Icon,
-	DashboardSquare01Icon,
-} from "@hugeicons/core-free-icons";
+import { ArrowDown01Icon, ArrowLeft01Icon, Home01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
@@ -42,9 +38,11 @@ export function AppSwitcher({
 	const app = APPS_CONFIG[current];
 	const [entries, setEntries] = useState<Record<string, string>>({});
 	const on = useModules();
-	const listed = (Object.keys(APPS_CONFIG) as AppHref[]).filter(
-		(href) => href === current || on.includes(href),
-	);
+	// The apps that are on, in the dashboard's order; the open one even if it's off.
+	const listed = [
+		...(on.includes(current) ? [] : [current]),
+		...on.filter((m): m is AppHref => m in APPS_CONFIG),
+	];
 	return (
 		<DropdownMenu
 			onOpenChange={(open) => {
@@ -102,9 +100,9 @@ export function AppSwitcher({
 				})}
 				<DropdownMenuSeparator />
 				<DropdownMenuItem asChild>
-					<Link href="/apps" prefetch>
-						<HugeiconsIcon icon={DashboardSquare01Icon} className="size-4" />
-						All apps
+					<Link href="/" prefetch>
+						<HugeiconsIcon icon={Home01Icon} className="size-4" />
+						Home
 					</Link>
 				</DropdownMenuItem>
 			</DropdownMenuContent>
@@ -121,9 +119,7 @@ export function BackToShell({ className }: { className?: string }) {
 		? "Week"
 		: origin.startsWith("/goals")
 			? "Goals"
-			: origin.startsWith("/apps")
-				? "Apps"
-				: "Today";
+			: "Home";
 	return (
 		<Button
 			variant="ghost"
