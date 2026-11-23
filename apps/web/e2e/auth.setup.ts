@@ -1,5 +1,5 @@
 import { expect, test as setup } from "@playwright/test";
-import { authUsers, db } from "@seikatsu/db";
+import { authUsers, db, eq, workspaces } from "@seikatsu/db";
 import { encode } from "next-auth/jwt";
 import { AUTH_SECRET, E2E_USER } from "./env";
 
@@ -27,6 +27,12 @@ setup("sign in", async ({ page }) => {
 	await expect(
 		page.locator("header").getByRole("button", { name: "New Transaction" }),
 	).toBeVisible();
+
+	// Past the first-run setup (welcome.spec.ts walks it on its own).
+	await db
+		.update(workspaces)
+		.set({ onboardedAt: new Date() })
+		.where(eq(workspaces.userId, E2E_USER.id));
 
 	await page.context().storageState({ path: "e2e/.auth/user.json" });
 });
