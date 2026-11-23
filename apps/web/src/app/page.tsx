@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth } from "@/auth";
 import { AppFrame } from "@/components/AppFrame";
@@ -35,6 +36,8 @@ export default async function HomePage() {
 async function Today({ firstName }: { firstName: string | null }) {
 	const [workspace, today] = await Promise.all([getCurrentWorkspace(), getUserToday()]);
 	if (!workspace) return null;
+	// A new user sets up their apps first.
+	if (!workspace.onboardedAt) redirect("/welcome");
 	// Which apps are in use decides the tiles; each tile's figures then stream in on their own.
 	const started = await getStarted(workspace);
 	return <TodayView ws={workspace} today={today} started={started} firstName={firstName} />;
