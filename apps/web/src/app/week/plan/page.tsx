@@ -13,10 +13,12 @@ import {
 } from "@/features/week/lib/plan-data";
 import { lookBack } from "@/features/week/lib/rhythm";
 import { buildWeek, weekLine, weekOf } from "@/features/week/lib/week";
-import { getCurrentWorkspace } from "@/lib/session";
+import { modulesOn } from "@/lib/modules";
+import { getCurrentWorkspace, requireModule } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
 
 export default async function WeekPlanPage() {
+	await requireModule("/week/plan");
 	const session = await auth();
 	if (!session) redirect("/");
 	const [workspace, today] = await Promise.all([getCurrentWorkspace(), getUserToday()]);
@@ -26,7 +28,7 @@ export default async function WeekPlanPage() {
 	// The week looked back on: the one before the week being planned, up to today.
 	const looked = weekOf(addDays(target, -7));
 	const [data, days, options, plan] = await Promise.all([
-		getWeekData(workspace, today, looked),
+		getWeekData(workspace, today, looked, modulesOn(workspace.modulesOff)),
 		readDayPlans(workspace.id, looked[0] ?? target, looked[6] ?? target),
 		readFocusOptions(workspace, today, fmt, target),
 		readWeekPlan(workspace.id, target),

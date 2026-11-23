@@ -29,6 +29,7 @@ import {
 	weekLine,
 	weekOf,
 } from "@/features/week/lib/week";
+import { modulesOn } from "@/lib/modules";
 import type { Workspace } from "@/lib/session";
 
 const DAY_NAME = new Intl.DateTimeFormat("en-GB", { weekday: "long", timeZone: "UTC" });
@@ -55,8 +56,9 @@ function rangeTitle(week: string[]) {
 export async function WeekView({ ws, today, day }: { ws: Workspace; today: string; day: string }) {
 	const week = weekOf(day);
 	const current = week.includes(today);
+	const on = modulesOn(ws.modulesOff);
 	const [data, agenda] = await Promise.all([
-		getWeekData(ws, today, week),
+		getWeekData(ws, today, week, on),
 		// This week's late rows, and rows put off to a day of this week or a later one.
 		(week[6] ?? "") >= today ? loadAgenda(ws, today) : null,
 	]);
@@ -103,13 +105,13 @@ export async function WeekView({ ws, today, day }: { ws: Workspace; today: strin
 	// The week's rhythm: plan it when it's due, then its focus; each day's own plan as a badge.
 	const viewed = week[0] ?? today;
 	const [rhythm, dayPlans] = await Promise.all([
-		viewed >= mondayOf(today) ? loadWeekRhythm(ws, today, fmt) : null,
-		readDayPlans(ws.id, week[0] ?? today, week[6] ?? today),
+		on.includes("/week/plan") && viewed >= mondayOf(today) ? loadWeekRhythm(ws, today, fmt) : null,
+		on.includes("/day") ? readDayPlans(ws.id, week[0] ?? today, week[6] ?? today) : [],
 	]);
 	const viewedPlan =
 		rhythm && viewed === mondayOf(today)
 			? { plan: rhythm.current, focus: rhythm.focus }
-			: viewed > today
+			: on.includes("/week/plan") && viewed > today
 				? await readWeekPlan(ws.id, viewed).then(async (plan) => ({
 						plan,
 						focus: plan?.plannedAt
@@ -119,7 +121,7 @@ export async function WeekView({ ws, today, day }: { ws: Workspace; today: strin
 				: null;
 	const invite =
 		rhythm?.phase === "plan" && (viewed === mondayOf(today) || viewed === rhythm.target);
-	const live = current ? await loadDay(ws, today, fmt) : null;
+	const live = current && on.includes("/day") ? await loadDay(ws, today, fmt) : null;
 	const badge = new Map(
 		dayPlans.map((d) => {
 			const result =

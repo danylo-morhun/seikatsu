@@ -8,6 +8,7 @@ import { getTodayHabits } from "@/features/keizoku/actions/logs";
 import { addDays } from "@/features/keizoku/lib/streak";
 import { getWeekData } from "@/features/week/lib/data";
 import { buildWeek, weekLine, weekOf } from "@/features/week/lib/week";
+import { modulesOn } from "@/lib/modules";
 import { tool } from "./types";
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD");
@@ -55,7 +56,7 @@ export const shellTools = [
 		run: async ({ offset }, { ws, today }) => {
 			const week = weekOf(addDays(today, offset * 7));
 			const fmt = (n: number, c = ws.baseCurrency) => money(n, c);
-			const data = await getWeekData(ws, today, week);
+			const data = await getWeekData(ws, today, week, modulesOn(ws.modulesOff));
 			const { days, totals } = buildWeek(data, today, week, fmt);
 			return {
 				from: week[0],

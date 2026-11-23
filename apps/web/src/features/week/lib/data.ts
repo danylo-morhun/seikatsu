@@ -33,20 +33,12 @@ import {
 import { getCar } from "@/features/aisha/actions/data";
 import { isScheduled } from "@/features/keizoku/lib/streak";
 import type { WeekData } from "@/features/week/lib/week";
+import { MODULE_HREFS, type ModuleHref } from "@/lib/modules";
 import type { Workspace } from "@/lib/session";
 
 type Range = { from: string; to: string };
 /** Only the id: the Sunday push reads the week without a session. */
 type Owner = Pick<Workspace, "id">;
-
-async function safely<T>(load: () => Promise<T[]>): Promise<T[]> {
-	try {
-		return await load();
-	} catch (error) {
-		console.error("[week] read failed", error);
-		return [];
-	}
-}
 
 const inRange = (column: Parameters<typeof gte>[0], { from, to }: Range) =>
 	and(gte(column, from), lte(column, to));
@@ -299,26 +291,30 @@ async function getBills(ws: Owner, range: Range): Promise<WeekData["bills"]> {
 }
 
 /** Everything the week view needs, read at once. */
-export async function getWeekData(ws: Owner, today: string, week: string[]): Promise<WeekData> {
+export async function getWeekData(
+	ws: Owner,
+	today: string,
+	week: string[],
+	/** The modules on: an app that's off has no part in the week. */
+	on: readonly ModuleHref[] = MODULE_HREFS,
+): Promise<WeekData> {
 	const range = { from: week[0], to: week[6] };
+	const when = <T>(module: ModuleHref, load: () => Promise<T>, none: T): Promise<T> =>
+		on.includes(module)
+			? load().catch((error) => {
+					console.error("[week] read failed", error);
+					return none;
+				})
+			: Promise.resolve(none);
 	const [spent, habits, pages, car, cards, jobs, wants, bills] = await Promise.all([
-		safely(() => getSpent(ws, range)),
-		getHabits(ws, range, week).catch((error) => {
-			console.error("[week] read failed", error);
-			return { ticks: [], expected: [], rows: [] };
-		}),
-		safely(() => getPages(ws, range)),
-		getCarWeek(ws, today, range).catch((error) => {
-			console.error("[week] read failed", error);
-			return { driven: [], due: [] };
-		}),
-		getCards(ws, range).catch((error) => {
-			console.error("[week] read failed", error);
-			return { done: [], due: [] };
-		}),
-		safely(() => getJobs(ws, range)),
-		safely(() => getWants(ws, range)),
-		safely(() => getBills(ws, range)),
+		when("/kuroji", () => getSpent(ws, range), []),
+		when("/keizoku", () => getHabits(ws, range, week), { ticks: [], expected: [], rows: [] }),
+		when("/tsundoku", () => getPages(ws, range), []),
+		when("/aisha", () => getCarWeek(ws, today, range), { driven: [], due: [] }),
+		when("/seiryu", () => getCards(ws, range), { done: [], due: [] }),
+		when("/kyuu", () => getJobs(ws, range), []),
+		when("/hoshii", () => getWants(ws, range), []),
+		when("/kuroji", () => getBills(ws, range), []),
 	]);
 	return {
 		spent,
