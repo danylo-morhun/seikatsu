@@ -46,6 +46,7 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 				{ keys: ["C"], label: "Calendar or widgets" },
 				{ keys: ["[", "]"], label: "Back / ahead a month, week or day" },
 				{ keys: ["T"], label: "Today" },
+				{ keys: ["O"], label: "Plan the week, when it's due (week view)", module: "/week/plan" },
 			],
 		},
 	],
@@ -82,14 +83,6 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 		},
 	],
 	"/week": [
-		{
-			title: "Week",
-			items: [
-				{ keys: ["[", "]"], label: "Previous / next week" },
-				{ keys: ["T"], label: "This week" },
-				{ keys: ["O"], label: "Plan the week, when it's due" },
-			],
-		},
 		{
 			title: "Planning the week",
 			items: [

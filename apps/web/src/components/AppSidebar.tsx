@@ -32,7 +32,7 @@ import {
 	SidebarMenuItem,
 } from "@seikatsu/ui";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useDesign } from "@/components/DesignProvider";
 import { useModules } from "@/components/ModulesProvider";
 import { signOutAction } from "@/features/auth/actions/auth";
@@ -55,20 +55,38 @@ interface Props {
 	user?: User | null;
 }
 
-/** The shell's places, in the order of the phone's bar. */
+/**
+ * The shell's places, in the order of the phone's bar. `href` names the module (Week can be
+ * off); `to` is where the link goes — Week is the home calendar's week view; `match` gets the
+ * path and the home's `v`.
+ */
 export const SHELL = [
-	{ href: "/", label: "Home", icon: Home01Icon, match: (p: string) => p === "/" },
+	{
+		href: "/",
+		to: "/",
+		label: "Home",
+		icon: Home01Icon,
+		match: (p: string, v: string | null) => p === "/" && v !== "week",
+	},
 	{
 		href: "/week",
+		to: "/?v=week",
 		label: "Week",
 		icon: Calendar03Icon,
-		match: (p: string) => p === "/week" || p.startsWith("/week/"),
+		match: (p: string, v: string | null) => p.startsWith("/week") || (p === "/" && v === "week"),
 	},
-	{ href: "/goals", label: "Goals", icon: Target02Icon, match: (p: string) => p === "/goals" },
+	{
+		href: "/goals",
+		to: "/goals",
+		label: "Goals",
+		icon: Target02Icon,
+		match: (p: string) => p === "/goals",
+	},
 ] as const;
 
 export function AppSidebar({ workspaceName, user }: Props) {
 	const pathname = usePathname();
+	const view = useSearchParams().get("v");
 	const { design } = useDesign();
 	const on = useModules();
 
@@ -107,15 +125,15 @@ export function AppSidebar({ workspaceName, user }: Props) {
 					<SidebarGroupContent>
 						{/* The shell's own places: Home (the dashboard), and Week and Goals when they're on. */}
 						<SidebarMenu>
-							{SHELL.filter((s) => pathIsOn(s.href, on)).map(({ href, label, icon, match }) => (
+							{SHELL.filter((s) => pathIsOn(s.href, on)).map(({ href, to, label, icon, match }) => (
 								<SidebarMenuItem key={href}>
 									<SidebarMenuButton
 										asChild
-										isActive={match(pathname)}
+										isActive={match(pathname, view)}
 										tooltip={label}
 										className="h-10 gap-2.5 data-active:bg-sidebar-accent data-active:font-semibold"
 									>
-										<Link href={href} prefetch>
+										<Link href={to} prefetch>
 											<HugeiconsIcon icon={icon} className="size-[18px]" />
 											<span className="truncate text-sm font-medium">{label}</span>
 										</Link>
