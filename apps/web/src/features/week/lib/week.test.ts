@@ -155,6 +155,7 @@ describe("buildWeek", () => {
 				app: "/kyuu",
 				title: "Interview · Acme",
 				note: "at 14:30",
+				time: "14:30",
 				href: "/kyuu/a1",
 			},
 		]);
