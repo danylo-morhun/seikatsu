@@ -29,11 +29,20 @@ export type CaptureContext = {
 	kinds?: readonly Kind[];
 };
 
-export const KINDS = ["expense", "income", "mileage", "want", "card", "habit", "pages"] as const;
+export const KINDS = [
+	"expense",
+	"income",
+	"mileage",
+	"want",
+	"card",
+	"habit",
+	"pages",
+	"event",
+] as const;
 export type Kind = (typeof KINDS)[number];
 
-/** The app each kind is saved in. */
-export const KIND_APP: Record<Kind, ModuleHref> = {
+/** The app each kind is saved in; null = the shell's own (always on). */
+export const KIND_APP: Record<Kind, ModuleHref | null> = {
 	expense: "/kuroji",
 	income: "/kuroji",
 	mileage: "/aisha",
@@ -41,6 +50,7 @@ export const KIND_APP: Record<Kind, ModuleHref> = {
 	card: "/seiryu",
 	habit: "/keizoku",
 	pages: "/tsundoku",
+	event: null,
 };
 
 /** The model's answer, one entry per thing to do; every field but `kind` may be null. */
@@ -65,6 +75,9 @@ export type RawAction = {
 	bookId: string | null;
 	page: number | null;
 	pagesRead: number | null;
+	eventDate: string | null;
+	startTime: string | null;
+	endTime: string | null;
 };
 
 const nullable = (type: string, description: string) => ({ type: [type, "null"], description });
@@ -101,6 +114,9 @@ export const RESPONSE_SCHEMA = {
 					bookId: nullable("string", "pages: id from the book list"),
 					page: nullable("integer", "pages: the page reached"),
 					pagesRead: nullable("integer", "pages: pages read, when no page is given"),
+					eventDate: nullable("string", "event: YYYY-MM-DD of the day it happens"),
+					startTime: nullable("string", "event: HH:MM (24h) it starts, when said"),
+					endTime: nullable("string", "event: HH:MM (24h) it ends, when said"),
 				},
 				required: [
 					"kind",
@@ -123,6 +139,9 @@ export const RESPONSE_SCHEMA = {
 					"bookId",
 					"page",
 					"pagesRead",
+					"eventDate",
+					"startTime",
+					"endTime",
 				],
 			},
 		},
@@ -154,6 +173,9 @@ function kindsText(ctx: CaptureContext): string {
   date when a day is named ("завтра", "до пятницы"), a due time when an hour is named ("в 15" →
   15:00), priority only when urgency is said.`,
 		habit: `- habit: a habit done ("был в зале" → the gym habit). Only habits from the list.`,
+		event: `- event: something that happens at a day or time, to be at or remember ("стоматолог завтра в 15",
+  "в субботу день рождения Оли", "встреча с Петей в пятницу 18–19"). Title, the day, a start time
+  when an hour is named and an end time when one is. Not a task to do (that's a card).`,
 		pages: `- pages: reading progress. page = the page reached ("до 52"); pagesRead when only a count
   is given ("прочитал 20 страниц").`,
 	};
@@ -186,6 +208,8 @@ not a copy of their words:
 - want: just the thing, a short noun with a capital letter, brand and model kept
   ("надо шапку купить" → "Hat"; "хочу kindle paperwhite" → "Kindle Paperwhite").
 - card: a short imperative ("позвонить в СТО насчёт шин" → "Call the garage about tyres").
+- event: what it is, a short noun phrase ("стоматолог" → "Dentist"; "день рождения Оли" →
+  "Olya's birthday").
 - expense/income description: the merchant if named ("Orlen", "Lidl"), else a short noun
   ("Coffee", "Fuel"). Never repeat the amount or the date. A word that isn't an ordinary
   noun is usually a merchant, often typed by ear in Cyrillic: match it to a known merchant
@@ -298,6 +322,15 @@ export type PlannedAction = Base &
 		  }
 		| { kind: "habit"; habitId: string; name: string; emoji: string; date: string }
 		| { kind: "pages"; bookId: string; title: string; page: number; from: number; date: string }
+		| {
+				kind: "event";
+				title: string;
+				date: string;
+				/** "HH:MM"; null = all day. */
+				startTime: string | null;
+				/** "HH:MM"; only with a start. */
+				endTime: string | null;
+		  }
 	);
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -445,6 +478,20 @@ function plan(raw: RawAction, ctx: CaptureContext, key: string): PlannedAction |
 				date: dayOf(raw.date, ctx.today),
 			};
 		}
+		case "event": {
+			const title = clean(raw.title);
+			if (!title) return null;
+			const startTime = timeOf(raw.startTime);
+			const endTime = startTime ? timeOf(raw.endTime) : null;
+			return {
+				key,
+				kind: "event",
+				title: title.slice(0, 200),
+				date: dueOf(raw.eventDate) ?? dueOf(raw.date) ?? ctx.today,
+				startTime,
+				endTime: endTime && endTime > startTime! ? endTime : null,
+			};
+		}
 		default:
 			return null;
 	}
@@ -495,6 +542,9 @@ function withNulls(raw: RawAction): RawAction {
 		bookId: str(raw.bookId),
 		page: num(raw.page),
 		pagesRead: num(raw.pagesRead),
+		eventDate: str(raw.eventDate),
+		startTime: str(raw.startTime),
+		endTime: str(raw.endTime),
 	};
 }
 
@@ -514,5 +564,7 @@ export function isReady(action: PlannedAction): boolean {
 			return action.page > action.from;
 		case "habit":
 			return true;
+		case "event":
+			return action.title.trim() !== "" && (!action.endTime || action.startTime != null);
 	}
 }

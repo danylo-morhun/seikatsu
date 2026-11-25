@@ -4,16 +4,11 @@ import { cn } from "@seikatsu/ui";
 import { EntryLink } from "@/features/calendar/components/Events";
 import type { DayFigures } from "@/features/calendar/lib/calendar";
 import type { CalEntry, Source } from "@/features/calendar/lib/events";
+import { sourceOf } from "@/features/calendar/lib/source";
 import { km, plural } from "@/features/home/lib/format";
 import type { Money } from "@/features/week/lib/week";
 import { APPS_CONFIG } from "@/lib/app-themes";
 import type { AppHref } from "@/lib/modules";
-
-/** The user's own events: 予 (a plan), in the shell's own pigment. */
-const OWN = { theme: "", kanji: "予", name: "Event" };
-
-/** Where a row comes from, as the calendar draws it: an app's theme and kanji, or the user's. */
-export const sourceOf = (app: Source) => (app === "/calendar" ? OWN : APPS_CONFIG[app]);
 
 /** The app's kanji in its own pigment: what marks a row as that app's, instead of a dot. */
 export function Kanji({ app, className }: { app: Source; className?: string }) {

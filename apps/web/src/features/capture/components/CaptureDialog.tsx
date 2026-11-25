@@ -27,6 +27,7 @@ import { startNavigationProgress } from "@/components/NavigationProgress";
 import { Spinner } from "@/components/Spinner";
 import { FieldError, FOOTER } from "@/features/aisha/components/DialogParts";
 import { parseNumber } from "@/features/aisha/lib/format";
+import { sourceOf } from "@/features/calendar/lib/source";
 import { type CapturePlan, parseCapture } from "@/features/capture/actions/parse";
 import { applyAction } from "@/features/capture/lib/apply";
 import { describeAction } from "@/features/capture/lib/describe";
@@ -383,7 +384,7 @@ function ActionRow({
 		if (!ready) setEditing(true);
 	}, [ready]);
 	const { app, title, detail } = describeAction(action, options, today);
-	const config = APPS_CONFIG[app];
+	const config = sourceOf(app);
 	const open = row.on && editing;
 
 	return (
@@ -667,6 +668,46 @@ function Fields({
 			);
 		case "habit":
 			return date("Done on");
+		case "event":
+			return (
+				<>
+					{text("Title", action.title, "title")}
+					<Field label="Day">
+						<Input
+							type="date"
+							value={action.date}
+							disabled={disabled}
+							className="h-9"
+							onChange={(e) => e.target.value && onChange({ date: e.target.value })}
+						/>
+					</Field>
+					<Field label="From">
+						<Input
+							type="time"
+							value={action.startTime ?? ""}
+							disabled={disabled}
+							className="h-9"
+							onChange={(e) =>
+								onChange({
+									startTime: e.target.value || null,
+									...(!e.target.value && { endTime: null }),
+								})
+							}
+						/>
+					</Field>
+					{action.startTime && (
+						<Field label="To">
+							<Input
+								type="time"
+								value={action.endTime ?? ""}
+								disabled={disabled}
+								className="h-9"
+								onChange={(e) => onChange({ endTime: e.target.value || null })}
+							/>
+						</Field>
+					)}
+				</>
+			);
 	}
 }
 

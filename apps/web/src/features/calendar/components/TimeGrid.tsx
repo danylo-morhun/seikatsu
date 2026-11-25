@@ -4,9 +4,10 @@ import type { CSSProperties } from "react";
 import { EntryLink, NewAtSlot } from "@/features/calendar/components/Events";
 import { GridScroller } from "@/features/calendar/components/GridScroller";
 import { NowLine } from "@/features/calendar/components/NowLine";
-import { Chip, Kanji, Recap, sourceOf } from "@/features/calendar/components/parts";
+import { Chip, Kanji, Recap } from "@/features/calendar/components/parts";
 import { type DayFigures, hoursOf, hrefOf, placeTimed } from "@/features/calendar/lib/calendar";
 import type { CalDay, CalEntry } from "@/features/calendar/lib/events";
+import { sourceOf } from "@/features/calendar/lib/source";
 import type { Money } from "@/features/week/lib/week";
 
 /** Rows a week's day lists above the hours before "n more" (the day view lists them all). */

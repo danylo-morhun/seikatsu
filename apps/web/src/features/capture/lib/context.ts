@@ -90,7 +90,10 @@ async function merchantUses(workspaceId: string, today: string) {
 export async function getCaptureContext(ws: Workspace, today: string): Promise<CaptureContext> {
 	// Only the apps that are on: the others aren't read, and their kinds aren't offered.
 	const on = modulesOn(ws.modulesOff);
-	const kinds = KINDS.filter((k) => on.includes(KIND_APP[k]));
+	const kinds = KINDS.filter((k) => {
+		const app = KIND_APP[k];
+		return app == null || on.includes(app);
+	});
 	const when = <T>(module: ModuleHref, load: () => Promise<T>, none: T) =>
 		on.includes(module) ? load() : Promise.resolve(none);
 	const [all, car, projects, habits, dueToday, books, hoshii, spent] = await Promise.all([
