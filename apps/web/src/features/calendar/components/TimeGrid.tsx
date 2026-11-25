@@ -116,7 +116,7 @@ export function TimeGrid({ days, today }: { days: WeekDay[]; today: string }) {
 								title={[p.entry.time, p.entry.title, p.entry.note].filter(Boolean).join(" · ")}
 								className={cn(
 									APPS_CONFIG[p.entry.app].theme,
-									"absolute top-(--top) left-(--left) h-(--h) w-(--w) overflow-hidden rounded-md border-l-2 border-primary bg-primary/15 px-1.5 py-1 text-xs leading-4 text-foreground outline-none transition-colors hover:bg-primary/25 focus-visible:ring-2 focus-visible:ring-ring",
+									"absolute top-(--top) left-(--left) h-(--h) w-(--w) overflow-hidden rounded-md bg-primary/20 px-1.5 py-1 text-xs leading-4 text-foreground outline-none transition-colors hover:bg-primary/25 focus-visible:ring-2 focus-visible:ring-ring",
 								)}
 								style={
 									{

@@ -22,13 +22,19 @@ export function Chip({
 			title={[entry.title, entry.note].filter(Boolean).join(" · ")}
 			className={cn(
 				APPS_CONFIG[entry.app].theme,
-				"block min-w-0 truncate rounded-md border-l-2 px-1.5 py-0.5 text-xs leading-5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+				"block min-w-0 truncate rounded-md px-1.5 py-0.5 text-xs leading-5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
 				done
-					? "border-primary/40 text-muted-foreground hover:bg-surface"
-					: "border-primary bg-primary/12 text-foreground hover:bg-primary/20",
+					? "text-muted-foreground hover:bg-surface"
+					: "bg-primary/15 text-foreground hover:bg-primary/25",
 				className,
 			)}
 		>
+			{done && (
+				<span
+					aria-hidden
+					className="mr-1.5 inline-block size-1.5 rounded-full bg-primary/70 align-middle"
+				/>
+			)}
 			{entry.time && <span className="mr-1 tabular-nums text-muted-foreground">{entry.time}</span>}
 			{entry.title}
 		</Link>
