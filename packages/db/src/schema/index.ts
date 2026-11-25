@@ -1,5 +1,6 @@
 export * from "./aisha";
 export * from "./auth";
+export * from "./calendar";
 export * from "./day";
 export * from "./goals";
 export * from "./hoshii";
