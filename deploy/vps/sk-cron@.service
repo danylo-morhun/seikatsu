@@ -1,4 +1,5 @@
-# Calls /api/cron/<instance> on the local app (sk-cron@notify, sk-cron@recurring, sk-cron@sync-banks).
+# Calls /api/cron/<instance> on the local app (sk-cron@notify, sk-cron@recurring, sk-cron@sync-banks,
+# sk-cron@google-calendar).
 [Unit]
 Description=seikatsu cron: %i
 After=seikatsu.service
