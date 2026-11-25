@@ -6,15 +6,14 @@ import type { CSSProperties } from "react";
 import { Invite } from "@/features/day/components/Invite";
 import { loadDay } from "@/features/day/lib/data";
 import { Seal } from "@/features/home/components/Line";
-import { loadAgenda } from "@/features/home/lib/agenda";
 import { money } from "@/features/home/lib/format";
-import { buildQueue } from "@/features/home/lib/queue";
 import { addDays } from "@/features/keizoku/lib/streak";
 import { MoveCard } from "@/features/week/components/MoveCard";
 import { WeekFocus } from "@/features/week/components/WeekFocus";
 import { WeekKeys } from "@/features/week/components/WeekKeys";
 import { WeekPlanKey } from "@/features/week/components/WeekPlanKey";
 import { getWeekData } from "@/features/week/lib/data";
+import { loadExtras } from "@/features/week/lib/extras";
 import {
 	focusStates,
 	loadWeekRhythm,
@@ -57,49 +56,11 @@ export async function WeekView({ ws, today, day }: { ws: Workspace; today: strin
 	const week = weekOf(day);
 	const current = week.includes(today);
 	const on = modulesOn(ws.modulesOff);
-	const [data, agenda] = await Promise.all([
-		getWeekData(ws, today, week, on),
-		// This week's late rows, and rows put off to a day of this week or a later one.
-		(week[6] ?? "") >= today ? loadAgenda(ws, today) : null,
-	]);
 	const fmt = (amount: number, currency = ws.baseCurrency) => money(amount, currency);
-	// What's late from before today, as Today lists it: it doesn't drop off the week.
-	const carried: WeekEntry[] =
-		agenda && current
-			? buildQueue(agenda, today, fmt)
-					.flatMap((q) =>
-						q.tone === "overdue" && q.app !== "/goals" ? [{ ...q, app: q.app }] : [],
-					)
-					.map((q) => {
-						const cardId = q.app === "/seiryu" ? q.key.slice("seiryu:".length) : null;
-						return {
-							key: cardId ? `seiryu:due:${cardId}` : `late:${q.key}`,
-							app: q.app,
-							title: q.title,
-							note: q.note,
-							href: q.href,
-							card: cardId ? { id: cardId, title: q.title } : undefined,
-						};
-					})
-			: [];
-	// Put off with "Later": back on its day, named as the list names it now.
-	const rows = agenda
-		? new Map(buildQueue({ ...agenda, snoozed: null }, today, fmt).map((q) => [q.key, q]))
-		: null;
-	const later = (agenda?.snoozed ?? []).flatMap((s) => {
-		const q = rows?.get(s.key);
-		if (!q || q.app === "/goals" || !week.includes(s.until)) return [];
-		return [
-			{
-				date: s.until,
-				key: `later:${q.key}`,
-				app: q.app,
-				title: q.title,
-				note: `Put off · ${q.note}`,
-				href: q.href,
-			},
-		];
-	});
+	const [data, { carried, later }] = await Promise.all([
+		getWeekData(ws, today, week, on),
+		loadExtras(ws, today, week, fmt),
+	]);
 	const { days, totals } = buildWeek(data, today, week, fmt, carried, later);
 
 	// The week's rhythm: plan it when it's due, then its focus; each day's own plan as a badge.

@@ -1,4 +1,4 @@
-// Server-only reads: each app's rows that fall in one week. Not a "use server" module — import
+// Server-only reads: each app's rows that fall in one week (or any run of days). Not a "use server" module — import
 // only from server components. Each read fails alone (empty), so one app's error leaves the
 // rest of the week readable.
 
@@ -290,15 +290,16 @@ async function getBills(ws: Owner, range: Range): Promise<WeekData["bills"]> {
 	}));
 }
 
-/** Everything the week view needs, read at once. */
+/** Everything the week view (or the calendar, over any run of days) needs, read at once. */
 export async function getWeekData(
 	ws: Owner,
 	today: string,
+	/** The days to read, in order: a week, or a calendar's month or day. */
 	week: string[],
 	/** The modules on: an app that's off has no part in the week. */
 	on: readonly ModuleHref[] = MODULE_HREFS,
 ): Promise<WeekData> {
-	const range = { from: week[0], to: week[6] };
+	const range = { from: week[0], to: week[week.length - 1] };
 	const when = <T>(module: ModuleHref, load: () => Promise<T>, none: T): Promise<T> =>
 		on.includes(module)
 			? load().catch((error) => {
