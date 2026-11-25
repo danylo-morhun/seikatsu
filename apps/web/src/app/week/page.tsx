@@ -1,31 +1,15 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
-import { AppFrame } from "@/components/AppFrame";
-import { WeekView } from "@/features/week/components/WeekView";
-import { getCurrentWorkspace, requireModule } from "@/lib/session";
-import { getUserToday } from "@/lib/timezone";
+import { requireModule } from "@/lib/session";
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
+/** The week is the home calendar's week view now; old links (pushes, bookmarks) land there. */
 export default async function WeekPage({
 	searchParams,
 }: {
 	searchParams: Promise<{ w?: string }>;
 }) {
 	await requireModule("/week");
-	const session = await auth();
-	if (!session) redirect("/");
-	const [workspace, today, { w }] = await Promise.all([
-		getCurrentWorkspace(),
-		getUserToday(),
-		searchParams,
-	]);
-	if (!workspace) redirect("/");
-	// Any day of the week to show; this week when it's missing or malformed.
-	const day = w && DAY.test(w) && !Number.isNaN(Date.parse(w)) ? w : today;
-	return (
-		<AppFrame>
-			<WeekView ws={workspace} today={today} day={day} />
-		</AppFrame>
-	);
+	const { w } = await searchParams;
+	redirect(w && DAY.test(w) ? `/?v=week&d=${w}` : "/?v=week");
 }

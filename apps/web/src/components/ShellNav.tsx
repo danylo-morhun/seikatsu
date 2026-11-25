@@ -59,8 +59,8 @@ export function ShellNav() {
 	return (
 		<TabBar
 			label="seikatsu"
-			active={places.findIndex((s) => s.match(pathname))}
-			items={[...places.map(({ href, label, icon }) => ({ href, label, icon })), ...apps]}
+			active={places.findIndex((s) => s.match(pathname, searchParams.get("v")))}
+			items={[...places.map(({ to, label, icon }) => ({ href: to, label, icon })), ...apps]}
 			action={
 				<TabBarAction icon={QuillWrite01Icon} aria-label="Capture" onClick={() => openCapture()} />
 			}
