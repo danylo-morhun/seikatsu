@@ -1,9 +1,9 @@
 // How a planned action reads in the capture dialog: its app, a title, one line of detail. Pure.
 
+import type { Source } from "@/features/calendar/lib/events";
 import type { CaptureContext, PlannedAction } from "@/features/capture/lib/plan";
 import { formatCurrency } from "@/features/kuroji/lib/format";
 import { PRIORITY_CONFIG } from "@/features/seiryu/lib/constants";
-import type { APPS_CONFIG } from "@/lib/app-themes";
 
 type Options = Pick<
 	CaptureContext,
@@ -22,7 +22,7 @@ export function describeAction(
 	action: PlannedAction,
 	options: Options,
 	today?: string,
-): { app: keyof typeof APPS_CONFIG; title: string; detail: string } {
+): { app: Source; title: string; detail: string } {
 	switch (action.kind) {
 		case "expense":
 		case "income": {
@@ -66,6 +66,19 @@ export function describeAction(
 				app: "/keizoku",
 				title: `${action.emoji} ${action.name}`.trim(),
 				detail: `done ${when(action.date, today)}`,
+			};
+		case "event":
+			return {
+				app: "/calendar",
+				title: `Event: ${action.title}`,
+				detail: line(
+					action.date === today ? "today" : when(action.date),
+					action.startTime
+						? action.endTime
+							? `${action.startTime}–${action.endTime}`
+							: action.startTime
+						: "all day",
+				),
 			};
 		case "pages":
 			return {

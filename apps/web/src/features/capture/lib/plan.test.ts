@@ -54,7 +54,47 @@ const raw = (fields: Partial<RawAction> & Pick<RawAction, "kind">): RawAction =>
 	bookId: null,
 	page: null,
 	pagesRead: null,
+	eventDate: null,
+	startTime: null,
+	endTime: null,
 	...fields,
+});
+
+describe("toPlan: events", () => {
+	it("keeps an event's day and times, any day ahead", () => {
+		const [e] = actions(
+			{
+				actions: [
+					raw({
+						kind: "event",
+						title: "Dentist",
+						eventDate: "2026-11-10",
+						startTime: "15:00",
+						endTime: "14:00",
+					}),
+				],
+			},
+			ctx,
+		);
+		expect(e).toMatchObject({
+			kind: "event",
+			title: "Dentist",
+			date: "2026-11-10",
+			startTime: "15:00",
+			endTime: null,
+		});
+	});
+	it("makes a day with no time an all-day event today", () => {
+		const [e] = actions({ actions: [raw({ kind: "event", title: "Olya's birthday" })] }, ctx);
+		expect(e).toMatchObject({ date: "2026-11-03", startTime: null, endTime: null });
+	});
+	it("is kept only when the kinds list it", () => {
+		const [e] = actions(
+			{ actions: [raw({ kind: "event", title: "Trip" })] },
+			{ ...ctx, kinds: ["expense"] },
+		);
+		expect(e).toBeUndefined();
+	});
 });
 
 describe("toPlan", () => {

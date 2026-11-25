@@ -2,6 +2,7 @@
 // revalidation and offline replay all stay with the app.
 
 import { saveReading } from "@/features/aisha/lib/offline";
+import { storeEvent } from "@/features/calendar/lib/offline";
 import type { PlannedAction } from "@/features/capture/lib/plan";
 import { saveNewItem } from "@/features/hoshii/lib/offline";
 import { tickDay } from "@/features/keizoku/lib/offline";
@@ -68,6 +69,27 @@ export async function applyAction(action: PlannedAction, ctx: Ctx): Promise<RunR
 				action.date,
 				true,
 			);
+		case "event": {
+			// No end said: an hour, as the calendar's own new event does.
+			const [h, m] = (action.startTime ?? "0:0").split(":").map(Number);
+			const plusHour = Math.min(23 * 60 + 59, h * 60 + m + 60);
+			const end = action.startTime
+				? (action.endTime ??
+					`${String(Math.floor(plusHour / 60)).padStart(2, "0")}:${String(plusHour % 60).padStart(2, "0")}`)
+				: null;
+			return storeEvent({
+				id: crypto.randomUUID(),
+				title: action.title,
+				date: action.date,
+				endDate: null,
+				startTime: action.startTime,
+				endTime: end,
+				repeat: null,
+				repeatEvery: 1,
+				repeatUntil: null,
+				note: null,
+			});
+		}
 		case "pages":
 			return saveProgress({ id: action.bookId, title: action.title }, action.page, action.date);
 	}
