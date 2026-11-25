@@ -38,6 +38,15 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 				},
 			],
 		},
+		{
+			title: "Calendar",
+			items: [
+				{ keys: ["M", "W", "D", "L"], label: "Month, week, day or list" },
+				{ keys: ["C"], label: "Calendar or widgets" },
+				{ keys: ["[", "]"], label: "Back / ahead a month, week or day" },
+				{ keys: ["T"], label: "Today" },
+			],
+		},
 	],
 	"/welcome": [
 		{

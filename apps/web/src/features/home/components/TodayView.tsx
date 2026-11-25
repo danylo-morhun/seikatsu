@@ -1,3 +1,12 @@
+import { PageTab, PageTabs } from "@/components/PageTabs";
+import { CalendarKeys } from "@/features/calendar/components/CalendarKeys";
+import {
+	CALENDAR_VIEWS,
+	type CalendarView,
+	hrefOf,
+	VIEW_KEYS,
+	viewKeyHrefs,
+} from "@/features/calendar/lib/calendar";
 import { Dashboard } from "@/features/home/components/Dashboard";
 import { Line } from "@/features/home/components/Line";
 import {
@@ -29,6 +38,8 @@ interface Props {
 	today: string;
 	started: Started;
 	firstName: string | null;
+	/** The calendar view C (or the Calendar tab) goes back to. */
+	calendar: CalendarView;
 }
 
 /**
@@ -36,7 +47,7 @@ interface Props {
  * per app that's on (its figure, what waits in it, its quick acts) and, if they want it, To do
  * across all of them. They order, size and hide the widgets (Dashboard's Edit).
  */
-export function TodayView({ ws, today, started, firstName }: Props) {
+export function TodayView({ ws, today, started, firstName, calendar }: Props) {
 	const on = modulesOn(ws.modulesOff);
 	const slots = layoutOf(ws.dashboard, on);
 	const widgets = Object.fromEntries(
@@ -58,6 +69,7 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 
 	return (
 		<div className="mx-auto w-full max-w-5xl px-4 pt-5 pb-28 sm:px-8 md:py-8">
+			<CalendarKeys view="widgets" hrefs={{ ...viewKeyHrefs(today, today), c: hrefOf(calendar) }} />
 			<Dashboard
 				slots={slots}
 				widgets={widgets}
@@ -67,6 +79,18 @@ export function TodayView({ ws, today, started, firstName }: Props) {
 						<p className="mt-1 min-h-5 text-sm text-muted-foreground">
 							<Greeting firstName={firstName} />
 						</p>
+						<div className="mt-3">
+							<PageTabs label="Home view">
+								{CALENDAR_VIEWS.map((v) => (
+									<PageTab key={v} href={hrefOf(v)} current={false}>
+										{VIEW_KEYS[v].name}
+									</PageTab>
+								))}
+								<PageTab href={hrefOf("widgets")} current>
+									Widgets
+								</PageTab>
+							</PageTabs>
+						</div>
 					</header>
 				}
 			>
