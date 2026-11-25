@@ -27,6 +27,11 @@ import { type CalDay, eventRows, googleRows, withEvents } from "@/features/calen
 import { HomeKeys } from "@/features/home/components/TodayIslands";
 import { layoutOf } from "@/features/home/lib/dashboard";
 import { money } from "@/features/home/lib/format";
+import {
+	HabitWeek,
+	loadWeekRhythmParts,
+	WeekRhythmHead,
+} from "@/features/week/components/WeekRhythm";
 import { getWeekData } from "@/features/week/lib/data";
 import { loadExtras } from "@/features/week/lib/extras";
 import { buildWeek, weekLine } from "@/features/week/lib/week";
@@ -84,6 +89,12 @@ export async function CalendarView({
 		.map((s) => s.id as AppHref);
 	const line = view === "day" ? null : weekLine(totals, fmt);
 	const [main, context] = titleParts(view, anchor);
+	// The week's rhythm (plan it, its focus, each day's own plan) when Week is on.
+	const rhythm =
+		view === "week" && on.includes("/week")
+			? await loadWeekRhythmParts(ws, today, dates, fmt, on)
+			: null;
+	const notes = rhythm?.notes;
 	const figures = new Map(dates.map((d) => [d, figuresOf(data, d)]));
 
 	return (
@@ -154,14 +165,16 @@ export async function CalendarView({
 						/>
 					)}
 					{view === "week" && (
-						<>
+						<div className="space-y-6">
+							{rhythm && <WeekRhythmHead parts={rhythm} today={today} />}
 							<div className="max-md:hidden">
-								<TimeGrid days={days} today={today} figures={figures} money={fmt} />
+								<TimeGrid days={days} today={today} figures={figures} money={fmt} notes={notes} />
 							</div>
 							<div className="md:hidden">
-								<DayList days={days} today={today} figures={figures} money={fmt} />
+								<DayList days={days} today={today} figures={figures} money={fmt} notes={notes} />
 							</div>
-						</>
+							{rhythm && data.habits && <HabitWeek habits={data.habits} today={today} />}
+						</div>
 					)}
 					{view === "day" && (
 						// The hours at the left, the day's whole list (with notes) beside them.

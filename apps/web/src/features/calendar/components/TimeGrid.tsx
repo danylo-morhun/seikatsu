@@ -34,6 +34,7 @@ export function TimeGrid({
 	figures,
 	money,
 	strip = true,
+	notes,
 }: {
 	days: CalDay[];
 	today: string;
@@ -41,6 +42,8 @@ export function TimeGrid({
 	money: Money;
 	/** The untimed rows above the hours; off where a list beside the grid holds them. */
 	strip?: boolean;
+	/** A short note per day under its date ("My day 2/3 · closed"). */
+	notes?: Map<string, string>;
 }) {
 	const { from } = hoursOf(days.flatMap((d) => timed(d).map((e) => e.time)));
 	const cols = days.length;
@@ -108,6 +111,9 @@ export function TimeGrid({
 												{WEEKDAY.format(utc(d.date))}
 											</span>
 										</Link>
+									)}
+									{notes?.get(d.date) && (
+										<p className="px-1 text-[11px] text-muted-foreground">{notes.get(d.date)}</p>
 									)}
 									{figs && <Recap figures={figs} money={money} className="px-1" />}
 									<div className="flex min-h-6 flex-col gap-0.5">

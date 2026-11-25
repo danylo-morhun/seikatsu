@@ -76,7 +76,16 @@ export function Chip({
 }
 
 /** A full row of the list: kanji, title and note, its time at the right. */
-export function Row({ entry, done = false }: { entry: CalEntry; done?: boolean }) {
+export function Row({
+	entry,
+	done = false,
+	action,
+}: {
+	entry: CalEntry;
+	done?: boolean;
+	/** A control at the row's end, above its link (move a card to another day). */
+	action?: React.ReactNode;
+}) {
 	return (
 		<li className="relative flex min-h-14 items-center gap-3 py-2.5 transition-colors duration-150 ease-out has-[a:hover,button:hover]:bg-surface/60">
 			<span
@@ -103,6 +112,7 @@ export function Row({ entry, done = false }: { entry: CalEntry; done?: boolean }
 					<span className="block truncate text-xs text-muted-foreground">{entry.note}</span>
 				)}
 			</EntryLink>
+			{action && <span className="relative z-10">{action}</span>}
 			{done ? (
 				<HugeiconsIcon
 					icon={CheckmarkCircle02Icon}

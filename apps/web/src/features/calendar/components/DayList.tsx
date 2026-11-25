@@ -4,11 +4,21 @@ import type { CSSProperties } from "react";
 import { Recap, Row } from "@/features/calendar/components/parts";
 import { type DayFigures, hrefOf } from "@/features/calendar/lib/calendar";
 import type { CalDay, CalEntry } from "@/features/calendar/lib/events";
+import { addDays, mondayOf } from "@/features/keizoku/lib/streak";
+import { MoveCard } from "@/features/week/components/MoveCard";
 import type { Money } from "@/features/week/lib/week";
 
 const WEEKDAY = new Intl.DateTimeFormat("en-GB", { weekday: "short", timeZone: "UTC" });
 const MONTH = new Intl.DateTimeFormat("en-GB", { month: "short", timeZone: "UTC" });
 const utc = (iso: string) => new Date(`${iso}T00:00:00Z`);
+
+/** The other days a card due on `date` can move to: the rest of its week, from today. */
+function weekAhead(date: string, today: string): string[] {
+	const monday = mondayOf(date);
+	return Array.from({ length: 7 }, (_, i) => addDays(monday, i)).filter(
+		(d) => d >= today && d !== date,
+	);
+}
 
 /** Timed rows first, by time; the rest after, as they came. */
 const byTime = (rows: CalEntry[]) =>
@@ -24,8 +34,11 @@ export function DayList({
 	today,
 	figures,
 	money,
+	notes,
 }: {
 	days: CalDay[];
+	/** A short note per day ("My day 2/3 · closed"). */
+	notes?: Map<string, string>;
 	today: string;
 	figures: Map<string, DayFigures>;
 	money: Money;
@@ -46,6 +59,7 @@ export function DayList({
 				return (
 					<li
 						key={d.date}
+						aria-label={d.date}
 						className={cn(
 							"grid animate-rise",
 							!single &&
@@ -91,7 +105,21 @@ export function DayList({
 							{d.done.length + d.plan.length > 0 ? (
 								<ul className="inset-group">
 									{byTime(d.plan).map((e) => (
-										<Row key={e.key} entry={e} />
+										<Row
+											key={e.key}
+											entry={e}
+											action={
+												e.card &&
+												d.date >= today && (
+													<MoveCard
+														card={e.card}
+														from={d.date}
+														days={weekAhead(d.date, today)}
+														weekEnd={addDays(mondayOf(d.date), 6)}
+													/>
+												)
+											}
+										/>
 									))}
 									{d.done.map((e) => (
 										<Row key={e.key} entry={e} done />
@@ -102,7 +130,14 @@ export function DayList({
 									Nothing planned
 								</p>
 							)}
-							{figs && <Recap figures={figs} money={money} className="px-1" />}
+							{(figs || notes?.get(d.date)) && (
+								<div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1">
+									{notes?.get(d.date) && (
+										<span className="text-[11px] text-muted-foreground">{notes.get(d.date)}</span>
+									)}
+									{figs && <Recap figures={figs} money={money} />}
+								</div>
+							)}
 						</div>
 					</li>
 				);
