@@ -30,7 +30,7 @@ export async function saveEvent(input: CalendarEventInput): Promise<Result> {
 		.insert(calendarEvents)
 		.values({ id, workspaceId: ws.id, ...fields })
 		.onConflictDoUpdate({ target: calendarEvents.id, set: { ...fields, updatedAt: now } });
-	revalidateShell();
+	revalidateShell(ws.id);
 	return { success: true };
 }
 
@@ -41,6 +41,6 @@ export async function deleteEvent(input: { id: string }): Promise<Result> {
 	await db
 		.delete(calendarEvents)
 		.where(and(eq(calendarEvents.id, parsed.data.id), eq(calendarEvents.workspaceId, ws.id)));
-	revalidateShell();
+	revalidateShell(ws.id);
 	return { success: true };
 }

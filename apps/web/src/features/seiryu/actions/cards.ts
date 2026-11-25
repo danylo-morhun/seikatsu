@@ -267,7 +267,7 @@ export async function createCard(
 
 	// Open-card counts in the project list change too.
 	revalidatePath("/seiryu", "layout");
-	revalidateShell();
+	revalidateShell(workspace.id);
 	return { success: true, data: { id: card.id, position: card.position } };
 }
 
@@ -324,7 +324,7 @@ export async function updateCard(input: unknown): Promise<{ error: string } | { 
 		.where(eq(seiryuCards.id, cardId));
 
 	revalidatePath(`/seiryu/${card.projectId}`);
-	revalidateShell();
+	revalidateShell(workspace.id);
 	return { success: true };
 }
 
@@ -371,7 +371,7 @@ export async function archiveCard(input: unknown): Promise<{ error: string } | {
 
 	// Open-card counts in the project list change too.
 	revalidatePath("/seiryu", "layout");
-	revalidateShell();
+	revalidateShell(workspace.id);
 	revalidatePath("/settings/seiryu");
 	return { success: true };
 }
@@ -412,7 +412,7 @@ export async function moveCard(
 
 	// Open-card counts in the project list change too.
 	revalidatePath("/seiryu", "layout");
-	revalidateShell();
+	revalidateShell(workspace.id);
 	return { success: true, data: { position } };
 }
 
@@ -544,7 +544,7 @@ export async function reorderCards(input: unknown): Promise<{ error: string } | 
 	await db.update(seiryuCards).set({ position: newPosition }).where(eq(seiryuCards.id, cardId));
 
 	revalidatePath(`/seiryu/${card.projectId}`);
-	revalidateShell();
+	revalidateShell(workspace.id);
 	return { success: true };
 }
 
@@ -569,7 +569,7 @@ export async function restoreCard(
 
 	// Open-card counts in the project list change too.
 	revalidatePath("/seiryu", "layout");
-	revalidateShell();
+	revalidateShell(workspace.id);
 	revalidatePath("/settings/seiryu");
 	return { success: true, data: { columnId: card.columnId, position } };
 }
@@ -587,7 +587,7 @@ export async function deleteCard(input: unknown): Promise<{ error: string } | { 
 
 	// Open-card counts in the project list change too.
 	revalidatePath("/seiryu", "layout");
-	revalidateShell();
+	revalidateShell(workspace.id);
 	revalidatePath("/settings/seiryu");
 	return { success: true };
 }
