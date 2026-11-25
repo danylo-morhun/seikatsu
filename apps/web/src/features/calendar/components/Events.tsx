@@ -14,8 +14,9 @@ import {
 	useMemo,
 	useState,
 } from "react";
+import { dragProps } from "@/features/calendar/components/Drag";
 import { EventDialog, type EventDraft } from "@/features/calendar/components/EventDialog";
-import type { EventFields } from "@/features/calendar/lib/events";
+import type { DragItem, EventFields } from "@/features/calendar/lib/events";
 import { pageKey } from "@/lib/capture-shortcut";
 
 type Open = (draft: EventDraft) => void;
@@ -77,10 +78,13 @@ export function EntryLink({
 	className,
 	title,
 	style,
+	drag,
 	children,
 }: {
 	href: string;
 	event?: EventFields;
+	/** Set: the row can be dragged to another day or time. */
+	drag?: DragItem;
 	className?: string;
 	title?: string;
 	style?: CSSProperties;
@@ -93,6 +97,7 @@ export function EntryLink({
 				type="button"
 				title={title}
 				style={style}
+				{...dragProps(drag)}
 				onClick={() => open(event)}
 				className={cn("text-left", className)}
 			>
@@ -100,7 +105,14 @@ export function EntryLink({
 			</button>
 		);
 	return (
-		<Link href={href} prefetch={false} title={title} className={className} style={style}>
+		<Link
+			href={href}
+			prefetch={false}
+			title={title}
+			className={className}
+			style={style}
+			{...dragProps(drag)}
+		>
 			{children}
 		</Link>
 	);
