@@ -1,12 +1,13 @@
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { DropDay } from "@/features/calendar/components/Drag";
 import { EntryLink, NewAtSlot } from "@/features/calendar/components/Events";
 import { GridScroller } from "@/features/calendar/components/GridScroller";
 import { NowLine } from "@/features/calendar/components/NowLine";
 import { Chip, Kanji, Recap } from "@/features/calendar/components/parts";
 import { type DayFigures, hoursOf, hrefOf, placeTimed } from "@/features/calendar/lib/calendar";
-import type { CalDay, CalEntry } from "@/features/calendar/lib/events";
+import { type CalDay, type CalEntry, dragOf } from "@/features/calendar/lib/events";
 import { sourceOf } from "@/features/calendar/lib/source";
 import type { Money } from "@/features/week/lib/week";
 
@@ -72,10 +73,11 @@ export function TimeGrid({
 							const shown = cols > 1 ? untimed.slice(0, STRIP) : untimed;
 							const figs = d.date <= today ? figures.get(d.date) : undefined;
 							return (
-								<div
+								<DropDay
 									key={d.date}
+									date={d.date}
 									className={cn(
-										"flex min-w-0 flex-col gap-1 border-r border-rule p-1.5 last:border-r-0",
+										"flex min-w-0 flex-col gap-1 border-r border-rule p-1.5 transition-colors duration-150 ease-out last:border-r-0",
 										d.isToday && "bg-primary/[0.06]",
 									)}
 								>
@@ -110,7 +112,7 @@ export function TimeGrid({
 									{figs && <Recap figures={figs} money={money} className="px-1" />}
 									<div className="flex min-h-6 flex-col gap-0.5">
 										{shown.map(({ e, done }) => (
-											<Chip key={e.key} entry={e} done={done} />
+											<Chip key={e.key} entry={e} done={done} date={d.date} />
 										))}
 										{untimed.length > shown.length && (
 											<Link
@@ -122,7 +124,7 @@ export function TimeGrid({
 											</Link>
 										)}
 									</div>
-								</div>
+								</DropDay>
 							);
 						})}
 					</div>
@@ -142,8 +144,10 @@ export function TimeGrid({
 						))}
 					</div>
 					{days.map((d) => (
-						<div
+						<DropDay
 							key={d.date}
+							date={d.date}
+							hour={HOUR}
 							className={cn(
 								"relative border-r border-rule last:border-r-0",
 								d.isToday && "bg-primary/[0.035]",
@@ -162,6 +166,7 @@ export function TimeGrid({
 									key={p.entry.key}
 									href={p.entry.href}
 									event={p.entry.event}
+									drag={dragOf(p.entry, d.date)}
 									title={[p.entry.time, p.entry.title, p.entry.note].filter(Boolean).join(" · ")}
 									className={cn(
 										sourceOf(p.entry.app).theme,
@@ -187,7 +192,7 @@ export function TimeGrid({
 								</EntryLink>
 							))}
 							{d.date === today && <NowLine from={0} to={24} hour={HOUR} />}
-						</div>
+						</DropDay>
 					))}
 				</div>
 			</GridScroller>

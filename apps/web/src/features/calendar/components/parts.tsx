@@ -3,11 +3,10 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import { EntryLink } from "@/features/calendar/components/Events";
 import type { DayFigures } from "@/features/calendar/lib/calendar";
-import type { CalEntry, Source } from "@/features/calendar/lib/events";
+import { type CalEntry, dragOf, type Source } from "@/features/calendar/lib/events";
 import { sourceOf } from "@/features/calendar/lib/source";
 import { km, plural } from "@/features/home/lib/format";
 import type { Money } from "@/features/week/lib/week";
-import { APPS_CONFIG } from "@/lib/app-themes";
 import type { AppHref } from "@/lib/modules";
 
 /** The app's kanji in its own pigment: what marks a row as that app's, instead of a dot. */
@@ -31,9 +30,12 @@ export function Kanji({ app, className }: { app: Source; className?: string }) {
 export function Chip({
 	entry,
 	done = false,
+	date,
 	className,
 }: {
 	entry: CalEntry;
+	/** The day it's shown on: given, a card or event can be dragged from it. */
+	date?: string;
 	/** What already happened: quieter than what's planned. */
 	done?: boolean;
 	className?: string;
@@ -42,6 +44,7 @@ export function Chip({
 		<EntryLink
 			href={entry.href}
 			event={entry.event}
+			drag={date && !done ? dragOf(entry, date) : undefined}
 			title={[entry.time, entry.title, entry.note].filter(Boolean).join(" · ")}
 			className={cn(
 				sourceOf(entry.app).theme,
