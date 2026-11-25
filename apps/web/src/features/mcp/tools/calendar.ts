@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { deleteEvent, saveEvent } from "@/features/calendar/actions/events";
+import { saveEvent } from "@/features/calendar/actions/events";
 import { readGoogleEvents } from "@/features/calendar/google/sync";
 import { readEvent, readEvents } from "@/features/calendar/lib/data";
 import {
@@ -154,20 +154,6 @@ export const calendarTools = [
 			return "error" in result
 				? result
 				: { id, when: whenOf(next), repeats: repeatText(next) ?? undefined };
-		},
-	}),
-	tool({
-		name: "calendar_delete_event",
-		title: "Delete an event",
-		description:
-			"Deletes an event by id (from `calendar`). A repeating event goes with all its days. Ask the user first.",
-		input: { id: z.uuid() },
-		write: true,
-		idempotent: true,
-		run: async ({ id }, { ws }) => {
-			const event = await readEvent(ws.id, id);
-			if (!event) return { error: "Event not found" };
-			return deleteEvent({ id });
 		},
 	}),
 ];
