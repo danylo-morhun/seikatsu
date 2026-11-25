@@ -26,6 +26,7 @@ export function SettingsNav() {
 		{ href: "/settings/account", label: "Account" },
 		{ href: "/settings/apps", label: "Apps" },
 		{ href: "/settings/notifications", label: "Notifications" },
+		{ href: "/settings/calendar", label: "Calendar" },
 		...Object.entries(APPS_CONFIG)
 			.filter(([appHref]) => APPS_WITH_SETTINGS.has(appHref) && on.includes(appHref as ModuleHref))
 			.map(([appHref, { name }]) => ({ href: `/settings${appHref}`, label: name })),
