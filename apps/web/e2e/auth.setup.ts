@@ -20,6 +20,9 @@ setup("sign in", async ({ page }) => {
 		{ ...cookie, name: COOKIE, value: token },
 		// Same zone as the browser (timezoneId) so the server's "today" matches the client's.
 		{ ...cookie, name: "tz", value: "UTC", httpOnly: false },
+		// The home opens on its widgets, as the specs written for them expect; calendar.spec.ts
+		// picks its views by URL.
+		{ ...cookie, name: "home", value: "widgets", httpOnly: false },
 	]);
 
 	await page.goto("/kuroji");
