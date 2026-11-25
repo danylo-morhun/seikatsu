@@ -6,10 +6,13 @@ import { pushToGoogleSoon } from "@/features/calendar/google/push";
  * one of them shows calls this beside its own revalidation, so none of them goes stale (and
  * the Google calendar, when connected, gets the change).
  */
-export function revalidateShell() {
+export function revalidateShell(
+	/** Given by a write that seikatsu mirrors to Google (events, cards, booked calls): the
+	 * change is sent there once the response is out. */
+	workspaceId?: string,
+) {
 	revalidatePath("/");
 	revalidatePath("/week");
 	revalidatePath("/goals");
-	// What changed may be on the user's Google calendar too.
-	pushToGoogleSoon();
+	if (workspaceId) pushToGoogleSoon(workspaceId);
 }
