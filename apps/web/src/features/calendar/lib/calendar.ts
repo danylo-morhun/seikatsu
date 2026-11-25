@@ -13,6 +13,8 @@ export type HomeView = CalendarView | "widgets";
 /** The home view last used on this device. */
 export const HOME_COOKIE = "home";
 export const DEFAULT_HOME: HomeView = "week";
+/** The calendar view last used here: where C goes back to from the widgets. */
+export const CALENDAR_COOKIE = "cal";
 
 /** The view key on the home (M, W, D, L) and its name. */
 export const VIEW_KEYS: Record<CalendarView, { key: string; name: string }> = {
@@ -33,6 +35,13 @@ export function homeViewOf(param?: string, cookie?: string): HomeView {
 	if (isView(param)) return param;
 	if (isView(cookie)) return cookie;
 	return DEFAULT_HOME;
+}
+
+/** The calendar view to go back to: the one last used, else the week. */
+export function calendarViewOf(cookie?: string): CalendarView {
+	return (CALENDAR_VIEWS as readonly string[]).includes(cookie ?? "")
+		? (cookie as CalendarView)
+		: "week";
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -98,6 +107,13 @@ export function hrefOf(view: HomeView, anchor?: string, today?: string): string 
 	const params = new URLSearchParams({ v: view });
 	if (view !== "widgets" && anchor && anchor !== today) params.set("d", anchor);
 	return `/?${params}`;
+}
+
+/** The home keys' targets from `anchor`: M W D L each view on that day, C the widgets. */
+export function viewKeyHrefs(anchor: string, today: string): Record<string, string> {
+	const out: Record<string, string> = { c: hrefOf("widgets") };
+	for (const v of CALENDAR_VIEWS) out[VIEW_KEYS[v].key] = hrefOf(v, anchor, today);
+	return out;
 }
 
 const utc = (iso: string) => new Date(`${iso}T00:00:00Z`);
@@ -203,5 +219,25 @@ export function figuresOf(data: WeekData, date: string): DayFigures {
 		pages: sum(data.pages, (r) => r.pages),
 		km: sum(data.driven, (r) => r.km),
 		cardsDone: sum(data.cardsDone, () => 1),
+	};
+}
+
+/** Only the rows dated from `from` to `to`: a month's figures leave out the weeks' spill-over. */
+export function within(data: WeekData, from: string, to: string): WeekData {
+	const keep = <T extends { date: string }>(rows: T[]) =>
+		rows.filter((r) => r.date >= from && r.date <= to);
+	return {
+		...data,
+		spent: keep(data.spent),
+		ticks: keep(data.ticks),
+		expected: keep(data.expected),
+		pages: keep(data.pages),
+		driven: keep(data.driven),
+		cardsDone: keep(data.cardsDone),
+		cardsDue: keep(data.cardsDue),
+		jobs: keep(data.jobs),
+		wants: keep(data.wants),
+		car: keep(data.car),
+		bills: keep(data.bills),
 	};
 }
