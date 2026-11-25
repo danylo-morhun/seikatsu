@@ -194,12 +194,16 @@ export type Placed<T> = {
 	cols: number;
 };
 
-/** Timed rows laid side by side where they overlap, as a calendar does. */
-export function placeTimed<T extends { time: string }>(entries: T[]): Placed<T>[] {
+/** Timed rows laid side by side where they overlap, as a calendar does. A row without its own
+ * end takes an hour. */
+export function placeTimed<T extends { time: string; end?: string }>(entries: T[]): Placed<T>[] {
 	const sorted = entries
 		.map((entry) => {
 			const start = minutesOf(entry.time);
-			return { entry, start, end: Math.min(24 * 60, start + DEFAULT_MINUTES), col: 0, cols: 1 };
+			const own = entry.end ? minutesOf(entry.end) : null;
+			// Its own end when it's after the start (at least a quarter hour shown), else an hour.
+			const end = own != null && own > start ? Math.max(own, start + 15) : start + DEFAULT_MINUTES;
+			return { entry, start, end: Math.min(24 * 60, end), col: 0, cols: 1 };
 		})
 		.sort((a, b) => a.start - b.start || a.end - b.end);
 	const placed: Placed<T>[] = [];
