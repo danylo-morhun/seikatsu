@@ -21,8 +21,25 @@ export type EventFields = {
 	note: string | null;
 };
 
-/** Where a calendar row comes from: an app, or the user's own event. */
-export type Source = AppHref | "/calendar";
+/** Where a calendar row comes from: an app, the user's own event, or a Google calendar. */
+export type Source = AppHref | "/calendar" | "/google";
+
+/** An event in one of the user's Google calendars, as the dialog changes it. */
+export type GoogleRef = {
+	/** google_calendars.id */
+	calendarId: string;
+	calendarName: string;
+	googleId: string;
+	writable: boolean;
+	/** One day of a repeating event: a change applies to that day. */
+	recurring: boolean;
+	title: string;
+	date: string;
+	endDate: string | null;
+	startTime: string | null;
+	endTime: string | null;
+	note: string | null;
+};
 
 /** A row on the calendar: an app's (as Week makes them) or an event's. */
 export type CalEntry = Omit<WeekEntry, "app"> & {
@@ -31,6 +48,10 @@ export type CalEntry = Omit<WeekEntry, "app"> & {
 	end?: string;
 	/** The event behind the row: it opens the event's dialog instead of a link. */
 	event?: EventFields;
+	/** A Google event: in its calendar's colour; a writable one opens the dialog. */
+	google?: GoogleRef;
+	/** "#rrggbb": the row's own colour in place of its app's pigment. */
+	color?: string;
 };
 
 export type CalDay = {
@@ -162,10 +183,10 @@ export function eventRows(events: EventFields[], days: string[]): Map<string, Ca
 /** The calendar's days: the apps' rows with the events' put in, timed ones by their time. */
 export function withEvents<D extends { date: string; plan: CalEntry[]; done: CalEntry[] }>(
 	days: D[],
-	rows: Map<string, CalEntry[]>,
+	...maps: Map<string, CalEntry[]>[]
 ): D[] {
 	return days.map((d) => {
-		const own = rows.get(d.date) ?? [];
+		const own = maps.flatMap((rows) => rows.get(d.date) ?? []);
 		if (own.length === 0) return d;
 		// Events lead: they're what the user set for the day themselves.
 		return { ...d, plan: [...own, ...d.plan] };
@@ -177,7 +198,8 @@ export function withEvents<D extends { date: string; plan: CalEntry[]; done: Cal
 /** What's dragged: a card due that day, or an event (as it falls on that day). */
 export type DragItem =
 	| { kind: "card"; id: string; title: string; from: string }
-	| { kind: "event"; event: EventFields; from: string };
+	| { kind: "event"; event: EventFields; from: string }
+	| { kind: "google"; google: GoogleRef; from: string };
 
 /** Where it's dropped: a day, and a time when it lands in the hours (none = keeps its own). */
 export type DropTarget = { date: string; time?: string };
@@ -214,6 +236,64 @@ export function movedEvent(e: EventFields, from: string, to: DropTarget): EventF
 /** What dragging a row moves, if it can move: an event, or a card due that day. */
 export function dragOf(entry: CalEntry, date: string): DragItem | undefined {
 	if (entry.event) return { kind: "event", event: entry.event, from: date };
+	if (entry.google?.writable) return { kind: "google", google: entry.google, from: date };
 	if (entry.card) return { kind: "card", id: entry.card.id, title: entry.card.title, from: date };
 	return undefined;
+}
+
+/** Google's events as rows: each in its calendar's colour, on every day it covers. */
+export function googleRows(
+	events: (Omit<GoogleRef, "calendarName"> & {
+		calendarName: string;
+		color: string | null;
+		location: string | null;
+		link: string | null;
+	})[],
+	days: string[],
+): Map<string, CalEntry[]> {
+	const rows = new Map<string, CalEntry[]>(days.map((d) => [d, []]));
+	for (const e of events) {
+		const span = e.endDate ? Math.max(0, daysBetween(e.date, e.endDate)) : 0;
+		for (let i = 0; i <= span; i++) {
+			const date = addDays(e.date, i);
+			const list = rows.get(date);
+			if (!list) continue;
+			const timed = span === 0 && e.startTime;
+			const { color, location, link, ...ref } = e;
+			list.push({
+				key: `google:${e.calendarId}:${e.googleId}:${date}`,
+				app: "/google",
+				title: e.title,
+				note: [
+					span > 0 ? `day ${i + 1} of ${span + 1}` : e.startTime ? null : "all day",
+					location,
+					e.calendarName,
+				]
+					.filter(Boolean)
+					.join(" · "),
+				href: link ?? `/?v=day&d=${date}`,
+				time: timed ? (e.startTime ?? undefined) : undefined,
+				end: timed ? (e.endTime ?? undefined) : undefined,
+				google: ref,
+				color: color ?? undefined,
+			});
+		}
+	}
+	return rows;
+}
+
+/** A Google event moved from one of its days to another (and time), keeping its length. */
+export function movedGoogle(g: GoogleRef, from: string, to: DropTarget): GoogleRef {
+	const shift = daysBetween(from, to.date);
+	const next = {
+		...g,
+		date: addDays(g.date, shift),
+		endDate: g.endDate ? addDays(g.endDate, shift) : null,
+	};
+	if (to.time) {
+		const length = g.startTime && g.endTime ? toMinutes(g.endTime) - toMinutes(g.startTime) : 60;
+		next.startTime = to.time;
+		next.endTime = toTime(Math.min(23 * 60 + 59, toMinutes(to.time) + Math.max(15, length)));
+	}
+	return next;
 }

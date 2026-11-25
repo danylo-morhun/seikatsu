@@ -5,6 +5,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Button,
 	Checkbox,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -21,14 +22,19 @@ import {
 import { useEffect, useId, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Spinner } from "@/components/Spinner";
+import { deleteGoogleEvent, saveGoogleEvent } from "@/features/calendar/actions/google";
 import { addDays, type EventFields, REPEATS, type Repeat } from "@/features/calendar/lib/events";
 import { removeEvent, storeEvent } from "@/features/calendar/lib/offline";
 import { eventSchema } from "@/features/calendar/lib/schemas";
 import { FIELD_TEXTAREA } from "@/features/keizoku/components/DayNoteDialog";
 import { QUEUED_TOAST } from "@/features/pwa/lib/run";
 
-/** What the dialog opens on: an event to edit, or a new one's first values. */
-export type EventDraft = Partial<EventFields> & { date: string };
+/** What the dialog opens on: an event to edit, or a new one's first values; with `google`,
+ * an event in one of the user's Google calendars. */
+export type EventDraft = Partial<EventFields> & {
+	date: string;
+	google?: { calendarId: string; googleId: string; calendarName: string; recurring: boolean };
+};
 
 const REPEAT_NAMES: Record<Repeat, string> = {
 	day: "Every day",
@@ -63,7 +69,8 @@ export function EventDialog({
 	onClose: () => void;
 }) {
 	const id = useId();
-	const editing = Boolean(draft?.id);
+	const google = draft?.google;
+	const editing = Boolean(draft?.id || google);
 	const [title, setTitle] = useState("");
 	const [date, setDate] = useState("");
 	const [endDate, setEndDate] = useState("");
@@ -112,6 +119,17 @@ export function EventDialog({
 			setError(parsed.error.issues[0]?.message ?? "Check the event");
 			return;
 		}
+		if (google) {
+			const { id: _, repeat: __, repeatEvery: ___, repeatUntil: ____, ...fields } = parsed.data;
+			startSaving(async () => {
+				const result = await saveGoogleEvent({ ...google, ...fields }).catch(() => ({
+					error: "Couldn't reach Google. Check your connection.",
+				}));
+				if ("error" in result) setError(result.error);
+				else onClose();
+			});
+			return;
+		}
 		startSaving(async () => {
 			const result = await storeEvent(parsed.data).catch(() => ({
 				error: "Couldn't save. Check your connection.",
@@ -126,6 +144,16 @@ export function EventDialog({
 	}
 
 	function remove() {
+		if (google) {
+			startSaving(async () => {
+				const result = await deleteGoogleEvent(google).catch(() => ({
+					error: "Couldn't reach Google. Check your connection.",
+				}));
+				if ("error" in result) toast.error(result.error);
+				else onClose();
+			});
+			return;
+		}
 		if (!draft?.id) return;
 		const eventId = draft.id;
 		startSaving(async () => {
@@ -148,11 +176,18 @@ export function EventDialog({
 				if (!v && !isSaving) onClose();
 			}}
 		>
-			<DialogContent className="[--app-kanji:'予'] max-sm:flex max-sm:flex-col sm:max-w-lg">
+			<DialogContent
+				className={cn(
+					google ? "[--app-kanji:'外']" : "[--app-kanji:'予']",
+					"max-sm:flex max-sm:flex-col sm:max-w-lg",
+				)}
+			>
 				<DialogHeader>
 					<DialogTitle>{editing ? "Edit event" : "New event"}</DialogTitle>
-					<DialogDescription className="sr-only">
-						An event of your own on the calendar: when it is, how often it repeats.
+					<DialogDescription className={google ? "text-sm" : "sr-only"}>
+						{google
+							? `In ${google.calendarName}${google.recurring ? " · changes apply to this day only" : ""}`
+							: "An event of your own on the calendar: when it is, how often it repeats."}
 					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={save} className="flex flex-1 flex-col gap-4">
@@ -234,56 +269,58 @@ export function EventDialog({
 						)}
 					</div>
 
-					<div className="grid gap-3 sm:grid-cols-2">
-						<div className="space-y-2">
-							<Label htmlFor={`${id}-repeat`}>Repeats</Label>
-							<Select value={repeat} onValueChange={(v) => setRepeat(v as Repeat | "none")}>
-								<SelectTrigger id={`${id}-repeat`} className="w-full">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="none">Never</SelectItem>
-									{REPEATS.map((r) => (
-										<SelectItem key={r} value={r}>
-											{REPEAT_NAMES[r]}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-						{repeat !== "none" && (
-							<div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-3">
-								<div className="space-y-2">
-									<Label htmlFor={`${id}-every`}>Every</Label>
-									<Input
-										id={`${id}-every`}
-										type="number"
-										inputMode="numeric"
-										min={1}
-										max={99}
-										value={every}
-										aria-describedby={`${id}-unit`}
-										onChange={(e) =>
-											setEvery(Math.max(1, Math.min(99, Number(e.target.value) || 1)))
-										}
-									/>
-									<span id={`${id}-unit`} className="sr-only">
-										{UNIT[repeat][every === 1 ? 0 : 1]}
-									</span>
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor={`${id}-until`}>Until</Label>
-									<Input
-										id={`${id}-until`}
-										type="date"
-										value={until}
-										min={date}
-										onChange={(e) => setUntil(e.target.value)}
-									/>
-								</div>
+					{!google && (
+						<div className="grid gap-3 sm:grid-cols-2">
+							<div className="space-y-2">
+								<Label htmlFor={`${id}-repeat`}>Repeats</Label>
+								<Select value={repeat} onValueChange={(v) => setRepeat(v as Repeat | "none")}>
+									<SelectTrigger id={`${id}-repeat`} className="w-full">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="none">Never</SelectItem>
+										{REPEATS.map((r) => (
+											<SelectItem key={r} value={r}>
+												{REPEAT_NAMES[r]}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
-						)}
-					</div>
+							{repeat !== "none" && (
+								<div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-3">
+									<div className="space-y-2">
+										<Label htmlFor={`${id}-every`}>Every</Label>
+										<Input
+											id={`${id}-every`}
+											type="number"
+											inputMode="numeric"
+											min={1}
+											max={99}
+											value={every}
+											aria-describedby={`${id}-unit`}
+											onChange={(e) =>
+												setEvery(Math.max(1, Math.min(99, Number(e.target.value) || 1)))
+											}
+										/>
+										<span id={`${id}-unit`} className="sr-only">
+											{UNIT[repeat][every === 1 ? 0 : 1]}
+										</span>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor={`${id}-until`}>Until</Label>
+										<Input
+											id={`${id}-until`}
+											type="date"
+											value={until}
+											min={date}
+											onChange={(e) => setUntil(e.target.value)}
+										/>
+									</div>
+								</div>
+							)}
+						</div>
+					)}
 
 					<div className="space-y-2">
 						<Label htmlFor={`${id}-note`}>Note</Label>
@@ -313,7 +350,7 @@ export function EventDialog({
 								disabled={isSaving}
 							>
 								<HugeiconsIcon icon={Delete02Icon} className="size-4" />
-								Delete{draft?.repeat ? " all" : ""}
+								{google?.recurring ? "Delete this day" : `Delete${draft?.repeat ? " all" : ""}`}
 							</Button>
 						)}
 						<div className="ml-auto flex gap-2 max-sm:flex-1">

@@ -3,7 +3,13 @@
 import { cn } from "@seikatsu/ui";
 import { type CSSProperties, type ReactNode, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { type DragItem, type DropTarget, movedEvent } from "@/features/calendar/lib/events";
+import { saveGoogleEvent } from "@/features/calendar/actions/google";
+import {
+	type DragItem,
+	type DropTarget,
+	movedEvent,
+	movedGoogle,
+} from "@/features/calendar/lib/events";
 import { storeEvent } from "@/features/calendar/lib/offline";
 import { QUEUED_TOAST, type RunResult } from "@/features/pwa/lib/run";
 import { saveCard } from "@/features/seiryu/lib/offline";
@@ -36,6 +42,16 @@ function move(item: DragItem, to: DropTarget): Promise<RunResult> {
 			dueDate: to.date,
 			...(to.time ? { dueTime: to.time } : {}),
 		});
+	if (item.kind === "google") {
+		// Google's own: online only, straight to its calendar.
+		const {
+			calendarName: _,
+			writable: __,
+			recurring: ___,
+			...g
+		} = movedGoogle(item.google, item.from, to);
+		return saveGoogleEvent(g);
+	}
 	return storeEvent(movedEvent(item.event, item.from, to));
 }
 
