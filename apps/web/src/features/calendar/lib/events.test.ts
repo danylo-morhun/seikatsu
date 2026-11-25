@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type EventFields, eventRows, repeatText, startsIn, whenOf } from "./events";
+import { type EventFields, eventRows, movedEvent, repeatText, startsIn, whenOf } from "./events";
 
 const ev = (over: Partial<EventFields>): EventFields => ({
 	id: "e1",
@@ -76,5 +76,26 @@ describe("whenOf and repeatText", () => {
 		expect(whenOf(ev({ endDate: "2026-11-27" }))).toBe("3 days");
 		expect(repeatText(ev({ repeat: "month", repeatEvery: 2 }))).toBe("every 2 months");
 		expect(repeatText(ev({ repeat: "week" }))).toBe("every week");
+	});
+});
+
+describe("movedEvent", () => {
+	it("shifts a trip by days and keeps its length", () => {
+		const trip = ev({ date: "2026-11-26", endDate: "2026-11-27" });
+		expect(movedEvent(trip, "2026-11-27", { date: "2026-11-29" })).toMatchObject({
+			date: "2026-11-28",
+			endDate: "2026-11-29",
+		});
+	});
+	it("lands at the hour it's dropped on, keeping its duration", () => {
+		const call = ev({ startTime: "15:00", endTime: "16:30" });
+		expect(movedEvent(call, "2026-11-25", { date: "2026-11-26", time: "09:00" })).toMatchObject({
+			date: "2026-11-26",
+			startTime: "09:00",
+			endTime: "10:30",
+		});
+		expect(movedEvent(ev({}), "2026-11-25", { date: "2026-11-25", time: "23:30" }).endTime).toBe(
+			"23:59",
+		);
 	});
 });
