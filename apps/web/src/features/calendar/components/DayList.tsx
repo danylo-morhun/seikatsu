@@ -3,14 +3,15 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { Recap, Row } from "@/features/calendar/components/parts";
 import { type DayFigures, hrefOf } from "@/features/calendar/lib/calendar";
-import type { Money, WeekDay, WeekEntry } from "@/features/week/lib/week";
+import type { CalDay, CalEntry } from "@/features/calendar/lib/events";
+import type { Money } from "@/features/week/lib/week";
 
 const WEEKDAY = new Intl.DateTimeFormat("en-GB", { weekday: "short", timeZone: "UTC" });
 const MONTH = new Intl.DateTimeFormat("en-GB", { month: "short", timeZone: "UTC" });
 const utc = (iso: string) => new Date(`${iso}T00:00:00Z`);
 
 /** Timed rows first, by time; the rest after, as they came. */
-const byTime = (rows: WeekEntry[]) =>
+const byTime = (rows: CalEntry[]) =>
 	[...rows].sort((a, b) => (a.time ?? "99").localeCompare(b.time ?? "99"));
 
 /**
@@ -24,7 +25,7 @@ export function DayList({
 	figures,
 	money,
 }: {
-	days: WeekDay[];
+	days: CalDay[];
 	today: string;
 	figures: Map<string, DayFigures>;
 	money: Money;

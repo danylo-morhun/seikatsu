@@ -1,12 +1,13 @@
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { EntryLink, NewAtSlot } from "@/features/calendar/components/Events";
 import { GridScroller } from "@/features/calendar/components/GridScroller";
 import { NowLine } from "@/features/calendar/components/NowLine";
-import { Chip, Kanji, Recap } from "@/features/calendar/components/parts";
+import { Chip, Kanji, Recap, sourceOf } from "@/features/calendar/components/parts";
 import { type DayFigures, hoursOf, hrefOf, placeTimed } from "@/features/calendar/lib/calendar";
-import type { Money, WeekDay, WeekEntry } from "@/features/week/lib/week";
-import { APPS_CONFIG } from "@/lib/app-themes";
+import type { CalDay, CalEntry } from "@/features/calendar/lib/events";
+import type { Money } from "@/features/week/lib/week";
 
 /** Rows a week's day lists above the hours before "n more" (the day view lists them all). */
 const STRIP = 4;
@@ -17,8 +18,8 @@ const HOURS = Array.from({ length: 24 }, (_, h) => h);
 const WEEKDAY = new Intl.DateTimeFormat("en-GB", { weekday: "short", timeZone: "UTC" });
 const utc = (iso: string) => new Date(`${iso}T00:00:00Z`);
 
-const timed = (d: WeekDay) =>
-	d.plan.filter((e): e is WeekEntry & { time: string } => Boolean(e.time));
+const timed = (d: CalDay) =>
+	d.plan.filter((e): e is CalEntry & { time: string } => Boolean(e.time));
 
 /**
  * Days side by side over the whole day's hours, as a calendar does: rows with a time sit at it,
@@ -32,7 +33,7 @@ export function TimeGrid({
 	money,
 	strip = true,
 }: {
-	days: WeekDay[];
+	days: CalDay[];
 	today: string;
 	figures: Map<string, DayFigures>;
 	money: Money;
@@ -154,14 +155,15 @@ export function TimeGrid({
 									className="h-14 border-t border-rule first:border-t-0 [background-image:linear-gradient(to_right,var(--rule)_50%,transparent_50%)] [background-position:0_50%] [background-repeat:repeat-x] [background-size:6px_1px]"
 								/>
 							))}
+							<NewAtSlot date={d.date} hour={HOUR} />
 							{placeTimed(timed(d)).map((p) => (
-								<Link
+								<EntryLink
 									key={p.entry.key}
 									href={p.entry.href}
-									prefetch={false}
+									event={p.entry.event}
 									title={[p.entry.time, p.entry.title, p.entry.note].filter(Boolean).join(" · ")}
 									className={cn(
-										APPS_CONFIG[p.entry.app].theme,
+										sourceOf(p.entry.app).theme,
 										"absolute top-(--top) left-(--left) z-10 flex h-(--h) w-(--w) flex-col gap-0.5 overflow-hidden rounded-[0.5rem] bg-primary/22 px-2 py-1.5 text-xs leading-4 text-foreground outline-none ring-1 ring-background/60 transition-colors duration-150 ease-out hover:bg-primary/32 focus-visible:ring-2 focus-visible:ring-ring",
 									)}
 									style={
@@ -175,13 +177,13 @@ export function TimeGrid({
 								>
 									<span className="flex items-center gap-1.5 text-[11px] tabular-nums text-muted-foreground">
 										<Kanji app={p.entry.app} className="text-[10px]" />
-										{p.entry.time}
+										{p.entry.end ? `${p.entry.time}–${p.entry.end}` : p.entry.time}
 									</span>
 									<span className="line-clamp-2 font-semibold">{p.entry.title}</span>
 									{p.entry.note && cols === 1 && (
 										<span className="truncate text-muted-foreground">{p.entry.note}</span>
 									)}
-								</Link>
+								</EntryLink>
 							))}
 							{d.date === today && <NowLine from={0} to={24} hour={HOUR} />}
 						</div>

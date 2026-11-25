@@ -1,8 +1,10 @@
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
+import { NewOnDay } from "@/features/calendar/components/Events";
 import { Chip, Recap, Seals } from "@/features/calendar/components/parts";
 import { type DayFigures, hrefOf } from "@/features/calendar/lib/calendar";
-import type { Money, WeekDay } from "@/features/week/lib/week";
+import type { CalDay } from "@/features/calendar/lib/events";
+import type { Money } from "@/features/week/lib/week";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 /** Rows a cell lists before folding the rest into "n more". */
@@ -20,7 +22,7 @@ export function MonthGrid({
 	today,
 	money,
 }: {
-	days: WeekDay[];
+	days: CalDay[];
 	figures: Map<string, DayFigures>;
 	/** "YYYY-MM": days outside it are quieter. */
 	month: string;
@@ -73,20 +75,23 @@ export function MonthGrid({
 								aria-label={`Open ${d.date}`}
 								className="absolute inset-0 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
 							/>
-							<span
-								className={cn(
-									"relative flex size-6 items-center justify-center self-center rounded-full text-xs font-medium tabular-nums sm:self-start",
-									d.isToday
-										? "bg-primary font-semibold text-primary-foreground"
-										: outside
-											? "text-muted-foreground/40"
-											: d.past
-												? "text-muted-foreground"
-												: "text-foreground",
-								)}
-							>
-								{Number(d.date.slice(8))}
-							</span>
+							<div className="relative flex items-center justify-center sm:justify-between">
+								<span
+									className={cn(
+										"relative flex size-6 items-center justify-center rounded-full text-xs font-medium tabular-nums",
+										d.isToday
+											? "bg-primary font-semibold text-primary-foreground"
+											: outside
+												? "text-muted-foreground/40"
+												: d.past
+													? "text-muted-foreground"
+													: "text-foreground",
+									)}
+								>
+									{Number(d.date.slice(8))}
+								</span>
+								<NewOnDay date={d.date} label={d.date} />
+							</div>
 							{/* A phone's cell: the kanji of the apps with something on. */}
 							<span className={cn("relative sm:hidden", outside && "opacity-40")}>
 								<Seals apps={[...new Set([...plan, ...d.done].map((e) => e.app))]} />
