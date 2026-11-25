@@ -62,6 +62,8 @@ export type WeekEntry = {
 	title: string;
 	note?: string;
 	href: string;
+	/** "HH:MM" when it's set for a time of day (a card's due time, a booked call). */
+	time?: string;
 	/** A card due that day: it can move to another day of the week. */
 	card?: { id: string; title: string };
 };
@@ -243,6 +245,7 @@ function planOn(data: WeekData, date: string, money: Money): WeekEntry[] {
 			title: card.title,
 			note: card.time ? `${card.time} · ${card.projectName}` : card.projectName,
 			href: `/seiryu/${card.projectId}/${card.id}`,
+			time: card.time ?? undefined,
 			card: { id: card.id, title: card.title },
 		});
 	for (const [i, item] of on(data.car, date).entries())
@@ -272,6 +275,7 @@ function planOn(data: WeekData, date: string, money: Money): WeekEntry[] {
 			title: `${call.what === "interview" ? "Interview" : "Screening"} · ${call.company}`,
 			note: call.time ? `at ${call.time}` : "booked",
 			href: call.id ? `/kyuu/${call.id}` : "/kyuu",
+			time: call.time ?? undefined,
 		});
 	for (const [i, bill] of on(data.bills, date).entries())
 		entries.push({
