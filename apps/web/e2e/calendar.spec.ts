@@ -105,3 +105,30 @@ test("an event is made with E, changed and deleted", async ({ page }) => {
 		.click();
 	await expect(page.getByRole("button", { name: /E2E dentist/ })).toHaveCount(0);
 });
+
+test("a card dragged into the hours gets that day and time", async ({ page }) => {
+	const isSunday = new Date().getUTCDay() === 0;
+	test.skip(isSunday, "no later day this week to drop on");
+	const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+	await page.goto("/?v=week");
+	const card = page.getByRole("link", { name: "E2E any time today" });
+	await expect(card).toBeVisible();
+	// The hours of tomorrow's column: 56 px an hour from midnight.
+	const column = page
+		.locator("div.cursor-cell")
+		.nth(
+			new Date(`${tomorrow}T00:00:00Z`).getUTCDay() === 0
+				? 6
+				: new Date(`${tomorrow}T00:00:00Z`).getUTCDay() - 1,
+		);
+	await card.dragTo(column, {
+		sourcePosition: { x: 4, y: 2 },
+		targetPosition: { x: 20, y: 14 * 56 + 2 },
+	});
+	await expect(page.getByRole("link", { name: /14:00\s*E2E any time today/ })).toBeVisible();
+	const [saved] = await db
+		.select({ dueDate: seiryuCards.dueDate, dueTime: seiryuCards.dueTime })
+		.from(seiryuCards)
+		.where(eq(seiryuCards.title, "E2E any time today"));
+	expect(saved).toEqual({ dueDate: tomorrow, dueTime: "14:00:00" });
+});
