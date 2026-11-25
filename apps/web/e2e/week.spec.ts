@@ -1,7 +1,8 @@
 import { db, eq, seiryuCards, seiryuColumns, seiryuProjects } from "@seikatsu/db";
 import { expect, test, workspaceId } from "./fixtures";
 
-// The week beside Today: cards due this week, movable to another day; done cards in the recap.
+// Week is the home calendar's week view: cards due this week, movable to another day; done
+// cards in the recap; /week and its old links land there.
 
 const today = new Date().toISOString().slice(0, 10); // the browser runs in UTC
 const isSunday = new Date().getUTCDay() === 0;
@@ -37,18 +38,20 @@ test.beforeEach(async () => {
 	});
 });
 
-test("the week shows today's due card and moves it to another day", async ({ page }) => {
+test("Week opens the calendar's week, where a card moves to another day", async ({ page }) => {
 	await page.goto("/");
 	await page.locator('[data-sidebar="sidebar"]').getByRole("link", { name: "Week" }).click();
-	await expect(page).toHaveURL(/\/week$/);
+	await expect(page).toHaveURL(/\/\?v=week$/);
 
-	const todayRow = page.getByRole("listitem", { name: nameOf(today) });
+	// A phone lists the days; each due card has its own Move menu.
+	await page.setViewportSize({ width: 390, height: 844 });
+	const todayRow = page.getByRole("listitem", { name: today, exact: true });
 	await expect(todayRow).toContainText("E2E due this week");
 	test.skip(isSunday, "no later day this week to move to");
 
 	await todayRow.getByRole("button", { name: "Move E2E due this week to another day" }).click();
 	await page.getByRole("menuitem", { name: nameOf(tomorrow) }).click();
-	await expect(page.getByRole("listitem", { name: nameOf(tomorrow) })).toContainText(
+	await expect(page.getByRole("listitem", { name: tomorrow, exact: true })).toContainText(
 		"E2E due this week",
 	);
 	const [card] = await db
@@ -75,15 +78,24 @@ test("a card marked done from Today lands in the week's recap", async ({ page })
 		.toEqual({ columnId: doneId, doneOn: today });
 
 	await page.goto("/week");
-	const todayRow = page.getByRole("listitem", { name: nameOf(today) });
+	await expect(page).toHaveURL(/\/\?v=week$/);
+	await page.setViewportSize({ width: 390, height: 844 });
+	const todayRow = page.getByRole("listitem", { name: today, exact: true });
 	await expect(todayRow).toContainText("E2E due this week");
-	await expect(todayRow).toContainText("done");
+	await expect(
+		todayRow
+			.getByRole("listitem")
+			.filter({ hasText: "E2E due this week" })
+			.getByRole("img", { name: "Done" }),
+	).toBeVisible();
 });
 
 test("earlier weeks are a link away", async ({ page }) => {
-	await page.goto("/week");
-	await page.getByRole("link", { name: "Previous week" }).click();
-	await expect(page.getByText("A week behind you")).toBeVisible();
-	await page.getByRole("link", { name: "This week" }).click();
-	await expect(page.getByText(/^This week ·/)).toBeVisible();
+	await page.goto("/week?w=2026-01-07");
+	await expect(page).toHaveURL(/\/\?v=week&d=2026-01-07$/);
+	await expect(page.getByRole("heading", { level: 1 })).toContainText("5 – 11 January");
+	await page.getByRole("link", { name: "Back" }).click();
+	await expect(page.getByRole("heading", { level: 1 })).toContainText("29 December – 4 January");
+	await page.getByRole("link", { name: "Today", exact: true }).click();
+	await expect(page).toHaveURL(/\/\?v=week$/);
 });
