@@ -171,3 +171,49 @@ export function withEvents<D extends { date: string; plan: CalEntry[]; done: Cal
 		return { ...d, plan: [...own, ...d.plan] };
 	});
 }
+
+// ── Moving a row by dragging it ──────────────────────────────────────────────
+
+/** What's dragged: a card due that day, or an event (as it falls on that day). */
+export type DragItem =
+	| { kind: "card"; id: string; title: string; from: string }
+	| { kind: "event"; event: EventFields; from: string };
+
+/** Where it's dropped: a day, and a time when it lands in the hours (none = keeps its own). */
+export type DropTarget = { date: string; time?: string };
+
+const toMinutes = (t: string) => {
+	const [h, m] = t.split(":").map(Number);
+	return h * 60 + (m || 0);
+};
+const toTime = (m: number) =>
+	`${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+
+/**
+ * An event moved from one of its days to another (and time): the whole event shifts by as many
+ * days, keeping its length; dropped in the hours, it starts there and keeps its duration. A
+ * repeating event shifts as a series.
+ */
+export function movedEvent(e: EventFields, from: string, to: DropTarget): EventFields {
+	const shift = daysBetween(from, to.date);
+	const next: EventFields = {
+		...e,
+		date: addDays(e.date, shift),
+		endDate: e.endDate ? addDays(e.endDate, shift) : null,
+		repeatUntil: e.repeatUntil ? addDays(e.repeatUntil, shift) : null,
+	};
+	if (to.time) {
+		const length = e.startTime && e.endTime ? toMinutes(e.endTime) - toMinutes(e.startTime) : 60;
+		const start = toMinutes(to.time);
+		next.startTime = to.time;
+		next.endTime = toTime(Math.min(23 * 60 + 59, start + Math.max(15, length)));
+	}
+	return next;
+}
+
+/** What dragging a row moves, if it can move: an event, or a card due that day. */
+export function dragOf(entry: CalEntry, date: string): DragItem | undefined {
+	if (entry.event) return { kind: "event", event: entry.event, from: date };
+	if (entry.card) return { kind: "card", id: entry.card.id, title: entry.card.title, from: date };
+	return undefined;
+}
