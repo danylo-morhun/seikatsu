@@ -96,6 +96,12 @@ describe("placeTimed", () => {
 		expect([by.b.col, by.b.cols]).toEqual([1, 2]);
 		expect([by.c.col, by.c.cols]).toEqual([0, 1]);
 	});
+	it("runs a row to its own end", () => {
+		const [p] = placeTimed([{ time: "15:00", end: "16:30" }]);
+		expect([p.start, p.end]).toEqual([900, 990]);
+		const [q] = placeTimed([{ time: "15:00", end: "14:00" }]);
+		expect(q.end).toBe(960);
+	});
 	it("reuses a column once it's free", () => {
 		const placed = placeTimed([
 			{ id: "a", time: "09:00" },
