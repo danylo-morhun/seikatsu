@@ -24,6 +24,9 @@ import {
 } from "@/features/calendar/lib/calendar";
 import { readEvents } from "@/features/calendar/lib/data";
 import { type CalDay, eventRows, googleRows, withEvents } from "@/features/calendar/lib/events";
+import { Invite } from "@/features/day/components/Invite";
+import { MyDay } from "@/features/day/components/MyDay";
+import { loadDay } from "@/features/day/lib/data";
 import { HomeKeys } from "@/features/home/components/TodayIslands";
 import { layoutOf } from "@/features/home/lib/dashboard";
 import { money } from "@/features/home/lib/format";
@@ -95,6 +98,11 @@ export async function CalendarView({
 			? await loadWeekRhythmParts(ws, today, dates, fmt, on)
 			: null;
 	const notes = rhythm?.notes;
+	// Today's own plan beside its hours, when Day is on.
+	const myDay =
+		view === "day" && anchor === today && on.includes("/day")
+			? await loadDay(ws, today, fmt)
+			: null;
 	const figures = new Map(dates.map((d) => [d, figuresOf(data, d)]));
 
 	return (
@@ -182,7 +190,22 @@ export async function CalendarView({
 							<div className="max-lg:hidden">
 								<TimeGrid days={days} today={today} figures={figures} money={fmt} strip={false} />
 							</div>
-							<DayList days={days} today={today} figures={figures} money={fmt} />
+							<div className="min-w-0 space-y-6">
+								{myDay?.plan?.plannedAt && myDay.picks.length > 0 ? (
+									<MyDay day={today} picks={myDay.picks} />
+								) : (
+									myDay &&
+									!myDay.plan?.closedAt && (
+										<Invite
+											href="/morning"
+											eyebrow="Morning"
+											title="Plan the day"
+											note="Sort what's waiting, pick up to three."
+										/>
+									)
+								)}
+								<DayList days={days} today={today} figures={figures} money={fmt} />
+							</div>
 						</div>
 					)}
 					{view === "list" && <DayList days={days} today={today} figures={figures} money={fmt} />}
