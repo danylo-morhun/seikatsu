@@ -1,4 +1,4 @@
-import { db, eq, seiryuCards, seiryuColumns, seiryuProjects } from "@seikatsu/db";
+import { calendarEvents, db, eq, seiryuCards, seiryuColumns, seiryuProjects } from "@seikatsu/db";
 import { expect, test, workspaceId } from "./fixtures";
 
 // The home as a calendar: a card due at a time sits in the week's hours, the month lists it on
@@ -67,4 +67,41 @@ test("keys switch views and the home opens on the last one", async ({ page }) =>
 	await expect(page).toHaveURL(/v=widgets/);
 	await page.keyboard.press("c");
 	await expect(page).toHaveURL(/v=month/);
+});
+
+test("an event is made with E, changed and deleted", async ({ page }) => {
+	const wsId = await workspaceId();
+	await db.delete(calendarEvents).where(eq(calendarEvents.workspaceId, wsId));
+	await page.goto("/?v=week");
+	await expect(page.getByRole("navigation", { name: "Home view" })).toBeVisible();
+
+	await page.keyboard.press("e");
+	const dialog = page.getByRole("dialog", { name: "New event" });
+	await dialog.getByLabel("Event name").fill("E2E dentist");
+	await dialog.getByLabel("All day").click();
+	await dialog.getByLabel("From").fill("15:00");
+	await dialog.getByLabel("To", { exact: true }).fill("16:30");
+	await dialog.getByRole("button", { name: "Save" }).click();
+	await expect(dialog).toBeHidden();
+
+	const block = page.getByRole("button", { name: /15:00–16:30\s*E2E dentist/ });
+	await expect(block).toBeVisible();
+	await block.click();
+	const edit = page.getByRole("dialog", { name: "Edit event" });
+	await edit.getByLabel("Event name").fill("E2E dentist, Dr Nowak");
+	await edit.getByRole("button", { name: "Save" }).click();
+	await expect(page.getByRole("button", { name: /E2E dentist, Dr Nowak/ })).toBeVisible();
+
+	const [saved] = await db
+		.select()
+		.from(calendarEvents)
+		.where(eq(calendarEvents.workspaceId, wsId));
+	expect(saved).toMatchObject({ title: "E2E dentist, Dr Nowak", date: today, endTime: "16:30:00" });
+
+	await page.getByRole("button", { name: /E2E dentist, Dr Nowak/ }).click();
+	await page
+		.getByRole("dialog", { name: "Edit event" })
+		.getByRole("button", { name: "Delete" })
+		.click();
+	await expect(page.getByRole("button", { name: /E2E dentist/ })).toHaveCount(0);
 });
