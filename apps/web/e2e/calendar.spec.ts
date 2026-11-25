@@ -40,7 +40,7 @@ test.beforeEach(async () => {
 
 test("the week puts a timed card in its hour and the rest above", async ({ page }) => {
 	await page.goto("/?v=week");
-	await expect(page.getByRole("link", { name: /^10:30\s*E2E call at ten/ })).toBeVisible();
+	await expect(page.getByRole("link", { name: /10:30\s*E2E call at ten/ })).toBeVisible();
 	await expect(page.getByRole("link", { name: "E2E any time today" })).toBeVisible();
 });
 

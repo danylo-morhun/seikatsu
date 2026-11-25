@@ -20,10 +20,10 @@ export function NowLine({ from, to, hour }: { from: number; to: number; hour: nu
 	return (
 		<div
 			aria-hidden
-			className="pointer-events-none absolute inset-x-0 top-(--top) z-10 h-px bg-destructive"
+			className="pointer-events-none absolute inset-x-0 top-(--top) z-10 h-px bg-primary"
 			style={{ "--top": `${((now - from * 60) / 60) * hour}px` } as CSSProperties}
 		>
-			<span className="absolute -top-1 -left-1 size-2 rounded-full bg-destructive" />
+			<span className="absolute -top-1 -left-1 size-2 rounded-full bg-primary" />
 		</div>
 	);
 }

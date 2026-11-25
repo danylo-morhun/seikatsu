@@ -134,6 +134,33 @@ export function titleOf(view: CalendarView, anchor: string): string {
 		: `${DAY_MONTH.format(first)} – ${DAY_MONTH.format(last)}`;
 }
 
+/** The title in two parts: what's named, then its quieter context ("November", "2026"). */
+export function titleParts(view: CalendarView, anchor: string): [string, string] {
+	const year = anchor.slice(0, 4);
+	if (view === "month") return [fmt({ month: "long" }).format(utc(anchor)), year];
+	if (view === "day")
+		return [fmt({ weekday: "long" }).format(utc(anchor)), DAY_MONTH.format(utc(anchor))];
+	if (view === "week") return [titleOf(view, anchor), `Week ${weekNumber(anchor)}`];
+	return [titleOf(view, anchor), year];
+}
+
+/** Monday-first week number, as calendars print it (ISO 8601). */
+export function weekNumber(iso: string): number {
+	const d = utc(iso);
+	const day = (d.getUTCDay() + 6) % 7;
+	d.setUTCDate(d.getUTCDate() - day + 3);
+	const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+	return (
+		1 +
+		Math.round(
+			((d.getTime() - firstThursday.getTime()) / 86_400_000 -
+				3 +
+				((firstThursday.getUTCDay() + 6) % 7)) /
+				7,
+		)
+	);
+}
+
 // ── The hour grid ────────────────────────────────────────────────────────────
 
 /** A timed row without its own length takes an hour, as a calendar's new event does. */
@@ -146,6 +173,7 @@ export const minutesOf = (time: string) => {
 
 /** The hours the grid spans: the working day, stretched to hold every timed row. */
 export function hoursOf(times: string[], from = 8, to = 20): { from: number; to: number } {
+	// (The grid itself runs the whole day; this is the span it opens scrolled to.)
 	let start = from;
 	let end = to;
 	for (const t of times) {
