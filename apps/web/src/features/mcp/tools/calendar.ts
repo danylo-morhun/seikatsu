@@ -1,9 +1,11 @@
 import { z } from "zod";
 import { deleteEvent, saveEvent } from "@/features/calendar/actions/events";
+import { readGoogleEvents } from "@/features/calendar/google/sync";
 import { readEvent, readEvents } from "@/features/calendar/lib/data";
 import {
 	daysBetween,
 	eventRows,
+	googleRows,
 	REPEATS,
 	repeatText,
 	whenOf,
@@ -45,7 +47,7 @@ export const calendarTools = [
 		name: "calendar",
 		title: "Calendar",
 		description:
-			"The calendar over any run of days (up to 62): each day's own events (with ids) and every app's dated rows — cards due (with times), booked calls, car due, recurring payments, wants done cooling; for days behind, what got done. Use for 'what's on next week', 'am I free on Friday at 3'.",
+			"The calendar over any run of days (up to 62): each day's own events (with ids), the connected Google calendars' events, and every app's dated rows — cards due (with times), booked calls, car due, recurring payments, wants done cooling; for days behind, what got done. Use for 'what's on next week', 'am I free on Friday at 3'.",
 		input: {
 			from: day.optional().describe("First day; default today"),
 			to: day.optional().describe("Last day; default `from` + 6"),
@@ -58,18 +60,27 @@ export const calendarTools = [
 			const dates: string[] = [];
 			for (let d = start; d <= end; d = addDays(d, 1)) dates.push(d);
 			const fmt = (n: number, c = ws.baseCurrency) => money(n, c);
-			const [data, events] = await Promise.all([
+			const [data, events, google] = await Promise.all([
 				getWeekData(ws, today, dates, modulesOn(ws.modulesOff)),
 				readEvents(ws.id, start, end),
+				readGoogleEvents(ws.id, start, end),
 			]);
 			const { days } = buildWeek(data, today, dates, fmt);
 			const own = eventRows(events, dates);
+			const theirs = googleRows(google, dates);
 			return {
 				days: days.map((d) => ({
 					date: d.date,
 					today: d.isToday || undefined,
 					events: (own.get(d.date) ?? []).map((e) => ({
 						id: e.event?.id,
+						title: e.title,
+						start: e.time,
+						end: e.end,
+						note: e.note || undefined,
+					})),
+					google: (theirs.get(d.date) ?? []).map((e) => ({
+						calendar: e.google?.calendarName,
 						title: e.title,
 						start: e.time,
 						end: e.end,

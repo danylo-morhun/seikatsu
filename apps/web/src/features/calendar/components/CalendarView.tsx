@@ -8,6 +8,7 @@ import { DayList } from "@/features/calendar/components/DayList";
 import { EventsProvider, NewEvent } from "@/features/calendar/components/Events";
 import { MonthGrid } from "@/features/calendar/components/MonthGrid";
 import { TimeGrid } from "@/features/calendar/components/TimeGrid";
+import { readGoogleEvents } from "@/features/calendar/google/sync";
 import {
 	CALENDAR_VIEWS,
 	daysOf,
@@ -22,7 +23,7 @@ import {
 	within,
 } from "@/features/calendar/lib/calendar";
 import { readEvents } from "@/features/calendar/lib/data";
-import { type CalDay, eventRows, withEvents } from "@/features/calendar/lib/events";
+import { type CalDay, eventRows, googleRows, withEvents } from "@/features/calendar/lib/events";
 import { HomeKeys } from "@/features/home/components/TodayIslands";
 import { layoutOf } from "@/features/home/lib/dashboard";
 import { money } from "@/features/home/lib/format";
@@ -56,10 +57,14 @@ export async function CalendarView({
 		getWeekData(ws, today, dates, on),
 		loadExtras(ws, today, dates, fmt),
 	]);
-	const events = await readEvents(ws.id, dates[0] ?? anchor, dates.at(-1) ?? anchor);
+	const [events, google] = await Promise.all([
+		readEvents(ws.id, dates[0] ?? anchor, dates.at(-1) ?? anchor),
+		readGoogleEvents(ws.id, dates[0] ?? anchor, dates.at(-1) ?? anchor),
+	]);
 	const days = withEvents(
 		buildWeek(data, today, dates, fmt, carried, later).days as CalDay[],
 		eventRows(events, dates),
+		googleRows(google, dates),
 	);
 	// A month's figures count its own days, not the weeks' spill-over around it.
 	const own =

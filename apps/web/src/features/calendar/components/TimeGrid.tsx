@@ -166,6 +166,7 @@ export function TimeGrid({
 									key={p.entry.key}
 									href={p.entry.href}
 									event={p.entry.event}
+									google={p.entry.google}
 									drag={dragOf(p.entry, d.date)}
 									title={[p.entry.time, p.entry.title, p.entry.note].filter(Boolean).join(" · ")}
 									className={cn(
@@ -178,11 +179,12 @@ export function TimeGrid({
 											"--h": `${((p.end - p.start) / 60) * HOUR - 2}px`,
 											"--left": `calc(${(p.col / p.cols) * 100}% + 3px)`,
 											"--w": `calc(${100 / p.cols}% - 6px)`,
+											...(p.entry.color ? { "--primary": p.entry.color } : {}),
 										} as CSSProperties
 									}
 								>
 									<span className="flex items-center gap-1.5 text-[11px] tabular-nums text-muted-foreground">
-										<Kanji app={p.entry.app} className="text-[10px]" />
+										<Kanji app={p.entry.app} color={p.entry.color} className="text-[10px]" />
 										{p.entry.end ? `${p.entry.time}–${p.entry.end}` : p.entry.time}
 									</span>
 									<span className="line-clamp-2 font-semibold">{p.entry.title}</span>

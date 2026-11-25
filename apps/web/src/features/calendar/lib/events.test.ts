@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { type EventFields, eventRows, movedEvent, repeatText, startsIn, whenOf } from "./events";
+import {
+	type EventFields,
+	eventRows,
+	googleRows,
+	movedEvent,
+	movedGoogle,
+	repeatText,
+	startsIn,
+	whenOf,
+} from "./events";
 
 const ev = (over: Partial<EventFields>): EventFields => ({
 	id: "e1",
@@ -97,5 +106,43 @@ describe("movedEvent", () => {
 		expect(movedEvent(ev({}), "2026-11-25", { date: "2026-11-25", time: "23:30" }).endTime).toBe(
 			"23:59",
 		);
+	});
+});
+
+describe("googleRows and movedGoogle", () => {
+	const g = {
+		calendarId: "c1",
+		calendarName: "Work",
+		googleId: "w1",
+		writable: true,
+		recurring: false,
+		title: "Standup",
+		date: "2026-11-26",
+		endDate: null,
+		startTime: "09:30",
+		endTime: "09:45",
+		note: null,
+		color: "#4285f4",
+		location: "Room 2",
+		link: "https://calendar.google.com/x",
+	};
+	it("shows a Google event in its calendar's colour, opening in Google", () => {
+		const [row] = googleRows([g], ["2026-11-26"]).get("2026-11-26") ?? [];
+		expect(row).toMatchObject({
+			app: "/google",
+			time: "09:30",
+			end: "09:45",
+			color: "#4285f4",
+			note: "Room 2 · Work",
+			href: "https://calendar.google.com/x",
+		});
+		expect(row?.google).toMatchObject({ calendarId: "c1", googleId: "w1" });
+	});
+	it("moves it keeping its quarter hour", () => {
+		expect(movedGoogle(g, "2026-11-26", { date: "2026-11-27", time: "11:00" })).toMatchObject({
+			date: "2026-11-27",
+			startTime: "11:00",
+			endTime: "11:15",
+		});
 	});
 });

@@ -16,7 +16,7 @@ import {
 } from "react";
 import { dragProps } from "@/features/calendar/components/Drag";
 import { EventDialog, type EventDraft } from "@/features/calendar/components/EventDialog";
-import type { DragItem, EventFields } from "@/features/calendar/lib/events";
+import type { DragItem, EventFields, GoogleRef } from "@/features/calendar/lib/events";
 import { pageKey } from "@/lib/capture-shortcut";
 
 type Open = (draft: EventDraft) => void;
@@ -79,10 +79,13 @@ export function EntryLink({
 	title,
 	style,
 	drag,
+	google,
 	children,
 }: {
 	href: string;
 	event?: EventFields;
+	/** A Google event: a writable one opens the dialog; else it opens in Google. */
+	google?: GoogleRef;
 	/** Set: the row can be dragged to another day or time. */
 	drag?: DragItem;
 	className?: string;
@@ -91,18 +94,45 @@ export function EntryLink({
 	children: ReactNode;
 }) {
 	const open = useContext(EventsContext);
-	if (event && open)
+	const draft: EventDraft | null = event
+		? event
+		: google?.writable
+			? {
+					...google,
+					id: undefined,
+					google: {
+						calendarId: google.calendarId,
+						googleId: google.googleId,
+						calendarName: google.calendarName,
+						recurring: google.recurring,
+					},
+				}
+			: null;
+	if (draft && open)
 		return (
 			<button
 				type="button"
 				title={title}
 				style={style}
 				{...dragProps(drag)}
-				onClick={() => open(event)}
+				onClick={() => open(draft)}
 				className={cn("text-left", className)}
 			>
 				{children}
 			</button>
+		);
+	if (google)
+		return (
+			<a
+				href={href}
+				target="_blank"
+				rel="noopener noreferrer"
+				title={title}
+				className={className}
+				style={style}
+			>
+				{children}
+			</a>
 		);
 	return (
 		<Link

@@ -4,18 +4,27 @@ import { cn } from "@seikatsu/ui";
 import { EntryLink } from "@/features/calendar/components/Events";
 import type { DayFigures } from "@/features/calendar/lib/calendar";
 import { type CalEntry, dragOf, type Source } from "@/features/calendar/lib/events";
-import { sourceOf } from "@/features/calendar/lib/source";
+import { colorStyle, sourceOf } from "@/features/calendar/lib/source";
 import { km, plural } from "@/features/home/lib/format";
 import type { Money } from "@/features/week/lib/week";
 import type { AppHref } from "@/lib/modules";
 
 /** The app's kanji in its own pigment: what marks a row as that app's, instead of a dot. */
-export function Kanji({ app, className }: { app: Source; className?: string }) {
+export function Kanji({
+	app,
+	color,
+	className,
+}: {
+	app: Source;
+	color?: string;
+	className?: string;
+}) {
 	const { theme, kanji, name } = sourceOf(app);
 	return (
 		<span
 			role="img"
 			aria-label={name}
+			style={colorStyle(color)}
 			className={cn(theme, "shrink-0 font-semibold leading-none text-primary", className)}
 		>
 			{kanji}
@@ -44,6 +53,8 @@ export function Chip({
 		<EntryLink
 			href={entry.href}
 			event={entry.event}
+			google={entry.google}
+			style={colorStyle(entry.color)}
 			drag={date && !done ? dragOf(entry, date) : undefined}
 			title={[entry.time, entry.title, entry.note].filter(Boolean).join(" · ")}
 			className={cn(
@@ -55,7 +66,7 @@ export function Chip({
 				className,
 			)}
 		>
-			<Kanji app={entry.app} className="text-[10px]" />
+			<Kanji app={entry.app} color={entry.color} className="text-[10px]" />
 			{entry.time && (
 				<span className="shrink-0 tabular-nums text-muted-foreground">{entry.time}</span>
 			)}
@@ -70,6 +81,7 @@ export function Row({ entry, done = false }: { entry: CalEntry; done?: boolean }
 		<li className="relative flex min-h-14 items-center gap-3 py-2.5 transition-colors duration-150 ease-out has-[a:hover,button:hover]:bg-surface/60">
 			<span
 				aria-hidden
+				style={colorStyle(entry.color)}
 				className={cn(
 					sourceOf(entry.app).theme,
 					"flex size-8 shrink-0 items-center justify-center rounded-[0.55rem] text-sm font-semibold",
@@ -81,6 +93,7 @@ export function Row({ entry, done = false }: { entry: CalEntry; done?: boolean }
 			<EntryLink
 				href={entry.href}
 				event={entry.event}
+				google={entry.google}
 				className="min-w-0 flex-1 outline-none after:absolute after:inset-0 focus-visible:after:rounded-[inherit] focus-visible:after:ring-2 focus-visible:after:ring-ring"
 			>
 				<span className={cn("block truncate text-sm font-medium", done && "text-muted-foreground")}>
