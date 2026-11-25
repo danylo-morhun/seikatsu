@@ -5,6 +5,7 @@ import Link from "next/link";
 import { PageTab, PageTabs } from "@/components/PageTabs";
 import { CalendarKeys } from "@/features/calendar/components/CalendarKeys";
 import { DayList } from "@/features/calendar/components/DayList";
+import { EventsProvider, NewEvent } from "@/features/calendar/components/Events";
 import { MonthGrid } from "@/features/calendar/components/MonthGrid";
 import { TimeGrid } from "@/features/calendar/components/TimeGrid";
 import {
@@ -20,6 +21,8 @@ import {
 	viewKeyHrefs,
 	within,
 } from "@/features/calendar/lib/calendar";
+import { readEvents } from "@/features/calendar/lib/data";
+import { type CalDay, eventRows, withEvents } from "@/features/calendar/lib/events";
 import { HomeKeys } from "@/features/home/components/TodayIslands";
 import { layoutOf } from "@/features/home/lib/dashboard";
 import { money } from "@/features/home/lib/format";
@@ -53,7 +56,11 @@ export async function CalendarView({
 		getWeekData(ws, today, dates, on),
 		loadExtras(ws, today, dates, fmt),
 	]);
-	const { days } = buildWeek(data, today, dates, fmt, carried, later);
+	const events = await readEvents(ws.id, dates[0] ?? anchor, dates.at(-1) ?? anchor);
+	const days = withEvents(
+		buildWeek(data, today, dates, fmt, carried, later).days as CalDay[],
+		eventRows(events, dates),
+	);
 	// A month's figures count its own days, not the weeks' spill-over around it.
 	const own =
 		view === "month"
@@ -75,92 +82,95 @@ export async function CalendarView({
 	const figures = new Map(dates.map((d) => [d, figuresOf(data, d)]));
 
 	return (
-		<div className="mx-auto w-full max-w-6xl space-y-6 px-4 pt-5 pb-28 sm:px-8 md:py-8">
-			<HomeKeys listed={apps} />
-			<CalendarKeys
-				view={view}
-				hrefs={{
-					...viewKeyHrefs(anchor, today),
-					"[": prev,
-					"]": next,
-					t: hrefOf(view, today, today),
-				}}
-			/>
-			<header className="flex animate-rise flex-wrap items-end justify-between gap-x-6 gap-y-4">
-				<div className="min-w-0">
-					<h1 className="text-[1.75rem] leading-none font-semibold tracking-[-0.03em] md:text-[2.5rem]">
-						{main} <span className="font-normal text-muted-foreground">{context}</span>
-					</h1>
-					<p className="mt-2.5 min-h-5 text-sm text-muted-foreground">
-						{line ?? (current ? "Today" : "")}
-					</p>
-				</div>
-				<div className="flex max-w-full flex-wrap items-center gap-2">
-					<nav aria-label="Dates" className="flex items-center rounded-button bg-surface p-0.5">
-						<StepLink href={prev} label="Back">
-							<HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
-						</StepLink>
-						<Link
-							href={hrefOf(view, today, today)}
-							prefetch
-							aria-keyshortcuts="T"
-							aria-disabled={current}
-							className={cn(
-								"rounded-button px-3 py-1.5 text-sm font-medium outline-none transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring",
-								current ? "text-muted-foreground" : "text-foreground hover:bg-surface-2",
-							)}
-						>
-							Today
-						</Link>
-						<StepLink href={next} label="Ahead">
-							<HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
-						</StepLink>
-					</nav>
-					<PageTabs label="Home view">
-						{CALENDAR_VIEWS.map((v) => (
-							<PageTab key={v} href={hrefOf(v, anchor, today)} current={v === view}>
-								{VIEW_KEYS[v].name}
+		<EventsProvider day={current ? today : anchor}>
+			<div className="mx-auto w-full max-w-6xl space-y-6 px-4 pt-5 pb-28 sm:px-8 md:py-8">
+				<HomeKeys listed={apps} />
+				<CalendarKeys
+					view={view}
+					hrefs={{
+						...viewKeyHrefs(anchor, today),
+						"[": prev,
+						"]": next,
+						t: hrefOf(view, today, today),
+					}}
+				/>
+				<header className="flex animate-rise flex-wrap items-end justify-between gap-x-6 gap-y-4">
+					<div className="min-w-0">
+						<h1 className="text-[1.75rem] leading-none font-semibold tracking-[-0.03em] md:text-[2.5rem]">
+							{main} <span className="font-normal text-muted-foreground">{context}</span>
+						</h1>
+						<p className="mt-2.5 min-h-5 text-sm text-muted-foreground">
+							{line ?? (current ? "Today" : "")}
+						</p>
+					</div>
+					<div className="flex max-w-full flex-wrap items-center gap-2">
+						<NewEvent day={current ? today : anchor} />
+						<nav aria-label="Dates" className="flex items-center rounded-button bg-surface p-0.5">
+							<StepLink href={prev} label="Back">
+								<HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
+							</StepLink>
+							<Link
+								href={hrefOf(view, today, today)}
+								prefetch
+								aria-keyshortcuts="T"
+								aria-disabled={current}
+								className={cn(
+									"rounded-button px-3 py-1.5 text-sm font-medium outline-none transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring",
+									current ? "text-muted-foreground" : "text-foreground hover:bg-surface-2",
+								)}
+							>
+								Today
+							</Link>
+							<StepLink href={next} label="Ahead">
+								<HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
+							</StepLink>
+						</nav>
+						<PageTabs label="Home view">
+							{CALENDAR_VIEWS.map((v) => (
+								<PageTab key={v} href={hrefOf(v, anchor, today)} current={v === view}>
+									{VIEW_KEYS[v].name}
+								</PageTab>
+							))}
+							<PageTab href={hrefOf("widgets")} current={false}>
+								Widgets
 							</PageTab>
-						))}
-						<PageTab href={hrefOf("widgets")} current={false}>
-							Widgets
-						</PageTab>
-					</PageTabs>
-				</div>
-			</header>
+						</PageTabs>
+					</div>
+				</header>
 
-			<div className="animate-rise [--i:1]">
-				{view === "month" && (
-					<MonthGrid
-						days={days}
-						figures={figures}
-						month={anchor.slice(0, 7)}
-						today={today}
-						money={fmt}
-					/>
-				)}
-				{view === "week" && (
-					<>
-						<div className="max-md:hidden">
-							<TimeGrid days={days} today={today} figures={figures} money={fmt} />
-						</div>
-						<div className="md:hidden">
+				<div className="animate-rise [--i:1]">
+					{view === "month" && (
+						<MonthGrid
+							days={days}
+							figures={figures}
+							month={anchor.slice(0, 7)}
+							today={today}
+							money={fmt}
+						/>
+					)}
+					{view === "week" && (
+						<>
+							<div className="max-md:hidden">
+								<TimeGrid days={days} today={today} figures={figures} money={fmt} />
+							</div>
+							<div className="md:hidden">
+								<DayList days={days} today={today} figures={figures} money={fmt} />
+							</div>
+						</>
+					)}
+					{view === "day" && (
+						// The hours at the left, the day's whole list (with notes) beside them.
+						<div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+							<div className="max-lg:hidden">
+								<TimeGrid days={days} today={today} figures={figures} money={fmt} strip={false} />
+							</div>
 							<DayList days={days} today={today} figures={figures} money={fmt} />
 						</div>
-					</>
-				)}
-				{view === "day" && (
-					// The hours at the left, the day's whole list (with notes) beside them.
-					<div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-						<div className="max-lg:hidden">
-							<TimeGrid days={days} today={today} figures={figures} money={fmt} strip={false} />
-						</div>
-						<DayList days={days} today={today} figures={figures} money={fmt} />
-					</div>
-				)}
-				{view === "list" && <DayList days={days} today={today} figures={figures} money={fmt} />}
+					)}
+					{view === "list" && <DayList days={days} today={today} figures={figures} money={fmt} />}
+				</div>
 			</div>
-		</div>
+		</EventsProvider>
 	);
 }
 

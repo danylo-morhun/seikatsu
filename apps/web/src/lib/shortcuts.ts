@@ -41,6 +41,7 @@ export const APP_SHORTCUTS: Record<string, ShortcutGroup[]> = {
 		{
 			title: "Calendar",
 			items: [
+				{ keys: ["E"], label: "New event (on the day in view)" },
 				{ keys: ["M", "W", "D", "L"], label: "Month, week, day or list" },
 				{ keys: ["C"], label: "Calendar or widgets" },
 				{ keys: ["[", "]"], label: "Back / ahead a month, week or day" },

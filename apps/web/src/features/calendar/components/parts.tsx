@@ -1,16 +1,23 @@
 import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
-import Link from "next/link";
+import { EntryLink } from "@/features/calendar/components/Events";
 import type { DayFigures } from "@/features/calendar/lib/calendar";
+import type { CalEntry, Source } from "@/features/calendar/lib/events";
 import { km, plural } from "@/features/home/lib/format";
-import type { Money, WeekEntry } from "@/features/week/lib/week";
+import type { Money } from "@/features/week/lib/week";
 import { APPS_CONFIG } from "@/lib/app-themes";
 import type { AppHref } from "@/lib/modules";
 
+/** The user's own events: 予 (a plan), in the shell's own pigment. */
+const OWN = { theme: "", kanji: "予", name: "Event" };
+
+/** Where a row comes from, as the calendar draws it: an app's theme and kanji, or the user's. */
+export const sourceOf = (app: Source) => (app === "/calendar" ? OWN : APPS_CONFIG[app]);
+
 /** The app's kanji in its own pigment: what marks a row as that app's, instead of a dot. */
-export function Kanji({ app, className }: { app: AppHref; className?: string }) {
-	const { theme, kanji, name } = APPS_CONFIG[app];
+export function Kanji({ app, className }: { app: Source; className?: string }) {
+	const { theme, kanji, name } = sourceOf(app);
 	return (
 		<span
 			role="img"
@@ -31,18 +38,18 @@ export function Chip({
 	done = false,
 	className,
 }: {
-	entry: WeekEntry;
+	entry: CalEntry;
 	/** What already happened: quieter than what's planned. */
 	done?: boolean;
 	className?: string;
 }) {
 	return (
-		<Link
+		<EntryLink
 			href={entry.href}
-			prefetch={false}
+			event={entry.event}
 			title={[entry.time, entry.title, entry.note].filter(Boolean).join(" · ")}
 			className={cn(
-				APPS_CONFIG[entry.app].theme,
+				sourceOf(entry.app).theme,
 				"flex min-w-0 items-center gap-1.5 rounded-[0.45rem] px-1.5 py-[3px] text-xs leading-4 outline-none transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring",
 				done
 					? "text-muted-foreground hover:bg-surface hover:text-foreground"
@@ -55,27 +62,27 @@ export function Chip({
 				<span className="shrink-0 tabular-nums text-muted-foreground">{entry.time}</span>
 			)}
 			<span className="min-w-0 truncate">{entry.title}</span>
-		</Link>
+		</EntryLink>
 	);
 }
 
 /** A full row of the list: kanji, title and note, its time at the right. */
-export function Row({ entry, done = false }: { entry: WeekEntry; done?: boolean }) {
+export function Row({ entry, done = false }: { entry: CalEntry; done?: boolean }) {
 	return (
-		<li className="relative flex min-h-14 items-center gap-3 py-2.5 transition-colors duration-150 ease-out has-[a:hover]:bg-surface/60">
+		<li className="relative flex min-h-14 items-center gap-3 py-2.5 transition-colors duration-150 ease-out has-[a:hover,button:hover]:bg-surface/60">
 			<span
 				aria-hidden
 				className={cn(
-					APPS_CONFIG[entry.app].theme,
+					sourceOf(entry.app).theme,
 					"flex size-8 shrink-0 items-center justify-center rounded-[0.55rem] text-sm font-semibold",
 					done ? "bg-surface-2 text-muted-foreground" : "bg-primary/14 text-primary",
 				)}
 			>
-				{APPS_CONFIG[entry.app].kanji}
+				{sourceOf(entry.app).kanji}
 			</span>
-			<Link
+			<EntryLink
 				href={entry.href}
-				prefetch={false}
+				event={entry.event}
 				className="min-w-0 flex-1 outline-none after:absolute after:inset-0 focus-visible:after:rounded-[inherit] focus-visible:after:ring-2 focus-visible:after:ring-ring"
 			>
 				<span className={cn("block truncate text-sm font-medium", done && "text-muted-foreground")}>
@@ -84,7 +91,7 @@ export function Row({ entry, done = false }: { entry: WeekEntry; done?: boolean 
 				{entry.note && (
 					<span className="block truncate text-xs text-muted-foreground">{entry.note}</span>
 				)}
-			</Link>
+			</EntryLink>
 			{done ? (
 				<HugeiconsIcon
 					icon={CheckmarkCircle02Icon}
@@ -137,7 +144,7 @@ export function Recap({
 }
 
 /** The apps a day has something from, as their kanji (a phone's month cell). */
-export function Seals({ apps }: { apps: AppHref[] }) {
+export function Seals({ apps }: { apps: Source[] }) {
 	if (apps.length === 0) return null;
 	return (
 		<span className="flex flex-wrap justify-center gap-0.5">
