@@ -3,6 +3,7 @@ export * from "./auth";
 export * from "./calendar";
 export * from "./day";
 export * from "./goals";
+export * from "./google";
 export * from "./hoshii";
 export * from "./keizoku";
 export * from "./kuroji";
