@@ -1,4 +1,5 @@
 import { aishaTools } from "./aisha";
+import { calendarTools } from "./calendar";
 import { dayTools, weekTools } from "./day";
 import { hoshiiTools } from "./hoshii";
 import { keizokuTools } from "./keizoku";
@@ -12,6 +13,7 @@ import type { ToolDef } from "./types";
 /** Every tool seikatsu offers over MCP, shell first, then the apps in their usual order. */
 export const ALL_TOOLS: ToolDef[] = [
 	...shellTools,
+	...calendarTools,
 	...dayTools,
 	...weekTools,
 	...kurojiTools,
