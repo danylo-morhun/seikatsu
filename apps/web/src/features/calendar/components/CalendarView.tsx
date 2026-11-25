@@ -1,5 +1,6 @@
 import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { PageTab, PageTabs } from "@/components/PageTabs";
 import { CalendarKeys } from "@/features/calendar/components/CalendarKeys";
@@ -13,14 +14,13 @@ import {
 	hrefOf,
 	showsToday,
 	stepOf,
-	titleOf,
+	titleParts,
 	VIEW_KEYS,
 	type CalendarView as View,
 	viewKeyHrefs,
 	within,
 } from "@/features/calendar/lib/calendar";
 import { HomeKeys } from "@/features/home/components/TodayIslands";
-import { CaptureBar } from "@/features/home/components/TodayQueue";
 import { layoutOf } from "@/features/home/lib/dashboard";
 import { money } from "@/features/home/lib/format";
 import { getWeekData } from "@/features/week/lib/data";
@@ -71,9 +71,11 @@ export async function CalendarView({
 		.filter((s) => !s.hidden && s.id !== "today")
 		.map((s) => s.id as AppHref);
 	const line = view === "day" ? null : weekLine(totals, fmt);
+	const [main, context] = titleParts(view, anchor);
+	const figures = new Map(dates.map((d) => [d, figuresOf(data, d)]));
 
 	return (
-		<div className="mx-auto w-full max-w-6xl space-y-5 px-4 pt-5 pb-28 sm:px-8 md:py-8">
+		<div className="mx-auto w-full max-w-6xl space-y-6 px-4 pt-5 pb-28 sm:px-8 md:py-8">
 			<HomeKeys listed={apps} />
 			<CalendarKeys
 				view={view}
@@ -84,17 +86,17 @@ export async function CalendarView({
 					t: hrefOf(view, today, today),
 				}}
 			/>
-			<header className="flex animate-rise flex-wrap items-end justify-between gap-3">
+			<header className="flex animate-rise flex-wrap items-end justify-between gap-x-6 gap-y-4">
 				<div className="min-w-0">
-					<h1 className="text-xl font-semibold tracking-tight md:text-3xl">
-						{titleOf(view, anchor)}
+					<h1 className="text-[1.75rem] leading-none font-semibold tracking-[-0.03em] md:text-[2.5rem]">
+						{main} <span className="font-normal text-muted-foreground">{context}</span>
 					</h1>
-					<p className="mt-1 min-h-5 text-sm text-muted-foreground">
+					<p className="mt-2.5 min-h-5 text-sm text-muted-foreground">
 						{line ?? (current ? "Today" : "")}
 					</p>
 				</div>
-				<div className="flex flex-wrap items-center gap-2">
-					<nav aria-label="Dates" className="flex items-center gap-1">
+				<div className="flex max-w-full flex-wrap items-center gap-2">
+					<nav aria-label="Dates" className="flex items-center rounded-button bg-surface p-0.5">
 						<StepLink href={prev} label="Back">
 							<HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
 						</StepLink>
@@ -102,7 +104,11 @@ export async function CalendarView({
 							href={hrefOf(view, today, today)}
 							prefetch
 							aria-keyshortcuts="T"
-							className="rounded-button px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-surface hover:text-foreground"
+							aria-disabled={current}
+							className={cn(
+								"rounded-button px-3 py-1.5 text-sm font-medium outline-none transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring",
+								current ? "text-muted-foreground" : "text-foreground hover:bg-surface-2",
+							)}
 						>
 							Today
 						</Link>
@@ -124,14 +130,10 @@ export async function CalendarView({
 			</header>
 
 			<div className="animate-rise [--i:1]">
-				<CaptureBar />
-			</div>
-
-			<div className="animate-rise [--i:2]">
 				{view === "month" && (
 					<MonthGrid
 						days={days}
-						figures={new Map(dates.map((d) => [d, figuresOf(data, d)]))}
+						figures={figures}
 						month={anchor.slice(0, 7)}
 						today={today}
 						money={fmt}
@@ -140,24 +142,23 @@ export async function CalendarView({
 				{view === "week" && (
 					<>
 						<div className="max-md:hidden">
-							<TimeGrid days={days} today={today} />
+							<TimeGrid days={days} today={today} figures={figures} money={fmt} />
 						</div>
 						<div className="md:hidden">
-							<DayList days={days} today={today} />
+							<DayList days={days} today={today} figures={figures} money={fmt} />
 						</div>
 					</>
 				)}
 				{view === "day" && (
-					<>
-						<div className="max-md:hidden">
-							<TimeGrid days={days} today={today} />
+					// The hours at the left, the day's whole list (with notes) beside them.
+					<div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+						<div className="max-lg:hidden">
+							<TimeGrid days={days} today={today} figures={figures} money={fmt} strip={false} />
 						</div>
-						<div className="md:hidden">
-							<DayList days={days} today={today} />
-						</div>
-					</>
+						<DayList days={days} today={today} figures={figures} money={fmt} />
+					</div>
 				)}
-				{view === "list" && <DayList days={days} today={today} />}
+				{view === "list" && <DayList days={days} today={today} figures={figures} money={fmt} />}
 			</div>
 		</div>
 	);
@@ -177,7 +178,7 @@ function StepLink({
 			href={href}
 			prefetch
 			aria-label={label}
-			className="flex size-9 items-center justify-center rounded-button text-muted-foreground transition-colors hover:bg-surface hover:text-foreground"
+			className="flex size-8 items-center justify-center rounded-button text-muted-foreground outline-none transition-colors duration-150 ease-out hover:bg-surface-2 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
 		>
 			{children}
 		</Link>

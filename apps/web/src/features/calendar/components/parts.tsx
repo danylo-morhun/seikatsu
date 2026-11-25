@@ -1,10 +1,31 @@
+import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
-import { Seal } from "@/features/home/components/Line";
-import type { WeekEntry } from "@/features/week/lib/week";
+import type { DayFigures } from "@/features/calendar/lib/calendar";
+import { km, plural } from "@/features/home/lib/format";
+import type { Money, WeekEntry } from "@/features/week/lib/week";
 import { APPS_CONFIG } from "@/lib/app-themes";
+import type { AppHref } from "@/lib/modules";
 
-/** A row in the calendar's own words: the app's pigment, its title, and what it opens. */
+/** The app's kanji in its own pigment: what marks a row as that app's, instead of a dot. */
+export function Kanji({ app, className }: { app: AppHref; className?: string }) {
+	const { theme, kanji, name } = APPS_CONFIG[app];
+	return (
+		<span
+			role="img"
+			aria-label={name}
+			className={cn(theme, "shrink-0 font-semibold leading-none text-primary", className)}
+		>
+			{kanji}
+		</span>
+	);
+}
+
+/**
+ * A row in the calendar's own words: sealed by its app's kanji, on a faint wash of the app's
+ * pigment when it's still ahead; plain when it already happened.
+ */
 export function Chip({
 	entry,
 	done = false,
@@ -19,54 +40,110 @@ export function Chip({
 		<Link
 			href={entry.href}
 			prefetch={false}
-			title={[entry.title, entry.note].filter(Boolean).join(" · ")}
+			title={[entry.time, entry.title, entry.note].filter(Boolean).join(" · ")}
 			className={cn(
 				APPS_CONFIG[entry.app].theme,
-				"block min-w-0 truncate rounded-md px-1.5 py-0.5 text-xs leading-5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+				"flex min-w-0 items-center gap-1.5 rounded-[0.45rem] px-1.5 py-[3px] text-xs leading-4 outline-none transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring",
 				done
-					? "text-muted-foreground hover:bg-surface"
-					: "bg-primary/15 text-foreground hover:bg-primary/25",
+					? "text-muted-foreground hover:bg-surface hover:text-foreground"
+					: "bg-primary/14 text-foreground hover:bg-primary/24",
 				className,
 			)}
 		>
-			{done && (
-				<span
-					aria-hidden
-					className="mr-1.5 inline-block size-1.5 rounded-full bg-primary/70 align-middle"
-				/>
+			<Kanji app={entry.app} className="text-[10px]" />
+			{entry.time && (
+				<span className="shrink-0 tabular-nums text-muted-foreground">{entry.time}</span>
 			)}
-			{entry.time && <span className="mr-1 tabular-nums text-muted-foreground">{entry.time}</span>}
-			{entry.title}
+			<span className="min-w-0 truncate">{entry.title}</span>
 		</Link>
 	);
 }
 
-/** A full row, as Week lists them: seal, title, note. */
+/** A full row of the list: kanji, title and note, its time at the right. */
 export function Row({ entry, done = false }: { entry: WeekEntry; done?: boolean }) {
 	return (
-		<li className="flex min-h-14 items-center gap-3 py-2">
-			<Seal href={entry.app} />
-			<Link href={entry.href} prefetch={false} className="group min-w-0 flex-1 outline-none">
-				<span
-					className={cn(
-						"block truncate text-sm font-medium group-hover:underline group-focus-visible:underline",
-						done && "text-muted-foreground",
-					)}
-				>
-					{entry.time && <span className="mr-1.5 tabular-nums">{entry.time}</span>}
+		<li className="relative flex min-h-14 items-center gap-3 py-2.5 transition-colors duration-150 ease-out has-[a:hover]:bg-surface/60">
+			<span
+				aria-hidden
+				className={cn(
+					APPS_CONFIG[entry.app].theme,
+					"flex size-8 shrink-0 items-center justify-center rounded-[0.55rem] text-sm font-semibold",
+					done ? "bg-surface-2 text-muted-foreground" : "bg-primary/14 text-primary",
+				)}
+			>
+				{APPS_CONFIG[entry.app].kanji}
+			</span>
+			<Link
+				href={entry.href}
+				prefetch={false}
+				className="min-w-0 flex-1 outline-none after:absolute after:inset-0 focus-visible:after:rounded-[inherit] focus-visible:after:ring-2 focus-visible:after:ring-ring"
+			>
+				<span className={cn("block truncate text-sm font-medium", done && "text-muted-foreground")}>
 					{entry.title}
 				</span>
 				{entry.note && (
 					<span className="block truncate text-xs text-muted-foreground">{entry.note}</span>
 				)}
 			</Link>
+			{done ? (
+				<HugeiconsIcon
+					icon={CheckmarkCircle02Icon}
+					aria-label="Done"
+					className="size-4 shrink-0 text-muted-foreground"
+				/>
+			) : (
+				entry.time && (
+					<span className="shrink-0 text-sm font-medium tabular-nums text-muted-foreground">
+						{entry.time}
+					</span>
+				)
+			)}
 		</li>
 	);
 }
 
-/** A tiny dot in an app's pigment (the month's cells on a phone). */
-export function Dot({ app }: { app: WeekEntry["app"] }) {
+/** What a day behind added up to, each figure sealed by its app: 黒 112 zł · 継 2/2. */
+export function Recap({
+	figures: f,
+	money,
+	className,
+}: {
+	figures: DayFigures;
+	money: Money;
+	className?: string;
+}) {
+	const parts: [AppHref, string][] = [];
+	if (f.spent > 0) parts.push(["/kuroji", money(f.spent)]);
+	if (f.ticks > 0) parts.push(["/keizoku", `${f.ticks}/${Math.max(f.ticks, f.expected)}`]);
+	if (f.cardsDone > 0) parts.push(["/seiryu", plural(f.cardsDone, "card")]);
+	if (f.pages > 0) parts.push(["/tsundoku", `${f.pages} p.`]);
+	if (f.km > 0) parts.push(["/aisha", km(f.km)]);
+	if (parts.length === 0) return null;
 	return (
-		<span aria-hidden className={cn(APPS_CONFIG[app].theme, "size-1.5 rounded-full bg-primary")} />
+		<p
+			className={cn(
+				"flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] leading-4 tabular-nums text-muted-foreground",
+				className,
+			)}
+		>
+			{parts.map(([app, text]) => (
+				<span key={app} className="inline-flex items-center gap-1 whitespace-nowrap">
+					<Kanji app={app} className="text-[10px]" />
+					{text}
+				</span>
+			))}
+		</p>
+	);
+}
+
+/** The apps a day has something from, as their kanji (a phone's month cell). */
+export function Seals({ apps }: { apps: AppHref[] }) {
+	if (apps.length === 0) return null;
+	return (
+		<span className="flex flex-wrap justify-center gap-0.5">
+			{apps.slice(0, 4).map((app) => (
+				<Kanji key={app} app={app} className="text-[9px]" />
+			))}
+		</span>
 	);
 }

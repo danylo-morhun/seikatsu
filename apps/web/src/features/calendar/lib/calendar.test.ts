@@ -11,6 +11,8 @@ import {
 	showsToday,
 	stepOf,
 	titleOf,
+	titleParts,
+	weekNumber,
 } from "./calendar";
 
 describe("homeViewOf", () => {
@@ -135,5 +137,18 @@ describe("figuresOf", () => {
 			km: 12,
 			cardsDone: 0,
 		});
+	});
+});
+
+describe("titleParts and weekNumber", () => {
+	it("splits the title into its name and context", () => {
+		expect(titleParts("month", "2026-11-25")).toEqual(["November", "2026"]);
+		expect(titleParts("day", "2026-11-25")).toEqual(["Wednesday", "25 November"]);
+		expect(titleParts("week", "2026-11-25")).toEqual(["23 – 29 November", "Week 48"]);
+	});
+	it("numbers weeks as ISO does", () => {
+		expect(weekNumber("2026-11-25")).toBe(48);
+		expect(weekNumber("2027-01-01")).toBe(53);
+		expect(weekNumber("2026-01-01")).toBe(1);
 	});
 });
