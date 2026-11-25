@@ -45,28 +45,45 @@ test("the week puts a timed card in its hour and the rest above", async ({ page 
 });
 
 test("keys switch views and the home opens on the last one", async ({ page }) => {
+	const views = page.getByRole("navigation", { name: "Home view" });
+	/** A key, pressed until the page (hydrated, on its new view) answers it. */
+	const press = async (key: string, url: RegExp, tab?: string) => {
+		await expect(async () => {
+			await page.keyboard.press(key);
+			await expect(page).toHaveURL(url, { timeout: 1000 });
+		}).toPass();
+		if (tab)
+			await expect(views.getByRole("link", { name: tab, exact: true })).toHaveAttribute(
+				"aria-current",
+				"page",
+			);
+	};
 	await page.goto("/?v=week");
-	await expect(page.getByRole("navigation", { name: "Home view" })).toBeVisible();
-
-	await page.keyboard.press("m");
-	await expect(page).toHaveURL(/v=month/);
-	await expect(page.getByRole("link", { name: /E2E call at ten/ })).toBeVisible();
-
-	await page.keyboard.press("]");
-	await expect(page).toHaveURL(/v=month&d=\d{4}-\d{2}-01/);
-	await page.keyboard.press("t");
-	await expect(page).toHaveURL(/\/\?v=month$/);
-
-	await page.goto("/");
-	await expect(page.getByRole("link", { name: "Month", exact: true })).toHaveAttribute(
+	await expect(views.getByRole("link", { name: "Week", exact: true })).toHaveAttribute(
 		"aria-current",
 		"page",
 	);
 
-	await page.keyboard.press("c");
-	await expect(page).toHaveURL(/v=widgets/);
-	await page.keyboard.press("c");
-	await expect(page).toHaveURL(/v=month/);
+	await press("m", /v=month/, "Month");
+	await expect(page.getByRole("link", { name: /E2E call at ten/ })).toBeVisible();
+	await press("]", /v=month&d=\d{4}-\d{2}-01/, "Month");
+	await expect(page.getByRole("heading", { level: 1 })).not.toContainText(
+		new Date().toLocaleString("en-GB", { month: "long", timeZone: "UTC" }),
+	);
+	await press("t", /\/\?v=month$/, "Month");
+
+	await page.goto("/");
+	await expect(views.getByRole("link", { name: "Month", exact: true })).toHaveAttribute(
+		"aria-current",
+		"page",
+	);
+
+	await press("c", /v=widgets/);
+	await expect(page.getByRole("link", { name: "Widgets", exact: true })).toHaveAttribute(
+		"aria-current",
+		"page",
+	);
+	await press("c", /v=month/, "Month");
 });
 
 test("an event is made with E, changed and deleted", async ({ page }) => {
@@ -75,8 +92,11 @@ test("an event is made with E, changed and deleted", async ({ page }) => {
 	await page.goto("/?v=week");
 	await expect(page.getByRole("navigation", { name: "Home view" })).toBeVisible();
 
-	await page.keyboard.press("e");
 	const dialog = page.getByRole("dialog", { name: "New event" });
+	await expect(async () => {
+		await page.keyboard.press("e");
+		await expect(dialog).toBeVisible({ timeout: 1000 });
+	}).toPass();
 	await dialog.getByLabel("Event name").fill("E2E dentist");
 	await dialog.getByLabel("All day").click();
 	await dialog.getByLabel("From").fill("15:00");
