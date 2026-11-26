@@ -47,10 +47,13 @@ test("a widget is hidden, shown again and resized in Edit", async ({ page }) => 
 
 test("widgets move with the keyboard, and the sidebar follows", async ({ page }) => {
 	await page.goto("/");
-	await page.getByRole("main").click({ position: { x: 5, y: 5 } });
-	await page.keyboard.press("e");
 	const move = page.getByRole("button", { name: "Move Kuroji" });
-	await expect(move).toBeVisible();
+	// Pressed until the page (hydrated) answers it.
+	await expect(async () => {
+		await page.getByRole("main").click({ position: { x: 5, y: 5 } });
+		await page.keyboard.press("e");
+		await expect(move).toBeVisible({ timeout: 1000 });
+	}).toPass();
 
 	// dnd-kit measures between key presses: pick up, move one place right, drop.
 	await move.focus();
