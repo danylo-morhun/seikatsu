@@ -43,6 +43,7 @@ function stamp() {
 }
 const store = new Map<string, Map<string, GoogleEvent>>();
 const writes = { insert: 0, patch: 0, remove: 0 };
+let created = 0;
 const OWN = "seikatsu-cal";
 const WORK = "work@group.calendar.google.com";
 
@@ -61,6 +62,7 @@ const fake = {
 		...(store.has(OWN) ? [{ id: OWN, summary: "seikatsu", accessRole: "owner" }] : []),
 	],
 	createCalendar: async () => {
+		created++;
 		cal(OWN);
 		return { id: OWN };
 	},
@@ -171,6 +173,15 @@ beforeAll(async () => {
 }, 30_000);
 
 describe("syncGoogle", () => {
+	it("takes up a seikatsu calendar Google made on a first sync cut short", async () => {
+		// Google made the calendar, but the answer never came back: nothing noted here.
+		cal(OWN);
+		await syncGoogle(ws.id);
+		expect(created).toBe(0);
+		const [account] = await testDb.select().from(schema.googleAccounts);
+		expect(account?.ownCalendarId).toBe(OWN);
+	});
+
 	it("writes seikatsu's rows to its own calendar and pulls the shown ones", async () => {
 		await syncGoogle(ws.id);
 		expect(byKey(`event:${eventId}`)).toMatchObject({
