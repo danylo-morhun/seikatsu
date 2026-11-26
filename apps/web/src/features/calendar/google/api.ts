@@ -1,4 +1,6 @@
-// Server-only: Google's OAuth and Calendar API, over fetch with a 5 s timeout each. The account's
+// Server-only: Google's OAuth and Calendar API, over fetch with a 15 s timeout each (Google
+// can take longer than the usual 5 s to make a calendar or list a year of events; a write cut
+// short still lands in Google, so a too-short timeout makes duplicates). The account's
 // tokens are sealed in google_accounts; an expired access token is refreshed and saved here.
 
 import { db, eq, googleAccounts } from "@seikatsu/db";
@@ -12,7 +14,7 @@ const API = "https://www.googleapis.com/calendar/v3";
 
 export const SCOPES = ["openid", "email", "https://www.googleapis.com/auth/calendar"];
 
-const TIMEOUT = 5000;
+const TIMEOUT = 15_000;
 
 export class GoogleError extends Error {
 	constructor(

@@ -122,6 +122,18 @@ async function syncCalendars(
 ): Promise<string> {
 	let list = await api.calendars();
 	let ownId = account.ownCalendarId;
+	// Not noted yet (a first sync cut short after Google made it): the user's own "seikatsu"
+	// calendar is ours, instead of making a second one.
+	if (!ownId || !list.some((c) => c.id === ownId)) {
+		const made = list.find((c) => c.summary === OWN_CALENDAR && c.accessRole === "owner");
+		if (made) {
+			ownId = made.id;
+			await db
+				.update(googleAccounts)
+				.set({ ownCalendarId: ownId })
+				.where(eq(googleAccounts.workspaceId, account.workspaceId));
+		}
+	}
 	if (!ownId || !list.some((c) => c.id === ownId)) {
 		ownId = (await api.createCalendar(OWN_CALENDAR, account.timeZone)).id;
 		await db
