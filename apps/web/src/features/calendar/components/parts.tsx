@@ -3,7 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@seikatsu/ui";
 import { EntryLink } from "@/features/calendar/components/Events";
 import type { DayFigures } from "@/features/calendar/lib/calendar";
-import { type CalEntry, dragOf, type Source } from "@/features/calendar/lib/events";
+import { type Bar, type CalEntry, dragOf, type Source } from "@/features/calendar/lib/events";
 import { colorStyle, sourceOf } from "@/features/calendar/lib/source";
 import { km, plural } from "@/features/home/lib/format";
 import type { Money } from "@/features/week/lib/week";
@@ -175,5 +175,56 @@ export function Seals({ apps }: { apps: Source[] }) {
 				<Kanji key={app} app={app} className="text-[9px]" />
 			))}
 		</span>
+	);
+}
+
+/**
+ * A day's lanes of several-day events: each bar sits in the lane of the day it starts on (or
+ * the week's first day) and reaches across the days it covers, past the cells' own padding.
+ */
+export function Lanes({ n, bars }: { n: number; bars: Bar[] }) {
+	if (n === 0) return null;
+	return (
+		<>
+			{Array.from({ length: n }, (_, lane) => {
+				const bar = bars.find((b) => b.lane === lane);
+				return (
+					// biome-ignore lint/suspicious/noArrayIndexKey: a lane is its place
+					<div key={lane} className="relative h-[22px] shrink-0">
+						{bar && <SpanBar bar={bar} />}
+					</div>
+				);
+			})}
+		</>
+	);
+}
+
+/** One several-day event as a bar across its days in the week (cells are 13 px apart). */
+function SpanBar({ bar }: { bar: Bar }) {
+	const { entry } = bar;
+	return (
+		<EntryLink
+			href={entry.href}
+			event={entry.event}
+			occurrence={entry.occurrence}
+			google={entry.google}
+			drag={dragOf(entry, bar.date)}
+			title={[entry.title, entry.note].filter(Boolean).join(" · ")}
+			style={
+				{
+					...colorStyle(entry.color),
+					"--len": bar.len,
+				} as React.CSSProperties
+			}
+			className={cn(
+				sourceOf(entry.app).theme,
+				"absolute inset-y-0 left-0 z-10 flex w-[calc(var(--len)*(100%+13px)-13px)] min-w-0 items-center gap-1.5 rounded-[0.45rem] bg-primary/22 px-1.5 text-xs leading-4 text-foreground outline-none transition-colors duration-150 ease-out hover:bg-primary/32 focus-visible:ring-2 focus-visible:ring-ring",
+				bar.before && "-ml-1.5 rounded-l-none pl-3",
+				bar.after && "rounded-r-none",
+			)}
+		>
+			<Kanji app={entry.app} color={entry.color} className="text-[10px]" />
+			<span className="min-w-0 truncate font-medium">{entry.title}</span>
+		</EntryLink>
 	);
 }

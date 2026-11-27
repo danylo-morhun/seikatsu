@@ -71,6 +71,8 @@ export type CalEntry = Omit<WeekEntry, "app"> & {
 	event?: EventFields;
 	/** For an event, the start day of the time the row is part of (a repeat's own day). */
 	occurrence?: string;
+	/** An event over several days: the same `key` on each of them, this one the `i`th of `n`. */
+	span?: { key: string; i: number; n: number };
 	/** A Google event: in its calendar's colour; a writable one opens the dialog. */
 	google?: GoogleRef;
 	/** "#rrggbb": the row's own colour in place of its app's pigment. */
@@ -331,6 +333,7 @@ export function eventRows(events: EventFields[], days: string[]): Map<string, Ca
 					end: timed ? (hhmm(e.endTime) ?? undefined) : undefined,
 					event: e,
 					occurrence: start,
+					...(span > 0 && { span: { key: `event:${e.id}:${start}`, i, n: span + 1 } }),
 				});
 			}
 		}
@@ -488,6 +491,7 @@ export function googleRows(
 				end: timed ? (e.endTime ?? undefined) : undefined,
 				google: ref,
 				color: color ?? undefined,
+				...(span > 0 && { span: { key: `google:${e.calendarId}:${e.googleId}`, i, n: span + 1 } }),
 			});
 		}
 	}
@@ -508,4 +512,61 @@ export function movedGoogle(g: GoogleRef, from: string, to: DropTarget): GoogleR
 		next.endTime = toTime(Math.min(23 * 60 + 59, toMinutes(to.time) + Math.max(15, length)));
 	}
 	return next;
+}
+
+// ── Several days as one bar ──────────────────────────────────────────────────
+
+/** An event over several days drawn across a week's row: from column `col`, `len` days long,
+ * in lane `lane` (0 on top); `before`/`after` when it goes on past the week's edge. */
+export type Bar = {
+	entry: CalEntry;
+	/** The day the bar starts on in this week (a drag moves the event from it). */
+	date: string;
+	col: number;
+	len: number;
+	lane: number;
+	before: boolean;
+	after: boolean;
+};
+
+/**
+ * A run of days (a week, or one day) with its several-day events taken out as bars, each in the
+ * first free lane; `lanes[c]` is how many lanes day `c` leaves room for, `rest[c]` its other rows.
+ */
+export function barsOf(days: CalDay[]): { bars: Bar[]; lanes: number[]; rest: CalEntry[][] } {
+	const found = new Map<string, Omit<Bar, "lane">>();
+	days.forEach((d, col) => {
+		for (const e of d.plan) {
+			if (!e.span) continue;
+			const bar = found.get(e.span.key);
+			if (bar) bar.len = col - bar.col + 1;
+			else
+				found.set(e.span.key, {
+					entry: e,
+					date: d.date,
+					col,
+					len: 1,
+					before: e.span.i > 0,
+					after: false,
+				});
+			const last = found.get(e.span.key);
+			if (last) last.after = e.span.i < e.span.n - 1;
+		}
+	});
+	const taken: boolean[][] = [];
+	const bars = [...found.values()]
+		.sort((a, b) => a.col - b.col || b.len - a.len)
+		.map((b) => {
+			let lane = 0;
+			while (taken[lane]?.slice(b.col, b.col + b.len).some(Boolean)) lane++;
+			taken[lane] ??= [];
+			for (let c = b.col; c < b.col + b.len; c++) taken[lane][c] = true;
+			return { ...b, lane };
+		});
+	const lanes = days.map((_, c) => {
+		let n = 0;
+		for (const b of bars) if (c >= b.col && c < b.col + b.len) n = Math.max(n, b.lane + 1);
+		return n;
+	});
+	return { bars, lanes, rest: days.map((d) => d.plan.filter((e) => !e.span)) };
 }
