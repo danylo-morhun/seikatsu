@@ -1,13 +1,13 @@
 import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import { DropDay } from "@/features/calendar/components/Drag";
+import { DropDay, ResizeEdge } from "@/features/calendar/components/Drag";
 import { EntryLink, NewAtSlot } from "@/features/calendar/components/Events";
 import { GridScroller } from "@/features/calendar/components/GridScroller";
 import { NowLine } from "@/features/calendar/components/NowLine";
 import { Chip, Kanji, Recap } from "@/features/calendar/components/parts";
 import { type DayFigures, hoursOf, hrefOf, placeTimed } from "@/features/calendar/lib/calendar";
-import { type CalDay, type CalEntry, dragOf } from "@/features/calendar/lib/events";
+import { type CalDay, type CalEntry, dragOf, resizeOf } from "@/features/calendar/lib/events";
 import { sourceOf } from "@/features/calendar/lib/source";
 import type { Money } from "@/features/week/lib/week";
 
@@ -197,6 +197,10 @@ export function TimeGrid({
 									{p.entry.note && cols === 1 && (
 										<span className="truncate text-muted-foreground">{p.entry.note}</span>
 									)}
+									{(() => {
+										const r = resizeOf(p.entry);
+										return r && <ResizeEdge item={r} start={p.entry.time} hour={HOUR} />;
+									})()}
 								</EntryLink>
 							))}
 							{d.date === today && <NowLine from={0} to={24} hour={HOUR} />}
