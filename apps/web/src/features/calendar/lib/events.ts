@@ -197,7 +197,7 @@ export function withEvents<D extends { date: string; plan: CalEntry[]; done: Cal
 
 /** What's dragged: a card due that day, or an event (as it falls on that day). */
 export type DragItem =
-	| { kind: "card"; id: string; title: string; from: string }
+	| { kind: "card"; id: string; title: string; from: string; time?: string }
 	| { kind: "event"; event: EventFields; from: string }
 	| { kind: "google"; google: GoogleRef; from: string };
 
@@ -237,7 +237,37 @@ export function movedEvent(e: EventFields, from: string, to: DropTarget): EventF
 export function dragOf(entry: CalEntry, date: string): DragItem | undefined {
 	if (entry.event) return { kind: "event", event: entry.event, from: date };
 	if (entry.google?.writable) return { kind: "google", google: entry.google, from: date };
-	if (entry.card) return { kind: "card", id: entry.card.id, title: entry.card.title, from: date };
+	if (entry.card)
+		return {
+			kind: "card",
+			id: entry.card.id,
+			title: entry.card.title,
+			from: date,
+			time: entry.time,
+		};
+	return undefined;
+}
+
+/** Whether a drop leaves the row where it was: the same day, and the same time when one is set. */
+export function sameDrop(item: DragItem, to: DropTarget): boolean {
+	if (to.date !== item.from) return false;
+	if (!to.time) return true;
+	const time =
+		item.kind === "card"
+			? item.time
+			: item.kind === "event"
+				? item.event.startTime
+				: item.google.startTime;
+	return time === to.time;
+}
+
+/** What dragging a timed row's bottom edge resizes: an event (own or a writable Google one). */
+export function resizeOf(
+	entry: CalEntry,
+): { kind: "event"; event: EventFields } | { kind: "google"; google: GoogleRef } | undefined {
+	if (entry.event && !entry.event.endDate) return { kind: "event", event: entry.event };
+	if (entry.google?.writable && !entry.google.endDate)
+		return { kind: "google", google: entry.google };
 	return undefined;
 }
 
