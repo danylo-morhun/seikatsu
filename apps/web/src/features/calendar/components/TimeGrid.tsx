@@ -172,6 +172,7 @@ export function TimeGrid({
 									key={p.entry.key}
 									href={p.entry.href}
 									event={p.entry.event}
+									occurrence={p.entry.occurrence}
 									google={p.entry.google}
 									drag={dragOf(p.entry, d.date)}
 									title={[p.entry.time, p.entry.title, p.entry.note].filter(Boolean).join(" · ")}
@@ -199,7 +200,13 @@ export function TimeGrid({
 									)}
 									{(() => {
 										const r = resizeOf(p.entry);
-										return r && <ResizeEdge item={r} start={p.entry.time} hour={HOUR} />;
+										// A short one is all click: its edge would cover it.
+										return (
+											r &&
+											p.end - p.start >= 30 && (
+												<ResizeEdge item={r} start={p.entry.time} hour={HOUR} />
+											)
+										);
 									})()}
 								</EntryLink>
 							))}

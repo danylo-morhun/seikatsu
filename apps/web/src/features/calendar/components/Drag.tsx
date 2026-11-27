@@ -5,6 +5,7 @@ import { type CSSProperties, type ReactNode, useSyncExternalStore } from "react"
 import { toast } from "sonner";
 import { saveGoogleEvent } from "@/features/calendar/actions/google";
 import {
+	changeOneDay,
 	type DragItem,
 	type DropTarget,
 	type EventFields,
@@ -13,7 +14,7 @@ import {
 	movedGoogle,
 	sameDrop,
 } from "@/features/calendar/lib/events";
-import { storeEvent } from "@/features/calendar/lib/offline";
+import { storeEvent, storeEventSet } from "@/features/calendar/lib/offline";
 import { QUEUED_TOAST, type RunResult } from "@/features/pwa/lib/run";
 import { saveCard } from "@/features/seiryu/lib/offline";
 
@@ -79,25 +80,41 @@ function overAt(x: number, y: number): Over | null {
 
 const googleFields = ({ calendarName: _, writable: __, recurring: ___, ...g }: GoogleRef) => g;
 
-/** A card moves its due day (and time) as Seiryu's own date field does; an event shifts. */
-function move(item: DragItem, to: DropTarget): Promise<RunResult> {
+/** A card moves its due day (and time) as Seiryu's own date field does; a Google event shifts. */
+function move(item: Exclude<DragItem, { kind: "event" }>, to: DropTarget): Promise<RunResult> {
 	if (item.kind === "card")
 		return saveCard(item.id, item.title, {
 			dueDate: to.date,
 			...(to.time ? { dueTime: to.time } : {}),
 		});
 	// Google's own: online only, straight to its calendar.
-	if (item.kind === "google")
-		return saveGoogleEvent(googleFields(movedGoogle(item.google, item.from, to)));
-	return storeEvent(movedEvent(item.event, item.from, to));
+	return saveGoogleEvent(googleFields(movedGoogle(item.google, item.from, to)));
 }
 
-/** Puts a moved row back where it was. */
-function moveBack(item: DragItem): Promise<RunResult> {
+/**
+ * A change to an event; for a repeating one, to its one day (`occurrence`) alone, which then
+ * stands apart. Returns how to undo it.
+ */
+function changeEvent(
+	event: EventFields,
+	occurrence: string | undefined,
+	change: (e: EventFields) => EventFields,
+): { run: () => Promise<RunResult>; undo: () => Promise<RunResult> } {
+	if (!event.repeat || !occurrence)
+		return { run: () => storeEvent(change(event)), undo: () => storeEvent(event) };
+	const newId = crypto.randomUUID();
+	const set = changeOneDay(event, occurrence, change, newId);
+	return {
+		run: () => storeEventSet(set, event.title),
+		undo: () => storeEventSet({ save: [event], remove: [newId] }, event.title),
+	};
+}
+
+/** Puts a moved card or Google event back where it was. */
+function moveBack(item: Exclude<DragItem, { kind: "event" }>): Promise<RunResult> {
 	if (item.kind === "card")
 		return saveCard(item.id, item.title, { dueDate: item.from, dueTime: item.time ?? null });
-	if (item.kind === "google") return saveGoogleEvent(googleFields(item.google));
-	return storeEvent(item.event);
+	return saveGoogleEvent(googleFields(item.google));
 }
 
 /** Saves a change and says how it went; a change that took gets Undo. */
@@ -117,6 +134,13 @@ function drop(item: DragItem, over: Over) {
 		...(over.minutes != null && { time: hhmm(over.minutes) }),
 	};
 	if (sameDrop(item, to)) return;
+	if (item.kind === "event") {
+		const { run, undo } = changeEvent(item.event, item.occurrence, (e) =>
+			movedEvent(e, item.from, to),
+		);
+		void settle(run, undo);
+		return;
+	}
 	void settle(
 		() => move(item, to),
 		() => moveBack(item),
@@ -293,7 +317,7 @@ export function DropDay({
 
 /** What resizing an event changes: its end, the same day. */
 export type Resizable =
-	| { kind: "event"; event: EventFields }
+	| { kind: "event"; event: EventFields; occurrence?: string }
 	| { kind: "google"; google: GoogleRef };
 
 /**
@@ -347,12 +371,13 @@ export function ResizeEdge({
 								if ("error" in r) row.style.setProperty("--h", before);
 								return r;
 							};
-							if (item.kind === "event")
-								void settle(
-									() => keep(storeEvent({ ...item.event, endTime })),
-									() => storeEvent(item.event),
-								);
-							else
+							if (item.kind === "event") {
+								const { run, undo } = changeEvent(item.event, item.occurrence, (e) => ({
+									...e,
+									endTime,
+								}));
+								void settle(() => keep(run()), undo);
+							} else
 								void settle(
 									() => keep(saveGoogleEvent(googleFields({ ...item.google, endTime }))),
 									() => saveGoogleEvent(googleFields(item.google)),
