@@ -18,8 +18,27 @@ export type EventFields = {
 	repeat: Repeat | null;
 	repeatEvery: number;
 	repeatUntil: string | null;
+	/** Ends after this many times; null = until `repeatUntil` or for good. */
+	repeatCount: number | null;
+	/** Weekly: its weekdays, 1 = Monday … 7 = Sunday; null = `date`'s own. */
+	repeatDays: number[] | null;
+	/** Monthly: on `date`'s weekday of the same week of the month (the 2nd Tuesday). */
+	repeatByWeekday: boolean;
+	/** Start days taken out of the series. */
+	skip: string[];
 	note: string | null;
 };
+
+/** What a new event's repeat fields are when nothing is set. */
+export const NO_REPEAT = {
+	repeat: null,
+	repeatEvery: 1,
+	repeatUntil: null,
+	repeatCount: null,
+	repeatDays: null,
+	repeatByWeekday: false,
+	skip: [],
+} satisfies Partial<EventFields>;
 
 /** Where a calendar row comes from: an app, the user's own event, or a Google calendar. */
 export type Source = AppHref | "/calendar" | "/google";
@@ -48,6 +67,8 @@ export type CalEntry = Omit<WeekEntry, "app"> & {
 	end?: string;
 	/** The event behind the row: it opens the event's dialog instead of a link. */
 	event?: EventFields;
+	/** For an event, the start day of the time the row is part of (a repeat's own day). */
+	occurrence?: string;
 	/** A Google event: in its calendar's colour; a writable one opens the dialog. */
 	google?: GoogleRef;
 	/** "#rrggbb": the row's own colour in place of its app's pigment. */
@@ -74,48 +95,159 @@ export function addDays(iso: string, n: number): string {
 export const daysBetween = (from: string, to: string) =>
 	Math.round((toDate(to).getTime() - toDate(from).getTime()) / 86_400_000);
 
-/** The `n`th repeat of a start day, or null when that day doesn't exist (31 Feb, 29 Feb). */
-function nth(start: string, repeat: Repeat, every: number, n: number): string | null {
+/** 1 = Monday … 7 = Sunday. */
+export const weekdayOf = (iso: string) => ((toDate(iso).getUTCDay() + 6) % 7) + 1;
+
+/** Which week of its month a day falls in: 1…4, or -1 for the last (a 5th is the last). */
+export function weekOfMonth(iso: string): number {
+	const n = Math.ceil(Number(iso.slice(8, 10)) / 7);
+	return n >= 5 ? -1 : n;
+}
+
+/** The `n`th (or with -1 the last) `weekday` of a month, as a day. */
+function nthWeekday(year: number, month0: number, weekday: number, n: number): string {
+	if (n === -1) {
+		const last = new Date(Date.UTC(year, month0 + 1, 0));
+		const back = (((last.getUTCDay() + 6) % 7) + 1 - weekday + 7) % 7;
+		last.setUTCDate(last.getUTCDate() - back);
+		return toIso(last);
+	}
+	const first = new Date(Date.UTC(year, month0, 1));
+	const ahead = (weekday - (((first.getUTCDay() + 6) % 7) + 1) + 7) % 7;
+	first.setUTCDate(1 + ahead + (n - 1) * 7);
+	return toIso(first);
+}
+
+/** The start days of the series' `n`th period (a day, a week, a month, a year), in order; empty
+ * when that period has none (31 Feb, 29 Feb). */
+function period(e: EventFields, repeat: Repeat, every: number, n: number): string[] {
 	const step = every * n;
-	if (repeat === "day") return addDays(start, step);
-	if (repeat === "week") return addDays(start, step * 7);
-	const [y, m, d] = start.split("-").map(Number);
+	if (repeat === "day") return [addDays(e.date, step)];
+	if (repeat === "week") {
+		if (!e.repeatDays?.length) return [addDays(e.date, step * 7)];
+		const monday = addDays(e.date, 1 - weekdayOf(e.date) + step * 7);
+		return [...new Set(e.repeatDays)].sort((a, b) => a - b).map((d) => addDays(monday, d - 1));
+	}
+	const [y, m, d] = e.date.split("-").map(Number);
 	const months = repeat === "month" ? step : step * 12;
+	if (repeat === "month" && e.repeatByWeekday) {
+		const target = new Date(Date.UTC(y, m - 1 + months, 1));
+		return [
+			nthWeekday(
+				target.getUTCFullYear(),
+				target.getUTCMonth(),
+				weekdayOf(e.date),
+				weekOfMonth(e.date),
+			),
+		];
+	}
 	const target = new Date(Date.UTC(y, m - 1 + months, d));
 	// The month rolled over: that day isn't in it, so this time it's skipped.
-	return target.getUTCDate() === d ? toIso(target) : null;
+	return target.getUTCDate() === d ? [toIso(target)] : [];
 }
 
 /**
  * The days an event starts on that touch `from`…`to`. A several-day event that started before
- * `from` and still runs counts; a repeat skips months without its day, as calendars do.
+ * `from` and still runs counts; a repeat skips months without its day, as calendars do; a count
+ * includes the days taken out (as Google's does), which are then left out.
  */
 export function startsIn(e: EventFields, from: string, to: string): string[] {
 	const span = e.endDate ? Math.max(0, daysBetween(e.date, e.endDate)) : 0;
 	const earliest = addDays(from, -span);
-	if (!e.repeat) return e.date <= to && e.date >= earliest ? [e.date] : [];
+	const skipped = new Set(e.skip);
+	if (!e.repeat) return e.date <= to && e.date >= earliest && !skipped.has(e.date) ? [e.date] : [];
 	const every = Math.max(1, e.repeatEvery);
 	const last = e.repeatUntil && e.repeatUntil < to ? e.repeatUntil : to;
 	const starts: string[] = [];
-	// Jump close to the range first, so a daily event from years ago costs nothing.
+	// Jump close to the range first, so a daily event from years ago costs nothing; a count has
+	// to be walked from the start.
 	let n = 0;
-	if (e.repeat === "day" || e.repeat === "week") {
-		const unit = (e.repeat === "day" ? 1 : 7) * every;
-		n = Math.max(0, Math.floor(daysBetween(e.date, earliest) / unit));
-	} else {
-		const [y0, m0] = e.date.split("-").map(Number);
-		const [y1, m1] = earliest.split("-").map(Number);
-		const months = (y1 - y0) * 12 + (m1 - m0);
-		const unit = (e.repeat === "month" ? 1 : 12) * every;
-		n = Math.max(0, Math.floor(months / unit) - 1);
+	if (e.repeatCount == null) {
+		if (e.repeat === "day" || e.repeat === "week") {
+			const unit = (e.repeat === "day" ? 1 : 7) * every;
+			n = Math.max(0, Math.floor(daysBetween(e.date, earliest) / unit) - 1);
+		} else {
+			const [y0, m0] = e.date.split("-").map(Number);
+			const [y1, m1] = earliest.split("-").map(Number);
+			const months = (y1 - y0) * 12 + (m1 - m0);
+			const unit = (e.repeat === "month" ? 1 : 12) * every;
+			n = Math.max(0, Math.floor(months / unit) - 1);
+		}
 	}
-	for (let guard = 0; guard < 1000; guard++, n++) {
-		const day = nth(e.date, e.repeat, every, n);
-		if (day == null) continue;
-		if (day > last) break;
-		if (day >= earliest) starts.push(day);
+	let count = 0;
+	for (let guard = 0; guard < 2000; guard++, n++) {
+		for (const day of period(e, e.repeat, every, n)) {
+			if (day < e.date) continue;
+			if (day > last) return starts;
+			count++;
+			if (e.repeatCount != null && count > e.repeatCount) return starts;
+			if (day >= earliest && !skipped.has(day)) starts.push(day);
+		}
 	}
 	return starts;
+}
+
+/** Whether an event repeats (and so a change asks: this one, the following, or all). */
+export const repeats = (e: Pick<EventFields, "repeat">) => e.repeat != null;
+
+/** How many times the series ran before `day` (skipped ones included): for a count split there. */
+function timesBefore(e: EventFields, day: string): number {
+	return startsIn({ ...e, skip: [], repeatCount: null, endDate: null }, e.date, addDays(day, -1))
+		.length;
+}
+
+/** What a change to one day of a repeating event touches. */
+export type Scope = "one" | "following" | "all";
+
+/**
+ * A change to one day (`day`, a start day) of a repeating event, as the events to save:
+ * - "one": the day is taken out of the series and `next` (if any) stands on its own;
+ * - "following": the series stops the day before and `next` (if any) carries on from `day`;
+ * - "all": the series itself becomes `next` (or is deleted: `null` in the list's place).
+ * `next` is the changed event as the dialog or a drag made it from the series; `newId` names the
+ * part that splits off. Pure, and the same twice: a replay saves the same rows.
+ */
+export function splitSeries(
+	series: EventFields,
+	day: string,
+	scope: Scope,
+	next: EventFields | null,
+	newId: string,
+): { save: EventFields[]; remove: string[] } {
+	if (scope === "all")
+		return next
+			? { save: [{ ...next, id: series.id }], remove: [] }
+			: { save: [], remove: [series.id] };
+	if (scope === "one") {
+		const kept = { ...series, skip: [...new Set([...series.skip, day])].sort() };
+		if (!next) return { save: [kept], remove: [] };
+		return { save: [kept, { ...next, id: newId, ...NO_REPEAT }], remove: [] };
+	}
+	// The following: the series ends the day before; what's left of a count goes on with the rest.
+	const before = timesBefore(series, day);
+	const ended =
+		before === 0
+			? null
+			: {
+					...series,
+					repeatUntil: addDays(day, -1),
+					repeatCount: null,
+					skip: series.skip.filter((s) => s < day),
+				};
+	const rest =
+		next &&
+		({
+			...next,
+			// From its first day on, the whole series changes: it keeps its id.
+			id: ended ? newId : series.id,
+			skip: series.skip.filter((s) => s >= day),
+			repeatCount:
+				series.repeatCount != null ? Math.max(1, series.repeatCount - before) : next.repeatCount,
+		} satisfies EventFields);
+	return {
+		save: [...(ended ? [ended] : []), ...(rest ? [rest] : [])],
+		remove: ended || rest ? [] : [series.id],
+	};
 }
 
 const hhmm = (t: string | null) => t?.slice(0, 5) ?? null;
@@ -139,11 +271,29 @@ const REPEAT_TEXT: Record<Repeat, [string, string]> = {
 	year: ["every year", "years"],
 };
 
-/** "every week", "every 2 months". */
-export function repeatText(e: Pick<EventFields, "repeat" | "repeatEvery">): string | null {
+const WEEKDAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const NTH = { 1: "1st", 2: "2nd", 3: "3rd", 4: "4th", [-1]: "last" } as Record<number, string>;
+
+/** "every week", "every 2 months", "every week on Mon, Wed", "every month on the 2nd Tue",
+ * with ", 10 times" when it has a count. */
+export function repeatText(
+	e: Pick<EventFields, "repeat" | "repeatEvery"> &
+		Partial<Pick<EventFields, "date" | "repeatDays" | "repeatByWeekday" | "repeatCount">>,
+): string | null {
 	if (!e.repeat) return null;
 	const [one, many] = REPEAT_TEXT[e.repeat];
-	return e.repeatEvery > 1 ? `every ${e.repeatEvery} ${many}` : one;
+	let text = e.repeatEvery > 1 ? `every ${e.repeatEvery} ${many}` : one;
+	if (e.repeat === "week" && e.repeatDays?.length) {
+		const days = [...new Set(e.repeatDays)].sort((a, b) => a - b);
+		text =
+			days.join() === "1,2,3,4,5" && e.repeatEvery === 1
+				? "every weekday"
+				: `${text} on ${days.map((d) => WEEKDAY_SHORT[d - 1]).join(", ")}`;
+	}
+	if (e.repeat === "month" && e.repeatByWeekday && e.date)
+		text += ` on the ${NTH[weekOfMonth(e.date)]} ${WEEKDAY_SHORT[weekdayOf(e.date) - 1]}`;
+	if (e.repeatCount) text += `, ${e.repeatCount} times`;
+	return text;
 }
 
 /**
@@ -173,6 +323,7 @@ export function eventRows(events: EventFields[], days: string[]): Map<string, Ca
 					time: timed ? (hhmm(e.startTime) ?? undefined) : undefined,
 					end: timed ? (hhmm(e.endTime) ?? undefined) : undefined,
 					event: e,
+					occurrence: start,
 				});
 			}
 		}
@@ -198,7 +349,7 @@ export function withEvents<D extends { date: string; plan: CalEntry[]; done: Cal
 /** What's dragged: a card due that day, or an event (as it falls on that day). */
 export type DragItem =
 	| { kind: "card"; id: string; title: string; from: string; time?: string }
-	| { kind: "event"; event: EventFields; from: string }
+	| { kind: "event"; event: EventFields; from: string; occurrence?: string }
 	| { kind: "google"; google: GoogleRef; from: string };
 
 /** Where it's dropped: a day, and a time when it lands in the hours (none = keeps its own). */
@@ -235,7 +386,8 @@ export function movedEvent(e: EventFields, from: string, to: DropTarget): EventF
 
 /** What dragging a row moves, if it can move: an event, or a card due that day. */
 export function dragOf(entry: CalEntry, date: string): DragItem | undefined {
-	if (entry.event) return { kind: "event", event: entry.event, from: date };
+	if (entry.event)
+		return { kind: "event", event: entry.event, from: date, occurrence: entry.occurrence };
 	if (entry.google?.writable) return { kind: "google", google: entry.google, from: date };
 	if (entry.card)
 		return {
@@ -261,11 +413,34 @@ export function sameDrop(item: DragItem, to: DropTarget): boolean {
 	return time === to.time;
 }
 
+/** One time of a repeating event as an event of its own: the day it starts on, no repeat. */
+export function occurrenceOf(e: EventFields, day: string): EventFields {
+	const span = e.endDate ? daysBetween(e.date, e.endDate) : 0;
+	return { ...e, ...NO_REPEAT, date: day, endDate: span > 0 ? addDays(day, span) : null };
+}
+
+/**
+ * A repeating event changed on one of its days by a drag or a resize: that day alone, taken out
+ * of the series (as calendars do). `change` makes the day's own event from it.
+ */
+export function changeOneDay(
+	series: EventFields,
+	day: string,
+	change: (one: EventFields) => EventFields,
+	newId: string,
+) {
+	return splitSeries(series, day, "one", change(occurrenceOf(series, day)), newId);
+}
+
 /** What dragging a timed row's bottom edge resizes: an event (own or a writable Google one). */
 export function resizeOf(
 	entry: CalEntry,
-): { kind: "event"; event: EventFields } | { kind: "google"; google: GoogleRef } | undefined {
-	if (entry.event && !entry.event.endDate) return { kind: "event", event: entry.event };
+):
+	| { kind: "event"; event: EventFields; occurrence?: string }
+	| { kind: "google"; google: GoogleRef }
+	| undefined {
+	if (entry.event && !entry.event.endDate)
+		return { kind: "event", event: entry.event, occurrence: entry.occurrence };
 	if (entry.google?.writable && !entry.google.endDate)
 		return { kind: "google", google: entry.google };
 	return undefined;
