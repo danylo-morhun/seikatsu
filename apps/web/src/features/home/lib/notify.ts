@@ -16,15 +16,25 @@ import { MODULE_HREFS } from "@/lib/modules";
 const SHOWN = 3;
 
 export function morningBrief(items: QueueItem[]): { title: string; body: string } | null {
-	if (items.length === 0) return null;
-	const late = items.filter((i) => i.tone === "overdue").length;
+	const tasks = items.filter((i) => !i.event);
+	const events = items.filter((i) => i.event);
+	if (tasks.length === 0 && events.length === 0) return null;
+	const late = tasks.filter((i) => i.tone === "overdue").length;
+	// The day's events, when there are any: how many, and the first at a time.
+	const first = events.find((e) => e.time);
+	const eventLine =
+		events.length === 0
+			? null
+			: `${events.length === 1 ? "1 event" : `${events.length} events`}${first ? `, first ${first.time} ${first.title}` : ""}`;
+	if (tasks.length === 0) return { title: "Today on the calendar", body: eventLine ?? "" };
 	const title =
-		items.length === 1
+		tasks.length === 1
 			? "1 thing waiting today"
-			: `${items.length} things waiting today${late > 0 ? `, ${late} late` : ""}`;
-	const named = items.slice(0, SHOWN).map((i) => i.title);
-	const more = items.length - named.length;
-	return { title, body: [...named, more > 0 && `+${more} more`].filter(Boolean).join(" · ") };
+			: `${tasks.length} things waiting today${late > 0 ? `, ${late} late` : ""}`;
+	const named = tasks.slice(0, SHOWN).map((i) => i.title);
+	const more = tasks.length - named.length;
+	const body = [...named, more > 0 && `+${more} more`].filter(Boolean).join(" · ");
+	return { title, body: eventLine ? `${body}\n${eventLine}` : body };
 }
 
 export const notifyToday: Notifier = async ({ workspaceId, prefs, clock, on = MODULE_HREFS }) => {
