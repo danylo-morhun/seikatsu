@@ -53,6 +53,7 @@ export function Chip({
 		<EntryLink
 			href={entry.href}
 			event={entry.event}
+			occurrence={entry.occurrence}
 			google={entry.google}
 			style={colorStyle(entry.color)}
 			drag={date && !done ? dragOf(entry, date) : undefined}
@@ -102,6 +103,7 @@ export function Row({
 			<EntryLink
 				href={entry.href}
 				event={entry.event}
+				occurrence={entry.occurrence}
 				google={entry.google}
 				className="min-w-0 flex-1 outline-none after:absolute after:inset-0 focus-visible:after:rounded-[inherit] focus-visible:after:ring-2 focus-visible:after:ring-ring"
 			>

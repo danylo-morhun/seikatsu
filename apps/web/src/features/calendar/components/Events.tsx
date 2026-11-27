@@ -75,6 +75,7 @@ export function NewEvent({ day }: { day: string }) {
 export function EntryLink({
 	href,
 	event,
+	occurrence,
 	className,
 	title,
 	style,
@@ -84,6 +85,8 @@ export function EntryLink({
 }: {
 	href: string;
 	event?: EventFields;
+	/** A repeating event's day this row shows (its start day). */
+	occurrence?: string;
 	/** A Google event: a writable one opens the dialog; else it opens in Google. */
 	google?: GoogleRef;
 	/** Set: the row can be dragged to another day or time. */
@@ -95,7 +98,7 @@ export function EntryLink({
 }) {
 	const open = useContext(EventsContext);
 	const draft: EventDraft | null = event
-		? event
+		? { ...event, occurrence }
 		: google?.writable
 			? {
 					...google,
