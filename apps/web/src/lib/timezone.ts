@@ -8,7 +8,7 @@ import { currentActor } from "@/lib/actor";
 
 export const TZ_COOKIE = "tz";
 
-function isValidZone(zone: string | undefined): zone is string {
+export function isValidZone(zone: string | undefined): zone is string {
 	if (!zone) return false;
 	try {
 		new Intl.DateTimeFormat("en-US", { timeZone: zone });
