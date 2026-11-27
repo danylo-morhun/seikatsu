@@ -1,39 +1,83 @@
 "use client";
 
 import { cn } from "@seikatsu/ui";
-import { type CSSProperties, type ReactNode, useState, useTransition } from "react";
+import { type CSSProperties, type ReactNode, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { saveGoogleEvent } from "@/features/calendar/actions/google";
 import {
 	type DragItem,
 	type DropTarget,
+	type EventFields,
+	type GoogleRef,
 	movedEvent,
 	movedGoogle,
+	sameDrop,
 } from "@/features/calendar/lib/events";
 import { storeEvent } from "@/features/calendar/lib/offline";
 import { QUEUED_TOAST, type RunResult } from "@/features/pwa/lib/run";
 import { saveCard } from "@/features/seiryu/lib/offline";
 
-/** The drag's own type, so only the calendar's rows drop on its days. */
-const TYPE = "application/x-seikatsu-calendar";
+// Dragging with pointer events, so a mouse and a finger move rows alike: a mouse starts once it
+// has moved a few px, a finger after holding still (a quick swipe still scrolls the page). The
+// day under the pointer is found by its `data-drop-date`, so the rows and slots need no wiring.
+
 /** Dropped in the hours, a row snaps to the quarter hour. */
 const SNAP = 15;
+/** A mouse drags past this many px; less is a click. */
+const MOUSE_SLOP = 4;
+/** A finger holds this long to pick a row up; moving further than TOUCH_SLOP first scrolls. */
+const HOLD_MS = 350;
+const TOUCH_SLOP = 8;
+
+type Over = { date: string; minutes: number | null };
+type Dragging = { title: string; x: number; y: number; over: Over | null };
+
+let dragging: Dragging | null = null;
+const listeners = new Set<() => void>();
+const subscribe = (l: () => void) => {
+	listeners.add(l);
+	return () => listeners.delete(l);
+};
+function set(next: Dragging | null) {
+	dragging = next;
+	for (const l of listeners) l();
+}
+const useDragging = () =>
+	useSyncExternalStore(
+		subscribe,
+		() => dragging,
+		() => null,
+	);
 
 /** How far below its top the dragged row was picked up: it lands with its top where it was. */
 let grabbed = 0;
 
-/** Starts dragging a row: a card due that day, or an event. */
-export function dragProps(item: DragItem | undefined) {
-	if (!item) return {};
-	return {
-		draggable: true,
-		onDragStart: (e: React.DragEvent) => {
-			e.dataTransfer.setData(TYPE, JSON.stringify(item));
-			grabbed = e.clientY - e.currentTarget.getBoundingClientRect().top;
-			e.dataTransfer.effectAllowed = "move";
-		},
+/** A drag or resize just ended: the click that follows it isn't a click. */
+function swallowNextClick() {
+	const stop = (e: MouseEvent) => {
+		e.stopPropagation();
+		e.preventDefault();
 	};
+	window.addEventListener("click", stop, { capture: true, once: true });
+	setTimeout(() => window.removeEventListener("click", stop, { capture: true }), 0);
 }
+
+const hhmm = (m: number) =>
+	`${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+
+/** The day (and time, in the hours) under a point. */
+function overAt(x: number, y: number): Over | null {
+	const el = document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-drop-date]");
+	const date = el?.dataset.dropDate;
+	if (!el || !date) return null;
+	const hour = Number(el.dataset.dropHour) || 0;
+	if (!hour) return { date, minutes: null };
+	const top = el.getBoundingClientRect().top;
+	const minutes = Math.round((((y - top - grabbed) / hour) * 60) / SNAP) * SNAP;
+	return { date, minutes: Math.max(0, Math.min(23 * 60 + 45, minutes)) };
+}
+
+const googleFields = ({ calendarName: _, writable: __, recurring: ___, ...g }: GoogleRef) => g;
 
 /** A card moves its due day (and time) as Seiryu's own date field does; an event shifts. */
 function move(item: DragItem, to: DropTarget): Promise<RunResult> {
@@ -42,21 +86,170 @@ function move(item: DragItem, to: DropTarget): Promise<RunResult> {
 			dueDate: to.date,
 			...(to.time ? { dueTime: to.time } : {}),
 		});
-	if (item.kind === "google") {
-		// Google's own: online only, straight to its calendar.
-		const {
-			calendarName: _,
-			writable: __,
-			recurring: ___,
-			...g
-		} = movedGoogle(item.google, item.from, to);
-		return saveGoogleEvent(g);
-	}
+	// Google's own: online only, straight to its calendar.
+	if (item.kind === "google")
+		return saveGoogleEvent(googleFields(movedGoogle(item.google, item.from, to)));
 	return storeEvent(movedEvent(item.event, item.from, to));
 }
 
-const hhmm = (m: number) =>
-	`${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+/** Puts a moved row back where it was. */
+function moveBack(item: DragItem): Promise<RunResult> {
+	if (item.kind === "card")
+		return saveCard(item.id, item.title, { dueDate: item.from, dueTime: item.time ?? null });
+	if (item.kind === "google") return saveGoogleEvent(googleFields(item.google));
+	return storeEvent(item.event);
+}
+
+/** Saves a change and says how it went; a change that took gets Undo. */
+async function settle(run: () => Promise<RunResult>, undo: (() => Promise<RunResult>) | null) {
+	const result = await run().catch(() => ({ error: "Couldn't move it. Check your connection." }));
+	if ("error" in result) toast.error(result.error);
+	else if ("queued" in result) toast(QUEUED_TOAST);
+	else if (undo)
+		toast("Moved", {
+			action: { label: "Undo", onClick: () => void settle(undo, null) },
+		});
+}
+
+function drop(item: DragItem, over: Over) {
+	const to: DropTarget = {
+		date: over.date,
+		...(over.minutes != null && { time: hhmm(over.minutes) }),
+	};
+	if (sameDrop(item, to)) return;
+	void settle(
+		() => move(item, to),
+		() => moveBack(item),
+	);
+}
+
+/**
+ * Follows one pointer from its press: `onStart` once it's a drag (past the slop for a mouse,
+ * after holding for a finger), `onMove` while it goes, `onEnd` when it's let go. A finger that
+ * moves before the hold lets the page scroll instead.
+ */
+function track(
+	e: React.PointerEvent,
+	handlers: {
+		onStart: (x: number, y: number) => void;
+		onMove: (x: number, y: number) => void;
+		onEnd: (x: number, y: number) => void;
+		onCancel: () => void;
+	},
+	immediate = false,
+) {
+	const touch = e.pointerType !== "mouse";
+	const id = e.pointerId;
+	const [x0, y0] = [e.clientX, e.clientY];
+	let [x, y] = [x0, y0];
+	let active = false;
+	const begin = () => {
+		active = true;
+		if (touch) navigator.vibrate?.(8);
+		handlers.onStart(x, y);
+	};
+	const timer = touch && !immediate ? setTimeout(begin, HOLD_MS) : null;
+	const cleanup = () => {
+		if (timer) clearTimeout(timer);
+		window.removeEventListener("pointermove", onMove);
+		window.removeEventListener("pointerup", onUp);
+		window.removeEventListener("pointercancel", onCancel);
+		window.removeEventListener("touchmove", onTouchMove);
+		window.removeEventListener("contextmenu", onContextMenu, true);
+	};
+	const onMove = (ev: PointerEvent) => {
+		if (ev.pointerId !== id) return;
+		[x, y] = [ev.clientX, ev.clientY];
+		if (!active) {
+			const far = Math.hypot(x - x0, y - y0);
+			if (immediate) begin();
+			else if (touch) {
+				if (far > TOUCH_SLOP) cleanup(); // a swipe: the page scrolls
+				return;
+			} else if (far > MOUSE_SLOP) begin();
+			else return;
+		}
+		handlers.onMove(x, y);
+	};
+	const onUp = (ev: PointerEvent) => {
+		if (ev.pointerId !== id) return;
+		cleanup();
+		if (!active) return;
+		swallowNextClick();
+		handlers.onEnd(ev.clientX, ev.clientY);
+	};
+	const onCancel = (ev: PointerEvent) => {
+		if (ev.pointerId !== id) return;
+		cleanup();
+		if (active) handlers.onCancel();
+	};
+	// Once a finger holds a row, it moves the row, not the page.
+	const onTouchMove = (ev: TouchEvent) => {
+		if (active) ev.preventDefault();
+	};
+	// A long press opens no menu: it picks the row up.
+	const onContextMenu = (ev: Event) => {
+		if (touch) ev.preventDefault();
+	};
+	window.addEventListener("pointermove", onMove);
+	window.addEventListener("pointerup", onUp);
+	window.addEventListener("pointercancel", onCancel);
+	window.addEventListener("touchmove", onTouchMove, { passive: false });
+	window.addEventListener("contextmenu", onContextMenu, true);
+}
+
+/** Classes a draggable row needs: no text selection, no iOS link preview on a long press. */
+export const DRAGGABLE = "select-none [-webkit-touch-callout:none]";
+
+/** Makes a row draggable to another day or time: a card due that day, or an event. */
+export function dragProps(item: DragItem | undefined) {
+	if (!item) return {};
+	const title =
+		item.kind === "card"
+			? item.title
+			: item.kind === "event"
+				? item.event.title
+				: item.google.title;
+	return {
+		// The browser's own drag (of a link, an image) would take over.
+		draggable: false,
+		onDragStart: (e: React.DragEvent) => e.preventDefault(),
+		onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
+			if (e.button !== 0) return;
+			const offset = e.clientY - e.currentTarget.getBoundingClientRect().top;
+			track(e, {
+				onStart: (x, y) => {
+					grabbed = offset;
+					set({ title, x, y, over: overAt(x, y) });
+				},
+				onMove: (x, y) => set({ title, x, y, over: overAt(x, y) }),
+				onEnd: (x, y) => {
+					const over = overAt(x, y);
+					set(null);
+					if (over) drop(item, over);
+				},
+				onCancel: () => set(null),
+			});
+		},
+	};
+}
+
+/** What a row being dragged looks like under the pointer: its title, where it would land. */
+export function DragLayer() {
+	const d = useDragging();
+	if (!d) return null;
+	const at = d.over?.minutes != null ? hhmm(d.over.minutes) : null;
+	return (
+		<div
+			aria-hidden
+			className="glass pointer-events-none fixed top-0 left-0 z-50 flex max-w-56 translate-x-(--x) translate-y-(--y) items-center gap-1.5 rounded-menu px-2.5 py-1.5 text-xs font-medium shadow-lg"
+			style={{ "--x": `${d.x + 12}px`, "--y": `${d.y - 36}px` } as CSSProperties}
+		>
+			{at && <span className="tabular-nums text-primary">{at}</span>}
+			<span className="truncate">{d.title}</span>
+		</div>
+	);
+}
 
 /**
  * A day a row can be dropped on. With `hour` it's the day's column of hours: the drop sets the
@@ -74,58 +267,102 @@ export function DropDay({
 	className?: string;
 	children: ReactNode;
 }) {
-	const [over, setOver] = useState<number | null>(null);
-	const [, startMoving] = useTransition();
-
-	const at = (e: React.DragEvent) => {
-		if (!hour) return 0;
-		const rect = e.currentTarget.getBoundingClientRect();
-		const y = e.clientY - rect.top - grabbed;
-		const minutes = Math.round(((y / hour) * 60) / SNAP) * SNAP;
-		return Math.max(0, Math.min(23 * 60 + 45, minutes));
-	};
-
+	const d = useDragging();
+	const over = d?.over?.date === date ? d.over : null;
 	return (
 		<div
-			className={cn(className, over != null && !hour && "bg-primary/10")}
-			onDragOver={(e) => {
-				if (!e.dataTransfer.types.includes(TYPE)) return;
-				e.preventDefault();
-				e.dataTransfer.dropEffect = "move";
-				setOver(at(e));
-			}}
-			onDragLeave={(e) => {
-				if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(null);
-			}}
-			onDrop={(e) => {
-				const raw = e.dataTransfer.getData(TYPE);
-				const minutes = at(e);
-				setOver(null);
-				if (!raw) return;
-				e.preventDefault();
-				const item = JSON.parse(raw) as DragItem;
-				const to: DropTarget = { date, ...(hour ? { time: hhmm(minutes) } : {}) };
-				startMoving(async () => {
-					const result = await move(item, to).catch(() => ({
-						error: "Couldn't move it. Check your connection.",
-					}));
-					if ("error" in result) toast.error(result.error);
-					else if ("queued" in result) toast(QUEUED_TOAST);
-				});
-			}}
+			data-drop-date={date}
+			data-drop-hour={hour}
+			className={cn(className, over && !hour && "bg-primary/10")}
 		>
 			{children}
-			{hour && over != null && (
+			{hour && over?.minutes != null && (
 				<div
 					aria-hidden
 					className="pointer-events-none absolute inset-x-1 top-(--top) z-30 flex h-0.5 items-center rounded-full bg-primary"
-					style={{ "--top": `${(over / 60) * hour}px` } as CSSProperties}
+					style={{ "--top": `${(over.minutes / 60) * hour}px` } as CSSProperties}
 				>
 					<span className="ml-1 -translate-y-2.5 rounded-sm bg-primary px-1 text-[10px] font-semibold tabular-nums text-primary-foreground">
-						{hhmm(over)}
+						{hhmm(over.minutes)}
 					</span>
 				</div>
 			)}
 		</div>
+	);
+}
+
+/** What resizing an event changes: its end, the same day. */
+export type Resizable =
+	| { kind: "event"; event: EventFields }
+	| { kind: "google"; google: GoogleRef };
+
+/**
+ * The bottom edge of a timed event in the hours: dragged, it sets where the event ends (to the
+ * quarter hour, at least 15 minutes long). The row grows as it's dragged; saved on let go.
+ */
+export function ResizeEdge({
+	item,
+	start,
+	hour,
+}: {
+	item: Resizable;
+	start: string;
+	hour: number;
+}) {
+	const startMin = Number(start.slice(0, 2)) * 60 + Number(start.slice(3, 5));
+	return (
+		<span
+			aria-hidden
+			className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize touch-none"
+			onClick={(e) => e.stopPropagation()}
+			onPointerDown={(e) => {
+				if (e.button !== 0) return;
+				e.stopPropagation();
+				e.preventDefault();
+				const row = e.currentTarget.parentElement;
+				const column = row?.closest<HTMLElement>("[data-drop-date]");
+				if (!row || !column) return;
+				const before = row.style.getPropertyValue("--h");
+				let end = startMin;
+				const endAt = (y: number) => {
+					const m =
+						Math.round((((y - column.getBoundingClientRect().top) / hour) * 60) / SNAP) * SNAP;
+					return Math.max(startMin + SNAP, Math.min(23 * 60 + 59, m));
+				};
+				track(
+					e,
+					{
+						onStart: () => {},
+						onMove: (_, y) => {
+							end = endAt(y);
+							row.style.setProperty("--h", `${((end - startMin) / 60) * hour - 2}px`);
+						},
+						onEnd: () => {
+							const endTime = hhmm(end);
+							const was = item.kind === "event" ? item.event.endTime : item.google.endTime;
+							if (endTime === was) return;
+							// Didn't take: the row goes back to its length.
+							const keep = async (run: Promise<RunResult>) => {
+								const r = await run;
+								if ("error" in r) row.style.setProperty("--h", before);
+								return r;
+							};
+							if (item.kind === "event")
+								void settle(
+									() => keep(storeEvent({ ...item.event, endTime })),
+									() => storeEvent(item.event),
+								);
+							else
+								void settle(
+									() => keep(saveGoogleEvent(googleFields({ ...item.google, endTime }))),
+									() => saveGoogleEvent(googleFields(item.google)),
+								);
+						},
+						onCancel: () => row.style.setProperty("--h", before),
+					},
+					true,
+				);
+			}}
+		/>
 	);
 }
