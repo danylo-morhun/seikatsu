@@ -236,3 +236,52 @@ test.describe("on a touch screen", () => {
 		expect(saved).toEqual({ dueDate: tomorrow, dueTime: "14:00:00" });
 	});
 });
+
+test("a repeating event changes on one day, and is cut from a day on", async ({ page }) => {
+	const wsId = await workspaceId();
+	await db.delete(calendarEvents).where(eq(calendarEvents.workspaceId, wsId));
+	const start = new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10);
+	const [series] = await db
+		.insert(calendarEvents)
+		.values({
+			workspaceId: wsId,
+			title: "E2E standup",
+			date: start,
+			startTime: "09:00",
+			endTime: "09:15",
+			repeat: "day",
+		})
+		.returning({ id: calendarEvents.id });
+	if (!series) throw new Error("no series");
+
+	// Today alone moves to 10:00.
+	await page.goto(`/?v=day&d=${today}`);
+	await page.getByRole("button", { name: /09:00–09:15\s*E2E standup/ }).click();
+	const edit = page.getByRole("dialog", { name: "Edit event" });
+	await edit.getByLabel("From").fill("10:00");
+	await edit.getByLabel("To", { exact: true }).fill("10:15");
+	await edit.getByRole("button", { name: "Save" }).click();
+	await edit.getByRole("button", { name: "This event" }).click();
+	await expect(edit).toBeHidden();
+	await expect(page.getByRole("button", { name: /10:00–10:15\s*E2E standup/ })).toBeVisible();
+
+	let rows = await db.select().from(calendarEvents).where(eq(calendarEvents.workspaceId, wsId));
+	expect(rows).toHaveLength(2);
+	expect(rows.find((r) => r.id === series.id)?.skip).toEqual([today]);
+	expect(rows.find((r) => r.id !== series.id)).toMatchObject({
+		date: today,
+		repeat: null,
+		startTime: "10:00:00",
+	});
+
+	// From tomorrow on, the series is gone; before stays.
+	const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+	await page.goto(`/?v=day&d=${tomorrow}`);
+	await page.getByRole("button", { name: /09:00–09:15\s*E2E standup/ }).click();
+	await edit.getByRole("button", { name: "Delete" }).click();
+	await edit.getByRole("button", { name: "This and following" }).click();
+	await expect(edit).toBeHidden();
+	await expect(page.getByRole("button", { name: /E2E standup/ })).toHaveCount(0);
+	rows = await db.select().from(calendarEvents).where(eq(calendarEvents.id, series.id));
+	expect(rows[0]?.repeatUntil).toBe(today);
+});
