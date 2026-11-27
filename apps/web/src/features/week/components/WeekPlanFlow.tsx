@@ -10,10 +10,10 @@ import { startNavigationProgress } from "@/components/NavigationProgress";
 import { Spinner } from "@/components/Spinner";
 import { Steps, StepTitle } from "@/features/day/components/Steps";
 import type { DayPick } from "@/features/day/lib/day";
+import { sealOf } from "@/features/home/lib/seal";
 import { QUEUED_TOAST, runOrQueue } from "@/features/pwa/lib/run";
 import { saveWeek } from "@/features/week/actions/plan";
 import { type FocusCandidate, MAX_FOCUS } from "@/features/week/lib/rhythm";
-import { APPS_CONFIG } from "@/lib/app-themes";
 import { pageKey } from "@/lib/capture-shortcut";
 
 type Look = {
@@ -34,8 +34,7 @@ const FROM: Record<FocusCandidate["from"], string> = {
 	soon: "Due soon",
 };
 
-const seal = (app: string) =>
-	app in APPS_CONFIG ? APPS_CONFIG[app as keyof typeof APPS_CONFIG] : { theme: "", kanji: "週" };
+const seal = (app: string) => sealOf(app, "週");
 
 /**
  * The week's plan: a look back at the week before (how the days went, which goals need a
