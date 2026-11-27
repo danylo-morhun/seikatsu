@@ -19,7 +19,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@seikatsu/ui";
-import { useEffect, useId, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Spinner } from "@/components/Spinner";
 import { deleteGoogleEvent, saveGoogleEvent } from "@/features/calendar/actions/google";
@@ -573,7 +573,12 @@ export function EventDialog({
 					)}
 
 					{asking ? (
-						<div className="mt-auto space-y-2 pt-2 max-sm:sticky max-sm:bottom-0 max-sm:-mx-6 max-sm:-mb-6 max-sm:border-t max-sm:bg-background max-sm:px-6 max-sm:py-4">
+						<div
+							ref={question}
+							role="group"
+							aria-label={asking === "delete" ? "Delete which of them?" : "Change which of them?"}
+							className="mt-auto space-y-2 pt-2 max-sm:sticky max-sm:bottom-0 max-sm:-mx-6 max-sm:-mb-6 max-sm:border-t max-sm:bg-background max-sm:px-6 max-sm:py-4"
+						>
 							<p className="text-sm font-medium">
 								{asking === "delete" ? "Delete which of them?" : "Change which of them?"}
 							</p>
