@@ -67,10 +67,39 @@ describe("toGoogle", () => {
 
 describe("rruleOf and editOf", () => {
 	it("writes repeats as RRULE", () => {
-		expect(rruleOf({ repeat: "week", repeatEvery: 2, repeatUntil: "2027-01-31" })).toEqual([
-			"RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20270131",
-		]);
-		expect(rruleOf({ repeat: null, repeatEvery: 1, repeatUntil: null })).toEqual([]);
+		const base = {
+			date: "2026-11-25",
+			startTime: null,
+			repeatEvery: 1,
+			repeatUntil: null,
+			repeatCount: null,
+			repeatDays: null,
+			repeatByWeekday: false,
+			skip: [],
+		};
+		const zone = "Europe/Warsaw";
+		expect(
+			rruleOf({ ...base, repeat: "week", repeatEvery: 2, repeatUntil: "2027-01-31" }, zone),
+		).toEqual(["RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20270131"]);
+		expect(rruleOf({ ...base, repeat: null }, zone)).toEqual([]);
+		expect(
+			rruleOf(
+				{ ...base, repeat: "week", repeatDays: [5, 1], repeatCount: 10, skip: ["2026-12-04"] },
+				zone,
+			),
+		).toEqual(["RRULE:FREQ=WEEKLY;BYDAY=MO,FR;COUNT=10", "EXDATE;VALUE=DATE:20261204"]);
+		expect(
+			rruleOf(
+				{
+					...base,
+					repeat: "month",
+					repeatByWeekday: true,
+					startTime: "09:30",
+					skip: ["2026-12-23"],
+				},
+				zone,
+			),
+		).toEqual(["RRULE:FREQ=MONTHLY;BYDAY=4WE", "EXDATE;TZID=Europe/Warsaw:20261223T093000"]);
 	});
 	it("takes seikatsu's own link off an edited note", () => {
 		const edit = editOf(

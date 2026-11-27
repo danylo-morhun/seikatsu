@@ -1,10 +1,38 @@
 // Server-only reads: the user's own events that touch a run of days. Takes a workspace id, so
 // a push or a tool can read them without a session.
 
-import { and, asc, calendarEvents, db, eq, gte, isNotNull, lte, or } from "@seikatsu/db";
+import {
+	and,
+	asc,
+	type CalendarEvent,
+	calendarEvents,
+	db,
+	eq,
+	gte,
+	isNotNull,
+	lte,
+	or,
+} from "@seikatsu/db";
 import type { EventFields } from "@/features/calendar/lib/events";
 
 const hhmm = (t: string | null) => t?.slice(0, 5) ?? null;
+
+const toFields = (r: CalendarEvent): EventFields => ({
+	id: r.id,
+	title: r.title,
+	date: r.date,
+	endDate: r.endDate,
+	startTime: hhmm(r.startTime),
+	endTime: hhmm(r.endTime),
+	repeat: r.repeat,
+	repeatEvery: r.repeatEvery,
+	repeatUntil: r.repeatUntil,
+	repeatCount: r.repeatCount,
+	repeatDays: r.repeatDays,
+	repeatByWeekday: r.repeatByWeekday,
+	skip: r.skip,
+	note: r.note,
+});
 
 export async function readEvents(
 	workspaceId: string,
@@ -27,18 +55,7 @@ export async function readEvents(
 			),
 		)
 		.orderBy(asc(calendarEvents.date), asc(calendarEvents.startTime));
-	return rows.map((r) => ({
-		id: r.id,
-		title: r.title,
-		date: r.date,
-		endDate: r.endDate,
-		startTime: hhmm(r.startTime),
-		endTime: hhmm(r.endTime),
-		repeat: r.repeat,
-		repeatEvery: r.repeatEvery,
-		repeatUntil: r.repeatUntil,
-		note: r.note,
-	}));
+	return rows.map(toFields);
 }
 
 export async function readEvent(workspaceId: string, id: string): Promise<EventFields | null> {
@@ -46,17 +63,5 @@ export async function readEvent(workspaceId: string, id: string): Promise<EventF
 		.select()
 		.from(calendarEvents)
 		.where(and(eq(calendarEvents.workspaceId, workspaceId), eq(calendarEvents.id, id)));
-	if (!r) return null;
-	return {
-		id: r.id,
-		title: r.title,
-		date: r.date,
-		endDate: r.endDate,
-		startTime: hhmm(r.startTime),
-		endTime: hhmm(r.endTime),
-		repeat: r.repeat,
-		repeatEvery: r.repeatEvery,
-		repeatUntil: r.repeatUntil,
-		note: r.note,
-	};
+	return r ? toFields(r) : null;
 }

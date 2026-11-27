@@ -18,6 +18,11 @@ export const eventSchema = z
 		repeat: z.enum(REPEATS).nullable(),
 		repeatEvery: z.int().min(1).max(99),
 		repeatUntil: day.nullable(),
+		// Defaults: an older outbox entry (saved before these existed) replays as before.
+		repeatCount: z.int().min(1).max(999).nullable().default(null),
+		repeatDays: z.array(z.int().min(1).max(7)).max(7).nullable().default(null),
+		repeatByWeekday: z.boolean().default(false),
+		skip: z.array(day).max(1000).default([]),
 		note: z.string().trim().max(2000).nullable(),
 	})
 	.refine((e) => !e.endDate || e.endDate >= e.date, {
@@ -28,6 +33,10 @@ export const eventSchema = z
 		message: "It ends before it starts",
 		path: ["endTime"],
 	})
+	.refine((e) => !(e.repeatUntil && e.repeatCount), {
+		message: "Ends on a day or after a count, not both",
+		path: ["repeatCount"],
+	})
 	.refine((e) => !e.repeatUntil || e.repeatUntil >= e.date, {
 		message: "It stops repeating before it starts",
 		path: ["repeatUntil"],
@@ -36,3 +45,11 @@ export const eventSchema = z
 export type CalendarEventInput = z.input<typeof eventSchema>;
 
 export const deleteEventSchema = z.object({ id: z.uuid() });
+
+/** A change to part of a repeating event: the rows it saves and the ones it deletes, at once. */
+export const eventSetSchema = z.object({
+	save: z.array(eventSchema).max(2),
+	remove: z.array(z.uuid()).max(1),
+});
+
+export type EventSetInput = z.input<typeof eventSetSchema>;

@@ -223,7 +223,11 @@ async function pullShown(api: CalendarApi, workspaceId: string, timeZone: string
 }
 
 /** seikatsu's rows that belong in Google now, by key. */
-async function mirrorItems(workspaceId: string, today: string): Promise<MirrorItem[]> {
+async function mirrorItems(
+	workspaceId: string,
+	today: string,
+	timeZone: string,
+): Promise<MirrorItem[]> {
 	const [ws] = await db
 		.select({ id: workspaces.id, modulesOff: workspaces.modulesOff })
 		.from(workspaces)
@@ -246,7 +250,7 @@ async function mirrorItems(workspaceId: string, today: string): Promise<MirrorIt
 		startTime: e.startTime,
 		endTime: e.endTime,
 		note: e.note,
-		recurrence: rruleOf(e),
+		recurrence: rruleOf(e, timeZone),
 		link: `${base}/?v=day&d=${e.date}`,
 	}));
 	for (const c of data.cardsDue)
@@ -327,7 +331,7 @@ async function mirror(api: CalendarApi, workspaceId: string, ownId: string, time
 
 	rows = await db.select().from(googleMirror).where(eq(googleMirror.workspaceId, workspaceId));
 	const sent = new Map(rows.map((r) => [r.key, r]));
-	const items = await mirrorItems(workspaceId, today);
+	const items = await mirrorItems(workspaceId, today, timeZone);
 	const wanted = new Set(items.map((i) => i.key));
 	for (const item of items) {
 		const body = toGoogle(item, timeZone);

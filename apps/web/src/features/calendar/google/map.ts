@@ -1,7 +1,7 @@
 // Google Calendar's events ⇄ seikatsu's, pure. Google keeps instants with offsets and all-day
 // ends exclusive; seikatsu keeps the user's wall clock and inclusive last days.
 
-import { addDays, type EventFields } from "@/features/calendar/lib/events";
+import { addDays, type EventFields, weekdayOf, weekOfMonth } from "@/features/calendar/lib/events";
 
 /** The fields of a Google event this needs (events.list / insert / patch). */
 export type GoogleEvent = {
@@ -88,13 +88,49 @@ export function fromGoogle(e: GoogleEvent, timeZone: string): CachedEvent | null
 
 const RRULE_FREQ = { day: "DAILY", week: "WEEKLY", month: "MONTHLY", year: "YEARLY" } as const;
 
-/** An event's repeat as Google's RRULE, or none. */
-export function rruleOf(e: Pick<EventFields, "repeat" | "repeatEvery" | "repeatUntil">): string[] {
+const BYDAY = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"];
+
+/** An event's repeat as Google's RRULE (and EXDATE for its days taken out), or none. */
+export function rruleOf(
+	e: Pick<
+		EventFields,
+		| "date"
+		| "startTime"
+		| "repeat"
+		| "repeatEvery"
+		| "repeatUntil"
+		| "repeatCount"
+		| "repeatDays"
+		| "repeatByWeekday"
+		| "skip"
+	>,
+	timeZone: string,
+): string[] {
 	if (!e.repeat) return [];
 	const parts = [`FREQ=${RRULE_FREQ[e.repeat]}`];
 	if (e.repeatEvery > 1) parts.push(`INTERVAL=${e.repeatEvery}`);
-	if (e.repeatUntil) parts.push(`UNTIL=${e.repeatUntil.replaceAll("-", "")}`);
-	return [`RRULE:${parts.join(";")}`];
+	if (e.repeat === "week" && e.repeatDays?.length)
+		parts.push(
+			`BYDAY=${[...new Set(e.repeatDays)]
+				.sort((a, b) => a - b)
+				.map((d) => BYDAY[d - 1])
+				.join(",")}`,
+		);
+	if (e.repeat === "month" && e.repeatByWeekday)
+		parts.push(`BYDAY=${weekOfMonth(e.date)}${BYDAY[weekdayOf(e.date) - 1]}`);
+	if (e.repeatCount) parts.push(`COUNT=${e.repeatCount}`);
+	else if (e.repeatUntil) parts.push(`UNTIL=${e.repeatUntil.replaceAll("-", "")}`);
+	const rules = [`RRULE:${parts.join(";")}`];
+	if (e.skip.length) {
+		const compact = (d: string) => d.replaceAll("-", "");
+		const at = e.startTime ? `T${e.startTime.replace(":", "")}00` : "";
+		rules.push(
+			e.startTime
+				? `EXDATE;TZID=${timeZone}:${e.skip.map((d) => compact(d) + at).join(",")}`
+				: `EXDATE;VALUE=DATE:${e.skip.map(compact).join(",")}`,
+		);
+	}
+	return rules;
 }
 
 /** One row of seikatsu's to write to its Google calendar. */

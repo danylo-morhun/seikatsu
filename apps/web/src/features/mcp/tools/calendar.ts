@@ -32,6 +32,24 @@ const eventFields = {
 	repeat: z.enum(REPEATS).optional().describe("Repeats every day/week/month/year from `date`"),
 	repeatEvery: z.number().int().min(1).max(99).optional().describe("Every 2 weeks = 2"),
 	repeatUntil: day.optional().describe("Last day it repeats on"),
+	repeatCount: z
+		.number()
+		.int()
+		.min(1)
+		.max(999)
+		.optional()
+		.describe("Stops after this many times (not with repeatUntil)"),
+	repeatDays: z
+		.array(z.number().int().min(1).max(7))
+		.max(7)
+		.optional()
+		.describe("Weekly: its weekdays, 1 = Monday … 7 = Sunday"),
+	repeatByWeekday: z
+		.boolean()
+		.optional()
+		.describe(
+			"Monthly: on `date`'s weekday of that week (the 2nd Tuesday) instead of its day number",
+		),
 	note: z.string().max(2000).optional(),
 };
 
@@ -117,6 +135,9 @@ export const calendarTools = [
 				repeat: args.repeat ?? null,
 				repeatEvery: args.repeatEvery ?? 1,
 				repeatUntil: args.repeatUntil ?? null,
+				repeatCount: args.repeatCount ?? null,
+				repeatDays: args.repeatDays ?? null,
+				repeatByWeekday: args.repeatByWeekday ?? false,
 				note: args.note ?? null,
 			});
 			return "error" in result ? result : { id };
@@ -137,6 +158,9 @@ export const calendarTools = [
 			repeat: z.enum(REPEATS).nullable().optional(),
 			repeatEvery: z.number().int().min(1).max(99).optional(),
 			repeatUntil: day.nullable().optional(),
+			repeatCount: z.number().int().min(1).max(999).nullable().optional(),
+			repeatDays: z.array(z.number().int().min(1).max(7)).max(7).nullable().optional(),
+			repeatByWeekday: z.boolean().optional(),
 			note: z.string().max(2000).nullable().optional(),
 		},
 		write: true,
