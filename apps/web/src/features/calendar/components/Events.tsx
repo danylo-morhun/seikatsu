@@ -11,10 +11,9 @@ import {
 	useCallback,
 	useContext,
 	useEffect,
-	useMemo,
 	useState,
 } from "react";
-import { dragProps } from "@/features/calendar/components/Drag";
+import { DRAGGABLE, DragLayer, dragProps } from "@/features/calendar/components/Drag";
 import { EventDialog, type EventDraft } from "@/features/calendar/components/EventDialog";
 import type { DragItem, EventFields, GoogleRef } from "@/features/calendar/lib/events";
 import { pageKey } from "@/lib/capture-shortcut";
@@ -50,6 +49,7 @@ export function EventsProvider({ day, children }: { day: string; children: React
 	return (
 		<EventsContext value={open}>
 			{children}
+			<DragLayer />
 			<EventDialog draft={draft} onClose={() => setDraft(null)} />
 		</EventsContext>
 	);
@@ -116,7 +116,7 @@ export function EntryLink({
 				style={style}
 				{...dragProps(drag)}
 				onClick={() => open(draft)}
-				className={cn("text-left", className)}
+				className={cn("text-left", drag && DRAGGABLE, className)}
 			>
 				{children}
 			</button>
@@ -139,7 +139,7 @@ export function EntryLink({
 			href={href}
 			prefetch={false}
 			title={title}
-			className={className}
+			className={cn(drag && DRAGGABLE, className)}
 			style={style}
 			{...dragProps(drag)}
 		>
@@ -148,33 +148,85 @@ export function EntryLink({
 	);
 }
 
-/** Half hours: a click in an empty stretch of a day's hours starts an event there. */
+/** A click starts an event on the half hour; dragging over the hours sets its length. */
 const STEP = 30;
+const SNAP = 15;
+
+const hh = (m: number) =>
+	`${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 
 /**
- * The empty hours of one day: clicking one opens a new event at that half hour, lasting an hour.
- * Sits under the rows, so a row's own click wins.
+ * The empty hours of one day: a click opens a new event at that half hour, lasting an hour; with
+ * a mouse, dragging down (or up) over the hours opens one for the stretch drawn. Sits under the
+ * rows, so a row's own click wins.
  */
 export function NewAtSlot({ date, hour }: { date: string; hour: number }) {
 	const open = useOpenEvent();
-	const at = useMemo(
-		() => (y: number) => {
-			const minutes = Math.min(23 * 60 + 30, Math.floor(((y / hour) * 60) / STEP) * STEP);
-			const hh = (m: number) =>
-				`${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
-			return { startTime: hh(minutes), endTime: hh(Math.min(23 * 60 + 59, minutes + 60)) };
-		},
-		[hour],
-	);
+	const [range, setRange] = useState<[number, number] | null>(null);
+	const minutesAt = (el: HTMLElement, y: number, step: number) =>
+		Math.max(
+			0,
+			Math.min(
+				24 * 60,
+				Math.round((((y - el.getBoundingClientRect().top) / hour) * 60) / step) * step,
+			),
+		);
 	return (
 		<div
 			aria-hidden
 			className="absolute inset-0 cursor-cell"
-			onClick={(e) => {
-				const rect = e.currentTarget.getBoundingClientRect();
-				open({ date, ...at(e.clientY - rect.top) });
+			onPointerDown={(e) => {
+				if (e.pointerType !== "mouse" || e.button !== 0) return;
+				const el = e.currentTarget;
+				const y0 = e.clientY;
+				const anchor = Math.floor(minutesAt(el, e.clientY, 1) / SNAP) * SNAP;
+				let drawn: [number, number] | null = null;
+				const onMove = (ev: PointerEvent) => {
+					if (!drawn && Math.abs(ev.clientY - y0) < 6) return;
+					const at = minutesAt(el, ev.clientY, SNAP);
+					drawn = at >= anchor ? [anchor, Math.max(anchor + SNAP, at)] : [at, anchor + SNAP];
+					setRange(drawn);
+				};
+				const onUp = () => {
+					window.removeEventListener("pointermove", onMove);
+					window.removeEventListener("pointerup", onUp);
+					setRange(null);
+					if (!drawn) return; // a click: onClick opens the hour
+					// The click that ends the drag isn't one.
+					el.dataset.drawn = "1";
+					const [from, to] = drawn;
+					open({ date, startTime: hh(from), endTime: hh(Math.min(23 * 60 + 59, to)) });
+				};
+				window.addEventListener("pointermove", onMove);
+				window.addEventListener("pointerup", onUp);
 			}}
-		/>
+			onClick={(e) => {
+				const el = e.currentTarget;
+				if (el.dataset.drawn) {
+					delete el.dataset.drawn;
+					return;
+				}
+				const minutes = Math.min(
+					23 * 60 + 30,
+					Math.floor(minutesAt(el, e.clientY, 1) / STEP) * STEP,
+				);
+				open({ date, startTime: hh(minutes), endTime: hh(Math.min(23 * 60 + 59, minutes + 60)) });
+			}}
+		>
+			{range && (
+				<div
+					className="pointer-events-none absolute inset-x-1 top-(--top) h-(--h) rounded-[0.5rem] bg-primary/25 px-2 py-1 text-[11px] font-medium tabular-nums text-primary ring-1 ring-primary/40"
+					style={
+						{
+							"--top": `${(range[0] / 60) * hour}px`,
+							"--h": `${((range[1] - range[0]) / 60) * hour}px`,
+						} as CSSProperties
+					}
+				>
+					{hh(range[0])}–{hh(Math.min(23 * 60 + 59, range[1]))}
+				</div>
+			)}
+		</div>
 	);
 }
 
