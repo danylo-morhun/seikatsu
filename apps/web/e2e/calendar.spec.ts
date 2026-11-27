@@ -152,3 +152,87 @@ test("a card dragged into the hours gets that day and time", async ({ page }) =>
 		.where(eq(seiryuCards.title, "E2E any time today"));
 	expect(saved).toEqual({ dueDate: tomorrow, dueTime: "14:00:00" });
 });
+
+test("dragging over empty hours opens an event for that stretch; its edge sets the end", async ({
+	page,
+}) => {
+	const wsId = await workspaceId();
+	await db.delete(calendarEvents).where(eq(calendarEvents.workspaceId, wsId));
+	await page.goto(`/?v=day&d=${today}`);
+	const hours = page.locator("div.cursor-cell").first();
+	await expect(hours).toBeVisible();
+	await hours.scrollIntoViewIfNeeded();
+	const box = await hours.boundingBox();
+	if (!box) throw new Error("no hours");
+	// 09:00 to 10:30, at 56 px an hour.
+	await page.mouse.move(box.x + 40, box.y + 9 * 56 + 4);
+	await page.mouse.down();
+	await page.mouse.move(box.x + 40, box.y + 10 * 56, { steps: 4 });
+	await page.mouse.move(box.x + 40, box.y + 10.5 * 56, { steps: 4 });
+	await page.mouse.up();
+
+	const dialog = page.getByRole("dialog", { name: "New event" });
+	await expect(dialog).toBeVisible();
+	await expect(dialog.getByLabel("From")).toHaveValue("09:00");
+	await expect(dialog.getByLabel("To", { exact: true })).toHaveValue("10:30");
+	await dialog.getByLabel("Event name").fill("E2E stretch");
+	await dialog.getByRole("button", { name: "Save" }).click();
+	await expect(dialog).toBeHidden();
+
+	// Its bottom edge, dragged half an hour further: it ends at 11:00.
+	const block = page.getByRole("button", { name: /09:00–10:30\s*E2E stretch/ });
+	await expect(block).toBeVisible();
+	const b = await block.boundingBox();
+	if (!b) throw new Error("no block");
+	await page.mouse.move(b.x + b.width / 2, b.y + b.height - 2);
+	await page.mouse.down();
+	await page.mouse.move(b.x + b.width / 2, b.y + b.height + 28, { steps: 4 });
+	await page.mouse.up();
+	await expect(page.getByRole("button", { name: /09:00–11:00\s*E2E stretch/ })).toBeVisible();
+	await expect(page.getByRole("dialog")).toHaveCount(0);
+	const [saved] = await db
+		.select()
+		.from(calendarEvents)
+		.where(eq(calendarEvents.workspaceId, wsId));
+	expect(saved).toMatchObject({ title: "E2E stretch", startTime: "09:00:00", endTime: "11:00:00" });
+});
+
+test.describe("on a touch screen", () => {
+	test.use({ hasTouch: true });
+
+	test("a held card follows the finger to another day's hour", async ({ page }) => {
+		const isSunday = new Date().getUTCDay() === 0;
+		test.skip(isSunday, "no later day this week to drop on");
+		const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+		await page.goto("/?v=week");
+		const card = page.getByRole("link", { name: "E2E any time today" });
+		await expect(card).toBeVisible();
+		const weekday = new Date(`${tomorrow}T00:00:00Z`).getUTCDay();
+		const column = page.locator("div.cursor-cell").nth(weekday === 0 ? 6 : weekday - 1);
+		await column.scrollIntoViewIfNeeded();
+		const from = await card.boundingBox();
+		const to = await column.boundingBox();
+		if (!from || !to) throw new Error("no boxes");
+
+		const cdp = await page.context().newCDPSession(page);
+		const touch = (type: "touchStart" | "touchMove" | "touchEnd", x: number, y: number) =>
+			cdp.send("Input.dispatchTouchEvent", {
+				type,
+				touchPoints: type === "touchEnd" ? [] : [{ x, y }],
+			});
+		const [x0, y0] = [from.x + 6, from.y + 4];
+		const [x1, y1] = [to.x + 20, to.y + 14 * 56 + 4];
+		await touch("touchStart", x0, y0);
+		await page.waitForTimeout(500); // held: picked up
+		for (let i = 1; i <= 8; i++)
+			await touch("touchMove", x0 + ((x1 - x0) * i) / 8, y0 + ((y1 - y0) * i) / 8);
+		await touch("touchEnd", x1, y1);
+
+		await expect(page.getByRole("link", { name: /14:00\s*E2E any time today/ })).toBeVisible();
+		const [saved] = await db
+			.select({ dueDate: seiryuCards.dueDate, dueTime: seiryuCards.dueTime })
+			.from(seiryuCards)
+			.where(eq(seiryuCards.title, "E2E any time today"));
+		expect(saved).toEqual({ dueDate: tomorrow, dueTime: "14:00:00" });
+	});
+});
