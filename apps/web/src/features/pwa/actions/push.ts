@@ -38,6 +38,7 @@ const prefsSchema = z.object({
 	kurojiWeekly: z.boolean(),
 	weekRecap: z.boolean(),
 	seiryuReminders: z.boolean(),
+	eventReminders: z.boolean(),
 	eveningClose: z.boolean(),
 	eveningTime: time,
 });

@@ -2,6 +2,7 @@ import { db, eq, inArray, notificationPrefs, pushSubscriptions, workspaces } fro
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { notifyAisha } from "@/features/aisha/lib/notify";
+import { notifyCalendar } from "@/features/calendar/lib/notify";
 import { notifyEvening } from "@/features/day/lib/notify";
 import { notifyToday } from "@/features/home/lib/notify";
 import { notifyKeizoku } from "@/features/keizoku/lib/notify";
@@ -22,6 +23,7 @@ const NOTIFIERS: Record<string, [Notifier, ModuleHref | null]> = {
 	kurojiBudget: [notifyKurojiBudget, "/kuroji"],
 	week: [notifyWeek, "/week"],
 	seiryu: [notifySeiryu, "/seiryu"],
+	calendar: [notifyCalendar, null],
 };
 
 // Every 15 minutes from cron-job.org, with GitHub Actions (.github/workflows/notify.yml) as a

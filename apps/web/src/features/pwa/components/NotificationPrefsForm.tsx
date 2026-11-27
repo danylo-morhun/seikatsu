@@ -48,7 +48,13 @@ const ROWS: Row[] = [
 		app: "生 Today",
 		label: "Morning: what's waiting",
 		detail:
-			"Today's list in one push: cards due, calls, follow-ups, wants to decide, payments to add, the car. Opens the morning's plan until the day is planned.",
+			"Today's list in one push: cards due, calls, follow-ups, wants to decide, payments to add, the car, and the day's events. Opens the morning's plan until the day is planned.",
+	},
+	{
+		key: "eventReminders",
+		app: "予 Calendar",
+		label: "Event reminders",
+		detail: "15 minutes before each event with a time, yours and your Google calendars'.",
 	},
 	{
 		key: "seiryuReminders",
@@ -100,6 +106,7 @@ const DEFAULTS: PrefsInput = {
 	kurojiWeekly: true,
 	weekRecap: false,
 	seiryuReminders: true,
+	eventReminders: true,
 	eveningClose: true,
 	eveningTime: "19:00",
 };
