@@ -25,6 +25,7 @@ const ev = (over: Partial<EventFields>): EventFields => ({
 	repeatDays: null,
 	repeatByWeekday: false,
 	skip: [],
+	location: null,
 	note: null,
 	...over,
 });

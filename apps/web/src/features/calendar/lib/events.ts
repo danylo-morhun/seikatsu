@@ -26,6 +26,8 @@ export type EventFields = {
 	repeatByWeekday: boolean;
 	/** Start days taken out of the series. */
 	skip: string[];
+	/** Where: a place, an address, a call's link. */
+	location: string | null;
 	note: string | null;
 };
 
@@ -316,7 +318,12 @@ export function eventRows(events: EventFields[], days: string[]): Map<string, Ca
 					key: `event:${e.id}:${date}`,
 					app: "/calendar",
 					title: e.title,
-					note: [span > 0 ? `day ${i + 1} of ${span + 1}` : whenOf(e), repeatText(e), e.note]
+					note: [
+						span > 0 ? `day ${i + 1} of ${span + 1}` : whenOf(e),
+						e.location,
+						repeatText(e),
+						e.note,
+					]
 						.filter(Boolean)
 						.join(" · "),
 					href: `/?v=day&d=${date}`,

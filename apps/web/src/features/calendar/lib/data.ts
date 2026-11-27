@@ -31,6 +31,7 @@ const toFields = (r: CalendarEvent): EventFields => ({
 	repeatDays: r.repeatDays,
 	repeatByWeekday: r.repeatByWeekday,
 	skip: r.skip,
+	location: r.location,
 	note: r.note,
 });
 

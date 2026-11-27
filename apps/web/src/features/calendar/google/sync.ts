@@ -251,6 +251,7 @@ async function mirrorItems(
 		endTime: e.endTime,
 		note: e.note,
 		recurrence: rruleOf(e, timeZone),
+		location: e.location,
 		link: `${base}/?v=day&d=${e.date}`,
 	}));
 	for (const c of data.cardsDue)
@@ -414,6 +415,7 @@ async function changedInGoogle(
 			endDate: edit.endDate,
 			startTime: edit.startTime,
 			endTime: edit.startTime ? edit.endTime : null,
+			location: edit.location,
 			note: edit.note,
 		});
 		return !("error" in result);
