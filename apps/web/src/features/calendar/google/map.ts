@@ -144,6 +144,7 @@ export type MirrorItem = {
 	endTime?: string | null;
 	note?: string | null;
 	recurrence?: string[];
+	location?: string | null;
 	/** Back to it in seikatsu. */
 	link: string;
 };
@@ -171,6 +172,7 @@ export function toGoogle(item: MirrorItem, timeZone: string) {
 				}
 			: { date: addDays(last, 1) },
 		...(item.recurrence?.length ? { recurrence: item.recurrence } : {}),
+		...(item.location ? { location: item.location } : {}),
 		extendedProperties: { private: { seikatsuKey: item.key } },
 		reminders: { useDefault: false },
 		transparency: timed ? "opaque" : "transparent",

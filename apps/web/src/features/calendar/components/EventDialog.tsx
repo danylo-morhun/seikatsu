@@ -117,9 +117,15 @@ export function EventDialog({
 	const [ends, setEnds] = useState<Ends>("never");
 	const [days, setDays] = useState<number[]>([]);
 	const [byWeekday, setByWeekday] = useState(false);
+	const [location, setLocation] = useState("");
 	const [note, setNote] = useState("");
 	/** Saving or deleting one day of a repeating event: which of them it's for. */
 	const [asking, setAsking] = useState<"save" | "delete" | null>(null);
+	const question = useRef<HTMLDivElement>(null);
+	// The question sits at the bottom of a long form: brought into view when it's asked.
+	useEffect(() => {
+		if (asking) question.current?.scrollIntoView({ block: "nearest" });
+	}, [asking]);
 	const [error, setError] = useState<string | null>(null);
 	const [isSaving, startSaving] = useTransition();
 
@@ -141,6 +147,7 @@ export function EventDialog({
 		setEnds(draft.repeatCount ? "after" : draft.repeatUntil ? "on" : "never");
 		setDays(draft.repeatDays ?? []);
 		setByWeekday(draft.repeatByWeekday ?? false);
+		setLocation(draft.location ?? "");
 		setNote(draft.note ?? "");
 		setError(null);
 		setAsking(null);
@@ -170,6 +177,7 @@ export function EventDialog({
 				repeatByWeekday: repeat === "month" && byWeekday,
 				skip: draft?.skip ?? [],
 			}),
+			location: location.trim() || null,
 			note: note.trim() || null,
 		};
 		const parsed = eventSchema.safeParse(input);
@@ -230,6 +238,7 @@ export function EventDialog({
 				repeatDays: ______,
 				repeatByWeekday: _______,
 				skip: ________,
+				location: _________,
 				...fields
 			} = parsed;
 			startSaving(async () => {
@@ -531,13 +540,27 @@ export function EventDialog({
 						</div>
 					)}
 
+					{!google && (
+						<div className="space-y-2">
+							<Label htmlFor={`${id}-where`}>Where</Label>
+							<Input
+								id={`${id}-where`}
+								value={location}
+								maxLength={500}
+								autoComplete="off"
+								placeholder="A place, an address, a call's link"
+								onChange={(e) => setLocation(e.target.value)}
+							/>
+						</div>
+					)}
+
 					<div className="space-y-2">
 						<Label htmlFor={`${id}-note`}>Note</Label>
 						<textarea
 							id={`${id}-note`}
 							value={note}
 							maxLength={2000}
-							placeholder="Where, who, what to bring"
+							placeholder="Who, what to bring"
 							onChange={(e) => setNote(e.target.value)}
 							className={`${FIELD_TEXTAREA} max-h-40 min-h-16`}
 						/>

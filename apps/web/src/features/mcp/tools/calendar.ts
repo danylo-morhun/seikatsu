@@ -50,6 +50,7 @@ const eventFields = {
 		.describe(
 			"Monthly: on `date`'s weekday of that week (the 2nd Tuesday) instead of its day number",
 		),
+	location: z.string().max(500).optional().describe("Where: a place, an address, a call's link"),
 	note: z.string().max(2000).optional(),
 };
 
@@ -138,6 +139,7 @@ export const calendarTools = [
 				repeatCount: args.repeatCount ?? null,
 				repeatDays: args.repeatDays ?? null,
 				repeatByWeekday: args.repeatByWeekday ?? false,
+				location: args.location ?? null,
 				note: args.note ?? null,
 			});
 			return "error" in result ? result : { id };
@@ -161,6 +163,7 @@ export const calendarTools = [
 			repeatCount: z.number().int().min(1).max(999).nullable().optional(),
 			repeatDays: z.array(z.number().int().min(1).max(7)).max(7).nullable().optional(),
 			repeatByWeekday: z.boolean().optional(),
+			location: z.string().max(500).nullable().optional(),
 			note: z.string().max(2000).nullable().optional(),
 		},
 		write: true,

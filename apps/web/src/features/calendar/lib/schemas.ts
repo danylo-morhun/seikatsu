@@ -23,6 +23,7 @@ export const eventSchema = z
 		repeatDays: z.array(z.int().min(1).max(7)).max(7).nullable().default(null),
 		repeatByWeekday: z.boolean().default(false),
 		skip: z.array(day).max(1000).default([]),
+		location: z.string().trim().max(500).nullable().default(null),
 		note: z.string().trim().max(2000).nullable(),
 	})
 	.refine((e) => !e.endDate || e.endDate >= e.date, {
