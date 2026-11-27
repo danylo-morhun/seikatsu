@@ -6,7 +6,7 @@
 
 import type { DayPick } from "@seikatsu/db";
 import type { DocumentFormValues, ServiceFormValues } from "@/features/aisha/lib/aisha-schemas";
-import type { CalendarEventInput } from "@/features/calendar/lib/schemas";
+import type { CalendarEventInput, EventSetInput } from "@/features/calendar/lib/schemas";
 import type { BuyValues, ItemFormValues, MoveTarget } from "@/features/hoshii/lib/hoshii-schemas";
 import type { HabitPatch } from "@/features/keizoku/lib/keizoku-schemas";
 import type { TransactionInput } from "@/features/kuroji/actions/transactions";
@@ -20,6 +20,7 @@ export interface OfflineOps {
 	/** The whole event, by the id made on the device. */
 	"calendar.saveEvent": CalendarEventInput;
 	"calendar.deleteEvent": { id: string };
+	"calendar.saveEventSet": EventSetInput;
 	"day.snooze": { key: string; until: string };
 	"day.unsnooze": { key: string };
 	"day.savePlan": { day: string; picks: DayPick[] };
