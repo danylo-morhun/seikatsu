@@ -50,6 +50,8 @@ export const calendarEvents = pgTable(
 		repeatByWeekday: boolean("repeat_by_weekday").notNull().default(false),
 		/** Days of a repeating event taken out (deleted or changed apart): its start days. */
 		skip: date("skip").array().notNull().default([]),
+		/** Where it is: a place, an address, a call's link. */
+		location: text("location"),
 		note: text("note"),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
