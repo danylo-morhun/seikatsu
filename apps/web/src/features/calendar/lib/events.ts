@@ -191,6 +191,16 @@ export function startsIn(e: EventFields, from: string, to: string): string[] {
 	return starts;
 }
 
+/** The start day nearest `today` going forward (or, when it has ended, its last one): where a
+ * search sends the user. */
+export function nearestStart(e: EventFields, today: string): string {
+	return (
+		startsIn(e, today, addDays(today, 730))[0] ??
+		startsIn(e, addDays(today, -730), addDays(today, -1)).at(-1) ??
+		e.date
+	);
+}
+
 /** Whether an event repeats (and so a change asks: this one, the following, or all). */
 export const repeats = (e: Pick<EventFields, "repeat">) => e.repeat != null;
 

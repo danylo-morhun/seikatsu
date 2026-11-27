@@ -19,7 +19,7 @@ import { ForgetOfflinePages } from "@/features/pwa/components/ForgetOfflinePages
 import { getCurrentWorkspace } from "@/lib/session";
 import { getUserToday } from "@/lib/timezone";
 
-type Search = { v?: string; d?: string };
+type Search = { v?: string; d?: string; q?: string };
 
 export default async function HomePage({ searchParams }: { searchParams: Promise<Search> }) {
 	const session = await auth();
@@ -62,7 +62,13 @@ async function Today({
 	const view = homeViewOf(search.v, jar.get(HOME_COOKIE)?.value);
 	if (view !== "widgets")
 		return (
-			<CalendarView ws={workspace} today={today} view={view} anchor={anchorOf(search.d, today)} />
+			<CalendarView
+				ws={workspace}
+				today={today}
+				view={view}
+				anchor={anchorOf(search.d, today)}
+				q={search.q?.slice(0, 100) ?? ""}
+			/>
 		);
 	// Which apps are in use decides the tiles; each tile's figures then stream in on their own.
 	const started = await getStarted(workspace);

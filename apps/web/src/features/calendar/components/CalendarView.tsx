@@ -4,9 +4,11 @@ import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { PageTab, PageTabs } from "@/components/PageTabs";
 import { CalendarKeys } from "@/features/calendar/components/CalendarKeys";
+import { CalendarSearch } from "@/features/calendar/components/CalendarSearch";
 import { DayList } from "@/features/calendar/components/DayList";
 import { EventsProvider, NewEvent } from "@/features/calendar/components/Events";
 import { MonthGrid } from "@/features/calendar/components/MonthGrid";
+import { SearchResults } from "@/features/calendar/components/SearchResults";
 import { TimeGrid } from "@/features/calendar/components/TimeGrid";
 import { readGoogleEvents } from "@/features/calendar/google/sync";
 import {
@@ -24,6 +26,7 @@ import {
 } from "@/features/calendar/lib/calendar";
 import { readEvents } from "@/features/calendar/lib/data";
 import { type CalDay, eventRows, googleRows, withEvents } from "@/features/calendar/lib/events";
+import { searchEvents } from "@/features/calendar/lib/search";
 import { Invite } from "@/features/day/components/Invite";
 import { MyDay } from "@/features/day/components/MyDay";
 import { loadDay } from "@/features/day/lib/data";
@@ -51,13 +54,17 @@ export async function CalendarView({
 	today,
 	view,
 	anchor,
+	q = "",
 }: {
 	ws: Workspace;
 	today: string;
 	view: View;
 	/** Any day the view should hold. */
 	anchor: string;
+	/** Searching the events: what's found shows in place of the days. */
+	q?: string;
 }) {
+	const found = q.trim().length >= 2 ? await searchEvents(ws.id, q, today) : null;
 	const dates = daysOf(view, anchor);
 	const on = modulesOn(ws.modulesOff);
 	const fmt = (amount: number, currency = ws.baseCurrency) => money(amount, currency);
@@ -128,6 +135,7 @@ export async function CalendarView({
 						</p>
 					</div>
 					<div className="flex max-w-full flex-wrap items-center gap-2">
+						<CalendarSearch q={q} />
 						<NewEvent day={current ? today : anchor} />
 						<nav aria-label="Dates" className="flex items-center rounded-button bg-surface p-0.5">
 							<StepLink href={prev} label="Back">
@@ -163,7 +171,8 @@ export async function CalendarView({
 				</header>
 
 				<div className="animate-rise [--i:1]">
-					{view === "month" && (
+					{found && <SearchResults q={q.trim()} found={found} today={today} />}
+					{!found && view === "month" && (
 						<MonthGrid
 							days={days}
 							figures={figures}
@@ -172,7 +181,7 @@ export async function CalendarView({
 							money={fmt}
 						/>
 					)}
-					{view === "week" && (
+					{!found && view === "week" && (
 						<div className="space-y-6">
 							{rhythm && <WeekRhythmHead parts={rhythm} today={today} />}
 							<div className="max-md:hidden">
@@ -184,7 +193,7 @@ export async function CalendarView({
 							{rhythm && data.habits && <HabitWeek habits={data.habits} today={today} />}
 						</div>
 					)}
-					{view === "day" && (
+					{!found && view === "day" && (
 						// The hours at the left, the day's whole list (with notes) beside them.
 						<div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
 							<div className="max-lg:hidden">
@@ -208,7 +217,9 @@ export async function CalendarView({
 							</div>
 						</div>
 					)}
-					{view === "list" && <DayList days={days} today={today} figures={figures} money={fmt} />}
+					{!found && view === "list" && (
+						<DayList days={days} today={today} figures={figures} money={fmt} />
+					)}
 				</div>
 			</div>
 		</EventsProvider>
