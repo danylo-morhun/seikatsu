@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+	barsOf,
+	type CalDay,
+	type CalEntry,
 	type EventFields,
 	eventRows,
 	googleRows,
@@ -253,5 +256,39 @@ describe("splitSeries", () => {
 			remove: [],
 		});
 		expect(splitSeries(series, day, "all", null, "e2")).toEqual({ save: [], remove: ["e1"] });
+	});
+});
+
+describe("barsOf", () => {
+	const week = Array.from({ length: 7 }, (_, i) => `2026-11-${String(23 + i).padStart(2, "0")}`);
+	const day = (date: string, plan: CalEntry[]): CalDay => ({
+		date,
+		isToday: false,
+		past: false,
+		done: [],
+		plan,
+	});
+
+	it("lays several-day events across the week in lanes, the rest stay rows", () => {
+		const trip = ev({ id: "trip", date: "2026-11-21", endDate: "2026-11-25" });
+		const fair = ev({ id: "fair", date: "2026-11-24", endDate: "2026-11-26" });
+		const once = ev({ id: "once", date: "2026-11-24" });
+		const rows = eventRows([trip, fair, once], week);
+		const { bars, lanes, rest } = barsOf(week.map((d) => day(d, rows.get(d) ?? [])));
+		expect(
+			bars.map(({ entry, col, len, lane, before, after }) => [
+				entry.title && entry.key.split(":")[1],
+				col,
+				len,
+				lane,
+				before,
+				after,
+			]),
+		).toEqual([
+			["trip", 0, 3, 0, true, false],
+			["fair", 1, 3, 1, false, false],
+		]);
+		expect(lanes).toEqual([1, 2, 2, 2, 0, 0, 0]);
+		expect(rest[1].map((e) => e.key)).toEqual(["event:once:2026-11-24"]);
 	});
 });

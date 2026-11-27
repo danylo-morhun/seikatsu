@@ -2,9 +2,9 @@ import { cn } from "@seikatsu/ui";
 import Link from "next/link";
 import { DropDay } from "@/features/calendar/components/Drag";
 import { NewOnDay } from "@/features/calendar/components/Events";
-import { Chip, Recap, Seals } from "@/features/calendar/components/parts";
+import { Chip, Lanes, Recap, Seals } from "@/features/calendar/components/parts";
 import { type DayFigures, hrefOf } from "@/features/calendar/lib/calendar";
-import type { CalDay } from "@/features/calendar/lib/events";
+import { barsOf, type CalDay } from "@/features/calendar/lib/events";
 import type { Money } from "@/features/week/lib/week";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -31,6 +31,8 @@ export function MonthGrid({
 	money: Money;
 }) {
 	const weeks = days.length / 7;
+	// Each week's several-day events as bars across it.
+	const laid = Array.from({ length: weeks }, (_, w) => barsOf(days.slice(w * 7, w * 7 + 7)));
 	return (
 		<div className="group-card overflow-hidden p-0!">
 			<div className="grid grid-cols-7 border-b border-rule">
@@ -58,7 +60,13 @@ export function MonthGrid({
 			>
 				{days.map((d, i) => {
 					const outside = d.date.slice(0, 7) !== month;
-					const plan = d.plan;
+					const week = laid[Math.floor(i / 7)];
+					const col = i % 7;
+					const plan = week?.rest[col] ?? d.plan;
+					const lanes = week?.lanes[col] ?? 0;
+					const bars = (week?.bars ?? []).filter((b) => b.col === col);
+					// The lanes count against the rows a cell has room for.
+					const room = Math.max(0, SHOWN - lanes);
 					const figs = d.date <= today ? figures.get(d.date) : undefined;
 					return (
 						<li
@@ -94,9 +102,15 @@ export function MonthGrid({
 									</span>
 									<NewOnDay date={d.date} label={d.date} />
 								</div>
+								{/* Several-day events, level across the week: right under the dates. */}
+								{lanes > 0 && (
+									<div className="relative flex flex-col gap-0.5 max-sm:hidden">
+										<Lanes n={lanes} bars={bars} />
+									</div>
+								)}
 								{/* A phone's cell: the kanji of the apps with something on. */}
 								<span className={cn("relative sm:hidden", outside && "opacity-40")}>
-									<Seals apps={[...new Set([...plan, ...d.done].map((e) => e.app))]} />
+									<Seals apps={[...new Set([...d.plan, ...d.done].map((e) => e.app))]} />
 								</span>
 								<div
 									className={cn(
@@ -105,12 +119,12 @@ export function MonthGrid({
 									)}
 								>
 									{figs && <Recap figures={figs} money={money} className="px-1 pb-0.5" />}
-									{plan.slice(0, SHOWN).map((e) => (
+									{plan.slice(0, room).map((e) => (
 										<Chip key={e.key} entry={e} date={d.date} />
 									))}
-									{plan.length > SHOWN && (
+									{plan.length > room && (
 										<span className="px-1.5 text-[11px] font-medium text-muted-foreground group-hover/cell:text-foreground">
-											{plan.length - SHOWN} more
+											{plan.length - room} more
 										</span>
 									)}
 								</div>
