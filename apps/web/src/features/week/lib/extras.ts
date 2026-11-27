@@ -3,7 +3,7 @@
 // Server-only: reads the agenda.
 
 import { loadAgenda } from "@/features/home/lib/agenda";
-import { buildQueue } from "@/features/home/lib/queue";
+import { buildQueue, isAppRow } from "@/features/home/lib/queue";
 import type { Money, WeekEntry } from "@/features/week/lib/week";
 import type { Workspace } from "@/lib/session";
 
@@ -26,7 +26,8 @@ export async function loadExtras(
 	// What's late from before today, as Today lists it: it doesn't drop off the days.
 	const carried: WeekEntry[] = days.includes(today)
 		? buildQueue(agenda, today, money)
-				.flatMap((q) => (q.tone === "overdue" && q.app !== "/goals" ? [{ ...q, app: q.app }] : []))
+				.filter(isAppRow)
+				.filter((q) => q.tone === "overdue")
 				.map((q) => {
 					const cardId = q.app === "/seiryu" ? q.key.slice("seiryu:".length) : null;
 					return {
@@ -45,7 +46,8 @@ export async function loadExtras(
 	);
 	const later = (agenda.snoozed ?? []).flatMap((s) => {
 		const q = rows.get(s.key);
-		if (!q || q.app === "/goals" || !days.includes(s.until)) return [];
+		// Events are on the days already, on their own.
+		if (!q || !isAppRow(q) || !days.includes(s.until)) return [];
 		return [
 			{
 				date: s.until,

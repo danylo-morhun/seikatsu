@@ -95,7 +95,9 @@ export function pickCandidates(
 	for (const pick of carried) add({ ...pick, note: notes.get(pick.key) ?? "", carried: true });
 	for (const pick of weekFocus)
 		add({ ...pick, note: notes.get(pick.key) ?? "", carried: false, week: true });
-	for (const item of queue) add({ ...pickOf(item), note: item.note, carried: false });
+	// An event happens on its own time: it sits in the day's hours, it isn't one of its three.
+	for (const item of queue)
+		if (!item.event) add({ ...pickOf(item), note: item.note, carried: false });
 	for (const card of focus)
 		add({
 			key: `seiryu:${card.id}`,

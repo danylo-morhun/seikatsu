@@ -11,11 +11,13 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { Kbd } from "@/components/Kbd";
+import { colorStyle } from "@/features/calendar/lib/source";
 import { loadDialog } from "@/features/capture/components/CaptureButton";
 import { openCapture } from "@/features/capture/lib/key";
 import { LaterMenu } from "@/features/day/components/LaterMenu";
 import { clearDue, putOff } from "@/features/day/lib/offline";
 import type { QueueItem } from "@/features/home/lib/queue";
+import { sealOf } from "@/features/home/lib/seal";
 import { keepWant, releaseWant } from "@/features/hoshii/lib/decide";
 import { LazyAddTransactionModal } from "@/features/kuroji/components/LazyAddTransactionModal";
 import type { FundDue } from "@/features/kuroji/lib/agenda";
@@ -23,7 +25,6 @@ import type { AddTransactionFormValues } from "@/features/kuroji/lib/transaction
 import { ghostAll, ghostedText } from "@/features/kyuu/lib/offline";
 import { QUEUED_TOAST } from "@/features/pwa/lib/run";
 import { finishCard } from "@/features/seiryu/lib/finish";
-import { APPS_CONFIG } from "@/lib/app-themes";
 
 /** One line about anything: opens capture with it, already reading. */
 export function CaptureBar() {
@@ -201,8 +202,7 @@ function QueueRow({
 	settle: (key: string, run: () => Promise<{ error: string } | object>) => void;
 	handle: (key: string, act: (back: () => void) => Promise<unknown>) => void;
 }) {
-	// Goals are the shell's own: its ink seal, no app pigment.
-	const app = item.app === "/goals" ? { theme: "", kanji: "志" } : APPS_CONFIG[item.app];
+	const app = sealOf(item.app);
 	const { act } = item;
 	return (
 		<li className="flex min-h-14 items-center gap-3 py-2">
@@ -213,6 +213,7 @@ function QueueRow({
 						app.theme,
 						"flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-[13px] font-semibold text-primary",
 					)}
+					style={colorStyle(item.color)}
 				>
 					{app.kanji}
 				</span>
@@ -230,20 +231,22 @@ function QueueRow({
 					{item.note}
 				</span>
 			</Link>
-			<LaterMenu
-				compact
-				title={item.title}
-				today={today}
-				onPick={(until) => handle(item.key, (back) => putOff(item, until, back))}
-				onNoDate={
-					item.cardId
-						? () => {
-								const cardId = item.cardId as string;
-								settle(item.key, () => clearDue({ cardId, title: item.title }));
-							}
-						: undefined
-				}
-			/>
+			{!item.event && (
+				<LaterMenu
+					compact
+					title={item.title}
+					today={today}
+					onPick={(until) => handle(item.key, (back) => putOff(item, until, back))}
+					onNoDate={
+						item.cardId
+							? () => {
+									const cardId = item.cardId as string;
+									settle(item.key, () => clearDue({ cardId, title: item.title }));
+								}
+							: undefined
+					}
+				/>
+			)}
 			{act.kind === "done" && (
 				<Button
 					variant="outline"
