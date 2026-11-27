@@ -20,15 +20,14 @@ import {
 } from "@/features/day/lib/day";
 import { clearDue, planDay, putOff } from "@/features/day/lib/offline";
 import type { QueueItem } from "@/features/home/lib/queue";
+import { sealOf } from "@/features/home/lib/seal";
 import { QUEUED_TOAST } from "@/features/pwa/lib/run";
 import { projectOfHref } from "@/features/week/lib/rhythm";
-import { APPS_CONFIG } from "@/lib/app-themes";
 import { pageKey } from "@/lib/capture-shortcut";
 
 type Step = "sort" | "pick";
 
-const seal = (app: string) =>
-	app in APPS_CONFIG ? APPS_CONFIG[app as keyof typeof APPS_CONFIG] : { theme: "", kanji: "志" };
+const seal = (app: string) => sealOf(app);
 
 /**
  * The morning: first what waits, each kept for today or put off (a card moves its own date);

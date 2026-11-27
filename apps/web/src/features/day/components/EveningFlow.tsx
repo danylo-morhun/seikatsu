@@ -9,8 +9,8 @@ import { LaterMenu } from "@/features/day/components/LaterMenu";
 import { Steps, StepTitle } from "@/features/day/components/Steps";
 import { laterDays } from "@/features/day/lib/day";
 import { clearDue, close, drop, putOff, shortDay } from "@/features/day/lib/offline";
+import { sealOf } from "@/features/home/lib/seal";
 import { QUEUED_TOAST } from "@/features/pwa/lib/run";
-import { APPS_CONFIG } from "@/lib/app-themes";
 import { pageKey } from "@/lib/capture-shortcut";
 
 /** Something the day didn't finish: a pick, or a card due by today. */
@@ -27,8 +27,7 @@ export type LeftRow = {
 type Step = 0 | 1 | 2;
 type Choice = "tomorrow" | "later" | "drop";
 
-const seal = (app: string) =>
-	app in APPS_CONFIG ? APPS_CONFIG[app as keyof typeof APPS_CONFIG] : { theme: "", kanji: "志" };
+const seal = (app: string) => sealOf(app);
 
 const FAILED = { error: "Couldn't save. Check your connection." };
 

@@ -8,12 +8,11 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { PickRow } from "@/features/day/lib/data";
 import { tick } from "@/features/day/lib/offline";
+import { sealOf } from "@/features/home/lib/seal";
 import { QUEUED_TOAST } from "@/features/pwa/lib/run";
 import { finishCard } from "@/features/seiryu/lib/finish";
-import { APPS_CONFIG } from "@/lib/app-themes";
 
-const seal = (app: string) =>
-	app in APPS_CONFIG ? APPS_CONFIG[app as keyof typeof APPS_CONFIG] : { theme: "", kanji: "志" };
+const seal = (app: string) => sealOf(app);
 
 /**
  * The day's picks, ticked right here: a card is finished in Seiryu (its own act, with Undo);
