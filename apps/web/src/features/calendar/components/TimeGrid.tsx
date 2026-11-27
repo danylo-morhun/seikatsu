@@ -5,9 +5,15 @@ import { DropDay, ResizeEdge } from "@/features/calendar/components/Drag";
 import { EntryLink, NewAtSlot } from "@/features/calendar/components/Events";
 import { GridScroller } from "@/features/calendar/components/GridScroller";
 import { NowLine } from "@/features/calendar/components/NowLine";
-import { Chip, Kanji, Recap } from "@/features/calendar/components/parts";
+import { Chip, Kanji, Lanes, Recap } from "@/features/calendar/components/parts";
 import { type DayFigures, hoursOf, hrefOf, placeTimed } from "@/features/calendar/lib/calendar";
-import { type CalDay, type CalEntry, dragOf, resizeOf } from "@/features/calendar/lib/events";
+import {
+	barsOf,
+	type CalDay,
+	type CalEntry,
+	dragOf,
+	resizeOf,
+} from "@/features/calendar/lib/events";
 import { sourceOf } from "@/features/calendar/lib/source";
 import type { Money } from "@/features/week/lib/week";
 
@@ -47,6 +53,8 @@ export function TimeGrid({
 }) {
 	const { from } = hoursOf(days.flatMap((d) => timed(d).map((e) => e.time)));
 	const cols = days.length;
+	// Several-day events as bars across the strip.
+	const laid = barsOf(days);
 	const grid = cn(
 		"grid",
 		cols === 7
@@ -68,9 +76,9 @@ export function TimeGrid({
 						<div className="flex items-end justify-end border-r border-rule px-1.5 pb-2 text-[10px] text-muted-foreground">
 							all day
 						</div>
-						{days.map((d) => {
+						{days.map((d, col) => {
 							const untimed = [
-								...d.plan.filter((e) => !e.time).map((e) => ({ e, done: false })),
+								...laid.rest[col].filter((e) => !e.time).map((e) => ({ e, done: false })),
 								...d.done.map((e) => ({ e, done: true })),
 							];
 							const shown = cols > 1 ? untimed.slice(0, STRIP) : untimed;
@@ -111,6 +119,11 @@ export function TimeGrid({
 												{WEEKDAY.format(utc(d.date))}
 											</span>
 										</Link>
+									)}
+									{laid.lanes[col] > 0 && (
+										<div className="relative flex flex-col gap-0.5">
+											<Lanes n={laid.lanes[col]} bars={laid.bars.filter((b) => b.col === col)} />
+										</div>
 									)}
 									{notes?.get(d.date) && (
 										<p className="px-1 text-[11px] text-muted-foreground">{notes.get(d.date)}</p>
@@ -179,6 +192,7 @@ export function TimeGrid({
 									className={cn(
 										sourceOf(p.entry.app).theme,
 										"absolute top-(--top) left-(--left) z-10 flex h-(--h) w-(--w) flex-col gap-0.5 overflow-hidden rounded-[0.5rem] bg-primary/22 px-2 py-1.5 text-xs leading-4 text-foreground outline-none ring-1 ring-background/60 transition-colors duration-150 ease-out hover:bg-primary/32 focus-visible:ring-2 focus-visible:ring-ring",
+										p.end - p.start < 30 && "justify-center py-0",
 									)}
 									style={
 										{
@@ -190,11 +204,27 @@ export function TimeGrid({
 										} as CSSProperties
 									}
 								>
-									<span className="flex items-center gap-1.5 text-[11px] tabular-nums text-muted-foreground">
-										<Kanji app={p.entry.app} color={p.entry.color} className="text-[10px]" />
-										{p.entry.end ? `${p.entry.time}–${p.entry.end}` : p.entry.time}
-									</span>
-									<span className="line-clamp-2 font-semibold">{p.entry.title}</span>
+									{p.end - p.start < 45 ? (
+										// Too short for two lines: time and title side by side.
+										<span className="flex min-w-0 items-center gap-1.5 text-[11px]">
+											<Kanji app={p.entry.app} color={p.entry.color} className="text-[10px]" />
+											<span className="shrink-0 tabular-nums text-muted-foreground">
+												<span aria-hidden>{p.entry.time}</span>
+												<span className="sr-only">
+													{p.entry.end ? `${p.entry.time}–${p.entry.end}` : p.entry.time}
+												</span>
+											</span>
+											<span className="truncate font-semibold">{p.entry.title}</span>
+										</span>
+									) : (
+										<>
+											<span className="flex items-center gap-1.5 text-[11px] tabular-nums text-muted-foreground">
+												<Kanji app={p.entry.app} color={p.entry.color} className="text-[10px]" />
+												{p.entry.end ? `${p.entry.time}–${p.entry.end}` : p.entry.time}
+											</span>
+											<span className="line-clamp-2 font-semibold">{p.entry.title}</span>
+										</>
+									)}
 									{p.entry.note && cols === 1 && (
 										<span className="truncate text-muted-foreground">{p.entry.note}</span>
 									)}
