@@ -285,3 +285,34 @@ test("a repeating event changes on one day, and is cut from a day on", async ({ 
 	rows = await db.select().from(calendarEvents).where(eq(calendarEvents.id, series.id));
 	expect(rows[0]?.repeatUntil).toBe(today);
 });
+
+test("/ searches the events: ahead first, Esc goes back to the days", async ({ page }) => {
+	const wsId = await workspaceId();
+	await db.delete(calendarEvents).where(eq(calendarEvents.workspaceId, wsId));
+	const ahead = new Date(Date.now() + 9 * 86_400_000).toISOString().slice(0, 10);
+	const behind = new Date(Date.now() - 40 * 86_400_000).toISOString().slice(0, 10);
+	await db.insert(calendarEvents).values([
+		{ workspaceId: wsId, title: "E2E dentist check-up", date: ahead, location: "ul. Długa 5" },
+		{ workspaceId: wsId, title: "E2E dentist, first visit", date: behind },
+		{ workspaceId: wsId, title: "E2E haircut", date: ahead },
+	]);
+	await page.goto("/?v=month");
+	await expect(page.getByRole("navigation", { name: "Home view" })).toBeVisible();
+	const field = page.getByRole("searchbox", { name: "Search events" });
+	await expect(async () => {
+		await page.keyboard.press("/");
+		await expect(field).toBeFocused({ timeout: 1000 });
+	}).toPass();
+	await field.fill("dentist");
+	await expect(page).toHaveURL(/q=dentist/);
+	const aheadList = page.getByRole("region", { name: "Ahead" });
+	await expect(aheadList.getByRole("button", { name: /E2E dentist check-up/ })).toBeVisible();
+	await expect(
+		page.getByRole("region", { name: "Behind" }).getByRole("button", { name: /first visit/ }),
+	).toBeVisible();
+	await expect(page.getByRole("button", { name: /E2E haircut/ })).toHaveCount(0);
+
+	await field.press("Escape");
+	await expect(page).not.toHaveURL(/q=/);
+	await expect(page.getByRole("list", { name: "Days" })).toBeVisible();
+});
