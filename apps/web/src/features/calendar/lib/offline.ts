@@ -1,7 +1,7 @@
 // Events from the browser: run now, or kept in the outbox until back online.
 
-import { deleteEvent, saveEvent } from "@/features/calendar/actions/events";
-import type { CalendarEventInput } from "@/features/calendar/lib/schemas";
+import { deleteEvent, saveEvent, saveEventSet } from "@/features/calendar/actions/events";
+import type { CalendarEventInput, EventSetInput } from "@/features/calendar/lib/schemas";
 import { runOrQueue } from "@/features/pwa/lib/run";
 
 const quote = (title: string) => `“${title.length > 40 ? `${title.slice(0, 40)}…` : title}”`;
@@ -17,4 +17,9 @@ export function removeEvent(id: string, title: string) {
 	return runOrQueue("calendar.deleteEvent", { id }, `${quote(title)} deleted`, () =>
 		deleteEvent({ id }),
 	);
+}
+
+/** A change to part of a repeating event: its rows saved and deleted together. */
+export function storeEventSet(set: EventSetInput, title: string) {
+	return runOrQueue("calendar.saveEventSet", set, `${quote(title)} saved`, () => saveEventSet(set));
 }

@@ -6,8 +6,8 @@ import { updateDocument } from "@/features/aisha/actions/documents";
 import { addReading } from "@/features/aisha/actions/readings";
 import { logService } from "@/features/aisha/actions/services";
 import { documentFormSchema, serviceFormSchema } from "@/features/aisha/lib/aisha-schemas";
-import { deleteEvent, saveEvent } from "@/features/calendar/actions/events";
-import { deleteEventSchema, eventSchema } from "@/features/calendar/lib/schemas";
+import { deleteEvent, saveEvent, saveEventSet } from "@/features/calendar/actions/events";
+import { deleteEventSchema, eventSchema, eventSetSchema } from "@/features/calendar/lib/schemas";
 import {
 	closeDay,
 	dropPick,
@@ -91,6 +91,7 @@ type Entry<N extends OpName> = {
 export const REGISTRY: { [N in OpName]: Entry<N> } = {
 	"calendar.saveEvent": { schema: eventSchema, run: saveEvent },
 	"calendar.deleteEvent": { schema: deleteEventSchema, run: deleteEvent },
+	"calendar.saveEventSet": { schema: eventSetSchema, run: saveEventSet },
 	"day.snooze": { schema: snoozeSchema, run: snoozeRow },
 	"day.unsnooze": { schema: unsnoozeSchema, run: unsnoozeRow },
 	"day.savePlan": { schema: planSchema, run: savePlan },
