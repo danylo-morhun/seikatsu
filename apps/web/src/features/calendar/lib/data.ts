@@ -17,7 +17,8 @@ import type { EventFields } from "@/features/calendar/lib/events";
 
 const hhmm = (t: string | null) => t?.slice(0, 5) ?? null;
 
-const toFields = (r: CalendarEvent): EventFields => ({
+/** A stored event as the calendar knows it. */
+export const toFields = (r: CalendarEvent): EventFields => ({
 	id: r.id,
 	title: r.title,
 	date: r.date,
