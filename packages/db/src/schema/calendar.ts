@@ -1,4 +1,5 @@
 import {
+	boolean,
 	date,
 	index,
 	integer,
@@ -40,6 +41,15 @@ export const calendarEvents = pgTable(
 		repeatEvery: integer("repeat_every").notNull().default(1),
 		/** The last day it repeats on (inclusive); null = for good. */
 		repeatUntil: date("repeat_until"),
+		/** Ends after this many times (counted from `date`, skipped ones included); null = no count. */
+		repeatCount: integer("repeat_count"),
+		/** Weekly: the weekdays it falls on (1 = Monday … 7 = Sunday); null = `date`'s own. */
+		repeatDays: integer("repeat_days").array(),
+		/** Monthly: on `date`'s weekday in the same week of the month (the 2nd Tuesday, the last
+		 * Friday) instead of the same day number. */
+		repeatByWeekday: boolean("repeat_by_weekday").notNull().default(false),
+		/** Days of a repeating event taken out (deleted or changed apart): its start days. */
+		skip: date("skip").array().notNull().default([]),
 		note: text("note"),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
