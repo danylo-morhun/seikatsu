@@ -1,6 +1,7 @@
 // What the day waits on: one list across the apps, most urgent first, each row with the one
 // thing to do about it. Pure — the home loads each app's summary (./today) and hands them in.
 
+import type { EventToday } from "@/features/calendar/lib/agenda";
 import { type GoalPace, goalAttention } from "@/features/goals/lib/progress";
 import type { CardToday, CarToday, WantsToday } from "@/features/home/lib/today";
 import type { FundDue, MoneyAgenda } from "@/features/kuroji/lib/agenda";
@@ -8,8 +9,12 @@ import type { JobsAgenda } from "@/features/kyuu/lib/agenda";
 import type { APPS_CONFIG } from "@/lib/app-themes";
 
 type AppHref = keyof typeof APPS_CONFIG;
-/** Where a row belongs: an app, or Goals (the shell's own). */
-export type QueueSource = AppHref | "/goals";
+/** Where a row belongs: an app, Goals (the shell's own), or an event (own or Google's). */
+export type QueueSource = AppHref | "/goals" | "/calendar" | "/google";
+
+/** Whether a row is an app's own (not a goal's or an event's). */
+export const isAppRow = <T extends { app: QueueSource }>(q: T): q is T & { app: AppHref } =>
+	q.app !== "/goals" && q.app !== "/calendar" && q.app !== "/google";
 
 export type QueueTone = "overdue" | "due" | "info";
 
@@ -33,6 +38,10 @@ export type QueueItem = {
 	cardId?: string;
 	/** "HH:MM" when it happens at a time today (a card's due time, a call): the day's timeline. */
 	time?: string;
+	/** An event: it happens on its own, so it can't be put off and only the calendar moves it. */
+	event?: true;
+	/** "#rrggbb": a Google calendar's own colour for its seal. */
+	color?: string;
 };
 
 /** Each app's own rule for what waits, folded: past this many, one row stands for them all. */
@@ -47,6 +56,8 @@ export type QueueData = {
 	car: CarToday | null;
 	/** Absent where goals aren't read (older callers, tests). */
 	goals?: GoalPace[] | null;
+	/** Today's events, own and Google's. Absent where they aren't read. */
+	events?: EventToday[] | null;
 	/** Rows put off with "Later": each stays off the list until its day. */
 	snoozed?: { key: string; until: string }[] | null;
 };
@@ -250,6 +261,22 @@ function goalItems(goals: GoalPace[], today: string): QueueItem[] {
 	});
 }
 
+/** Today's events: what's set for the day, never late, so they head nothing but the hours. */
+function eventItems(events: EventToday[], today: string): QueueItem[] {
+	return events.map((e) => ({
+		key: e.key,
+		app: e.source,
+		title: e.title,
+		note: e.note || (e.time ? (e.end ? `${e.time}–${e.end}` : e.time) : "all day"),
+		href: `/?v=day&d=${today}`,
+		tone: "info",
+		act: { kind: "open" },
+		event: true,
+		...(e.time && { time: e.time }),
+		...(e.color && { color: e.color }),
+	}));
+}
+
 /** Money as the app writes it ("500 zł"); the composer passes Kuroji's formatter. */
 export type Money = (amount: number, currency: string) => string;
 
@@ -267,6 +294,7 @@ export function buildQueue(
 		...(data.wants ? wantItems(data.wants) : []),
 		...(data.jobs ? jobItems(data.jobs, today) : []),
 		...(data.goals ? goalItems(data.goals, today) : []),
+		...(data.events ? eventItems(data.events, today) : []),
 	];
 	const later = new Set((data.snoozed ?? []).filter((s) => s.until > today).map((s) => s.key));
 	return items

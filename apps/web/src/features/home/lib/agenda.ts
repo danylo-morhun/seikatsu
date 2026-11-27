@@ -4,6 +4,7 @@
 // never an error.
 
 import { cache } from "react";
+import { readEventsAgenda } from "@/features/calendar/lib/agenda";
 import { readSnoozes } from "@/features/day/lib/snoozes";
 import { getGoals } from "@/features/goals/lib/data";
 import { describeLink, type GoalPace, goalProgress } from "@/features/goals/lib/progress";
@@ -46,16 +47,18 @@ export async function readAgenda(ws: Workspace, today: string): Promise<QueueDat
 	const on = modulesOn(ws.modulesOff);
 	const from = <T>(module: ModuleHref, load: () => Promise<T>) =>
 		on.includes(module) ? safely(load) : Promise.resolve(null);
-	const [money, wants, cards, jobs, car, goals, snoozed] = await Promise.all([
+	const [money, wants, cards, jobs, car, goals, events, snoozed] = await Promise.all([
 		from("/kuroji", () => readMoneyAgenda(ws, today)),
 		from("/hoshii", () => getWants(ws, today)),
 		from("/seiryu", () => getCardsDue(ws, today)),
 		from("/kyuu", () => readJobsAgenda(ws.id, today)),
 		from("/aisha", () => readCar(ws.id, today)),
 		from("/goals", () => readGoalPace(ws, today)),
+		// The calendar is the home's own: always on.
+		safely(() => readEventsAgenda(ws.id, today)),
 		safely(() => readSnoozes(ws.id, today)),
 	]);
-	return { money, wants, cards, jobs, car, goals, snoozed };
+	return { money, wants, cards, jobs, car, goals, events, snoozed };
 }
 
 /** Request-cached for the pages: Today and Week read it once between them. */

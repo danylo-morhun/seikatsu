@@ -54,7 +54,8 @@ export default async function MorningPage({
 		<AppFrame>
 			<MorningFlow
 				today={today}
-				items={day.queue}
+				// Events aren't sorted: they happen on their own day.
+				items={day.queue.filter((q) => !q.event)}
 				focus={doing}
 				carried={day.carried}
 				weekFocus={weekFocus}

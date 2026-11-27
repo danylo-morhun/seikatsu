@@ -211,4 +211,39 @@ describe("buildQueue", () => {
 			[`kyuu:call:j:${TODAY}`, undefined, "12:00"],
 		]);
 	});
+
+	it("lists today's events last, at their time, never to be put off", () => {
+		const queue = buildQueue(
+			{
+				...empty,
+				cards: [card("a", TODAY)],
+				events: [
+					{
+						key: "event:e1:2026-11-03",
+						source: "/calendar",
+						title: "Dentist",
+						time: "10:00",
+						end: "11:00",
+						note: "10:00–11:00",
+					},
+					{
+						key: "google:c:g:2026-11-03",
+						source: "/google",
+						title: "Trip",
+						note: "",
+						color: "#ff0000",
+					},
+				],
+			},
+			TODAY,
+		);
+		expect(queue.map((q) => q.key)).toEqual([
+			"seiryu:a",
+			"event:e1:2026-11-03",
+			"google:c:g:2026-11-03",
+		]);
+		expect(queue[1]).toMatchObject({ app: "/calendar", tone: "info", time: "10:00", event: true });
+		expect(queue[2]).toMatchObject({ app: "/google", note: "all day", color: "#ff0000" });
+		expect(queue[2].time).toBeUndefined();
+	});
 });
