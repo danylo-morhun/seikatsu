@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addUnits, nextDueDate, repeatLabel } from "./repeat";
+import { addUnits, caughtUp, nextDueDate, repeatLabel } from "./repeat";
 
 describe("addUnits", () => {
 	it("steps days, weeks, months and years", () => {
@@ -40,4 +40,25 @@ describe("nextDueDate", () => {
 it("names the rule", () => {
 	expect(repeatLabel(1, "week")).toBe("Every week");
 	expect(repeatLabel(3, "month")).toBe("Every 3 months");
+});
+
+describe("caughtUp", () => {
+	const daily = { every: 1, unit: "day", fromDone: false } as const;
+	const weekly = { every: 1, unit: "week", fromDone: false } as const;
+	it("moves a missed daily card to today", () => {
+		expect(caughtUp(daily, "2026-11-23", "2026-11-28")).toBe("2026-11-28");
+	});
+	it("keeps a weekly card late until its next step comes", () => {
+		expect(caughtUp(weekly, "2026-11-23", "2026-11-28")).toBeNull();
+		expect(caughtUp(weekly, "2026-11-23", "2026-12-01")).toBe("2026-11-30");
+	});
+	it("keeps the month's day", () => {
+		expect(caughtUp({ every: 1, unit: "month", fromDone: false }, "2026-09-06", "2026-11-10")).toBe(
+			"2026-11-06",
+		);
+	});
+	it("leaves cards counted from done and cards not late", () => {
+		expect(caughtUp({ ...daily, fromDone: true }, "2026-11-23", "2026-11-28")).toBeNull();
+		expect(caughtUp(daily, "2026-11-28", "2026-11-28")).toBeNull();
+	});
 });

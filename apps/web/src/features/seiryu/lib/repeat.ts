@@ -51,3 +51,15 @@ export function nextDueDate(rule: Repeat, dueDate: string | null, doneDay: strin
 	}
 	return next;
 }
+
+/**
+ * A repeating card left undone: its latest step on or before `today`, so missed steps don't
+ * pile up as one card days late (a daily chore missed on Monday is simply today's). Null when
+ * no newer step has come yet, or when the rule counts from done (it has no calendar to keep).
+ */
+export function caughtUp(rule: Repeat, dueDate: string, today: string): string | null {
+	if (rule.fromDone || dueDate >= today) return null;
+	let step = 0;
+	while (addUnits(dueDate, rule.every * (step + 1), rule.unit) <= today) step++;
+	return step === 0 ? null : addUnits(dueDate, rule.every * step, rule.unit);
+}

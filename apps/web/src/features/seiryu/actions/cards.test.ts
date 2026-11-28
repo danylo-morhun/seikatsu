@@ -14,6 +14,7 @@ vi.mock("@/lib/session", () => ({
 vi.mock("@/lib/timezone", () => ({
 	getUserToday: vi.fn(async () => today),
 	getUserTimeZone: vi.fn(async () => "Europe/Warsaw"),
+	dayIn: () => today,
 }));
 vi.mock("@/lib/revalidate", () => ({ revalidateShell: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -30,6 +31,7 @@ vi.mock("@seikatsu/db", async () => ({
 
 const { createCard, moveCard, updateCard } = await import("./cards");
 const { archiveFinishedCards } = await import("../lib/auto-archive");
+const { catchUpRepeats } = await import("../lib/catch-up");
 const { copyGroup } = await import("./groups");
 const C = schema.seiryuCards;
 
@@ -249,5 +251,38 @@ describe("sorting and clearing", () => {
 		const rows = await testDb.select().from(C);
 		expect(rows.find((r) => r.id === card.id)?.archivedAt).not.toBeNull();
 		expect(rows.find((r) => r.id === recent?.id)?.archivedAt).toBeNull();
+	});
+});
+
+describe("late repeating cards", () => {
+	beforeAll(async () => {
+		testDb = await createTestDb();
+	}, 30_000);
+
+	afterEach(async () => {
+		await testDb.delete(schema.workspaces);
+		today = "2026-11-06";
+	});
+
+	it("a missed daily card moves to today with its reminder", async () => {
+		today = "2026-11-28";
+		const { card } = await seed({ dueDate: "2026-11-23", repeatEvery: 1, repeatUnit: "day" });
+		expect(await catchUpRepeats()).toBe(1);
+		const [row] = await testDb.select().from(C).where(ops.eq(C.id, card.id));
+		expect(row.dueDate).toBe("2026-11-28");
+		// No zone saved: UTC, at its 10:00.
+		expect(row.remindAt?.toISOString()).toBe("2026-11-28T10:00:00.000Z");
+	});
+
+	it("leaves a weekly card late until its next step", async () => {
+		today = "2026-11-28";
+		await seed({ dueDate: "2026-11-23", repeatEvery: 1, repeatUnit: "week" });
+		expect(await catchUpRepeats()).toBe(0);
+	});
+
+	it("leaves a card counted from done", async () => {
+		today = "2026-11-28";
+		await seed({ dueDate: "2026-11-23", repeatEvery: 1, repeatUnit: "day", repeatFromDone: true });
+		expect(await catchUpRepeats()).toBe(0);
 	});
 });
