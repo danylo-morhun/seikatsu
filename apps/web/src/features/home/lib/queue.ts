@@ -36,6 +36,8 @@ export type QueueItem = {
 	act: QueueAct;
 	/** A Seiryu card's id: "Later" moves its own due date instead of snoozing the row. */
 	cardId?: string;
+	/** Days past its due date (cards): the morning puts long-late ones off together. */
+	late?: number;
 	/** "HH:MM" when it happens at a time today (a card's due time, a call): the day's timeline. */
 	time?: string;
 	/** An event: it happens on its own, so it can't be put off and only the calendar moves it. */
@@ -95,6 +97,7 @@ function cardItems(cards: CardToday[], today: string): QueueItem[] {
 			href: `/seiryu/${card.projectId}/${card.id}`,
 			tone: late > 0 ? "overdue" : "due",
 			cardId: card.id,
+			...(late > 0 && { late }),
 			...(late <= 0 && card.dueTime && { time: card.dueTime }),
 			act: card.doneColumnId
 				? {

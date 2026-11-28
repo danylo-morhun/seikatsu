@@ -8,6 +8,7 @@ import {
 	pickCandidates,
 	pickStates,
 	slotOf,
+	staleOf,
 	timeline,
 } from "./day";
 
@@ -161,5 +162,16 @@ describe("pickCandidates with the week's focus", () => {
 			["w", false, true],
 			["a", false, false],
 		]);
+	});
+});
+
+describe("staleOf", () => {
+	const card = (key: string, late?: number) => item(key, { cardId: key, late });
+	it("gathers cards long late when there are two or more", () => {
+		const items = [card("a", 5), card("b", 3), card("c", 1), card("d"), item("e", { late: 9 })];
+		expect(staleOf(items).map((i) => i.key)).toEqual(["a", "b"]);
+	});
+	it("leaves a single long-late card to its own row", () => {
+		expect(staleOf([card("a", 5), card("b", 1)])).toEqual([]);
 	});
 });
