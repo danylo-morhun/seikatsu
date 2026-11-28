@@ -68,6 +68,42 @@ export async function putOff(
 	return result;
 }
 
+/**
+ * "Later" for a batch of cards at once (the morning's long-late ones): each moves its own due
+ * date, one toast for all. `back` gets the keys that failed.
+ */
+export async function putOffAll(
+	items: Pick<QueueItem, "key" | "title" | "cardId">[],
+	until: string | null,
+	back: (keys: string[]) => void,
+) {
+	const results = await Promise.all(
+		items.map((item) =>
+			saveCard(
+				item.cardId as string,
+				item.title,
+				until ? { dueDate: until } : { dueDate: null, dueTime: null },
+			).catch(() => ({ error: "Couldn't save. Check your connection." })),
+		),
+	);
+	const failed = items.filter((_, i) => "error" in (results[i] ?? {})).map((i) => i.key);
+	if (failed.length > 0) {
+		toast.error(`${failed.length} couldn't be moved`);
+		back(failed);
+	}
+	const moved = items.length - failed.length;
+	if (moved === 0) return;
+	const queued = results.some((r) => "queued" in r);
+	const cards = `${moved} card${moved === 1 ? "" : "s"}`;
+	toast(
+		queued
+			? QUEUED_TOAST
+			: until
+				? `Moved ${cards} to ${shortDay(until)}`
+				: `${cards} without a date`,
+	);
+}
+
 /** A card's "No date": off every list until it gets one again. */
 export function clearDue(item: { cardId: string; title: string }) {
 	return saveCard(item.cardId, item.title, { dueDate: null, dueTime: null });

@@ -27,6 +27,7 @@ export function LaterMenu({
 	onPick,
 	onNoDate,
 	compact = false,
+	label = "Later",
 	className,
 }: {
 	title: string;
@@ -36,6 +37,8 @@ export function LaterMenu({
 	onNoDate?: () => void;
 	/** An icon on phones, the word on wider screens. */
 	compact?: boolean;
+	/** The button's word ("Later all" for a batch). */
+	label?: string;
 	className?: string;
 }) {
 	const days = laterDays(today);
@@ -54,7 +57,7 @@ export function LaterMenu({
 							icon={Clock01Icon}
 							className={cn("size-3.5", compact ? "sm:hidden" : "hidden")}
 						/>
-						<span className={cn(compact && "max-sm:hidden")}>Later</span>
+						<span className={cn(compact && "max-sm:hidden")}>{label}</span>
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" className="min-w-52">

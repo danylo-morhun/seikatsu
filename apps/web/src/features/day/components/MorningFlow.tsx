@@ -17,8 +17,10 @@ import {
 	type FocusPick,
 	MAX_PICKS,
 	pickCandidates,
+	STALE_DAYS,
+	staleOf,
 } from "@/features/day/lib/day";
-import { clearDue, planDay, putOff } from "@/features/day/lib/offline";
+import { clearDue, planDay, putOff, putOffAll } from "@/features/day/lib/offline";
 import type { QueueItem } from "@/features/home/lib/queue";
 import { sealOf } from "@/features/home/lib/seal";
 import { QUEUED_TOAST } from "@/features/pwa/lib/run";
@@ -60,6 +62,12 @@ export function MorningFlow({
 	const [step, setStep] = useState<Step>(startOnPick || items.length === 0 ? "pick" : "sort");
 	const [gone, setGone] = useState<Set<string>>(new Set());
 	const left = useMemo(() => items.filter((i) => !gone.has(i.key)), [items, gone]);
+	// Cards long late are sorted as one batch first; the rest row by row.
+	const stale = useMemo(() => staleOf(left), [left]);
+	const rest = useMemo(() => {
+		const keys = new Set(stale.map((i) => i.key));
+		return left.filter((i) => !keys.has(i.key));
+	}, [left, stale]);
 
 	const candidates = useMemo(
 		() => pickCandidates(left, focus, carried, weekFocus),
@@ -71,13 +79,47 @@ export function MorningFlow({
 	);
 	const [saving, startSaving] = useTransition();
 
-	const hide = (key: string) => setGone((prev) => new Set(prev).add(key));
-	const show = (key: string) =>
+	const hide = (...keys: string[]) => setGone((prev) => new Set([...prev, ...keys]));
+	const show = (...keys: string[]) =>
 		setGone((prev) => {
 			const next = new Set(prev);
-			next.delete(key);
+			for (const key of keys) next.delete(key);
 			return next;
 		});
+
+	function putOffStale(until: string | null) {
+		const keys = stale.map((i) => i.key);
+		hide(...keys);
+		setChosen((prev) => prev.filter((k) => !keys.includes(k)));
+		void putOffAll(stale, until, (failed) => show(...failed));
+	}
+
+	const sortRow = (item: QueueItem) => (
+		<SortRow
+			key={item.key}
+			item={item}
+			today={today}
+			onLater={(until) => {
+				hide(item.key);
+				setChosen((prev) => prev.filter((k) => k !== item.key));
+				void putOff(item, until, () => show(item.key));
+			}}
+			onNoDate={
+				item.cardId
+					? () => {
+							hide(item.key);
+							const cardId = item.cardId as string;
+							void clearDue({ cardId, title: item.title }).then((r) => {
+								if ("error" in r) {
+									toast.error(r.error);
+									show(item.key);
+								}
+							});
+						}
+					: undefined
+			}
+		/>
+	);
 
 	function toggle(key: string) {
 		setChosen((prev) =>
@@ -142,34 +184,26 @@ export function MorningFlow({
 								: "Nothing left waiting."
 						}
 					/>
-					{left.length > 0 && (
-						<ul aria-label="Waiting" className="inset-group">
-							{left.map((item) => (
-								<SortRow
-									key={item.key}
-									item={item}
+					{stale.length > 0 && (
+						<section aria-label="Long late" className="mb-6">
+							<div className="mb-2 flex items-center justify-between gap-3 px-1">
+								<h2 className="text-sm font-medium text-muted-foreground">
+									{stale.length} late {STALE_DAYS}+ days · still for this week?
+								</h2>
+								<LaterMenu
+									title={`all ${stale.length} long-late cards`}
 									today={today}
-									onLater={(until) => {
-										hide(item.key);
-										setChosen((prev) => prev.filter((k) => k !== item.key));
-										void putOff(item, until, () => show(item.key));
-									}}
-									onNoDate={
-										item.cardId
-											? () => {
-													hide(item.key);
-													const cardId = item.cardId as string;
-													void clearDue({ cardId, title: item.title }).then((r) => {
-														if ("error" in r) {
-															toast.error(r.error);
-															show(item.key);
-														}
-													});
-												}
-											: undefined
-									}
+									label="Later all"
+									onPick={putOffStale}
+									onNoDate={() => putOffStale(null)}
 								/>
-							))}
+							</div>
+							<ul className="inset-group">{stale.map(sortRow)}</ul>
+						</section>
+					)}
+					{rest.length > 0 && (
+						<ul aria-label="Waiting" className="inset-group">
+							{rest.map(sortRow)}
 						</ul>
 					)}
 					<div className="mt-6 flex justify-end">
