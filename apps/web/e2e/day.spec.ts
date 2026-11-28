@@ -166,3 +166,44 @@ test("the evening sorts what's left and closes the day", async ({ page }) => {
 	await page.goto("/");
 	await expect(page.getByRole("region", { name: "My day" }).getByText("Day closed.")).toBeVisible();
 });
+
+test("the morning puts long-late cards off together", async ({ page }) => {
+	const [todo] = await db
+		.select({ id: seiryuColumns.id, projectId: seiryuColumns.projectId })
+		.from(seiryuColumns)
+		.innerJoin(seiryuProjects, eq(seiryuColumns.projectId, seiryuProjects.id))
+		.where(
+			and(eq(seiryuProjects.workspaceId, await workspaceId()), eq(seiryuColumns.name, "Todo")),
+		);
+	if (!todo) throw new Error("column not found");
+	await db.insert(seiryuCards).values(
+		["E2E late one", "E2E late two"].map((title, i) => ({
+			projectId: todo.projectId,
+			columnId: todo.id,
+			title,
+			position: `b${i}`,
+			dueDate: day(-5),
+		})),
+	);
+
+	await page.goto("/morning");
+	const late = page.getByRole("region", { name: "Long late" });
+	await expect(late).toContainText("2 late 3+ days");
+	await late.getByRole("button", { name: "Later: all 2 long-late cards" }).click();
+	await page.getByRole("menuitem", { name: /Tomorrow/ }).click();
+	await expect(late).toBeHidden();
+	await expect(page.getByRole("list", { name: "Waiting" })).toContainText("E2E pick me");
+	await expect
+		.poll(
+			async () =>
+				(
+					await db
+						.select({ due: seiryuCards.dueDate })
+						.from(seiryuCards)
+						.where(eq(seiryuCards.columnId, todo.id))
+				)
+					.map((c) => c.due)
+					.filter((d) => d === day(1)).length,
+		)
+		.toBe(2);
+});
