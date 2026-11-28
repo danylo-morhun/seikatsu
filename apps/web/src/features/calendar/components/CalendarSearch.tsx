@@ -49,7 +49,6 @@ export function CalendarSearch({ q }: { q: string }) {
 		if (text.trim() === q) return;
 		const t = setTimeout(() => go(text), WAIT_MS);
 		return () => clearTimeout(t);
-		// biome-ignore lint/correctness/useExhaustiveDependencies: `go` reads the current URL
 	}, [text, q]);
 
 	const close = () => {
