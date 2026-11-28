@@ -13,6 +13,15 @@ export type { DayPick };
 export const MAX_PICKS = 3;
 
 /** The evening starts here when no time is set. */
+/** A card this many days late or more is "long late": the morning sorts those as one batch. */
+export const STALE_DAYS = 3;
+
+/** The long-late cards, when there are enough of them (2+) to be worth one decision. */
+export function staleOf(items: QueueItem[]): QueueItem[] {
+	const stale = items.filter((i) => i.cardId && (i.late ?? 0) >= STALE_DAYS);
+	return stale.length >= 2 ? stale : [];
+}
+
 export const DEFAULT_EVENING = "19:00";
 
 export const pickOf = (item: Pick<QueueItem, "key" | "title" | "href" | "app">): DayPick => ({
