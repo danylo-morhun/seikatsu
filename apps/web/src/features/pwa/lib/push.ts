@@ -2,7 +2,7 @@
 // (NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT) — see docs/ops/runbook.md.
 
 import { and, db, eq, inArray, notificationLog, pushSubscriptions } from "@seikatsu/db";
-import webpush from "web-push";
+import * as webpush from "web-push";
 
 export interface PushPayload {
 	title: string;
