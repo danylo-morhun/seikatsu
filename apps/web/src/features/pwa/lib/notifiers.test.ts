@@ -7,10 +7,8 @@ let testDb: Awaited<ReturnType<typeof createTestDb>>;
 
 const sendNotification = vi.fn(async (..._args: unknown[]) => ({ statusCode: 201 }));
 vi.mock("web-push", () => ({
-	default: {
-		setVapidDetails: vi.fn(),
-		sendNotification: (...a: unknown[]) => sendNotification(...a),
-	},
+	setVapidDetails: vi.fn(),
+	sendNotification: (...a: unknown[]) => sendNotification(...a),
 }));
 
 // The cron has no session; modules beside the notifiers import auth and the cache.
