@@ -26,6 +26,22 @@ export class GoogleError extends Error {
 }
 
 async function call<T>(url: string, init: RequestInit = {}): Promise<T> {
+	// A read that times out is asked once more (a first sync pulls a lot); a write isn't,
+	// since one cut short may still have landed.
+	const reads = !init.method || init.method === "GET";
+	for (let attempt = 0; ; attempt++) {
+		try {
+			return await callOnce<T>(url, init);
+		} catch (e) {
+			const timedOut = e instanceof Error && e.name === "AbortError";
+			if (timedOut && reads && attempt === 0) continue;
+			if (timedOut) throw new GoogleError(0, `Google didn't answer in ${TIMEOUT / 1000} s`);
+			throw e;
+		}
+	}
+}
+
+async function callOnce<T>(url: string, init: RequestInit): Promise<T> {
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), TIMEOUT);
 	try {
