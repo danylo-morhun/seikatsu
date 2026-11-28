@@ -16,12 +16,13 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getExchangeRate } from "@/features/kuroji/lib/exchange-rates";
 import { generateDueForWorkspace } from "@/features/kuroji/lib/recurring-runner";
 import { archiveFinishedCards } from "@/features/seiryu/lib/auto-archive";
+import { catchUpRepeats } from "@/features/seiryu/lib/catch-up";
 import { pruneOldRows } from "@/lib/retention";
 import { dayIn } from "@/lib/timezone";
 
 // Daily Vercel Cron (see vercel.json): materializes recurring transactions due today, stores
-// today's exchange rates (so page renders never have to) and clears week-old finished Seiryu
-// cards into the archive. Guarded by CRON_SECRET.
+// today's exchange rates (so page renders never have to), clears week-old finished Seiryu
+// cards into the archive and moves late repeating cards to their latest step. Guarded by CRON_SECRET.
 export async function GET(req: NextRequest) {
 	const secret = process.env.CRON_SECRET;
 	if (!secret) {
@@ -64,6 +65,11 @@ export async function GET(req: NextRequest) {
 		Sentry.captureException(e, { tags: { cron: "seiryu-archive" } });
 		return -1;
 	});
+	// Repeating cards left undone move to their latest step instead of piling up as late.
+	const caughtUpCards = await catchUpRepeats().catch((e: unknown) => {
+		Sentry.captureException(e, { tags: { cron: "seiryu-catch-up" } });
+		return -1;
+	});
 	// Same daily slot: old outbox receipts, send-once keys and stale MCP rows go.
 	const pruned = await pruneOldRows();
 	return NextResponse.json({
@@ -73,6 +79,7 @@ export async function GET(req: NextRequest) {
 		rates,
 		pruned,
 		archivedCards,
+		caughtUpCards,
 	});
 }
 
