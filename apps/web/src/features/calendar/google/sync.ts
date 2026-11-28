@@ -24,7 +24,12 @@ import {
 } from "@seikatsu/db";
 import * as Sentry from "@sentry/nextjs";
 import { deleteEvent, saveEvent } from "@/features/calendar/actions/events";
-import { type CalendarApi, calendarApi, tokenFor } from "@/features/calendar/google/api";
+import {
+	type CalendarApi,
+	calendarApi,
+	GoogleError,
+	tokenFor,
+} from "@/features/calendar/google/api";
 import {
 	type CachedEvent,
 	editOf,
@@ -107,7 +112,9 @@ async function syncOnce(workspaceId: string, pull: boolean) {
 			.set({ ...(pull ? { lastSyncedAt: new Date() } : {}), lastError: null })
 			.where(eq(googleAccounts.workspaceId, workspaceId));
 	} catch (e) {
-		Sentry.captureException(e, { tags: { sync: "google-calendar" } });
+		// Google slow or down for a moment: noted on the account, the next run (15 min) retries.
+		const passing = e instanceof GoogleError && (e.status === 0 || e.status >= 500);
+		if (!passing) Sentry.captureException(e, { tags: { sync: "google-calendar" } });
 		await db
 			.update(googleAccounts)
 			.set({ lastError: e instanceof Error ? e.message.slice(0, 300) : "Sync failed" })

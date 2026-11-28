@@ -101,6 +101,14 @@ const fake = {
 vi.mock("@/features/calendar/google/api", () => ({
 	calendarApi: () => fake,
 	tokenFor: async () => "token",
+	GoogleError: class extends Error {
+		constructor(
+			readonly status: number,
+			message: string,
+		) {
+			super(message);
+		}
+	},
 }));
 
 /** The user changing something in Google's own app. */
